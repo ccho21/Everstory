@@ -23,7 +23,7 @@
   "use strict";
 
   var MM_TO_PT = 2.834645;
-  var SAFETY_MM  = 5;     // 안전 여백 (a5_border 안쪽)
+  var SAFETY_MM  = 3;     // 안전 여백 (a5_border 안쪽)
   var GAP_MM     = 2;     // 셀 간격
 
   // ═══ 다이얼로그 ═══════════════════════════════════════════
@@ -86,15 +86,6 @@
     return;
   }
 
-  // ═══ 첫 페어 비율 측정 (셀 크기 결정용) ═══
-  var aspect;
-  try {
-    aspect = _measurePairAspect(pairs[0]);
-  } catch (eA) {
-    alert("첫 페어 비율 측정 실패: " + (eA && eA.message ? eA.message : eA));
-    return;
-  }
-
   // ═══ 템플릿 ═══
   var templateFile = _resolveTemplate();
   if (!templateFile || !templateFile.exists) {
@@ -118,15 +109,10 @@
   var safetyPt = SAFETY_MM * MM_TO_PT;
   var gapPt    = GAP_MM * MM_TO_PT;
 
-  // 셀 크기: 첫 페어 비율 기반, 긴 변을 sizePt에 맞추고 비율 유지
-  var cellWPt, cellHPt;
-  if (aspect.w >= aspect.h) {
-    cellWPt = sizePt;
-    cellHPt = sizePt * (aspect.h / aspect.w);
-  } else {
-    cellHPt = sizePt;
-    cellWPt = sizePt * (aspect.w / aspect.h);
-  }
+  // 셀은 sizePt × sizePt 정사각. _placeSticker의 Math.min fit이
+  // 각 사진의 긴 변을 sizePt에 맞춰 스케일하므로 모든 사진의 긴 변이 동일.
+  var cellWPt = sizePt;
+  var cellHPt = sizePt;
 
   var bL = borderBounds[0], bT = borderBounds[1], bR = borderBounds[2], bB = borderBounds[3];
   var borderW = bR - bL;
@@ -456,19 +442,6 @@
     preset.colorMode = DocumentColorSpace.RGB;
     preset.units = RulerUnits.Millimeters;
     return app.documents.addDocument("Art & Illustration", preset);
-  }
-
-  // 첫 페어의 clean.psd를 임시 doc에 add → width/height 측정 → 닫기
-  // (실제 PrintData에 배치되는 PSD 기준으로 셀 비율을 잡아야 width=sizeMm으로 정확히 들어감)
-  function _measurePairAspect(pair) {
-    var probe = _newDocForImage();
-    try {
-      var p = probe.placedItems.add();
-      p.file = pair.psd;
-      return { w: p.width, h: p.height };
-    } finally {
-      try { probe.close(SaveOptions.DONOTSAVECHANGES); } catch (e) {}
-    }
   }
 
   function _collectPairs(folder) {
