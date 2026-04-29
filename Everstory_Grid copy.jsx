@@ -1,14 +1,14 @@
-// Everstory — 템플릿 기반 시트 그리드 배치기 v6 (Phase B+D 통합, offset 미적용)
+// Everstory — 템플릿 기반 시트 그리드 배치기
 //
 // 템플릿: templates/template_heart.ait
 //   info 레이어 안의 a5_border (PathItem) — 그리드 배치 영역 정의
 //
 // 입력: 02_cutout/ 폴더 안의 페어
-//   {base}_clean.psd  (Phase A 산출물 — 누끼 PSD)
-//   {base}_sil.png    (Phase A 산출물 — 실루엣 PNG)
+//   {base}_clean.psd  — 누끼 PSD
+//   {base}_sil.png    — 실루엣 PNG
 //
 // 처리: 매 시트마다 .ait를 app.open()으로 열어 새 Untitled 문서 생성
-//       PNG → 내부 trace → cutline path (offset/simplify 없음 — 외곽선 그대로)
+//       PNG → 내부 trace → cutline path (외곽선 그대로, offset/simplify 없음)
 //       PSD → PrintData(최상위 레이어)에 embed
 //       cutline의 PNG-relative 좌표를 PSD bbox에 정규화로 매핑 → KissCut과 PrintData 영역 일치
 //       템플릿의 info 레이어는 KissCut과 PrintData 사이에 그대로 유지
@@ -23,7 +23,7 @@
   "use strict";
 
   var MM_TO_PT = 2.834645;
-  var SAFETY_MM  = 5;     // 안전 여백 (a5_border 안쪽)
+  var SAFETY_MM  = 3;     // 안전 여백 (a5_border 안쪽)
   var GAP_MM     = 2;     // 셀 간격
 
   // ═══ 다이얼로그 ═══════════════════════════════════════════
@@ -86,15 +86,6 @@
     return;
   }
 
-  // ═══ 첫 페어 비율 측정 (셀 크기 결정용) ═══
-  var aspect;
-  try {
-    aspect = _measurePairAspect(pairs[0]);
-  } catch (eA) {
-    alert("첫 페어 비율 측정 실패: " + (eA && eA.message ? eA.message : eA));
-    return;
-  }
-
   // ═══ 템플릿 ═══
   var templateFile = _resolveTemplate();
   if (!templateFile || !templateFile.exists) {
@@ -118,15 +109,10 @@
   var safetyPt = SAFETY_MM * MM_TO_PT;
   var gapPt    = GAP_MM * MM_TO_PT;
 
-  // 셀 크기: 첫 페어 비율 기반, 긴 변을 sizePt에 맞추고 비율 유지
-  var cellWPt, cellHPt;
-  if (aspect.w >= aspect.h) {
-    cellWPt = sizePt;
-    cellHPt = sizePt * (aspect.h / aspect.w);
-  } else {
-    cellHPt = sizePt;
-    cellWPt = sizePt * (aspect.w / aspect.h);
-  }
+  // 셀은 sizePt × sizePt 정사각. _placeSticker의 Math.min fit이
+  // 각 사진의 긴 변을 sizePt에 맞춰 스케일하므로 모든 사진의 긴 변이 동일.
+  var cellWPt = sizePt;
+  var cellHPt = sizePt;
 
   var bL = borderBounds[0], bT = borderBounds[1], bR = borderBounds[2], bB = borderBounds[3];
   var borderW = bR - bL;
@@ -168,6 +154,7 @@
 
   var ts = _timestamp();
   var savedFiles = [];
+  var failedItems = [];
 
   try {
     for (var sIdx = 0; sIdx < sheetCount; sIdx++) {
@@ -189,7 +176,12 @@
         sheetBorder = probeBorder;
       } else {
         sheetDoc = _openTemplateDoc(templateFile);
-        sheetBorder = _findInfoBorder(sheetDoc);
+        try {
+          sheetBorder = _findInfoBorder(sheetDoc);
+        } catch (eFB2) {
+          try { sheetDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
+          continue;
+        }
       }
 
       var sbb = sheetBorder.geometricBounds;
@@ -218,7 +210,11 @@
         try {
           _placeSticker(sheetDoc, slice[i], x, y, cellWPt, cellHPt, printLayer, kissLayer, cutSpot);
         } catch (e) {
-          // 한 페어 실패해도 나머지 진행
+          failedItems.push({
+            sheet: sIdx + 1,
+            base: slice[i].base,
+            error: (e && e.message) ? e.message : String(e)
+          });
         }
       }
 
@@ -241,13 +237,23 @@
 
   var cellWMm = (cellWPt / MM_TO_PT).toFixed(1);
   var cellHMm = (cellHPt / MM_TO_PT).toFixed(1);
-  alert(
+
+  var msg =
     "✓ 완료: " + savedFiles.length + "장 저장\n" +
     "템플릿: " + templateFile.name + "\n" +
     "사이즈: " + sizeMm + "mm (셀 " + cellWMm + "×" + cellHMm + "mm)  /  레이아웃: " + cols + "×" + rows + " (" + perSheet + "/시트)\n" +
-    "전체 입력: " + pairs.length + "개" + (shouldRepeat ? " (시트 채우기 위해 반복 배치)" : "") + "\n\n" +
-    savedFiles.join("\n")
-  );
+    "전체 입력: " + pairs.length + "개" + (shouldRepeat ? " (시트 채우기 위해 반복 배치)" : "") + "\n";
+
+  if (failedItems.length > 0) {
+    msg += "\n⚠ 실패 " + failedItems.length + "건:\n";
+    for (var fi = 0; fi < failedItems.length; fi++) {
+      var f = failedItems[fi];
+      msg += "  · sheet" + _pad(f.sheet, 2) + " / " + f.base + ": " + f.error + "\n";
+    }
+  }
+
+  msg += "\n" + savedFiles.join("\n");
+  alert(msg);
 
 
   // ═════════════════════════════════════════════════════════
@@ -255,6 +261,8 @@
   // ═════════════════════════════════════════════════════════
 
   function _placeSticker(sheetDoc, pair, x, y, cellWPt, cellHPt, printLayer, kissLayer, cutSpot) {
+    try { sheetDoc.selection = null; } catch (eSel) {}
+
     // 1) clean.psd → PrintData (셀 양 축 fit, 비율 유지)
     var placed = printLayer.placedItems.add();
     placed.file = pair.psd;
@@ -284,7 +292,7 @@
     var cutInfo = null;
     var copied = false;
 
-    var tempDoc = _newDocForImage(pair.sil);
+    var tempDoc = _newDocForImage();
     try {
       _traceAndUnite(tempDoc, pair.sil);
 
@@ -442,7 +450,7 @@
     return border;
   }
 
-  function _newDocForImage(imgFile) {
+  function _newDocForImage() {
     var preset = new DocumentPreset();
     preset.width  = 1000;
     preset.height = 1000;
@@ -451,22 +459,13 @@
     return app.documents.addDocument("Art & Illustration", preset);
   }
 
-  // 첫 페어의 clean.psd를 임시 doc에 add → width/height 측정 → 닫기
-  // (실제 PrintData에 배치되는 PSD 기준으로 셀 비율을 잡아야 width=sizeMm으로 정확히 들어감)
-  function _measurePairAspect(pair) {
-    var probe = _newDocForImage(pair.psd);
-    try {
-      var p = probe.placedItems.add();
-      p.file = pair.psd;
-      return { w: p.width, h: p.height };
-    } finally {
-      try { probe.close(SaveOptions.DONOTSAVECHANGES); } catch (e) {}
-    }
-  }
-
   function _collectPairs(folder) {
     var pngFiles = folder.getFiles(function (f) {
       return f instanceof File && /_sil\.png$/i.test(f.name);
+    });
+
+    pngFiles.sort(function (a, b) {
+      return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0);
     });
 
     var pairs = [];
@@ -486,10 +485,30 @@
   }
 
   function _findCutline(doc) {
-    var byName = _deepFindByName(doc, "Cutline") || _deepFindByName(doc, "CutPath");
-    if (byName) return byName;
-    if (doc.compoundPathItems.length > 0) return doc.compoundPathItems[0];
-    if (doc.pathItems.length > 0) return doc.pathItems[0];
+    return _deepFindByName(doc, "Cutline")
+        || _deepFindByName(doc, "CutPath")
+        || _deepFindFirstPath(doc);
+  }
+
+  function _deepFindFirstPath(container) {
+    if (container.compoundPathItems && container.compoundPathItems.length > 0) {
+      return container.compoundPathItems[0];
+    }
+    if (container.pathItems && container.pathItems.length > 0) {
+      return container.pathItems[0];
+    }
+    if (container.groupItems) {
+      for (var g = 0; g < container.groupItems.length; g++) {
+        var found = _deepFindFirstPath(container.groupItems[g]);
+        if (found) return found;
+      }
+    }
+    if (container.layers) {
+      for (var L = 0; L < container.layers.length; L++) {
+        var foundL = _deepFindFirstPath(container.layers[L]);
+        if (foundL) return foundL;
+      }
+    }
     return null;
   }
 
@@ -563,12 +582,20 @@
   function _stripPSDPaths(group) {
     if (group.pathItems) {
       for (var i = group.pathItems.length - 1; i >= 0; i--) {
-        try { group.pathItems[i].remove(); } catch (e) {}
+        try {
+          // clipping mask는 raster 투명 영역을 결정하므로 보존
+          if (!group.pathItems[i].clipping) group.pathItems[i].remove();
+        } catch (e) {}
       }
     }
     if (group.compoundPathItems) {
       for (var j = group.compoundPathItems.length - 1; j >= 0; j--) {
         try { group.compoundPathItems[j].remove(); } catch (e) {}
+      }
+    }
+    if (group.groupItems) {
+      for (var g = group.groupItems.length - 1; g >= 0; g--) {
+        try { _stripPSDPaths(group.groupItems[g]); } catch (e) {}
       }
     }
   }
@@ -614,7 +641,8 @@
            _pad(n.getMonth() + 1, 2) +
            _pad(n.getDate(), 2) + "_" +
            _pad(n.getHours(), 2) +
-           _pad(n.getMinutes(), 2);
+           _pad(n.getMinutes(), 2) +
+           _pad(n.getSeconds(), 2);
   }
 
   function _pad(n, w) {

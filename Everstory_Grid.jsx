@@ -1,17 +1,19 @@
-// Everstory — 템플릿 기반 시트 그리드 배치기
+// Everstory — 템플릿 기반 시트 배치기 (v7, bin packing)
 //
 // 템플릿: templates/template_heart.ait
-//   info 레이어 안의 a5_border (PathItem) — 그리드 배치 영역 정의
+//   info 레이어 안의 a5_border (PathItem) — 배치 가능 영역 정의
+//   배너 (브랜드명 + QR 등) 는 a5_border 외부에 별도 디자인 (스크립트 영향 없음)
 //
 // 입력: 02_cutout/ 폴더 안의 페어
 //   {base}_clean.psd  — 누끼 PSD
 //   {base}_sil.png    — 실루엣 PNG
 //
-// 처리: 매 시트마다 .ait를 app.open()으로 열어 새 Untitled 문서 생성
-//       PNG → 내부 trace → cutline path (외곽선 그대로, offset/simplify 없음)
-//       PSD → PrintData(최상위 레이어)에 embed
-//       cutline의 PNG-relative 좌표를 PSD bbox에 정규화로 매핑 → KissCut과 PrintData 영역 일치
-//       템플릿의 info 레이어는 KissCut과 PrintData 사이에 그대로 유지
+// 처리:
+//   1. 페어별 sil.png aspect 측정 → 셀 W×H (긴 변 = sizePt)
+//   2. MaxRects + BSSF bin packing 으로 시트 안에 가변 크기 셀 배치
+//   3. 매 시트마다 .ait 열어 PrintData/KissCut 레이어 추가
+//   4. 셀 단위로 PSD embed + sil.png trace → KissCut 정합
+//   5. 한 시트 leftover 는 다음 시트로 이월 (정책 상한까지)
 //
 // 출력: 03_output/{timestamp}_NNmm_sheet{N:02d}.ai
 //
@@ -27,7 +29,7 @@
   var GAP_MM     = 2;     // 셀 간격
 
   // ═══ 다이얼로그 ═══════════════════════════════════════════
-  var dlg = new Window("dialog", "Everstory A5 시트 배치 v6");
+  var dlg = new Window("dialog", "Everstory A5 시트 배치 v7 (bin packing)");
   dlg.orientation = "column";
   dlg.alignChildren = "fill";
   dlg.margins = 20;
@@ -59,6 +61,14 @@
   policyMaxRow.add("statictext", undefined, "장까지");
   policyAuto.value = true;
 
+  var optsPanel = dlg.add("panel", undefined, "옵션");
+  optsPanel.orientation = "column";
+  optsPanel.alignChildren = "left";
+  optsPanel.margins = [15, 20, 15, 15];
+  optsPanel.spacing = 6;
+  var autoCloseCheck = optsPanel.add("checkbox", undefined, "저장 후 시트 자동 닫기 (검수 시 OFF)");
+  autoCloseCheck.value = false;
+
   var btnGroup = dlg.add("group");
   btnGroup.alignment = "right";
   btnGroup.spacing = 10;
@@ -75,6 +85,7 @@
   }
   var policy = policySingle.value ? "single" : (policyAuto.value ? "auto" : "max");
   var maxSheets = parseInt(maxInput.text, 10) || 1;
+  var autoClose = autoCloseCheck.value;
 
   // ═══ 입력 폴더 ═══
   var inputFolder = Folder.selectDialog("02_cutout 폴더 선택 (_clean.psd + _sil.png 페어)");
@@ -104,46 +115,76 @@
     return;
   }
 
-  // ═══ 그리드 계산 ═══
+  // ═══ 단위 변환 ═══
   var sizePt   = sizeMm * MM_TO_PT;
   var safetyPt = SAFETY_MM * MM_TO_PT;
   var gapPt    = GAP_MM * MM_TO_PT;
 
-  // 셀은 sizePt × sizePt 정사각. _placeSticker의 Math.min fit이
-  // 각 사진의 긴 변을 sizePt에 맞춰 스케일하므로 모든 사진의 긴 변이 동일.
-  var cellWPt = sizePt;
-  var cellHPt = sizePt;
-
+  // ═══ Bin (a5_border 안 사용 가능 영역) ═══
   var bL = borderBounds[0], bT = borderBounds[1], bR = borderBounds[2], bB = borderBounds[3];
-  var borderW = bR - bL;
-  var borderH = bT - bB;
+  var binW = (bR - bL) - 2 * safetyPt;
+  var binH = (bT - bB) - 2 * safetyPt;
 
-  var availW = borderW - 2 * safetyPt;
-  var availH = borderH - 2 * safetyPt;
-  var cols = Math.floor((availW + gapPt) / (cellWPt + gapPt));
-  var rows = Math.floor((availH + gapPt) / (cellHPt + gapPt));
-  if (cols < 1 || rows < 1) {
-    var cwMm = (cellWPt / MM_TO_PT).toFixed(1);
-    var chMm = (cellHPt / MM_TO_PT).toFixed(1);
-    alert("a5_border 안에 셀(" + cwMm + "×" + chMm + "mm)이 들어가지 않습니다.");
+  if (binW <= 0 || binH <= 0) {
+    alert("a5_border 영역이 안전 여백보다 작습니다.");
     try { probeDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
     return;
   }
-  var perSheet = cols * rows;
 
-  // ═══ 반복 모드: 입력 < perSheet면 한 시트를 cycle해서 꽉 채움 ═══
-  var shouldRepeat = pairs.length < perSheet;
-
-  // ═══ 시트 수 결정 ═══
-  var sheetCount;
-  if (shouldRepeat) {
-    sheetCount = 1;
-  } else {
-    var totalNeeded = Math.ceil(pairs.length / perSheet);
-    if (policy === "single")    sheetCount = 1;
-    else if (policy === "max")  sheetCount = Math.min(totalNeeded, maxSheets);
-    else                        sheetCount = totalNeeded;
+  // ═══ 페어별 aspect 측정 + 셀 사이즈 계산 (긴 변 = sizePt) ═══
+  var totalArea = 0;
+  var anyTooBig = false;
+  for (var pi = 0; pi < pairs.length; pi++) {
+    try {
+      _measurePairAspect(pairs[pi]);
+    } catch (eAsp) {
+      pairs[pi].aspect = 1;
+    }
+    if (pairs[pi].aspect >= 1) {
+      pairs[pi].cellW = sizePt;
+      pairs[pi].cellH = sizePt / pairs[pi].aspect;
+    } else {
+      pairs[pi].cellW = sizePt * pairs[pi].aspect;
+      pairs[pi].cellH = sizePt;
+    }
+    totalArea += pairs[pi].cellW * pairs[pi].cellH;
+    if (pairs[pi].cellW > binW || pairs[pi].cellH > binH) anyTooBig = true;
   }
+
+  if (anyTooBig) {
+    alert("일부 셀이 a5_border 안 사용 가능 영역(" +
+          (binW / MM_TO_PT).toFixed(1) + "×" + (binH / MM_TO_PT).toFixed(1) +
+          "mm)보다 큽니다. 사이즈를 줄이세요.");
+    try { probeDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
+    return;
+  }
+
+  // ═══ 반복 모드: 입력 area < bin area * 0.6 이면 cycling 으로 꽉 채움 ═══
+  var binArea = binW * binH;
+  var shouldRepeat = totalArea < binArea * 0.6;
+
+  // ═══ 작업 큐 빌드 ═══
+  var queue = [];
+  if (shouldRepeat) {
+    var copies = Math.max(2, Math.ceil((binArea * 1.2) / totalArea));
+    for (var c = 0; c < copies; c++) {
+      for (var pi2 = 0; pi2 < pairs.length; pi2++) queue.push(pairs[pi2]);
+    }
+  } else {
+    for (var pi3 = 0; pi3 < pairs.length; pi3++) queue.push(pairs[pi3]);
+  }
+
+  // 큰 셀 먼저 (packing 효율 ↑)
+  queue.sort(function (a, b) {
+    return (b.cellW * b.cellH) - (a.cellW * a.cellH);
+  });
+
+  // ═══ 시트 수 상한 ═══
+  var maxSheetCap;
+  if (shouldRepeat)              maxSheetCap = 1;
+  else if (policy === "single")  maxSheetCap = 1;
+  else if (policy === "max")     maxSheetCap = maxSheets;
+  else                           maxSheetCap = 9999;
 
   // ═══ 출력 폴더 ═══
   var outFolder = _resolveOutputFolder(inputFolder);
@@ -155,23 +196,13 @@
   var ts = _timestamp();
   var savedFiles = [];
   var failedItems = [];
+  var sheetCount = 0;
+  var firstSheetPlacedCount = 0;
 
   try {
-    for (var sIdx = 0; sIdx < sheetCount; sIdx++) {
-      var slice;
-      if (shouldRepeat) {
-        slice = [];
-        for (var rIdx = 0; rIdx < perSheet; rIdx++) {
-          slice.push(pairs[rIdx % pairs.length]);
-        }
-      } else {
-        var startIdx = sIdx * perSheet;
-        var endIdx = Math.min(startIdx + perSheet, pairs.length);
-        slice = pairs.slice(startIdx, endIdx);
-      }
-
+    while (queue.length > 0 && sheetCount < maxSheetCap) {
       var sheetDoc, sheetBorder;
-      if (sIdx === 0) {
+      if (sheetCount === 0) {
         sheetDoc = probeDoc;
         sheetBorder = probeBorder;
       } else {
@@ -180,14 +211,26 @@
           sheetBorder = _findInfoBorder(sheetDoc);
         } catch (eFB2) {
           try { sheetDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
-          continue;
+          break;
         }
       }
 
       var sbb = sheetBorder.geometricBounds;
       var sbL = sbb[0], sbT = sbb[1], sbR = sbb[2], sbB = sbb[3];
-      var sbW = sbR - sbL;
-      var sbH = sbT - sbB;
+      var sheetBinW = (sbR - sbL) - 2 * safetyPt;
+      var sheetBinH = (sbT - sbB) - 2 * safetyPt;
+
+      // 이번 시트 pack
+      var packItems = [];
+      for (var qi = 0; qi < queue.length; qi++) {
+        packItems.push({ w: queue[qi].cellW, h: queue[qi].cellH, payload: queue[qi] });
+      }
+      var packResult = _binPack(packItems, sheetBinW, sheetBinH, gapPt);
+
+      if (packResult.placed.length === 0) {
+        try { sheetDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
+        break;
+      }
 
       var cutSpot = _ensureCutContour(sheetDoc);
       var printLayer = sheetDoc.layers.add();
@@ -195,24 +238,18 @@
       var kissLayer = sheetDoc.layers.add();
       kissLayer.name = "KissCut";
 
-      // 그리드 시작 좌표 (a5_border 안에서 centered)
-      var rowWidth = cols * cellWPt + (cols - 1) * gapPt;
-      var rowHeight = rows * cellHPt + (rows - 1) * gapPt;
-      var startX = sbL + (sbW - rowWidth) / 2;
-      var startY = sbT - (sbH - rowHeight) / 2;
-
-      for (var i = 0; i < slice.length; i++) {
-        var col = i % cols;
-        var row = Math.floor(i / cols);
-        var x = startX + col * (cellWPt + gapPt);
-        var y = startY - row * (cellHPt + gapPt);
+      for (var p = 0; p < packResult.placed.length; p++) {
+        var pl = packResult.placed[p];
+        // bin 좌표 (top-left, y down) → AI 좌표 (y up, top 이 큰 값)
+        var aiX = sbL + safetyPt + pl.x;
+        var aiY = sbT - safetyPt - pl.y;
 
         try {
-          _placeSticker(sheetDoc, slice[i], x, y, cellWPt, cellHPt, printLayer, kissLayer, cutSpot);
+          _placeSticker(sheetDoc, pl.payload, aiX, aiY, pl.w, pl.h, printLayer, kissLayer, cutSpot);
         } catch (e) {
           failedItems.push({
-            sheet: sIdx + 1,
-            base: slice[i].base,
+            sheet: sheetCount + 1,
+            base: pl.payload.base,
             error: (e && e.message) ? e.message : String(e)
           });
         }
@@ -223,26 +260,39 @@
       printLayer.move(sheetDoc, ElementPlacement.PLACEATEND);
 
       // 저장
-      var sheetNum = _pad(sIdx + 1, 2);
+      var sheetNum = _pad(sheetCount + 1, 2);
       var fileName = ts + "_" + sizeMm + "mm_sheet" + sheetNum + ".ai";
       var saveFile = new File(outFolder.fsName + "/" + fileName);
       _saveAi(sheetDoc, saveFile);
       savedFiles.push(saveFile.fsName);
 
-      // sheetDoc.close(SaveOptions.SAVECHANGES);
+      if (autoClose) {
+        try { sheetDoc.close(SaveOptions.SAVECHANGES); } catch (eC) {}
+      }
+
+      if (sheetCount === 0) firstSheetPlacedCount = packResult.placed.length;
+
+      // 다음 시트로 leftover 이월
+      var newQueue = [];
+      for (var li = 0; li < packResult.leftover.length; li++) {
+        newQueue.push(packResult.leftover[li].payload);
+      }
+      queue = newQueue;
+
+      sheetCount++;
     }
   } finally {
     app.userInteractionLevel = prevInteraction;
   }
 
-  var cellWMm = (cellWPt / MM_TO_PT).toFixed(1);
-  var cellHMm = (cellHPt / MM_TO_PT).toFixed(1);
+  var binWMm = (binW / MM_TO_PT).toFixed(1);
+  var binHMm = (binH / MM_TO_PT).toFixed(1);
 
   var msg =
     "✓ 완료: " + savedFiles.length + "장 저장\n" +
     "템플릿: " + templateFile.name + "\n" +
-    "사이즈: " + sizeMm + "mm (셀 " + cellWMm + "×" + cellHMm + "mm)  /  레이아웃: " + cols + "×" + rows + " (" + perSheet + "/시트)\n" +
-    "전체 입력: " + pairs.length + "개" + (shouldRepeat ? " (시트 채우기 위해 반복 배치)" : "") + "\n";
+    "사이즈: " + sizeMm + "mm (긴 변 기준)  /  bin: " + binWMm + "×" + binHMm + "mm  /  첫 시트 배치: " + firstSheetPlacedCount + "개\n" +
+    "전체 입력: " + pairs.length + "개" + (shouldRepeat ? " (cycling 으로 시트 채움)" : "") + "\n";
 
   if (failedItems.length > 0) {
     msg += "\n⚠ 실패 " + failedItems.length + "건:\n";
@@ -323,7 +373,9 @@
       try { tempDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
     }
 
-    if (!copied || !cutInfo) return;
+    if (!copied || !cutInfo) {
+      throw new Error("trace 결과 path 없음 (sil.png 비었거나 threshold 부적합)");
+    }
 
     // 3) sheet에 paste → PSD bbox 안에 정확히 align
     app.activeDocument = sheetDoc;
@@ -649,6 +701,136 @@
     var s = "" + n;
     while (s.length < w) s = "0" + s;
     return s;
+  }
+
+
+  // ═════════════════════════════════════════════════════════
+  //  MEASURE — 페어별 sil.png aspect 1회 측정 후 캐시
+  // ═════════════════════════════════════════════════════════
+
+  function _measurePairAspect(pair) {
+    if (pair.aspect) return pair.aspect;
+    var doc = _newDocForImage();
+    try {
+      var p = doc.layers[0].placedItems.add();
+      p.file = pair.sil;
+      pair.aspect = p.width / p.height;
+    } finally {
+      try { doc.close(SaveOptions.DONOTSAVECHANGES); } catch (e) {}
+    }
+    return pair.aspect;
+  }
+
+
+  // ═════════════════════════════════════════════════════════
+  //  BIN PACKING — MaxRects + Best Short-Side Fit (BSSF)
+  //  좌표계: top-left 원점, y 가 아래로 증가 (호출측에서 AI 좌표로 변환)
+  //  회전 비활성 (스티커 방향 고정)
+  // ═════════════════════════════════════════════════════════
+
+  function _binPack(items, binW, binH, gap) {
+    var freeRects = [{ x: 0, y: 0, w: binW, h: binH }];
+    var placed = [];
+    var leftover = [];
+
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      // gap 은 item 의 우/하단에 reserve (다음 item 과의 간격)
+      var w = item.w + gap;
+      var h = item.h + gap;
+
+      var bestIdx = -1;
+      var bestShort = Infinity;
+      var bestLong = Infinity;
+
+      for (var j = 0; j < freeRects.length; j++) {
+        var fr = freeRects[j];
+        if (fr.w >= w && fr.h >= h) {
+          var leftW = fr.w - w;
+          var leftH = fr.h - h;
+          var sFit = leftW < leftH ? leftW : leftH;
+          var lFit = leftW > leftH ? leftW : leftH;
+          if (sFit < bestShort || (sFit === bestShort && lFit < bestLong)) {
+            bestIdx = j;
+            bestShort = sFit;
+            bestLong = lFit;
+          }
+        }
+      }
+
+      if (bestIdx === -1) {
+        leftover.push(item);
+        continue;
+      }
+
+      var chosen = freeRects[bestIdx];
+      placed.push({
+        x: chosen.x,
+        y: chosen.y,
+        w: item.w,
+        h: item.h,
+        payload: item.payload
+      });
+
+      var used = { x: chosen.x, y: chosen.y, w: w, h: h };
+
+      // 모든 free rect 를 used 와 분할
+      var newFree = [];
+      for (var k = 0; k < freeRects.length; k++) {
+        var split = _splitFreeRect(freeRects[k], used);
+        for (var s = 0; s < split.length; s++) newFree.push(split[s]);
+      }
+      freeRects = _pruneFreeRects(newFree);
+    }
+
+    return { placed: placed, leftover: leftover };
+  }
+
+  function _splitFreeRect(fr, used) {
+    // 교차하지 않으면 그대로
+    if (used.x >= fr.x + fr.w || used.x + used.w <= fr.x ||
+        used.y >= fr.y + fr.h || used.y + used.h <= fr.y) {
+      return [fr];
+    }
+    var result = [];
+    // 위쪽
+    if (used.y > fr.y && used.y < fr.y + fr.h) {
+      result.push({ x: fr.x, y: fr.y, w: fr.w, h: used.y - fr.y });
+    }
+    // 아래쪽
+    if (used.y + used.h < fr.y + fr.h) {
+      result.push({ x: fr.x, y: used.y + used.h, w: fr.w, h: (fr.y + fr.h) - (used.y + used.h) });
+    }
+    // 왼쪽
+    if (used.x > fr.x && used.x < fr.x + fr.w) {
+      result.push({ x: fr.x, y: fr.y, w: used.x - fr.x, h: fr.h });
+    }
+    // 오른쪽
+    if (used.x + used.w < fr.x + fr.w) {
+      result.push({ x: used.x + used.w, y: fr.y, w: (fr.x + fr.w) - (used.x + used.w), h: fr.h });
+    }
+    return result;
+  }
+
+  function _pruneFreeRects(rects) {
+    var result = [];
+    for (var i = 0; i < rects.length; i++) {
+      var keep = true;
+      for (var j = 0; j < rects.length; j++) {
+        if (i !== j && _rectContains(rects[j], rects[i])) {
+          keep = false;
+          break;
+        }
+      }
+      if (keep) result.push(rects[i]);
+    }
+    return result;
+  }
+
+  function _rectContains(outer, inner) {
+    return inner.x >= outer.x && inner.y >= outer.y &&
+           inner.x + inner.w <= outer.x + outer.w &&
+           inner.y + inner.h <= outer.y + outer.h;
   }
 
 })();
