@@ -1,4 +1,4 @@
-// Everstory — 템플릿 기반 시트 배치기 (v7, bin packing)
+// Everstory — 템플릿 기반 시트 배치기 (v8, filename size + cut inset + bin packing)
 //
 // 템플릿: templates/template_heart.ait
 //   info 레이어 안의 a5_border (PathItem) — 배치 가능 영역 정의
@@ -9,10 +9,10 @@
 //   {base}_sil.png    — 실루엣 PNG
 //
 // 처리:
-//   1. 페어별 sil.png aspect 측정 → 셀 W×H (긴 변 = sizePt)
-//   2. MaxRects + BSSF bin packing 으로 시트 안에 가변 크기 셀 배치
-//   3. 매 시트마다 .ait 열어 PrintData/KissCut 레이어 추가
-//   4. 셀 단위로 PSD embed + sil.png trace → KissCut 정합
+//   1. 페어별 sil.png aspect 측정 → 셀 W×H (긴 변 = 기본 size 또는 파일명 _NNmm)
+//   2. 파일명 _NNmm 이 있으면 페어별 크기로 override
+//   3. MaxRects + BSSF bin packing 으로 시트 안에 가변 크기 셀 배치
+//   4. 셀 단위로 선택한 칼선 여백만큼 PSD fit 영역 축소 + sil.png trace → KissCut 정합
 //   5. 한 시트 leftover 는 다음 시트로 이월 (정책 상한까지)
 //
 // 출력: 03_output/{timestamp}_NNmm_sheet{N:02d}.ai
@@ -29,13 +29,13 @@
   var GAP_MM     = 2;     // 셀 간격
 
   // ═══ 다이얼로그 ═══════════════════════════════════════════
-  var dlg = new Window("dialog", "Everstory A5 시트 배치 v7 (bin packing)");
+  var dlg = new Window("dialog", "Everstory A5 시트 배치 v8");
   dlg.orientation = "column";
   dlg.alignChildren = "fill";
   dlg.margins = 20;
   dlg.spacing = 12;
 
-  var sizePanel = dlg.add("panel", undefined, "시트 사이즈 (cm)");
+  var sizePanel = dlg.add("panel", undefined, "기본 스티커 긴 변 (cm)");
   sizePanel.orientation = "row";
   sizePanel.margins = [15, 20, 15, 15];
   sizePanel.spacing = 15;
@@ -46,6 +46,18 @@
     sizeRadios.push(sizePanel.add("radiobutton", undefined, SIZE_OPTIONS[s]));
   }
   sizeRadios[2].value = true; // 60mm 기본
+
+  var cutMarginPanel = dlg.add("panel", undefined, "칼선 여백");
+  cutMarginPanel.orientation = "row";
+  cutMarginPanel.margins = [15, 20, 15, 15];
+  cutMarginPanel.spacing = 15;
+  var CUT_MARGIN_OPTIONS = ["1mm", "2mm"];
+  var CUT_MARGIN_VALUES = [1, 2];
+  var cutMarginRadios = [];
+  for (var cm = 0; cm < CUT_MARGIN_OPTIONS.length; cm++) {
+    cutMarginRadios.push(cutMarginPanel.add("radiobutton", undefined, CUT_MARGIN_OPTIONS[cm]));
+  }
+  cutMarginRadios[0].value = true; // 1mm 기본
 
   var policyPanel = dlg.add("panel", undefined, "다중 시트 정책");
   policyPanel.orientation = "column";
@@ -83,6 +95,10 @@
   for (var si = 0; si < sizeRadios.length; si++) {
     if (sizeRadios[si].value) { sizeMm = SIZE_VALUES[si]; break; }
   }
+  var cutMarginMm = 1;
+  for (var cmi = 0; cmi < cutMarginRadios.length; cmi++) {
+    if (cutMarginRadios[cmi].value) { cutMarginMm = CUT_MARGIN_VALUES[cmi]; break; }
+  }
   var policy = policySingle.value ? "single" : (policyAuto.value ? "auto" : "max");
   var maxSheets = parseInt(maxInput.text, 10) || 1;
   var autoClose = autoCloseCheck.value;
@@ -116,9 +132,9 @@
   }
 
   // ═══ 단위 변환 ═══
-  var sizePt   = sizeMm * MM_TO_PT;
   var safetyPt = SAFETY_MM * MM_TO_PT;
   var gapPt    = GAP_MM * MM_TO_PT;
+  var cutMarginPt = cutMarginMm * MM_TO_PT;
 
   // ═══ Bin (a5_border 안 사용 가능 영역) ═══
   var bL = borderBounds[0], bT = borderBounds[1], bR = borderBounds[2], bB = borderBounds[3];
@@ -131,21 +147,25 @@
     return;
   }
 
-  // ═══ 페어별 aspect 측정 + 셀 사이즈 계산 (긴 변 = sizePt) ═══
+  // ═══ 페어별 aspect 측정 + 셀 사이즈 계산 (긴 변 = 기본 size 또는 파일명 _NNmm) ═══
   var totalArea = 0;
   var anyTooBig = false;
+  var hasCustomSize = false;
   for (var pi = 0; pi < pairs.length; pi++) {
     try {
       _measurePairAspect(pairs[pi]);
     } catch (eAsp) {
       pairs[pi].aspect = 1;
     }
+    pairs[pi].sizeMm = _resolvePairSizeMm(pairs[pi], sizeMm);
+    if (pairs[pi].sizeMm !== sizeMm) hasCustomSize = true;
+    var pairSizePt = pairs[pi].sizeMm * MM_TO_PT;
     if (pairs[pi].aspect >= 1) {
-      pairs[pi].cellW = sizePt;
-      pairs[pi].cellH = sizePt / pairs[pi].aspect;
+      pairs[pi].cellW = pairSizePt;
+      pairs[pi].cellH = pairSizePt / pairs[pi].aspect;
     } else {
-      pairs[pi].cellW = sizePt * pairs[pi].aspect;
-      pairs[pi].cellH = sizePt;
+      pairs[pi].cellW = pairSizePt * pairs[pi].aspect;
+      pairs[pi].cellH = pairSizePt;
     }
     totalArea += pairs[pi].cellW * pairs[pi].cellH;
     if (pairs[pi].cellW > binW || pairs[pi].cellH > binH) anyTooBig = true;
@@ -159,30 +179,18 @@
     return;
   }
 
-  // ═══ 반복 모드: 입력 area < bin area * 0.6 이면 cycling 으로 꽉 채움 ═══
+  // ═══ 반복 모드: 입력 area < bin area * 0.6 이면 원본 배치 후 cycling 으로 채움 ═══
   var binArea = binW * binH;
   var shouldRepeat = totalArea < binArea * 0.6;
 
-  // ═══ 작업 큐 빌드 ═══
+  // ═══ 작업 큐 빌드: 원본 페어는 항상 먼저 한 번씩 사용 ═══
   var queue = [];
-  if (shouldRepeat) {
-    var copies = Math.max(2, Math.ceil((binArea * 1.2) / totalArea));
-    for (var c = 0; c < copies; c++) {
-      for (var pi2 = 0; pi2 < pairs.length; pi2++) queue.push(pairs[pi2]);
-    }
-  } else {
-    for (var pi3 = 0; pi3 < pairs.length; pi3++) queue.push(pairs[pi3]);
-  }
-
-  // 큰 셀 먼저 (packing 효율 ↑)
-  queue.sort(function (a, b) {
-    return (b.cellW * b.cellH) - (a.cellW * a.cellH);
-  });
+  var primaryPairs = _sortedPairsByArea(pairs, false);
+  for (var pi2 = 0; pi2 < primaryPairs.length; pi2++) queue.push(primaryPairs[pi2]);
 
   // ═══ 시트 수 상한 ═══
   var maxSheetCap;
-  if (shouldRepeat)              maxSheetCap = 1;
-  else if (policy === "single")  maxSheetCap = 1;
+  if (policy === "single")       maxSheetCap = 1;
   else if (policy === "max")     maxSheetCap = maxSheets;
   else                           maxSheetCap = 9999;
 
@@ -232,6 +240,20 @@
         break;
       }
 
+      // 원본 페어가 모두 들어간 마지막 시트만 남는 공간을 반복 샘플로 채움.
+      // 반복 샘플은 작은 것부터 시도해서 큰 샘플 몇 개가 시트를 독점하지 않게 한다.
+      if (shouldRepeat && packResult.leftover.length === 0) {
+        var fillerItems = _buildRepeatFillItems(pairs, sheetBinW * sheetBinH, totalArea);
+        if (fillerItems.length > 0 && packResult.freeRects && packResult.freeRects.length > 0) {
+          var fillerResult = _binPack(fillerItems, sheetBinW, sheetBinH, gapPt, packResult.freeRects);
+          for (var fp = 0; fp < fillerResult.placed.length; fp++) {
+            packResult.placed.push(fillerResult.placed[fp]);
+          }
+        }
+      }
+
+      _centerPlacedItems(packResult.placed, sheetBinW, sheetBinH);
+
       var cutSpot = _ensureCutContour(sheetDoc);
       var printLayer = sheetDoc.layers.add();
       printLayer.name = "PrintData";
@@ -245,7 +267,7 @@
         var aiY = sbT - safetyPt - pl.y;
 
         try {
-          _placeSticker(sheetDoc, pl.payload, aiX, aiY, pl.w, pl.h, printLayer, kissLayer, cutSpot);
+          _placeSticker(sheetDoc, pl.payload, aiX, aiY, pl.w, pl.h, cutMarginPt, printLayer, kissLayer, cutSpot);
         } catch (e) {
           failedItems.push({
             sheet: sheetCount + 1,
@@ -291,8 +313,9 @@
   var msg =
     "✓ 완료: " + savedFiles.length + "장 저장\n" +
     "템플릿: " + templateFile.name + "\n" +
-    "사이즈: " + sizeMm + "mm (긴 변 기준)  /  bin: " + binWMm + "×" + binHMm + "mm  /  첫 시트 배치: " + firstSheetPlacedCount + "개\n" +
-    "전체 입력: " + pairs.length + "개" + (shouldRepeat ? " (cycling 으로 시트 채움)" : "") + "\n";
+    "기본 사이즈: " + sizeMm + "mm (긴 변 기준)" + (hasCustomSize ? " / 파일명 mm값 반영" : "") +
+    "  /  칼선 여백: " + cutMarginMm + "mm  /  bin: " + binWMm + "×" + binHMm + "mm  /  첫 시트 배치: " + firstSheetPlacedCount + "개\n" +
+    "전체 입력: " + pairs.length + "개" + (shouldRepeat ? " (원본 우선 + cycling 채움)" : "") + "\n";
 
   if (failedItems.length > 0) {
     msg += "\n⚠ 실패 " + failedItems.length + "건:\n";
@@ -310,17 +333,27 @@
   //  PLACEMENT — PSD bbox와 cutline을 정확히 정렬
   // ═════════════════════════════════════════════════════════
 
-  function _placeSticker(sheetDoc, pair, x, y, cellWPt, cellHPt, printLayer, kissLayer, cutSpot) {
+  function _placeSticker(sheetDoc, pair, x, y, cellWPt, cellHPt, cutMarginPt, printLayer, kissLayer, cutSpot) {
     try { sheetDoc.selection = null; } catch (eSel) {}
 
-    // 1) clean.psd → PrintData (셀 양 축 fit, 비율 유지)
+    // 1) clean.psd → PrintData (칼선 여백만큼 안쪽 fit, 비율 유지)
+    var artX = x + cutMarginPt;
+    var artY = y - cutMarginPt;
+    var artW = cellWPt - 2 * cutMarginPt;
+    var artH = cellHPt - 2 * cutMarginPt;
+    if (artW <= 0 || artH <= 0) {
+      throw new Error("칼선 여백이 스티커 크기보다 큽니다");
+    }
+
+    app.activeDocument = sheetDoc;
+    sheetDoc.activeLayer = printLayer;
     var placed = printLayer.placedItems.add();
     placed.file = pair.psd;
-    var ratio = Math.min(cellWPt / placed.width, cellHPt / placed.height);
+    var ratio = Math.min(artW / placed.width, artH / placed.height);
     placed.width  *= ratio;
     placed.height *= ratio;
-    placed.left = x + (cellWPt - placed.width) / 2;
-    placed.top  = y - (cellHPt - placed.height) / 2;
+    placed.left = artX + (artW - placed.width) / 2;
+    placed.top  = artY - (artH - placed.height) / 2;
 
     // PSD bbox 기록 (cutline 정렬 기준)
     var psdL = placed.left;
@@ -703,6 +736,66 @@
     return s;
   }
 
+  function _resolvePairSizeMm(pair, defaultSizeMm) {
+    var m = pair.base.match(/(^|[_ -])([0-9]+(\.[0-9]+)?)mm($|[_ -])/i);
+    if (m && m[2]) {
+      var parsed = parseFloat(m[2]);
+      if (parsed > 0) return parsed;
+    }
+    return defaultSizeMm;
+  }
+
+  function _sortedPairsByArea(pairs, ascending) {
+    var result = [];
+    for (var i = 0; i < pairs.length; i++) result.push(pairs[i]);
+    result.sort(function (a, b) {
+      var aa = a.cellW * a.cellH;
+      var bb = b.cellW * b.cellH;
+      return ascending ? (aa - bb) : (bb - aa);
+    });
+    return result;
+  }
+
+  function _buildRepeatFillItems(pairs, binArea, totalArea) {
+    var items = [];
+    if (totalArea <= 0) return items;
+
+    var rounds = Math.max(1, Math.ceil((binArea - totalArea) / totalArea) + 1);
+    var fillPairs = _sortedPairsByArea(pairs, true);
+    for (var r = 0; r < rounds; r++) {
+      for (var i = 0; i < fillPairs.length; i++) {
+        items.push({ w: fillPairs[i].cellW, h: fillPairs[i].cellH, payload: fillPairs[i] });
+      }
+    }
+    return items;
+  }
+
+  function _centerPlacedItems(placed, binW, binH) {
+    if (!placed || placed.length === 0) return;
+
+    var minX = placed[0].x;
+    var minY = placed[0].y;
+    var maxX = placed[0].x + placed[0].w;
+    var maxY = placed[0].y + placed[0].h;
+
+    for (var i = 1; i < placed.length; i++) {
+      if (placed[i].x < minX) minX = placed[i].x;
+      if (placed[i].y < minY) minY = placed[i].y;
+      if (placed[i].x + placed[i].w > maxX) maxX = placed[i].x + placed[i].w;
+      if (placed[i].y + placed[i].h > maxY) maxY = placed[i].y + placed[i].h;
+    }
+
+    var usedW = maxX - minX;
+    var usedH = maxY - minY;
+    var dx = (binW - usedW) / 2 - minX;
+    var dy = (binH - usedH) / 2 - minY;
+
+    for (var j = 0; j < placed.length; j++) {
+      placed[j].x += dx;
+      placed[j].y += dy;
+    }
+  }
+
 
   // ═════════════════════════════════════════════════════════
   //  MEASURE — 페어별 sil.png aspect 1회 측정 후 캐시
@@ -728,8 +821,8 @@
   //  회전 비활성 (스티커 방향 고정)
   // ═════════════════════════════════════════════════════════
 
-  function _binPack(items, binW, binH, gap) {
-    var freeRects = [{ x: 0, y: 0, w: binW, h: binH }];
+  function _binPack(items, binW, binH, gap, startFreeRects) {
+    var freeRects = startFreeRects ? _cloneRects(startFreeRects) : [{ x: 0, y: 0, w: binW, h: binH }];
     var placed = [];
     var leftover = [];
 
@@ -783,7 +876,15 @@
       freeRects = _pruneFreeRects(newFree);
     }
 
-    return { placed: placed, leftover: leftover };
+    return { placed: placed, leftover: leftover, freeRects: freeRects };
+  }
+
+  function _cloneRects(rects) {
+    var result = [];
+    for (var i = 0; i < rects.length; i++) {
+      result.push({ x: rects[i].x, y: rects[i].y, w: rects[i].w, h: rects[i].h });
+    }
+    return result;
   }
 
   function _splitFreeRect(fr, used) {
