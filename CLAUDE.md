@@ -7,8 +7,8 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 첫 주력 상품은 **A5 커스텀 사진 다이컷 스티커 시트**다. 대표 모드는 **Name Included**이며, Photo Only는 기본형 옵션으로 유지한다.
 
 - **Photo Only**: 사진 누끼 스티커만 A5 한 시트에 자동 배치
-- **Name Included**: 사진 중심 배치 + 이름 스티커 1개. 이름 스티커 생성/배치 방식은 별도 구현 단계에서 확정
-- **Mini Decor**: 후순위 확장. 사진과 이름 스티커보다 중요도가 낮음
+- **Name Included**: 사진 중심 배치 + 상단 production header에 고객 이름/주문 정보 표기. 별도 이름 스티커는 시트에 넣지 않음
+- **Mini Decor**: 후순위 확장. 사진보다 중요도가 낮음
 - **문구 스티커**: MVP와 현재 파이프라인 범위에서 제외
 - **PhotoStrip**: 주력 파이프라인에서 제외
 - **시트 수**: MVP는 A5 한 시트만 생성. 넘치는 입력은 사진 수/크기 조정으로 운영
@@ -52,8 +52,8 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 **스크립트 분리 기준**:
 - `Everstory_Grid.jsx` — A5 스티커 시트처럼 여러 개별 스티커를 bin packing 하는 레이아웃
-- `Everstory_NameSticker.jsx` — 다이컷 스타일 이름 스티커 단독 생성/검수용 프로토타입. Grid 통합 전 폰트/backing/CutContour 테스트에 사용
-- `Everstory_NameIncludedSheet.jsx` — `a5_border` 안쪽 상하좌우 2mm 안전 여백을 적용한 뒤, 상단 14mm 헤더 왼쪽에는 이름 스티커를, 오른쪽에는 작은 오더 디테일 텍스트를 배치하는 Name Included 시트 배치 프로토타입. 사진은 헤더 아래 직사각형 영역에 pack하며 템플릿 정보/QR 영역은 별도로 계산하지 않음
+- `Everstory_NameSticker.jsx` — 다이컷 스타일 이름 스티커 단독 생성/검수용 프로토타입. 현재 시트에는 통합하지 않고 폰트/backing/CutContour 테스트에 사용
+- `Everstory_NameIncludedSheet.jsx` — `a5_border` 안쪽 상하좌우 2mm 안전 여백을 적용한 뒤, 상단 20mm production header에는 `EVERSTORY`와 주문 정보를 배치하고, 헤더 아래 전체 영역에는 사진 스티커만 pack하는 Name Included 시트 배치 프로토타입. 별도 이름 스티커는 생성하지 않음
 - `Everstory_CleanOffsetPath.jsx` — 선택한 Offset Path/CompoundPath 안쪽 조각을 제거하는 검수 보조 도구
 - `Everstory_TemplateBuilder.jsx` — 고정 프레임 템플릿/slot PathItem을 생성하는 보조 도구
 
@@ -122,7 +122,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 **배너 영역 컨벤션**: `info > a5_border` 는 **그리드 영역만** 정의. 마케팅 배너 (브랜드명 + QR) 는 a5_border *외부* (보통 하단 12mm) 에 템플릿에서 직접 디자인. 스크립트는 a5_border 만 읽으므로 배너 변경에 영향받지 않음.
 
 ### 3) Name Sticker Prototype — `Everstory_NameSticker.jsx` (Illustrator)
-이름 스티커 1개를 단독 생성하고 저장하지 않은 Illustrator 문서에 열린 채로 둔다. 이름 입력 → 스타일 선택 → 컬러 선택 → 스타일별 최적 폰트 자동 적용 → `PrintData`의 다이컷 backing/text와 `KissCut`의 `CutContour` path를 생성한다. 현재는 Grid 통합 전 폰트, backing shape, 칼선 안정성 검수용이다.
+이름 스티커 1개를 단독 생성하고 저장하지 않은 Illustrator 문서에 열린 채로 둔다. 이름 입력 → 한글/영문별 고정 폰트 후보 선택 → 컬러 선택 → `PrintData`의 다이컷 backing/text와 `KissCut`의 `CutContour` path를 생성한다. 선택한 PostScript 폰트가 없으면 자동 대체 없이 중단한다. 현재 Name Included 시트에는 통합하지 않고, 폰트/backing shape/칼선 안정성 검수용으로만 둔다.
 
 ### 4) Template Builder — `Everstory_TemplateBuilder.jsx` (Illustrator)
 고정 프레임 템플릿의 검정 프레임과 `Frame > slot_01..slot_N` PathItem을 자동 생성하는 보조 스크립트. PhotoStrip 배치 상품은 MVP에서 제외하지만, 템플릿 생성 도구는 보조 유틸리티로 유지한다.

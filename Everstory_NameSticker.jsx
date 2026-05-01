@@ -1,6 +1,6 @@
-// Everstory — Name Sticker prototype (v3, style + color)
+// Everstory — Name Sticker prototype (v4, fixed font candidates + color)
 //
-// 입력: 이름 텍스트 + 스타일/컬러 선택
+// 입력: 이름 텍스트 + 고정 폰트 후보/컬러 선택
 // 출력: 저장하지 않은 Illustrator 문서에 이름 스티커 1개 생성
 //
 // 생성 레이어:
@@ -14,46 +14,126 @@
 (function () {
   "use strict";
 
-  var SCRIPT_TITLE = "Everstory Name Sticker v3";
+  var SCRIPT_TITLE = "Everstory Name Sticker v4";
   var MM_TO_PT = 2.834645;
   var DOC_W_MM = 148;
   var DOC_H_MM = 105;
   var MAX_TEXT_W_MM = 78;
   var MAX_TEXT_H_MM = 24;
 
-  var STYLE_PRESETS = [
+  var ENGLISH_FONT_PRESETS = [
     {
-      name: "Minimal Script",
-      keywords: ["script", "hand", "calligraphy", "chancery", "roundhand", "sign", "brush", "snell"],
-      fallbackFonts: ["SnellRoundhand", "SignPainter-HouseScript", "BrushScriptMT", "Apple-Chancery"],
+      label: "Snell Roundhand",
+      fontName: "SnellRoundhand",
       backingColor: [255, 255, 252],
       backingStrokeColor: [218, 216, 210],
       fontSize: 58,
       tracking: 0,
       backingOffset: 3.8,
-      underline: false
+      underline: false,
+      underlineStrokeWidth: 0.7
     },
     {
-      name: "Minimal Serif",
-      keywords: ["didot", "bodoni", "garamond", "caslon", "times", "georgia", "serif"],
-      fallbackFonts: ["Didot", "BodoniSvtyTwoITCTT-Book", "TimesNewRomanPSMT", "Georgia"],
+      label: "SignPainter HouseScript",
+      fontName: "SignPainter-HouseScript",
+      backingColor: [255, 255, 252],
+      backingStrokeColor: [218, 216, 210],
+      fontSize: 62,
+      tracking: 0,
+      backingOffset: 4.0,
+      underline: false,
+      underlineStrokeWidth: 0.7
+    },
+    {
+      label: "Apple Chancery",
+      fontName: "Apple-Chancery",
+      backingColor: [255, 255, 252],
+      backingStrokeColor: [218, 216, 210],
+      fontSize: 52,
+      tracking: 0,
+      backingOffset: 3.6,
+      underline: false,
+      underlineStrokeWidth: 0.7
+    },
+    {
+      label: "Didot",
+      fontName: "Didot",
       backingColor: [255, 255, 252],
       backingStrokeColor: [218, 216, 210],
       fontSize: 54,
       tracking: 20,
       backingOffset: 3.6,
-      underline: false
+      underline: false,
+      underlineStrokeWidth: 0.7
     },
     {
-      name: "Minimal Sans",
-      keywords: ["avenir", "helvetica", "futura", "gill", "arial", "noto sans", "source sans"],
-      fallbackFonts: ["Avenir-Book", "HelveticaNeue-Light", "GillSans-Light", "ArialMT"],
+      label: "Avenir Next Regular",
+      fontName: "AvenirNext-Regular",
       backingColor: [255, 255, 252],
       backingStrokeColor: [218, 216, 210],
       fontSize: 50,
-      tracking: 120,
-      backingOffset: 3.6,
-      underline: true
+      tracking: 80,
+      backingOffset: 3.4,
+      underline: true,
+      underlineStrokeWidth: 0.9
+    }
+  ];
+
+  var KOREAN_FONT_PRESETS = [
+    {
+      label: "Apple SD Gothic Neo SemiBold",
+      fontName: "AppleSDGothicNeo-SemiBold",
+      backingColor: [255, 255, 252],
+      backingStrokeColor: [218, 216, 210],
+      fontSize: 46,
+      tracking: 20,
+      backingOffset: 3.4,
+      underline: false,
+      underlineStrokeWidth: 0.7
+    },
+    {
+      label: "Apple SD Gothic Neo Regular",
+      fontName: "AppleSDGothicNeo-Regular",
+      backingColor: [255, 255, 252],
+      backingStrokeColor: [218, 216, 210],
+      fontSize: 46,
+      tracking: 40,
+      backingOffset: 3.4,
+      underline: false,
+      underlineStrokeWidth: 0.7
+    },
+    {
+      label: "Apple SD Gothic Neo Medium",
+      fontName: "AppleSDGothicNeo-Medium",
+      backingColor: [255, 255, 252],
+      backingStrokeColor: [218, 216, 210],
+      fontSize: 46,
+      tracking: 30,
+      backingOffset: 3.4,
+      underline: false,
+      underlineStrokeWidth: 0.7
+    },
+    {
+      label: "Apple SD Gothic Neo Bold",
+      fontName: "AppleSDGothicNeo-Bold",
+      backingColor: [255, 255, 252],
+      backingStrokeColor: [218, 216, 210],
+      fontSize: 44,
+      tracking: 10,
+      backingOffset: 3.4,
+      underline: false,
+      underlineStrokeWidth: 0.7
+    },
+    {
+      label: "Apple SD Gothic Neo Light",
+      fontName: "AppleSDGothicNeo-Light",
+      backingColor: [255, 255, 252],
+      backingStrokeColor: [218, 216, 210],
+      fontSize: 46,
+      tracking: 50,
+      backingOffset: 3.4,
+      underline: false,
+      underlineStrokeWidth: 0.7
     }
   ];
 
@@ -74,20 +154,23 @@
     return;
   }
 
-  var options = _showOptionsDialog(nameText);
+  var fontPresets = _selectFontPresets(nameText);
+  var options = _showOptionsDialog(nameText, fontPresets);
   if (!options) return;
+
+  var textFont = _requireFont(options.fontPreset);
+  if (!textFont) return;
 
   var doc = _createDocument();
   var layers = _createLayers(doc);
-  var textFont = _resolveFont(options.style);
 
-  _drawNameSticker(doc, layers.printLayer, layers.kissLayer, nameText, options.style, options.color, textFont);
+  _drawNameSticker(doc, layers.printLayer, layers.kissLayer, nameText, options.fontPreset, options.color, textFont);
 
   alert(
     "완료: 다이컷 스타일 이름 스티커를 새 문서에 생성했습니다.\n" +
-    "스타일: " + options.style.name + "\n" +
+    "폰트 후보: " + options.fontPreset.label + "\n" +
     "컬러: " + options.color.name + "\n" +
-    "폰트: " + (textFont ? textFont.name : "기본 폰트") + "\n\n" +
+    "PostScript: " + options.fontPreset.fontName + "\n\n" +
     "저장하지 않았으니 Illustrator에서 검수하세요."
   );
 
@@ -96,7 +179,7 @@
   //  UI
   // ═════════════════════════════════════════════════════════
 
-  function _showOptionsDialog(nameText) {
+  function _showOptionsDialog(nameText, fontPresets) {
     var dlg = new Window("dialog", SCRIPT_TITLE);
     dlg.orientation = "column";
     dlg.alignChildren = "fill";
@@ -106,15 +189,16 @@
     var title = dlg.add("statictext", undefined, "Name: " + nameText);
     try { title.graphics.font = ScriptUI.newFont(title.graphics.font.name, "BOLD", 14); } catch (e) {}
 
-    var stylePanel = dlg.add("panel", undefined, "스타일");
-    stylePanel.orientation = "column";
-    stylePanel.alignChildren = "fill";
-    stylePanel.margins = [14, 18, 14, 14];
-    var styleDrop = stylePanel.add("dropdownlist");
-    for (var i = 0; i < STYLE_PRESETS.length; i++) {
-      styleDrop.add("item", STYLE_PRESETS[i].name);
+    var fontPanel = dlg.add("panel", undefined, "고정 폰트 후보");
+    fontPanel.orientation = "column";
+    fontPanel.alignChildren = "fill";
+    fontPanel.margins = [14, 18, 14, 14];
+    var fontDrop = fontPanel.add("dropdownlist");
+    fontDrop.preferredSize = [320, 24];
+    for (var i = 0; i < fontPresets.length; i++) {
+      fontDrop.add("item", fontPresets[i].label);
     }
-    styleDrop.selection = 0;
+    fontDrop.selection = 0;
 
     var colorPanel = dlg.add("panel", undefined, "컬러");
     colorPanel.orientation = "column";
@@ -127,7 +211,7 @@
     }
     colorDrop.selection = 0;
 
-    var hint = dlg.add("statictext", undefined, "폰트는 선택한 스타일에 맞춰 자동 적용됩니다.");
+    var hint = dlg.add("statictext", undefined, "한글 이름은 한글 후보, 그 외 이름은 영문 후보만 사용합니다. 선택 폰트가 없으면 중단합니다.");
     try { hint.graphics.foregroundColor = hint.graphics.newPen(hint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHint) {}
 
     var btnGroup = dlg.add("group");
@@ -139,12 +223,12 @@
 
     if (dlg.show() !== 1) return null;
 
-    var styleIndex = styleDrop.selection ? styleDrop.selection.index : 0;
+    var fontIndex = fontDrop.selection ? fontDrop.selection.index : 0;
     var colorIndex = colorDrop.selection ? colorDrop.selection.index : 0;
 
     return {
-      styleIndex: styleIndex,
-      style: STYLE_PRESETS[styleIndex],
+      fontIndex: fontIndex,
+      fontPreset: fontPresets[fontIndex],
       color: COLOR_PRESETS[colorIndex]
     };
   }
@@ -154,7 +238,7 @@
   //  DRAW
   // ═════════════════════════════════════════════════════════
 
-  function _drawNameSticker(doc, printLayer, kissLayer, nameText, style, colorPreset, textFont) {
+  function _drawNameSticker(doc, printLayer, kissLayer, nameText, fontPreset, colorPreset, textFont) {
     var docW = DOC_W_MM * MM_TO_PT;
     var docH = DOC_H_MM * MM_TO_PT;
     var centerX = docW / 2;
@@ -162,8 +246,8 @@
 
     var textRgb = colorPreset.rgb;
     var textColor = _rgb(textRgb[0], textRgb[1], textRgb[2]);
-    var backingColor = _rgb(style.backingColor[0], style.backingColor[1], style.backingColor[2]);
-    var backingStrokeColor = _rgb(style.backingStrokeColor[0], style.backingStrokeColor[1], style.backingStrokeColor[2]);
+    var backingColor = _rgb(fontPreset.backingColor[0], fontPreset.backingColor[1], fontPreset.backingColor[2]);
+    var backingStrokeColor = _rgb(fontPreset.backingStrokeColor[0], fontPreset.backingStrokeColor[1], fontPreset.backingStrokeColor[2]);
 
     doc.activeLayer = printLayer;
     var text = printLayer.textFrames.add();
@@ -172,22 +256,22 @@
     text.top = 0;
 
     var attrs = text.textRange.characterAttributes;
-    if (textFont) attrs.textFont = textFont;
-    attrs.size = style.fontSize;
-    attrs.tracking = style.tracking;
+    attrs.textFont = textFont;
+    attrs.size = fontPreset.fontSize;
+    attrs.tracking = fontPreset.tracking;
     attrs.fillColor = textColor;
 
-    _fitTextToBox(text, MAX_TEXT_W_MM * MM_TO_PT, MAX_TEXT_H_MM * MM_TO_PT, style.fontSize);
+    _fitTextToBox(text, MAX_TEXT_W_MM * MM_TO_PT, MAX_TEXT_H_MM * MM_TO_PT, fontPreset.fontSize);
     _centerItem(text, centerX, centerY);
 
     var decorItems = [];
-    if (style.underline) {
-      decorItems.push(_drawUnderline(printLayer, text, textColor, style));
+    if (fontPreset.underline) {
+      decorItems.push(_drawUnderline(printLayer, text, textColor, fontPreset));
     }
 
     var outlined = text.createOutline();
     var printItems = [outlined].concat(decorItems);
-    var backing = _makeDieCutBacking(doc, printLayer, printItems, style, backingColor, backingStrokeColor);
+    var backing = _makeDieCutBacking(doc, printLayer, printItems, fontPreset, backingColor, backingStrokeColor);
 
     var cutSpot = _ensureCutContour(doc);
     var cutPath = backing.duplicate(kissLayer, ElementPlacement.PLACEATEND);
@@ -366,7 +450,7 @@
     line.filled = false;
     line.stroked = true;
     line.strokeColor = color;
-    line.strokeWidth = style.name === "Minimal Script" ? 0.7 : 0.9;
+    line.strokeWidth = style.underlineStrokeWidth;
     try { line.strokeCap = StrokeCap.ROUNDENDCAP; } catch (e) {}
     return line;
   }
@@ -416,33 +500,31 @@
     return { printLayer: printLayer, kissLayer: kissLayer };
   }
 
-  function _resolveFont(style) {
-    for (var i = 0; i < style.fallbackFonts.length; i++) {
-      try { return app.textFonts.getByName(style.fallbackFonts[i]); } catch (eFallback) {}
-    }
-
-    var keywordFont = _findFontByKeywords(style.keywords);
-    if (keywordFont) return keywordFont;
-
-    if (app.textFonts.length > 0) return app.textFonts[0];
-    return null;
-  }
-
-  function _findFontByKeywords(keywords) {
-    for (var i = 0; i < app.textFonts.length; i++) {
-      var font = app.textFonts[i];
-      var hay = _fontHaystack(font);
-      for (var k = 0; k < keywords.length; k++) {
-        if (hay.indexOf(keywords[k]) !== -1) return font;
-      }
-    }
-    return null;
-  }
-
-
   // ═════════════════════════════════════════════════════════
   //  HELPERS
   // ═════════════════════════════════════════════════════════
+
+  function _selectFontPresets(nameText) {
+    return _hasHangul(nameText) ? KOREAN_FONT_PRESETS : ENGLISH_FONT_PRESETS;
+  }
+
+  function _hasHangul(text) {
+    return /[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7AF]/.test(text);
+  }
+
+  function _requireFont(fontPreset) {
+    try {
+      return app.textFonts.getByName(fontPreset.fontName);
+    } catch (e) {
+      alert(
+        "필수 폰트를 찾을 수 없습니다.\n\n" +
+        "선택: " + fontPreset.label + "\n" +
+        "PostScript: " + fontPreset.fontName + "\n\n" +
+        "자동 대체 없이 중단합니다."
+      );
+      return null;
+    }
+  }
 
   function _centerItem(item, cx, cy) {
     var b = item.geometricBounds;
@@ -498,14 +580,6 @@
     c.green = g;
     c.blue = b;
     return c;
-  }
-
-  function _fontHaystack(font) {
-    var parts = [];
-    try { parts.push(font.name); } catch (e1) {}
-    try { parts.push(font.family); } catch (e2) {}
-    try { parts.push(font.style); } catch (e3) {}
-    return parts.join(" ").toLowerCase();
   }
 
   function _trim(s) {

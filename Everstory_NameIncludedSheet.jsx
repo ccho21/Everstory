@@ -1,14 +1,14 @@
-// Everstory — Name Included sheet prototype (v9, fixed header zone)
+// Everstory — Name Included sheet prototype (v10, production header)
 //
 // 목적:
-//   Everstory_Grid.jsx에 통합하기 전, 이름 스티커를 사진 다이컷과 같은 A5 sheet 안에
-//   어떻게 섞어 배치할지 검수하는 Illustrator 프로토타입.
+//   Everstory_Grid.jsx에 통합하기 전, A5 sheet 상단 production header와
+//   사진 다이컷 배치 영역을 검수하는 Illustrator 프로토타입.
 //
 // 동작:
-//   1. 이름 / 오더 디테일 / 이름 스타일 / 이름 컬러 / 이름 가로 / 사진 스티커 크기 / 칼선 여백 선택
+//   1. 고객 이름 / 재질 / 날짜 / 사진 스티커 크기 / 칼선 여백 선택
 //   2. templates/template_heart.ait 열기
-//   3. 상단 14mm 헤더 왼쪽에 이름 스티커, 오른쪽에 작은 오더 디테일 배치
-//   4. 헤더 아래 직사각형 영역에 _clean.psd + _sil.png 사진 스티커를 MaxRects로 pack
+//   3. 상단 20mm production header에 EVERSTORY + ORDER DETAIL 배치
+//   4. 헤더 아래 전체 영역에 _clean.psd + _sil.png 사진 스티커를 MaxRects로 pack
 //   5. 저장하지 않고 열린 상태로 둠
 //
 // 사용법: File → Scripts → Other Script → Everstory_NameIncludedSheet.jsx
@@ -18,68 +18,17 @@
 (function () {
   "use strict";
 
-  var SCRIPT_TITLE = "Everstory Name Included Sheet v9";
+  var SCRIPT_TITLE = "Everstory Name Included Sheet v10";
   var MM_TO_PT = 2.834645;
   var SAFETY_MM = 2;
   var GAP_MM = 2;
-  var HEADER_ZONE_MM = 14;
-  var HEADER_NAME_BACKING_OFFSET_MM = 1.8;
+  var HEADER_ZONE_MM = 20;
   var REPEAT_FILL_THRESHOLD = 0.82;
-  var DEFAULT_NAME_WIDTH_MM = 60;
-  var MIN_NAME_WIDTH_MM = 30;
-  var MAX_NAME_WIDTH_MM = 90;
 
   var SIZE_OPTIONS = ["2cm", "3cm", "6cm"];
   var SIZE_VALUES = [20, 30, 60];
   var CUT_MARGIN_OPTIONS = ["1mm", "2mm"];
   var CUT_MARGIN_VALUES = [1, 2];
-  var HEADER_ANCHOR = "header-left";
-  var HEADER_ANCHOR_LABEL = "Header Left";
-
-  var STYLE_PRESETS = [
-    {
-      name: "Minimal Script",
-      keywords: ["script", "hand", "calligraphy", "chancery", "roundhand", "sign", "brush", "snell"],
-      fallbackFonts: ["SnellRoundhand", "SignPainter-HouseScript", "BrushScriptMT", "Apple-Chancery"],
-      backingColor: [255, 255, 252],
-      backingStrokeColor: [218, 216, 210],
-      fontSize: 58,
-      tracking: 0,
-      backingOffset: 3.8,
-      underline: false
-    },
-    {
-      name: "Minimal Serif",
-      keywords: ["didot", "bodoni", "garamond", "caslon", "times", "georgia", "serif"],
-      fallbackFonts: ["Didot", "BodoniSvtyTwoITCTT-Book", "TimesNewRomanPSMT", "Georgia"],
-      backingColor: [255, 255, 252],
-      backingStrokeColor: [218, 216, 210],
-      fontSize: 54,
-      tracking: 20,
-      backingOffset: 3.6,
-      underline: false
-    },
-    {
-      name: "Minimal Sans",
-      keywords: ["avenir", "helvetica", "futura", "gill", "arial", "noto sans", "source sans"],
-      fallbackFonts: ["Avenir-Book", "HelveticaNeue-Light", "GillSans-Light", "ArialMT"],
-      backingColor: [255, 255, 252],
-      backingStrokeColor: [218, 216, 210],
-      fontSize: 50,
-      tracking: 120,
-      backingOffset: 3.6,
-      underline: true
-    }
-  ];
-
-  var COLOR_PRESETS = [
-    { name: "Cocoa Brown", rgb: [95, 82, 64] },
-    { name: "Soft Black", rgb: [34, 34, 32] },
-    { name: "Warm Taupe", rgb: [128, 112, 93] },
-    { name: "Dusty Rose", rgb: [161, 111, 105] },
-    { name: "Blue Gray", rgb: [64, 88, 98] },
-    { name: "Sage Gray", rgb: [102, 116, 100] }
-  ];
 
   var options = _showDialog();
   if (!options) return;
@@ -131,33 +80,18 @@
   var cutSpot = _ensureCutContour(doc);
 
   var headerHPt = HEADER_ZONE_MM * MM_TO_PT;
-  var nameStyle = _makeHeaderNameStyle(options.style);
-  var nameMaxTextWidthMm = _resolveNameTextWidthMm(options.nameWidthMm, nameStyle);
-  var nameMaxTextHeightMm = _resolveHeaderNameTextHeightMm(nameStyle);
-  var nameSticker = _createNameSticker(
-    doc,
-    printLayer,
-    kissLayer,
-    options.nameText,
-    nameStyle,
-    options.color,
-    nameMaxTextWidthMm * MM_TO_PT,
-    nameMaxTextHeightMm * MM_TO_PT,
-    cutSpot
-  );
-  _safeDeselect(doc);
-  _safeRedrawAndGC();
+  if (headerHPt >= binH) {
+    alert("헤더 영역이 a5_border 안 사용 가능 영역보다 큽니다.");
+    return;
+  }
 
-  var nameRect = _resolveNameAnchorRect(nameSticker.w, nameSticker.h, binW, binH, options.anchor, headerHPt);
-  _moveNameStickerToBin(doc, nameSticker, bL + safetyPt + nameRect.x, bT - safetyPt - nameRect.y);
+  var orderDetailText = _buildOrderDetail(options, pairs.length);
+  _drawProductionHeader(doc, printLayer, orderDetailText, bL + safetyPt, bT - safetyPt, binW, headerHPt);
 
-  var orderDetailText = _buildOrderDetail(options.orderDetail, options.sizeMm, options.cutMarginMm, pairs.length);
-  _drawOrderDetail(doc, printLayer, orderDetailText, bL + safetyPt, bT - safetyPt, binW, headerHPt, nameSticker.w);
-
-  var freeRects = _buildPhotoFreeRects(nameRect, binW, binH, options.anchor, gapPt);
+  var freeRects = [{ x: 0, y: headerHPt, w: binW, h: binH - headerHPt }];
   var photoArea = _sumRectAreas(freeRects);
   if (photoArea <= 0) {
-    alert("이름 스티커가 사진 배치 영역을 모두 차지합니다. 이름 가로를 줄이세요.");
+    alert("헤더가 사진 배치 영역을 모두 차지합니다. 헤더 높이를 줄이세요.");
     return;
   }
 
@@ -185,7 +119,7 @@
   }
 
   if (anyTooBig) {
-    alert("일부 사진 셀이 이름 아래 사진 영역보다 큽니다. 사진 스티커 크기나 이름 스티커 크기를 줄이세요.");
+    alert("일부 사진 셀이 헤더 아래 사진 영역보다 큽니다. 사진 스티커 크기를 줄이세요.");
     return;
   }
 
@@ -239,8 +173,8 @@
   var msg =
     "완료: Name Included 시트 프로토타입 생성\n" +
     "저장하지 않았으니 Illustrator에서 검수하세요.\n\n" +
-    "이름: " + options.nameText + " / " + options.style.name + " / " + options.color.name + "\n" +
-    "헤더: 15mm / 이름 위치: " + options.anchorLabel + " / 이름 가로: " + options.nameWidthMm + "mm\n" +
+    "고객 이름: " + options.nameText + "\n" +
+    "헤더: " + HEADER_ZONE_MM + "mm / 이름 스티커: 없음\n" +
     "오더 디테일: " + orderDetailText + "\n" +
     "기본 사이즈: " + options.sizeMm + "mm" + (hasCustomSize ? " / 파일명 mm값 반영" : "") +
     " / 칼선 여백: " + options.cutMarginMm + "mm\n" +
@@ -268,46 +202,32 @@
     dlg.margins = 18;
     dlg.spacing = 12;
 
-    var namePanel = dlg.add("panel", undefined, "이름");
+    var namePanel = dlg.add("panel", undefined, "고객 이름");
     namePanel.orientation = "column";
     namePanel.alignChildren = "fill";
     namePanel.margins = [14, 18, 14, 14];
     var nameInput = namePanel.add("edittext", undefined, "Mina");
     nameInput.preferredSize = [320, 24];
 
-    var orderPanel = dlg.add("panel", undefined, "오더 디테일");
-    orderPanel.orientation = "column";
-    orderPanel.alignChildren = "fill";
-    orderPanel.margins = [14, 18, 14, 14];
-    var orderInput = orderPanel.add("edittext", undefined, "");
-    orderInput.preferredSize = [320, 24];
-    var orderHint = orderPanel.add("statictext", undefined, "비워두면 사이즈/사진수/칼선 여백만 자동 표기합니다.");
-    try { orderHint.graphics.foregroundColor = orderHint.graphics.newPen(orderHint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eOrderHint) {}
+    var detailPanel = dlg.add("panel", undefined, "헤더 정보");
+    detailPanel.orientation = "column";
+    detailPanel.alignChildren = "fill";
+    detailPanel.margins = [14, 18, 14, 14];
+    detailPanel.spacing = 8;
 
-    var stylePanel = dlg.add("panel", undefined, "이름 스타일");
-    stylePanel.orientation = "column";
-    stylePanel.alignChildren = "fill";
-    stylePanel.margins = [14, 18, 14, 14];
-    var styleDrop = stylePanel.add("dropdownlist");
-    for (var s = 0; s < STYLE_PRESETS.length; s++) styleDrop.add("item", STYLE_PRESETS[s].name);
-    styleDrop.selection = 0;
+    var materialGroup = detailPanel.add("group");
+    materialGroup.orientation = "row";
+    materialGroup.alignChildren = "center";
+    materialGroup.add("statictext", undefined, "재질");
+    var materialInput = materialGroup.add("edittext", undefined, "White");
+    materialInput.preferredSize = [250, 24];
 
-    var colorPanel = dlg.add("panel", undefined, "이름 컬러");
-    colorPanel.orientation = "column";
-    colorPanel.alignChildren = "fill";
-    colorPanel.margins = [14, 18, 14, 14];
-    var colorDrop = colorPanel.add("dropdownlist");
-    for (var c = 0; c < COLOR_PRESETS.length; c++) colorDrop.add("item", COLOR_PRESETS[c].name);
-    colorDrop.selection = 0;
-
-    var nameSizePanel = dlg.add("panel", undefined, "이름 스티커 가로");
-    nameSizePanel.orientation = "row";
-    nameSizePanel.alignChildren = "center";
-    nameSizePanel.margins = [14, 18, 14, 14];
-    nameSizePanel.spacing = 8;
-    var nameWidthInput = nameSizePanel.add("edittext", undefined, String(DEFAULT_NAME_WIDTH_MM));
-    nameWidthInput.preferredSize = [48, 24];
-    nameSizePanel.add("statictext", undefined, "mm");
+    var dateGroup = detailPanel.add("group");
+    dateGroup.orientation = "row";
+    dateGroup.alignChildren = "center";
+    dateGroup.add("statictext", undefined, "날짜");
+    var dateInput = dateGroup.add("edittext", undefined, _todayIso());
+    dateInput.preferredSize = [250, 24];
 
     var sizePanel = dlg.add("panel", undefined, "사진 스티커 긴 변");
     sizePanel.orientation = "row";
@@ -329,7 +249,7 @@
     }
     cutRadios[0].value = true;
 
-    var hint = dlg.add("statictext", undefined, "상단 14mm 헤더 왼쪽에는 이름, 오른쪽에는 오더 디테일을 넣습니다.");
+    var hint = dlg.add("statictext", undefined, "상단 20mm 헤더에는 주문 정보만 넣고, 이름 스티커는 생성하지 않습니다.");
     try { hint.graphics.foregroundColor = hint.graphics.newPen(hint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHint) {}
 
     var btnGroup = dlg.add("group");
@@ -357,179 +277,13 @@
       if (cutRadios[cidx].value) { cutMarginMm = CUT_MARGIN_VALUES[cidx]; break; }
     }
 
-    var styleIndex = styleDrop.selection ? styleDrop.selection.index : 0;
-    var colorIndex = colorDrop.selection ? colorDrop.selection.index : 0;
-    var nameWidthMm = parseFloat(nameWidthInput.text);
-    if (!nameWidthMm || nameWidthMm <= 0) nameWidthMm = DEFAULT_NAME_WIDTH_MM;
-    if (nameWidthMm < MIN_NAME_WIDTH_MM) nameWidthMm = MIN_NAME_WIDTH_MM;
-    if (nameWidthMm > MAX_NAME_WIDTH_MM) nameWidthMm = MAX_NAME_WIDTH_MM;
-
     return {
       nameText: nameText,
-      orderDetail: _trim(orderInput.text),
-      style: STYLE_PRESETS[styleIndex],
-      color: COLOR_PRESETS[colorIndex],
-      anchor: HEADER_ANCHOR,
-      anchorLabel: HEADER_ANCHOR_LABEL,
-      nameWidthMm: nameWidthMm,
+      material: _trim(materialInput.text) || "White",
+      orderDate: _trim(dateInput.text) || _todayIso(),
       sizeMm: sizeMm,
       cutMarginMm: cutMarginMm
     };
-  }
-
-
-  // ═════════════════════════════════════════════════════════
-  //  NAME STICKER
-  // ═════════════════════════════════════════════════════════
-
-  function _createNameSticker(doc, printLayer, kissLayer, nameText, style, colorPreset, maxTextW, maxTextH, cutSpot) {
-    var textFont = _resolveFont(style);
-    var textRgb = colorPreset.rgb;
-    var textColor = _rgb(textRgb[0], textRgb[1], textRgb[2]);
-    var backingColor = _rgb(style.backingColor[0], style.backingColor[1], style.backingColor[2]);
-    var backingStrokeColor = _rgb(style.backingStrokeColor[0], style.backingStrokeColor[1], style.backingStrokeColor[2]);
-
-    doc.activeLayer = printLayer;
-    var text = printLayer.textFrames.add();
-    text.contents = nameText;
-    text.left = 0;
-    text.top = 0;
-
-    var attrs = text.textRange.characterAttributes;
-    if (textFont) attrs.textFont = textFont;
-    attrs.size = style.fontSize;
-    attrs.tracking = style.tracking;
-    attrs.fillColor = textColor;
-
-    _fitTextToBox(text, maxTextW, maxTextH, style.fontSize);
-    _centerItem(text, 0, 0);
-
-    var decorItems = [];
-    if (style.underline) {
-      decorItems.push(_drawUnderline(printLayer, text, textColor, style));
-    }
-
-    var outlined = text.createOutline();
-    var printItems = [outlined].concat(decorItems);
-    var backing = _makeDieCutBacking(doc, printLayer, printItems, style, backingColor, backingStrokeColor);
-
-    var cutPath = backing.duplicate(kissLayer, ElementPlacement.PLACEATEND);
-    _removeContainedSubpaths(cutPath);
-    _forceCutContourStroke(cutPath, cutSpot);
-
-    var group = printLayer.groupItems.add();
-    try { backing.move(group, ElementPlacement.PLACEATEND); } catch (eB) {}
-    try { outlined.move(group, ElementPlacement.PLACEATEND); } catch (eO) {}
-    for (var i = 0; i < decorItems.length; i++) {
-      try { decorItems[i].move(group, ElementPlacement.PLACEATEND); } catch (eD) {}
-    }
-    try { group.name = "NameSticker_Print"; } catch (eName) {}
-    try { cutPath.name = "NameSticker_Cut"; } catch (eCutName) {}
-
-    var gb = group.geometricBounds;
-    return {
-      printItem: group,
-      cutItem: cutPath,
-      bounds: gb,
-      w: gb[2] - gb[0],
-      h: gb[1] - gb[3]
-    };
-  }
-
-  function _makeHeaderNameStyle(style) {
-    return {
-      name: style.name,
-      keywords: _copyArray(style.keywords),
-      fallbackFonts: _copyArray(style.fallbackFonts),
-      backingColor: _copyArray(style.backingColor),
-      backingStrokeColor: _copyArray(style.backingStrokeColor),
-      fontSize: Math.min(style.fontSize, 44),
-      tracking: style.tracking,
-      backingOffset: Math.min(style.backingOffset, HEADER_NAME_BACKING_OFFSET_MM),
-      underline: style.underline
-    };
-  }
-
-  function _copyArray(arr) {
-    var copy = [];
-    for (var i = 0; i < arr.length; i++) copy.push(arr[i]);
-    return copy;
-  }
-
-  function _makeDieCutBacking(doc, layer, sourceItems, style, fillColor, edgeColor) {
-    var sourceGroup = layer.groupItems.add();
-    for (var i = 0; i < sourceItems.length; i++) {
-      sourceItems[i].duplicate(sourceGroup, ElementPlacement.PLACEATEND);
-    }
-
-    _applyBackingSourceStyle(sourceGroup, fillColor, style.backingOffset * MM_TO_PT * 2);
-
-    var backing = _expandAndUnite(doc, sourceGroup);
-    if (backing && backing !== sourceGroup) {
-      _removeContainedSubpaths(backing);
-      _applyPrintBackingStyle(backing, fillColor, edgeColor);
-    } else {
-      backing = sourceGroup;
-    }
-    try { backing.name = "NameBacking"; } catch (eName) {}
-    return backing;
-  }
-
-  function _moveNameStickerToBin(doc, nameSticker, left, top) {
-    _safeDeselect(doc);
-    var b = nameSticker.printItem.geometricBounds;
-    var dx = left - b[0];
-    var dy = top - b[1];
-    nameSticker.printItem.translate(dx, dy);
-    nameSticker.cutItem.translate(dx, dy);
-    _safeDeselect(doc);
-    _safeRedrawAndGC();
-  }
-
-  function _resolveNameAnchorRect(w, h, binW, binH, anchor, headerH) {
-    var x = 0;
-    var y = 0;
-    if (anchor === "header-left") {
-      x = 0;
-      y = (headerH - h) / 2;
-    } else if (anchor === "top-header") {
-      x = (binW - w) / 2;
-      y = 0;
-    } else if (anchor === "center") {
-      x = (binW - w) / 2;
-      y = (binH - h) / 2;
-    } else if (anchor === "top-center") {
-      x = (binW - w) / 2;
-      y = 0;
-    } else if (anchor === "bottom-right") {
-      x = binW - w;
-      y = binH - h;
-    } else if (anchor === "bottom-left") {
-      x = 0;
-      y = binH - h;
-    }
-    if (x < 0) x = 0;
-    if (y < 0) y = 0;
-    return { x: x, y: y, w: w, h: h };
-  }
-
-  function _buildPhotoFreeRects(nameRect, binW, binH, anchor, gap) {
-    if (anchor === "header-left" || anchor === "top-header") {
-      var headerH = HEADER_ZONE_MM * MM_TO_PT;
-      if (headerH > binH) headerH = binH;
-      return [{ x: 0, y: headerH, w: binW, h: binH - headerH }];
-    }
-
-    var reserved = _reserveRectWithGap(nameRect, binW, binH, gap);
-    return _splitFreeRect({ x: 0, y: 0, w: binW, h: binH }, reserved);
-  }
-
-  function _reserveRectWithGap(rect, binW, binH, gap) {
-    var x = Math.max(0, rect.x - gap);
-    var y = Math.max(0, rect.y - gap);
-    var r = Math.min(binW, rect.x + rect.w + gap);
-    var b = Math.min(binH, rect.y + rect.h + gap);
-    return { x: x, y: y, w: r - x, h: b - y };
   }
 
   function _sumRectAreas(rects) {
@@ -547,63 +301,71 @@
     return false;
   }
 
-  function _resolveNameTextWidthMm(targetStickerWidthMm, style) {
-    var textWidth = targetStickerWidthMm - (style.backingOffset * 2);
-    if (textWidth < 16) textWidth = 16;
-    return textWidth;
+  function _buildOrderDetail(options, photoCount) {
+    return [
+      "USER: " + options.nameText + "    TYPE: Name Add-on",
+      "SIZE: " + options.sizeMm + "mm    CUT: " + options.cutMarginMm + "mm    PHOTOS: " + photoCount + "    MATERIAL: " + options.material,
+      "DATE: " + options.orderDate
+    ].join("\r");
   }
 
-  function _resolveHeaderNameTextHeightMm(style) {
-    var h = HEADER_ZONE_MM - (style.backingOffset * 2) - 1.5;
-    if (style.underline) h -= 3.5;
-    if (h < 6) h = 6;
-    if (h > 10) h = 10;
-    return h;
-  }
-
-  function _resolveNameTextHeightMm(targetStickerWidthMm) {
-    var h = targetStickerWidthMm * 0.42;
-    if (h < 12) h = 12;
-    if (h > 24) h = 24;
-    return h;
-  }
-
-  function _buildOrderDetail(inputText, sizeMm, cutMarginMm, photoCount) {
-    var meta = sizeMm + "mm / " + photoCount + " photos / cut " + cutMarginMm + "mm";
-    var input = _trim(inputText);
-    return input ? (input + " / " + meta) : meta;
-  }
-
-  function _drawOrderDetail(doc, layer, detailText, binLeft, binTop, binW, headerH, nameW) {
-    if (!detailText) return null;
-
-    var leftLimit = binLeft + nameW + 6 * MM_TO_PT;
-    var right = binLeft + binW;
-    var maxW = right - leftLimit;
-    if (maxW <= 12 * MM_TO_PT) return null;
-
+  function _drawProductionHeader(doc, layer, detailText, binLeft, binTop, binW, headerH) {
     doc.activeLayer = layer;
-    var text = layer.textFrames.add();
-    text.contents = detailText;
-    text.left = 0;
-    text.top = 0;
 
-    var attrs = text.textRange.characterAttributes;
     var infoFont = _resolveInfoFont();
+    var dark = _rgb(54, 54, 50);
+    var muted = _rgb(105, 105, 100);
+    var ruleColor = _rgb(218, 216, 210);
+
+    var brand = layer.textFrames.add();
+    brand.contents = "EVERSTORY";
+    brand.left = 0;
+    brand.top = 0;
+    var brandAttrs = brand.textRange.characterAttributes;
+    if (infoFont) brandAttrs.textFont = infoFont;
+    brandAttrs.size = 10;
+    brandAttrs.tracking = 180;
+    brandAttrs.fillColor = dark;
+    _moveItemTopLeft(brand, binLeft, binTop - 3 * MM_TO_PT);
+    try { brand.name = "HeaderBrand_Print"; } catch (eBrandName) {}
+
+    var title = layer.textFrames.add();
+    title.contents = "ORDER DETAIL";
+    title.left = 0;
+    title.top = 0;
+    var titleAttrs = title.textRange.characterAttributes;
+    if (infoFont) titleAttrs.textFont = infoFont;
+    titleAttrs.size = 6.2;
+    titleAttrs.tracking = 120;
+    titleAttrs.fillColor = dark;
+    _moveItemTopRight(title, binLeft + binW, binTop - 2.6 * MM_TO_PT);
+    try { title.name = "HeaderTitle_Print"; } catch (eTitleName) {}
+
+    var detail = layer.textFrames.add();
+    detail.contents = detailText;
+    detail.left = 0;
+    detail.top = 0;
+    var attrs = detail.textRange.characterAttributes;
     if (infoFont) attrs.textFont = infoFont;
-    attrs.size = 5.8;
-    attrs.tracking = 40;
-    attrs.fillColor = _rgb(115, 115, 112);
+    attrs.size = 5.2;
+    attrs.leading = 6.8;
+    attrs.tracking = 20;
+    attrs.fillColor = muted;
 
-    _fitTextToBoxMin(text, maxW, 5 * MM_TO_PT, 5.8, 4.2);
+    var detailW = binW * 0.68;
+    var detailH = headerH - 7 * MM_TO_PT;
+    _fitTextToBoxMin(detail, detailW, detailH, 5.2, 4.2);
+    _moveItemTopRight(detail, binLeft + binW, binTop - 6.2 * MM_TO_PT);
+    try { detail.name = "OrderDetail_Print"; } catch (eDetailName) {}
 
-    var b = text.geometricBounds;
-    var h = b[1] - b[3];
-    var targetTop = binTop - (headerH - h) / 2;
-    _moveItemTopRight(text, right, targetTop);
-
-    try { text.name = "OrderDetail_Print"; } catch (eName) {}
-    return text;
+    var ruleY = binTop - headerH + 1.2 * MM_TO_PT;
+    var rule = layer.pathItems.add();
+    rule.setEntirePath([[binLeft, ruleY], [binLeft + binW, ruleY]]);
+    rule.filled = false;
+    rule.stroked = true;
+    rule.strokeColor = ruleColor;
+    rule.strokeWidth = 0.35;
+    try { rule.name = "HeaderRule_Print"; } catch (eRuleName) {}
   }
 
   function _resolveInfoFont() {
@@ -634,6 +396,11 @@
   function _moveItemTopRight(item, right, top) {
     var b = item.geometricBounds;
     item.translate(right - b[2], top - b[1]);
+  }
+
+  function _moveItemTopLeft(item, left, top) {
+    var b = item.geometricBounds;
+    item.translate(left - b[0], top - b[1]);
   }
 
 
@@ -876,184 +643,9 @@
   //  SHARED VECTOR HELPERS
   // ═════════════════════════════════════════════════════════
 
-  function _expandAndUnite(doc, item) {
-    app.activeDocument = doc;
-    doc.selection = null;
-    item.selected = true;
-
-    try { app.executeMenuCommand("expandStyle"); } catch (eExpandStyle1) {}
-    try { app.executeMenuCommand("outline"); } catch (eOutlineStroke) {}
-    try { app.executeMenuCommand("Live Pathfinder Add"); } catch (ePathfinder) {}
-    try { app.executeMenuCommand("expandStyle"); } catch (eExpandStyle2) {}
-
-    var sel = doc.selection;
-    if (sel && sel.length > 0) return sel[0];
-    return null;
-  }
-
-  function _safeDeselect(doc) {
-    try { app.activeDocument = doc; } catch (eActive) {}
-    try { doc.selection = null; } catch (eSel) {}
-    try { app.executeMenuCommand("deselectall"); } catch (eMenu) {}
-  }
-
   function _safeRedrawAndGC() {
     try { app.redraw(); } catch (eRedraw) {}
     try { $.gc(); } catch (eGc) {}
-  }
-
-  function _applyBackingSourceStyle(item, color, strokeWidth) {
-    try {
-      if (item.typename === "GroupItem") {
-        for (var i = 0; i < item.pageItems.length; i++) {
-          _applyBackingSourceStyle(item.pageItems[i], color, strokeWidth);
-        }
-        return;
-      }
-      if (item.typename === "CompoundPathItem") {
-        for (var j = 0; j < item.pathItems.length; j++) {
-          _applyBackingSourceStyle(item.pathItems[j], color, strokeWidth);
-        }
-        return;
-      }
-      if (item.typename === "PathItem") {
-        item.filled = true;
-        item.fillColor = color;
-        item.stroked = true;
-        item.strokeColor = color;
-        item.strokeWidth = strokeWidth;
-        try { item.strokeJoin = StrokeJoin.ROUNDENDJOIN; } catch (eJoin) {}
-        try { item.strokeCap = StrokeCap.ROUNDENDCAP; } catch (eCap) {}
-      }
-    } catch (e) {}
-  }
-
-  function _applyPrintBackingStyle(item, fillColor, edgeColor) {
-    try {
-      if (item.typename === "GroupItem") {
-        for (var i = 0; i < item.pageItems.length; i++) {
-          _applyPrintBackingStyle(item.pageItems[i], fillColor, edgeColor);
-        }
-        return;
-      }
-      if (item.typename === "CompoundPathItem") {
-        for (var j = 0; j < item.pathItems.length; j++) {
-          _applyPrintBackingStyle(item.pathItems[j], fillColor, edgeColor);
-        }
-        return;
-      }
-      if (item.typename === "PathItem") {
-        item.filled = true;
-        item.fillColor = fillColor;
-        item.stroked = true;
-        item.strokeColor = edgeColor;
-        item.strokeWidth = 0.35;
-      }
-    } catch (e) {}
-  }
-
-  function _removeContainedSubpaths(item) {
-    try {
-      if (item.typename === "GroupItem") {
-        for (var g = 0; g < item.pageItems.length; g++) {
-          _removeContainedSubpaths(item.pageItems[g]);
-        }
-        return;
-      }
-
-      if (item.typename !== "CompoundPathItem" || !item.pathItems || item.pathItems.length < 2) {
-        return;
-      }
-
-      var paths = [];
-      var largestAbsArea = 0;
-      var outerSign = 0;
-      for (var i = 0; i < item.pathItems.length; i++) {
-        var area = 0;
-        try { area = item.pathItems[i].area; } catch (eArea) {}
-        var absArea = Math.abs(area);
-        if (absArea > largestAbsArea) {
-          largestAbsArea = absArea;
-          outerSign = area > 0 ? 1 : (area < 0 ? -1 : 0);
-        }
-        paths.push({
-          item: item.pathItems[i],
-          bounds: item.pathItems[i].geometricBounds,
-          sign: area > 0 ? 1 : (area < 0 ? -1 : 0),
-          remove: false
-        });
-      }
-
-      for (var p = 0; p < paths.length; p++) {
-        for (var q = 0; q < paths.length; q++) {
-          if (p === q) continue;
-          if (_boundsContain(paths[q].bounds, paths[p].bounds, 0.3)) {
-            if (outerSign === 0 || paths[p].sign === 0 || paths[p].sign !== outerSign) {
-              paths[p].remove = true;
-            }
-            break;
-          }
-        }
-      }
-
-      var keepCount = 0;
-      for (var k = 0; k < paths.length; k++) {
-        if (!paths[k].remove) keepCount++;
-      }
-      if (keepCount === 0) return;
-
-      for (var r = paths.length - 1; r >= 0; r--) {
-        if (paths[r].remove) {
-          try { paths[r].item.remove(); } catch (eRemove) {}
-        }
-      }
-    } catch (e) {}
-  }
-
-  function _boundsContain(outer, inner, tol) {
-    return inner[0] >= outer[0] + tol &&
-           inner[2] <= outer[2] - tol &&
-           inner[1] <= outer[1] - tol &&
-           inner[3] >= outer[3] + tol;
-  }
-
-  function _drawUnderline(layer, textItem, color, style) {
-    var b = textItem.geometricBounds;
-    var w = b[2] - b[0];
-    var x1 = b[0] + w * 0.08;
-    var x2 = b[2] - w * 0.08;
-    var y = b[3] - 2.2 * MM_TO_PT;
-
-    var line = layer.pathItems.add();
-    line.setEntirePath([[x1, y], [x2, y]]);
-    line.filled = false;
-    line.stroked = true;
-    line.strokeColor = color;
-    line.strokeWidth = style.name === "Minimal Script" ? 0.7 : 0.9;
-    try { line.strokeCap = StrokeCap.ROUNDENDCAP; } catch (e) {}
-    return line;
-  }
-
-  function _fitTextToBox(textItem, maxW, maxH, startSize) {
-    var size = startSize;
-    for (var i = 0; i < 30; i++) {
-      var b = textItem.geometricBounds;
-      var w = b[2] - b[0];
-      var h = b[1] - b[3];
-      if (w <= maxW && h <= maxH) break;
-      var rw = maxW / w;
-      var rh = maxH / h;
-      var r = Math.min(rw, rh);
-      size = Math.max(12, size * r * 0.96);
-      textItem.textRange.characterAttributes.size = size;
-    }
-  }
-
-  function _centerItem(item, cx, cy) {
-    var b = item.geometricBounds;
-    var itemCx = (b[0] + b[2]) / 2;
-    var itemCy = (b[1] + b[3]) / 2;
-    item.translate(cx - itemCx, cy - itemCy);
   }
 
   function _stripPSDPaths(group) {
@@ -1211,37 +803,6 @@
     return c;
   }
 
-  function _resolveFont(style) {
-    for (var i = 0; i < style.fallbackFonts.length; i++) {
-      try { return app.textFonts.getByName(style.fallbackFonts[i]); } catch (eFallback) {}
-    }
-
-    var keywordFont = _findFontByKeywords(style.keywords);
-    if (keywordFont) return keywordFont;
-
-    if (app.textFonts.length > 0) return app.textFonts[0];
-    return null;
-  }
-
-  function _findFontByKeywords(keywords) {
-    for (var i = 0; i < app.textFonts.length; i++) {
-      var font = app.textFonts[i];
-      var hay = _fontHaystack(font);
-      for (var k = 0; k < keywords.length; k++) {
-        if (hay.indexOf(keywords[k]) !== -1) return font;
-      }
-    }
-    return null;
-  }
-
-  function _fontHaystack(font) {
-    var parts = [];
-    try { parts.push(font.name); } catch (e1) {}
-    try { parts.push(font.family); } catch (e2) {}
-    try { parts.push(font.style); } catch (e3) {}
-    return parts.join(" ").toLowerCase();
-  }
-
 
   // ═════════════════════════════════════════════════════════
   //  PACKING
@@ -1374,6 +935,15 @@
 
   function _trim(s) {
     return String(s).replace(/^\s+|\s+$/g, "");
+  }
+
+  function _todayIso() {
+    var d = new Date();
+    return d.getFullYear() + "-" + _pad2(d.getMonth() + 1) + "-" + _pad2(d.getDate());
+  }
+
+  function _pad2(n) {
+    return n < 10 ? "0" + n : String(n);
   }
 
 })();
