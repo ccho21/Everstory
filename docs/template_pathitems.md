@@ -2,11 +2,13 @@
 
 Everstory Illustrator 스크립트는 템플릿 안의 특정 **PathItem 이름**을 찾아서 배치 영역을 계산한다. 템플릿을 만들거나 수정할 때는 아래 규칙을 지킨다.
 
+현재 MVP 주력 파이프라인은 `template_heart.ait` + `Everstory_Grid.jsx` 기반 A5 사진 다이컷 스티커 시트다. PhotoStrip 배치 상품은 retired이며, `template_4cut.ait` 관련 내용은 `Everstory_TemplateBuilder.jsx` 보조 유틸리티 기준으로만 유지한다.
+
 ## 핵심 규칙
 
 - `template_heart.ait`의 `a5_border`는 `info` 레이어 안에 둔다.
 - `template_4cut.ait`의 `a5_border`는 `Info` 레이어 안에 둔다.
-- `template_4cut.ait`의 `slot_01..slot_N`은 `Frame` 레이어 안에 둔다.
+- `template_4cut.ait`의 `slot_01..slot_N`은 `Frame` 레이어 안에 둔다. 이 규칙은 TemplateBuilder 보조 템플릿용이다.
 - 스크립트가 찾는 이름은 path 자체의 이름이다. 그룹 이름이나 레이어 이름만 바꾸면 안 된다.
 - `a5_border`, `slot_01` 같은 이름은 대소문자와 철자를 그대로 쓴다.
 - 일반 사각형은 `PathItem`, 라운드/복합 슬롯은 `CompoundPathItem`이어도 된다.
@@ -14,7 +16,7 @@ Everstory Illustrator 스크립트는 템플릿 안의 특정 **PathItem 이름*
 
 ## 자동 생성 방법
 
-포토스트립/인생네컷 프레임은 `Everstory_TemplateBuilder.jsx`로 자동 생성할 수 있다.
+고정 프레임 템플릿은 `Everstory_TemplateBuilder.jsx`로 자동 생성할 수 있다.
 
 1. Illustrator에서 `File > Scripts > Other Script...`를 선택한다.
 2. `Everstory_TemplateBuilder.jsx`를 실행한다.
@@ -58,9 +60,9 @@ Everstory Illustrator 스크립트는 템플릿 안의 특정 **PathItem 이름*
 - `template_heart.ait`에서 하단 브랜드/QR 배너를 쓸 경우, 배너 높이만큼 `a5_border` 하단을 위로 올린다.
 - 기준 사각형의 fill/stroke는 없어도 된다. 보이게 두고 싶으면 연한 색/점선으로 두되, 컷터용 `CutContour`를 적용하지 않는다.
 
-## `slot_01..slot_N` 만들기
+## `slot_01..slot_N` 확인/수정
 
-`Everstory_PhotoStrip.jsx`가 인생네컷/포토스트립 템플릿에서 사진을 넣을 영역이다. 현재 규칙은 `Frame > slot_01..slot_N` 이다.
+`slot_01..slot_N`은 `Everstory_TemplateBuilder.jsx`가 생성하는 고정 프레임 기준 path다. 현재 MVP 배치 스크립트는 이 슬롯을 사용하지 않는다.
 
 1. `templates/template_4cut.ait`를 Illustrator에서 연다.
 2. `Frame` 레이어를 만든다. 이미 있으면 그대로 사용한다.
@@ -99,7 +101,6 @@ Illustrator에서 path 이름을 정확히 바꾸는 것이 가장 중요하다.
 | 템플릿 | 스크립트 | 필수 PathItem |
 |---|---|---|
 | `template_heart.ait` | `Everstory_Grid.jsx` | `info > a5_border` |
-| `template_4cut.ait` | `Everstory_PhotoStrip.jsx` | `Frame > slot_01..slot_N` |
 | `template_4cut.ait` 재생성 | `Everstory_TemplateBuilder.jsx` | `Info > a5_border` 기준, `Frame > slot_01..slot_N`, `KissCut` 자동 생성 |
 
 ## 자주 나는 문제
@@ -109,7 +110,7 @@ Illustrator에서 path 이름을 정확히 바꾸는 것이 가장 중요하다.
 - path 이름이 정확히 `a5_border`인지 확인한다.
 - 그룹 이름만 바꾼 것은 아닌지 확인한다.
 
-### 포토스트립에서 슬롯을 못 찾음
+### TemplateBuilder 템플릿에서 슬롯 확인이 필요함
 - 이름이 `slot_1`이 아니라 `slot_01`인지 확인한다.
 - path가 `Frame` 레이어 안에 있는지 확인한다.
 - 슬롯이 이미지나 텍스트 객체가 아니라 PathItem/CompoundPathItem인지 확인한다.

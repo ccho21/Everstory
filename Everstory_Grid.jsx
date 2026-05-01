@@ -1,4 +1,4 @@
-// Everstory — 템플릿 기반 시트 배치기 (v8, filename size + cut inset + bin packing)
+// Everstory — 템플릿 기반 시트 배치기 (v9, filename size + cut inset + single-sheet MVP)
 //
 // 템플릿: templates/template_heart.ait
 //   info 레이어 안의 a5_border (PathItem) — 배치 가능 영역 정의
@@ -13,7 +13,7 @@
 //   2. 파일명 _NNmm 이 있으면 페어별 크기로 override
 //   3. MaxRects + BSSF bin packing 으로 시트 안에 가변 크기 셀 배치
 //   4. 셀 단위로 선택한 칼선 여백만큼 PSD fit 영역 축소 + sil.png trace → KissCut 정합
-//   5. 한 시트 leftover 는 다음 시트로 이월 (정책 상한까지)
+//   5. MVP 정책상 A5 한 시트만 저장하고 leftover 는 결과 알림에 표시
 //
 // 출력: 03_output/{timestamp}_NNmm_sheet{N:02d}.ai
 //
@@ -29,7 +29,7 @@
   var GAP_MM     = 2;     // 셀 간격
 
   // ═══ 다이얼로그 ═══════════════════════════════════════════
-  var dlg = new Window("dialog", "Everstory A5 시트 배치 v8");
+  var dlg = new Window("dialog", "Everstory A5 시트 배치 v9");
   dlg.orientation = "column";
   dlg.alignChildren = "fill";
   dlg.margins = 20;
@@ -59,20 +59,6 @@
   }
   cutMarginRadios[0].value = true; // 1mm 기본
 
-  var policyPanel = dlg.add("panel", undefined, "다중 시트 정책");
-  policyPanel.orientation = "column";
-  policyPanel.alignChildren = "left";
-  policyPanel.margins = [15, 20, 15, 15];
-  policyPanel.spacing = 6;
-  var policySingle = policyPanel.add("radiobutton", undefined, "한 시트만 (남는 입력 무시)");
-  var policyAuto   = policyPanel.add("radiobutton", undefined, "자동 분할 (모든 입력 처리)");
-  var policyMaxRow = policyPanel.add("group");
-  var policyMax    = policyMaxRow.add("radiobutton", undefined, "최대");
-  var maxInput     = policyMaxRow.add("edittext", undefined, "3");
-  maxInput.preferredSize = [40, 22];
-  policyMaxRow.add("statictext", undefined, "장까지");
-  policyAuto.value = true;
-
   var optsPanel = dlg.add("panel", undefined, "옵션");
   optsPanel.orientation = "column";
   optsPanel.alignChildren = "left";
@@ -99,8 +85,6 @@
   for (var cmi = 0; cmi < cutMarginRadios.length; cmi++) {
     if (cutMarginRadios[cmi].value) { cutMarginMm = CUT_MARGIN_VALUES[cmi]; break; }
   }
-  var policy = policySingle.value ? "single" : (policyAuto.value ? "auto" : "max");
-  var maxSheets = parseInt(maxInput.text, 10) || 1;
   var autoClose = autoCloseCheck.value;
 
   // ═══ 입력 폴더 ═══
@@ -188,16 +172,13 @@
   var primaryPairs = _sortedPairsByArea(pairs, false);
   for (var pi2 = 0; pi2 < primaryPairs.length; pi2++) queue.push(primaryPairs[pi2]);
 
-  // ═══ 시트 수 상한 ═══
-  var maxSheetCap;
-  if (policy === "single")       maxSheetCap = 1;
-  else if (policy === "max")     maxSheetCap = maxSheets;
-  else                           maxSheetCap = 9999;
+  // ═══ MVP 시트 수 상한: A5 한 시트만 생성 ═══
+  var maxSheetCap = 1;
 
   // ═══ 출력 폴더 ═══
   var outFolder = _resolveOutputFolder(inputFolder);
 
-  // ═══ 시트별 처리 ═══
+  // ═══ 시트 처리 ═══
   var prevInteraction = app.userInteractionLevel;
   app.userInteractionLevel = UserInteractionLevel.DONTDISPLAYALERTS;
 
@@ -294,7 +275,7 @@
 
       if (sheetCount === 0) firstSheetPlacedCount = packResult.placed.length;
 
-      // 다음 시트로 leftover 이월
+      // 한 시트에 들어가지 못한 입력 기록
       var newQueue = [];
       for (var li = 0; li < packResult.leftover.length; li++) {
         newQueue.push(packResult.leftover[li].payload);
@@ -316,6 +297,10 @@
     "기본 사이즈: " + sizeMm + "mm (긴 변 기준)" + (hasCustomSize ? " / 파일명 mm값 반영" : "") +
     "  /  칼선 여백: " + cutMarginMm + "mm  /  bin: " + binWMm + "×" + binHMm + "mm  /  첫 시트 배치: " + firstSheetPlacedCount + "개\n" +
     "전체 입력: " + pairs.length + "개" + (shouldRepeat ? " (원본 우선 + cycling 채움)" : "") + "\n";
+
+  if (queue.length > 0) {
+    msg += "한 시트 정책으로 미배치 입력: " + queue.length + "개\n";
+  }
 
   if (failedItems.length > 0) {
     msg += "\n⚠ 실패 " + failedItems.length + "건:\n";
