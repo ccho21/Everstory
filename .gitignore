@@ -1,5 +1,6 @@
 .DS_Store
 **/.DS_Store
+.omc/
 projects/*/01_original/
 projects/*/02_cutout/
 projects/*/03_output/

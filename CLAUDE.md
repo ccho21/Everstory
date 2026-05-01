@@ -53,7 +53,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 **스크립트 분리 기준**:
 - `Everstory_Grid.jsx` — A5 스티커 시트처럼 여러 개별 스티커를 bin packing 하는 레이아웃
 - `Everstory_NameSticker.jsx` — 다이컷 스타일 이름 스티커 단독 생성/검수용 프로토타입. 현재 시트에는 통합하지 않고 폰트/backing/CutContour 테스트에 사용
-- `Everstory_NameIncludedSheet.jsx` — `a5_border` 안쪽 상하좌우 2mm 안전 여백을 적용한 뒤, 상단 20mm production header에는 `EVERSTORY`와 주문 정보를 배치하고, 헤더 아래 전체 영역에는 사진 스티커만 pack하는 Name Included 시트 배치 프로토타입. 별도 이름 스티커는 생성하지 않음
+- `Everstory_NameIncludedSheet.jsx` — `a5_border` 안쪽 상하좌우 2mm 안전 여백을 적용한 뒤, 상단 18mm production header에 좌측 고객 이름(uppercase)과 우측 ORDER DETAIL을 배치하고, 헤더 아래 전체 영역에는 사진 스티커만 pack하는 Name Included 시트 배치 프로토타입. 사진 스티커 사이즈는 S/M/L/XL = 2/3/4.5/6cm. 별도 이름 스티커는 생성하지 않음
 - `Everstory_CleanOffsetPath.jsx` — 선택한 Offset Path/CompoundPath 안쪽 조각을 제거하는 검수 보조 도구
 - `Everstory_TemplateBuilder.jsx` — 고정 프레임 템플릿/slot PathItem을 생성하는 보조 도구
 

@@ -1,13 +1,13 @@
-// Everstory — Name Included sheet prototype (v10, production header)
+// Everstory — Name Included sheet prototype (v11, customer name header)
 //
 // 목적:
 //   Everstory_Grid.jsx에 통합하기 전, A5 sheet 상단 production header와
 //   사진 다이컷 배치 영역을 검수하는 Illustrator 프로토타입.
 //
 // 동작:
-//   1. 고객 이름 / 재질 / 날짜 / 사진 스티커 크기 / 칼선 여백 선택
+//   1. 고객 이름 / 재질 / 날짜 / 사진 스티커 크기 (S/M/L/XL) / 칼선 여백 선택
 //   2. templates/template_heart.ait 열기
-//   3. 상단 20mm production header에 EVERSTORY + ORDER DETAIL 배치
+//   3. 상단 18mm production header — 좌측 고객 이름, 우측 ORDER DETAIL
 //   4. 헤더 아래 전체 영역에 _clean.psd + _sil.png 사진 스티커를 MaxRects로 pack
 //   5. 저장하지 않고 열린 상태로 둠
 //
@@ -18,15 +18,16 @@
 (function () {
   "use strict";
 
-  var SCRIPT_TITLE = "Everstory Name Included Sheet v10";
+  var SCRIPT_TITLE = "Everstory Name Included Sheet v11";
   var MM_TO_PT = 2.834645;
   var SAFETY_MM = 2;
   var GAP_MM = 2;
-  var HEADER_ZONE_MM = 20;
+  var HEADER_ZONE_MM = 18;
   var REPEAT_FILL_THRESHOLD = 0.82;
 
-  var SIZE_OPTIONS = ["2cm", "3cm", "6cm"];
-  var SIZE_VALUES = [20, 30, 60];
+  var SIZE_OPTIONS = ["S 2cm", "M 3cm", "L 4.5cm", "XL 6cm"];
+  var SIZE_VALUES = [20, 30, 45, 60];
+  var SIZE_LETTERS = ["S", "M", "L", "XL"];
   var CUT_MARGIN_OPTIONS = ["1mm", "2mm"];
   var CUT_MARGIN_VALUES = [1, 2];
 
@@ -86,7 +87,7 @@
   }
 
   var orderDetailText = _buildOrderDetail(options, pairs.length);
-  _drawProductionHeader(doc, printLayer, orderDetailText, bL + safetyPt, bT - safetyPt, binW, headerHPt);
+  _drawProductionHeader(doc, printLayer, options.nameText, orderDetailText, bL + safetyPt, bT - safetyPt, binW, headerHPt);
 
   var freeRects = [{ x: 0, y: headerHPt, w: binW, h: binH - headerHPt }];
   var photoArea = _sumRectAreas(freeRects);
@@ -249,7 +250,7 @@
     }
     cutRadios[0].value = true;
 
-    var hint = dlg.add("statictext", undefined, "상단 20mm 헤더에는 주문 정보만 넣고, 이름 스티커는 생성하지 않습니다.");
+    var hint = dlg.add("statictext", undefined, "상단 18mm 헤더 — 좌측에 고객 이름, 우측에 ORDER DETAIL. 이름 스티커는 생성하지 않습니다.");
     try { hint.graphics.foregroundColor = hint.graphics.newPen(hint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHint) {}
 
     var btnGroup = dlg.add("group");
@@ -302,14 +303,22 @@
   }
 
   function _buildOrderDetail(options, photoCount) {
+    var sizeLabel = _sizeLetter(options.sizeMm) + " " + options.sizeMm + "mm";
     return [
-      "USER: " + options.nameText + "    TYPE: Name Add-on",
-      "SIZE: " + options.sizeMm + "mm    CUT: " + options.cutMarginMm + "mm    PHOTOS: " + photoCount + "    MATERIAL: " + options.material,
+      "TYPE: Name Add-on    MATERIAL: " + options.material,
+      "SIZE: " + sizeLabel + "    CUT: " + options.cutMarginMm + "mm    PHOTOS: " + photoCount,
       "DATE: " + options.orderDate
     ].join("\r");
   }
 
-  function _drawProductionHeader(doc, layer, detailText, binLeft, binTop, binW, headerH) {
+  function _sizeLetter(mm) {
+    for (var i = 0; i < SIZE_VALUES.length; i++) {
+      if (SIZE_VALUES[i] === mm) return SIZE_LETTERS[i];
+    }
+    return "·";
+  }
+
+  function _drawProductionHeader(doc, layer, customerName, detailText, binLeft, binTop, binW, headerH) {
     doc.activeLayer = layer;
 
     var infoFont = _resolveInfoFont();
@@ -317,17 +326,20 @@
     var muted = _rgb(105, 105, 100);
     var ruleColor = _rgb(218, 216, 210);
 
-    var brand = layer.textFrames.add();
-    brand.contents = "EVERSTORY";
-    brand.left = 0;
-    brand.top = 0;
-    var brandAttrs = brand.textRange.characterAttributes;
-    if (infoFont) brandAttrs.textFont = infoFont;
-    brandAttrs.size = 10;
-    brandAttrs.tracking = 180;
-    brandAttrs.fillColor = dark;
-    _moveItemTopLeft(brand, binLeft, binTop - 3 * MM_TO_PT);
-    try { brand.name = "HeaderBrand_Print"; } catch (eBrandName) {}
+    var name = layer.textFrames.add();
+    name.contents = String(customerName).toUpperCase();
+    name.left = 0;
+    name.top = 0;
+    var nameAttrs = name.textRange.characterAttributes;
+    if (infoFont) nameAttrs.textFont = infoFont;
+    nameAttrs.size = 14;
+    nameAttrs.tracking = 80;
+    nameAttrs.fillColor = dark;
+    var nameMaxW = binW * 0.36;
+    var nameMaxH = headerH - 4 * MM_TO_PT;
+    _fitTextToBoxMin(name, nameMaxW, nameMaxH, 14, 9);
+    _moveItemTopLeft(name, binLeft, binTop - 3 * MM_TO_PT);
+    try { name.name = "HeaderName_Print"; } catch (eNameName) {}
 
     var title = layer.textFrames.add();
     title.contents = "ORDER DETAIL";
@@ -352,7 +364,7 @@
     attrs.tracking = 20;
     attrs.fillColor = muted;
 
-    var detailW = binW * 0.68;
+    var detailW = binW * 0.62;
     var detailH = headerH - 7 * MM_TO_PT;
     _fitTextToBoxMin(detail, detailW, detailH, 5.2, 4.2);
     _moveItemTopRight(detail, binLeft + binW, binTop - 6.2 * MM_TO_PT);
