@@ -1,24 +1,30 @@
-# Name Included Sheet v12 — 레이아웃 모드 + 성능 최적화 계획
+# Name Included Sheet v13 — 레이아웃 모드 + 성능 최적화 계획
 
-`Everstory_NameIncludedSheet.jsx` v12 작업 들어가기 전 합의된 설계를 정리한다. 구현 시 이 문서를 기준으로 한다.
+> ⚠️ **이 문서는 v13 계획 단계 기록이며, 현재 운영 기준이 아니다.**
+> 현재 동결 기준선은 [`docs/name_included_v15_baseline.md`](name_included_v15_baseline.md) 참고.
+> 실제 채택 layout 알고리즘은 [`docs/name_included_v14_layout.md`](name_included_v14_layout.md) (shelf/row + justify + round-robin filler) 참고.
+> 본 문서의 per-design k 규칙, Variety 모드, trace 캐싱, math-first planning 등은 v14 에 들어가지 않았다. 추후 재검토 시 참고용으로만 본다.
 
-대상 파일: `Everstory_NameIncludedSheet.jsx` (현재 v11)
+`Everstory_NameIncludedSheet.jsx` v13 작업 들어가기 전 합의된 설계를 정리한다. 구현 시 이 문서를 기준으로 한다.
+
+대상 파일: `Everstory_NameIncludedSheet.jsx` (현재 v12 — `template_cutout.ait` + `info > body` / `info > header` 마이그레이션 완료)
 선행 조건: 성능 최적화 2개 (trace 캐싱 + math-first planning) 가 모드 추가보다 먼저 들어간다.
 
-## 1. 배경 — 왜 v12 인가
+## 1. 배경 — 왜 v13 인가
 
-v11 까지의 동작:
+v12 까지의 동작:
 - 다이얼로그에서 사이즈 1개 선택 (S/M/L/XL)
 - 모든 페어 같은 사이즈 (파일명 `_NNmm` 있으면 override)
 - aspect cell + MaxRects bin packing
 - 1장씩 다 배치한 뒤 남는 공간은 작은 페어부터 cycling fill
+- `info > body` 영역 (템플릿이 정의, A5 − 18mm header) 을 그대로 bin 으로 사용
 
 문제점:
 - aspect cell 때문에 실제 배치 개수가 입력 분포에 따라 ±10 흔들림 → 캡 약속 못함
 - cycling fill 이 작은 디자인 위주로 돌아서 디자인별 분배 불공평
 - `_placePhotoSticker` 가 호출될 때마다 Image Trace 재실행 → 같은 디자인 20번 들어가면 trace 20회 (메모리 위험 1순위)
 
-v12 의 목표:
+v13 의 목표:
 - per-design 최소 복사본 보장 규칙 도입
 - "한 시트에 여러 사이즈 자동 섞기" 신규 모드 (Variety) 추가
 - Image Trace 캐싱 + math-first planning 으로 trace 횟수와 메모리 압박 대폭 감소
@@ -31,7 +37,7 @@ v12 의 목표:
 | **M only** | 모두 30mm | 무시 | per-design k = floor(cap_M / N) |
 | **L only** | 모두 45mm | 무시 | per-design k = floor(cap_L / N) |
 | **XL only** | 모두 60mm | 무시 | per-design k = floor(cap_XL / N) |
-| **Mixed** | 페어별 다름 | 적용 (기본값 + override) | 1장씩 + cycling fill (현재 v11 동작) |
+| **Mixed** | 페어별 다름 | 적용 (기본값 + override) | 1장씩 + cycling fill (현재 v12 동작) |
 | **Variety** | 페어마다 여러 사이즈 | 무시 | descending round fill (큰 사이즈 → 작은 사이즈) |
 
 선택 UI: 라디오 버튼 6개. Variety 선택 시에만 추가로 사이즈 셋 체크박스 활성 (`[XL][L][M][S]`).
@@ -67,24 +73,23 @@ k = max(1, floor(cap / N))
 선택 (b) 채택 — **cap개만 1장씩 배치 + 나머지 leftover 알림에 표시**.
 시작 시점에 거부하지 않음. 사용자가 결과 알림 보고 사이즈 키우거나 디자인 줄임.
 
-### 차이점 (v11 cycling fill 과 비교)
+### 차이점 (v12 cycling fill 과 비교)
 
-- v11: 1장씩 → 남으면 작은 페어부터 cycling. 결과적으로 작은 페어가 더 많이 복제됨 (불공평)
-- v12: k장씩 동등 분배 → cycling은 boundary 채움 용도만. 공평한 분배
+- v12: 1장씩 → 남으면 작은 페어부터 cycling. 결과적으로 작은 페어가 더 많이 복제됨 (불공평)
+- v13: k장씩 동등 분배 → cycling은 boundary 채움 용도만. 공평한 분배
 
 ## 4. 캡 산정 — 정사각 셀 baseline
 
-A5 사용 영역 = (148 - 2×SAFETY_MM) × (210 - 2×SAFETY_MM - HEADER_ZONE_MM)
-            = 144 × 188 mm (SAFETY_MM=2, HEADER_ZONE_MM=18)
+`template_cutout.ait` 의 `info > body` 영역 = 148 × 192 mm 가 baseline (header 18mm 제외, A5 148×210mm 기준). 실제 cap 은 템플릿이 정의한 body PathItem 좌표로 산정한다.
 
-| 사이즈 | 셀 + gap | 격자 | cap |
-|--------|---------|------|-----|
+| 사이즈 | 셀 + gap | 격자 (148×192mm body) | cap |
+|--------|---------|----------------------|-----|
 | S 20mm | 22 × 22 | 6 × 8 | **48** |
-| M 30mm | 32 × 32 | 4 × 5 | **20** |
+| M 30mm | 32 × 32 | 4 × 6 | **24** |
 | L 45mm | 47 × 47 | 3 × 4 | **12** |
 | XL 60mm | 62 × 62 | 2 × 3 | **6** |
 
-**핵심 인사이트**: 긴 변이 같으면 aspect cell 면적은 항상 정사각 셀 면적 이하. 따라서 정사각 cap 으로 약속하면 aspect packing 도 같거나 더 많이 들어감 (다만 packing 효율로 인해 가끔 정사각보다 적게 들어갈 수도 있음 — 5번 섹션의 fallback 참고).
+**핵심 인사이트**: 긴 변이 같으면 aspect cell 면적은 항상 정사각 셀 면적 이하. 따라서 정사각 cap 으로 약속하면 aspect packing 도 같거나 더 많이 들어감 (다만 packing 효율로 인해 가끔 정사각보다 적게 들어갈 수도 있음 — 5번 섹션의 fallback 참고). cap 값은 body PathItem 의 실제 mm 치수로부터 런타임에 계산한다 (하드코딩 금지).
 
 ## 5. Variety 모드 — descending round fill
 
@@ -124,16 +129,16 @@ while 활성 사이즈:
 
 ### Mixed 모드와의 관계
 
-Variety 는 Mixed 와 별도 모드. Mixed 는 v11 그대로 (파일명 `_NNmm` override + 1장씩 + cycling). 사용자가 직접 사이즈를 지정하고 싶을 때 Mixed, 자동으로 큰 것부터 채우길 원할 때 Variety.
+Variety 는 Mixed 와 별도 모드. Mixed 는 v12 그대로 (파일명 `_NNmm` override + 1장씩 + cycling). 사용자가 직접 사이즈를 지정하고 싶을 때 Mixed, 자동으로 큰 것부터 채우길 원할 때 Variety.
 
-## 6. Mixed 모드 (v11 동작 유지)
+## 6. Mixed 모드 (v12 동작 유지)
 
 - 파일명 `_NNmm` override 적용
 - 다이얼로그 기본 사이즈는 override 없는 페어에만 적용
 - 1장씩 배치 + cycling fill (현재 동작)
 - per-design k 규칙 적용 안 함 (사이즈가 페어마다 달라서 cap 산정 애매)
 
-이 모드는 v11 코드 그대로 유지하면서 trace 캐싱 + math-first planning 만 적용.
+이 모드는 v12 코드 그대로 유지하면서 trace 캐싱 + math-first planning 만 적용.
 
 ## 7. 성능 최적화 (모드 무관, 필수 전제)
 
@@ -197,14 +202,14 @@ Phase 2 (DOM, 한 방향):
 ## 8. 메모리 안전장치
 
 - **Hard cap = 60 stickers per sheet**. A5 + 18mm 헤더에서 이론 최대 ~50–60장. 이 이상은 어차피 비현실적이고 Illustrator 가 불안정해짐.
-- 매 placement 후 `app.redraw()` + `$.gc()` 호출 (이미 v11 에 있음, 유지).
+- 매 placement 후 `app.redraw()` + `$.gc()` 호출 (이미 v12 에 있음, 유지).
 - `app.userInteractionLevel = DONTDISPLAYALERTS` 로 dialog 누락 방지 (이미 있음).
 - 임시 doc 은 항상 `finally` 블록에서 close.
 
-## 9. v12 다이얼로그 (제안)
+## 9. v13 다이얼로그 (제안)
 
 ```
-┌─ Everstory Name Included Sheet v12 ─────────────────────────┐
+┌─ Everstory Name Included Sheet v13 ─────────────────────────┐
 │                                                              │
 │  고객 이름:  [ Mina                                       ]  │
 │                                                              │
@@ -238,11 +243,11 @@ Phase 2 (DOM, 한 방향):
    - trace 캐싱 (`_ensurePairCutline`)
    - math-first planning (현재 single-size 동작도 2-phase 로 리팩터)
    - 기존 모드 동작 동일성 검증
-   - 같은 입력으로 v11 vs Phase 1 trace 횟수 비교 (로그)
+   - 같은 입력으로 v12 vs Phase 1 trace 횟수 비교 (로그)
 
 2. **Phase 2 — Single-size 모드의 per-design k 규칙**
    - 현재 다이얼로그는 그대로, 내부 분배 로직만 교체
-   - Mixed 모드는 v11 동작 유지
+   - Mixed 모드는 v12 동작 유지
 
 3. **Phase 3 — Variety 모드**
    - 다이얼로그에 Variety 라디오 + 사이즈 체크박스 추가
@@ -265,12 +270,12 @@ Phase 2 (DOM, 한 방향):
 
 ## 12. 변경되지 않는 것 (regression 가드)
 
-- `info > a5_border` 기준 영역 계산
-- 헤더 18mm + 좌측 이름 + 우측 ORDER DETAIL 레이아웃
+- `info > body` 기준 영역 계산 (사진 pack 영역)
+- `info > header` 기준 영역에 좌측 이름 + 우측 ORDER DETAIL 그리기
 - `PrintData` / `KissCut` 레이어 z-order
 - `CutContour` 스폿 색상 (M=100, SPOT)
 - 파일 저장 안 함 (검수 전용 프로토타입)
 - `_traceAndUnite` 의 Image Trace 파라미터 (threshold 230, pathFidelity 10, etc.)
 - 칼선 여백 옵션 (1mm / 2mm)
 
-이 항목들은 v12 에서도 동일해야 한다. 회귀 발생 시 우선순위 1로 수정.
+이 항목들은 v13 에서도 동일해야 한다. 회귀 발생 시 우선순위 1로 수정.

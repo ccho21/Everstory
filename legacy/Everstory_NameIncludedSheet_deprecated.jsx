@@ -1,4 +1,4 @@
-// Everstory — Name Included sheet prototype (v15, shelf/row + justify + round-robin filler + trace cache)
+// Everstory — Name Included sheet prototype (v14, shelf/row + justify + round-robin filler)
 //
 // 목적:
 //   Everstory_Grid.jsx에 통합하기 전, A5 sheet 상단 production header와
@@ -12,10 +12,7 @@
 //      - 행 간격: 고정 GAP_MM
 //      - 행 내부 cell 가로: 양끝 정렬(justify), gap 늘어남
 //      - 빈 자리 채움: round-robin 으로 입력 사진을 순환
-//   5. v15 stability: 같은 sil.png 는 시트당 1회만 Image Trace, 결과는 hidden TraceStash
-//      레이어에 캐시. placement 마다 cachedCutline.duplicate() 로 처리해서 clipboard 의존 제거
-//      (배치 N개 → trace N회 → trace = unique 페어 수)
-//   6. 저장하지 않고 열린 상태로 둠
+//   5. 저장하지 않고 열린 상태로 둠
 //
 // 사용법: File → Scripts → Other Script → Everstory_NameIncludedSheet.jsx
 
@@ -24,7 +21,7 @@
 (function () {
   "use strict";
 
-  var SCRIPT_TITLE = "Everstory Name Included Sheet v15";
+  var SCRIPT_TITLE = "Everstory Name Included Sheet v14";
   var MM_TO_PT = 2.834645;
   var BODY_PADDING_MM = 1;  // body 안쪽 상하좌우 여백
   var GAP_MM = 2;           // 행 간격(세로) 고정. 행 내부 가로 gap 은 justify 로 늘어남
@@ -138,17 +135,10 @@
 
   _centerPlacedItems(packResult.placed, binW, binH);
 
-  var uniquePairs = _uniquePairsFromPlaced(packResult.placed);
   var failedItems = [];
-  var traceFailures = [];
   var prevInteraction = app.userInteractionLevel;
   app.userInteractionLevel = UserInteractionLevel.DONTDISPLAYALERTS;
   try {
-    traceFailures = _buildCutlineCache(doc, uniquePairs, cutSpot);
-    for (var tf = 0; tf < traceFailures.length; tf++) {
-      failedItems.push(traceFailures[tf]);
-    }
-
     for (var p = 0; p < packResult.placed.length; p++) {
       var pl = packResult.placed[p];
       var aiX = bL + padPt + pl.x;
@@ -163,7 +153,6 @@
       }
     }
   } finally {
-    _cleanupTraceStash(doc);
     app.userInteractionLevel = prevInteraction;
   }
 
@@ -182,7 +171,6 @@
     "사진 입력: " + pairs.length + "개 / 사진 배치: " + packResult.placed.length + "개" +
     (packResult.repeatedCount > 0 ? " (반복 채움 " + packResult.repeatedCount + "개 포함)" : "") + "\n" +
     "행: " + packResult.rows.length + "개 / 행 간격: " + GAP_MM + "mm / 가로: justify (round-robin filler)\n" +
-    "Trace 캐시: unique " + uniquePairs.length + "개 (배치 " + packResult.placed.length + "회 → trace " + uniquePairs.length + "회)\n" +
     "미배치 사진: " + packResult.leftover.length + "개";
 
   if (failedItems.length > 0) {
@@ -471,137 +459,6 @@
 
 
   // ═════════════════════════════════════════════════════════
-  //  CUTLINE TRACE CACHE (v15)
-  //  같은 sil.png 는 시트당 1회만 Image Trace.
-  //  결과 cutline 을 sheet doc 의 hidden TraceStash 레이어에 저장하고
-  //  placement 마다 cachedCutline.duplicate() 로 복제한다.
-  // ═════════════════════════════════════════════════════════
-
-  function _uniquePairsFromPlaced(placedItems) {
-    var seen = {};
-    var unique = [];
-    for (var i = 0; i < placedItems.length; i++) {
-      var pl = placedItems[i];
-      if (!pl || !pl.payload) continue;
-      var key = pl.payload.base;
-      if (seen[key]) continue;
-      seen[key] = true;
-      unique.push(pl.payload);
-    }
-    return unique;
-  }
-
-  function _ensureTraceStashLayer(sheetDoc) {
-    for (var i = 0; i < sheetDoc.layers.length; i++) {
-      if (sheetDoc.layers[i].name === "TraceStash") {
-        sheetDoc.layers[i].visible = true;
-        sheetDoc.layers[i].locked = false;
-        return sheetDoc.layers[i];
-      }
-    }
-    var layer = sheetDoc.layers.add();
-    layer.name = "TraceStash";
-    layer.visible = true;
-    layer.locked = false;
-    return layer;
-  }
-
-  function _cleanupTraceStash(sheetDoc) {
-    for (var i = sheetDoc.layers.length - 1; i >= 0; i--) {
-      if (sheetDoc.layers[i].name === "TraceStash") {
-        try { sheetDoc.layers[i].locked = false; } catch (eLock) {}
-        try { sheetDoc.layers[i].visible = true; } catch (eVis) {}
-        try { sheetDoc.layers[i].remove(); } catch (eRm) {}
-      }
-    }
-  }
-
-  function _buildCutlineCache(sheetDoc, uniquePairs, cutSpot) {
-    var failures = [];
-    if (!uniquePairs || uniquePairs.length === 0) return failures;
-
-    var stash = _ensureTraceStashLayer(sheetDoc);
-
-    for (var i = 0; i < uniquePairs.length; i++) {
-      var pair = uniquePairs[i];
-      if (pair.cachedCutline && pair.cutInfo) continue;
-
-      var tempDoc = null;
-      var copied = false;
-      var localCutInfo = null;
-      try {
-        tempDoc = _newDocForImage();
-        _traceAndUnite(tempDoc, pair.sil);
-
-        var ar = tempDoc.artboards[0].artboardRect;
-        var pngW = ar[2] - ar[0];
-        var pngH = ar[1] - ar[3];
-
-        var cutline = _findCutline(tempDoc);
-        if (!cutline) {
-          throw new Error("trace 결과 path 없음");
-        }
-
-        _stripFills(cutline);
-        var tempCutSpot = _ensureCutContour(tempDoc);
-        _forceCutContourStroke(cutline, tempCutSpot);
-
-        var b = cutline.geometricBounds;
-        localCutInfo = {
-          relL: b[0] / pngW,
-          relT: (pngH - b[1]) / pngH,
-          relW: (b[2] - b[0]) / pngW,
-          relH: (b[1] - b[3]) / pngH
-        };
-
-        tempDoc.selection = null;
-        cutline.selected = true;
-        app.copy();
-        copied = true;
-      } catch (eTrace) {
-        failures.push({
-          base: pair.base,
-          error: (eTrace && eTrace.message) ? eTrace.message : String(eTrace)
-        });
-      } finally {
-        if (tempDoc) {
-          try { tempDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
-        }
-        _safeRedrawAndGC();
-      }
-
-      if (!copied || !localCutInfo) continue;
-
-      try {
-        app.activeDocument = sheetDoc;
-        sheetDoc.activeLayer = stash;
-        sheetDoc.selection = null;
-        app.paste();
-
-        var pasted = sheetDoc.selection;
-        if (!pasted || pasted.length === 0) {
-          throw new Error("paste 결과 비어있음");
-        }
-        var cached = pasted[0];
-        try { cached.hidden = true; } catch (eHide) {}
-        _forceCutContourStroke(cached, cutSpot);
-
-        pair.cachedCutline = cached;
-        pair.cutInfo = localCutInfo;
-        sheetDoc.selection = null;
-      } catch (ePaste) {
-        failures.push({
-          base: pair.base,
-          error: "cache stash 실패: " + ((ePaste && ePaste.message) ? ePaste.message : String(ePaste))
-        });
-      }
-    }
-
-    return failures;
-  }
-
-
-  // ═════════════════════════════════════════════════════════
   //  PHOTO STICKER PLACEMENT
   // ═════════════════════════════════════════════════════════
 
@@ -614,10 +471,6 @@
     var artH = cellHPt - 2 * cutMarginPt;
     if (artW <= 0 || artH <= 0) {
       throw new Error("칼선 여백이 스티커 크기보다 큽니다");
-    }
-
-    if (!pair.cachedCutline || !pair.cutInfo) {
-      throw new Error("cutline cache 없음 (" + pair.base + ")");
     }
 
     app.activeDocument = sheetDoc;
@@ -636,29 +489,67 @@
     var psdH = placed.height;
 
     placed.embed();
+
     _stripEmbeddedPSDPathsNear(printLayer, psdL, psdT, psdW, psdH);
 
-    var cutInfo = pair.cutInfo;
-    sheetDoc.activeLayer = kissLayer;
-    var dup = pair.cachedCutline.duplicate(kissLayer, ElementPlacement.PLACEATBEGINNING);
-    try { dup.hidden = false; } catch (eShow) {}
+    var cutInfo = null;
+    var copied = false;
 
-    var freshCutSpot = _ensureCutContour(sheetDoc);
+    var tempDoc = _newDocForImage();
+    try {
+      _traceAndUnite(tempDoc, pair.sil);
 
-    var targetW = cutInfo.relW * psdW;
-    var targetH = cutInfo.relH * psdH;
-    var nb = dup.geometricBounds;
-    var nw = nb[2] - nb[0];
-    var nh = nb[1] - nb[3];
-    if (nw > 0 && nh > 0) {
-      dup.resize((targetW / nw) * 100, (targetH / nh) * 100);
+      var ar = tempDoc.artboards[0].artboardRect;
+      var pngW = ar[2] - ar[0];
+      var pngH = ar[1] - ar[3];
+
+      var cutline = _findCutline(tempDoc);
+      if (cutline) {
+        _stripFills(cutline);
+        var tempCutSpot = _ensureCutContour(tempDoc);
+        _forceCutContourStroke(cutline, tempCutSpot);
+
+        var b = cutline.geometricBounds;
+        cutInfo = {
+          relL: b[0] / pngW,
+          relT: (pngH - b[1]) / pngH,
+          relW: (b[2] - b[0]) / pngW,
+          relH: (b[1] - b[3]) / pngH
+        };
+
+        tempDoc.selection = null;
+        cutline.selected = true;
+        app.copy();
+        copied = true;
+      }
+    } finally {
+      try { tempDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
+      _safeRedrawAndGC();
     }
-    dup.left = psdL + cutInfo.relL * psdW;
-    dup.top = psdT - cutInfo.relT * psdH;
-    _forceCutContourStroke(dup, freshCutSpot);
+
+    if (!copied || !cutInfo) {
+      throw new Error("trace 결과 path 없음");
+    }
+
+    app.activeDocument = sheetDoc;
+    sheetDoc.activeLayer = kissLayer;
+    app.paste();
+
+    var pasted = sheetDoc.selection;
+    if (pasted && pasted.length > 0) {
+      var item = pasted[0];
+      var targetW = cutInfo.relW * psdW;
+      var targetH = cutInfo.relH * psdH;
+      var nb = item.geometricBounds;
+      var nw = nb[2] - nb[0];
+      var nh = nb[1] - nb[3];
+      item.resize((targetW / nw) * 100, (targetH / nh) * 100);
+      item.left = psdL + cutInfo.relL * psdW;
+      item.top = psdT - cutInfo.relT * psdH;
+      _forceCutContourStroke(item, cutSpot);
+    }
 
     sheetDoc.selection = null;
-    _safeRedrawAndGC();
   }
 
   function _traceAndUnite(doc, silFile) {

@@ -26,6 +26,8 @@ Everstory의 첫 주력 상품은 고객 사진을 중심으로 만드는 **A5 �
 
 이름은 스티커 아이템이 아니라 header metadata로만 사용한다. 헤더 아래 영역은 사진 스티커로만 채운다.
 
+현재 배치 기준은 `Everstory_NameIncludedSheet.jsx` v15 baseline 이다. shelf/row + justify + round-robin filler 레이아웃에 trace cache 안정화를 더한 상태로 동결한다. 운영 기준은 `docs/name_included_v15_baseline.md`, layout 세부 규칙은 `docs/name_included_v14_layout.md` 에 둔다.
+
 ### Name + Mini Decor
 
 후순위 확장 모드. 미니 데코 소량을 추가한다.
@@ -77,9 +79,9 @@ Everstory의 첫 주력 상품은 고객 사진을 중심으로 만드는 **A5 �
 
 ## 구현 상태
 
-- `Everstory_Grid.jsx`: Photo Only에 해당하는 A5 한 시트 다이컷 자동 배치 구현
+- `Everstory_Grid.jsx`: Photo Only에 해당하는 A5 한 시트 다이컷 자동 배치. `template_cutout.ait` 의 `info > body` 영역을 사용한다.
 - `Everstory_NameSticker.jsx`: 다이컷 스타일 이름 스티커 단독 생성 프로토타입. 현재 Name Included 시트에는 통합하지 않는다.
-- `Everstory_NameIncludedSheet.jsx`: `a5_border` 안쪽 상하좌우 2mm 안전 여백을 적용한 뒤, 상단 20mm production header에 `EVERSTORY`와 주문 정보를 배치한다. 헤더 아래 전체 영역에는 사진 스티커만 pack하며, 별도 이름 스티커는 생성하지 않는다.
+- `Everstory_NameIncludedSheet.jsx`: `template_cutout.ait` 의 `info > header` 영역에 좌측 고객 이름(uppercase) + 우측 ORDER DETAIL 을 그리고, `info > body` 영역에 사진 스티커만 pack 한다. v15 baseline 기준 shelf/row + justify + round-robin filler + trace cache 를 사용하며, 별도 이름 스티커는 생성하지 않는다.
 - `Everstory_CleanOffsetPath.jsx`: 수동 Offset Path 검수 중 생긴 내부 조각 제거 보조 도구
 - Name Included Grid 통합: 다음 구현 단계
 - Mini Decor: 후순위 확장

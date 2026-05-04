@@ -2,15 +2,15 @@
 
 Everstory Illustrator 스크립트는 템플릿 안의 특정 **PathItem 이름**을 찾아서 배치 영역을 계산한다. 템플릿을 만들거나 수정할 때는 아래 규칙을 지킨다.
 
-현재 MVP 주력 파이프라인은 `template_heart.ait` + `Everstory_Grid.jsx` 기반 A5 사진 다이컷 스티커 시트다. PhotoStrip 배치 상품은 retired이며, `template_4cut.ait` 관련 내용은 `Everstory_TemplateBuilder.jsx` 보조 유틸리티 기준으로만 유지한다.
+현재 MVP 주력 파이프라인은 `template_cutout.ait` + `Everstory_Grid.jsx` / `Everstory_NameIncludedSheet.jsx` 기반 A5 사진 다이컷 스티커 시트다. PhotoStrip 배치 상품은 retired이며, `template_4cut.ait` 관련 내용은 `Everstory_TemplateBuilder.jsx` 보조 유틸리티 기준으로만 유지한다.
 
 ## 핵심 규칙
 
-- `template_heart.ait`의 `a5_border`는 `info` 레이어 안에 둔다.
+- `template_cutout.ait`의 `body` / `header` / `header_border` / `border` / `reg_border`는 모두 `info` 레이어 안에 둔다.
 - `template_4cut.ait`의 `a5_border`는 `Info` 레이어 안에 둔다.
 - `template_4cut.ait`의 `slot_01..slot_N`은 `Frame` 레이어 안에 둔다. 이 규칙은 TemplateBuilder 보조 템플릿용이다.
 - 스크립트가 찾는 이름은 path 자체의 이름이다. 그룹 이름이나 레이어 이름만 바꾸면 안 된다.
-- `a5_border`, `slot_01` 같은 이름은 대소문자와 철자를 그대로 쓴다.
+- `body`, `header`, `a5_border`, `slot_01` 같은 이름은 대소문자와 철자를 그대로 쓴다.
 - 일반 사각형은 `PathItem`, 라운드/복합 슬롯은 `CompoundPathItem`이어도 된다.
 - 기준 path는 프린트용 디자인이 아니라 스크립트 기준선이다. 보이지 않아도 되지만 삭제하면 안 된다.
 
@@ -40,25 +40,43 @@ Everstory Illustrator 스크립트는 템플릿 안의 특정 **PathItem 이름*
 
 수동으로 처음부터 만들 필요가 있는 경우에만 아래 절차를 따른다.
 
-## `a5_border` 만들기
+## `template_cutout.ait` PathItem 만들기
 
-`a5_border`는 템플릿마다 의미가 다르다.
+`info` 레이어 안에 다음 5개 path 를 둔다. 모두 스크립트 기준선이며 `CutContour` 스폿을 적용하지 않는다.
 
-- `template_heart.ait`: `Everstory_Grid.jsx`가 사용할 실제 그리드 영역이다. 하단 배너를 제외한 영역만 감싼다.
-- `template_4cut.ait`: `Everstory_TemplateBuilder.jsx`가 사용할 A5 전체 기준선이다. `Info > a5_border` 크기는 148×210mm로 둔다.
+| 이름 | 의미 | 스크립트 사용 |
+|------|------|--------------|
+| `border` | A5 전체 영역 (148×210mm) | 시각 가이드. 스크립트 무시 |
+| `reg_border` | Summa D75 컷팅 안전 영역 | 시각 가이드. 스크립트 무시 |
+| `header` | 상단 15mm production header 박스 | `Everstory_NameIncludedSheet.jsx` / `Everstory_mixed.jsx` 가 ORDER DETAIL 그리는 영역으로 사용 |
+| `header_border` | header 와 body 사이 15mm 구분선 | 시각 가이드. 스크립트 무시 |
+| `body` | A5 − header (148×195mm) | `Everstory_mixed.jsx` / `Everstory_NameIncludedSheet.jsx` 가 사진 pack 영역으로 사용 |
 
-1. Illustrator에서 대상 템플릿을 연다.
-2. Layers 패널에서 `info` 또는 `Info` 레이어를 만든다. 이미 있으면 그대로 사용한다.
-3. Rectangle Tool로 기준 영역을 사각형으로 그린다.
-4. Layers 패널에서 방금 만든 사각형 PathItem을 찾아 이름을 `a5_border`로 바꾼다.
-5. `template_heart.ait`에서는 배너 영역을 `a5_border` 밖에 둔다. `template_4cut.ait`에서는 `a5_border`를 A5 전체 크기로 유지한다.
-6. 저장한다.
+1. Illustrator에서 `template_cutout.ait` 를 연다.
+2. Layers 패널에서 `info` 레이어를 만든다 (이미 있으면 그대로 사용).
+3. Rectangle Tool 로 위 표의 5개 영역을 각각 그린다.
+4. Layers 패널에서 각 path 이름을 정확히 `border` / `reg_border` / `header` / `header_border` / `body` 로 바꾼다.
+5. 저장한다.
 
 권장:
-- `template_heart.ait`의 `a5_border`는 A5 전체가 아니라 실제 스티커 grid 영역만 감싼다.
-- `template_4cut.ait`의 `Info > a5_border`는 148×210mm A5 전체를 감싼다. Frame은 이 안에서 상/좌/우 3mm, 하단 15mm margin을 두고 생성된다.
-- `template_heart.ait`에서 하단 브랜드/QR 배너를 쓸 경우, 배너 높이만큼 `a5_border` 하단을 위로 올린다.
-- 기준 사각형의 fill/stroke는 없어도 된다. 보이게 두고 싶으면 연한 색/점선으로 두되, 컷터용 `CutContour`를 적용하지 않는다.
+- `body` 와 `header` 의 좌표가 정확해야 스크립트가 의도한 위치에 사진/텍스트를 배치한다. 두 path 가 겹치거나 어긋나지 않도록 한다.
+- `header_border` 는 단순히 시각 구분용이라 `header` 와 `body` 사이 가로선 PathItem 1개로 둬도 된다.
+- 기준 사각형의 fill/stroke 는 없어도 된다. 보이게 두고 싶으면 연한 색/점선으로 두되, 컷터용 `CutContour` 를 적용하지 않는다.
+- 마케팅 배너 (브랜드명 + QR) 는 별도 디자인 레이어에 둔다. `info` 레이어 안의 5개 기준 path 와 분리한다.
+
+## `template_4cut.ait` 의 `a5_border` 만들기
+
+`template_4cut.ait` 는 `Everstory_TemplateBuilder.jsx` 가 사용하는 보조 템플릿이며 `template_cutout.ait` 와 구조가 다르다.
+
+1. Illustrator에서 `template_4cut.ait` 를 연다.
+2. Layers 패널에서 `Info` 레이어를 만든다 (이미 있으면 그대로 사용).
+3. Rectangle Tool 로 148×210mm A5 전체를 사각형으로 그린다.
+4. 그 PathItem 이름을 `a5_border` 로 바꾼다.
+5. 저장한다.
+
+권장:
+- `Info > a5_border` 는 148×210mm A5 전체를 감싼다. Frame 은 이 안에서 상/좌/우 3mm, 하단 15mm margin 을 두고 생성된다.
+- 기준 사각형의 fill/stroke 는 없어도 된다.
 
 ## `slot_01..slot_N` 확인/수정
 
@@ -89,7 +107,7 @@ Illustrator에서 path 이름을 정확히 바꾸는 것이 가장 중요하다.
 2. `info` 레이어를 펼친다.
 3. `<Path>` 또는 `<Compound Path>` 항목을 찾는다.
 4. 항목 이름을 더블클릭한다.
-5. `a5_border` 또는 `slot_01`처럼 정확한 이름을 입력한다.
+5. `body`, `header`, `a5_border`, `slot_01` 처럼 정확한 이름을 입력한다.
 
 주의:
 - 캔버스 위 텍스트로 `slot_01`을 써도 스크립트는 찾지 못한다.
@@ -100,14 +118,15 @@ Illustrator에서 path 이름을 정확히 바꾸는 것이 가장 중요하다.
 
 | 템플릿 | 스크립트 | 필수 PathItem |
 |---|---|---|
-| `template_heart.ait` | `Everstory_Grid.jsx` | `info > a5_border` |
+| `template_cutout.ait` | `Everstory_Grid.jsx` | `info > body` |
+| `template_cutout.ait` | `Everstory_NameIncludedSheet.jsx` | `info > body` + `info > header` |
 | `template_4cut.ait` 재생성 | `Everstory_TemplateBuilder.jsx` | `Info > a5_border` 기준, `Frame > slot_01..slot_N`, `KissCut` 자동 생성 |
 
 ## 자주 나는 문제
 
-### 스크립트가 `a5_border`를 못 찾음
+### 스크립트가 `body` 또는 `header` 를 못 찾음
 - `info` 레이어가 없는지 확인한다.
-- path 이름이 정확히 `a5_border`인지 확인한다.
+- path 이름이 정확히 `body` / `header` 인지 확인한다 (대소문자, 공백 주의).
 - 그룹 이름만 바꾼 것은 아닌지 확인한다.
 
 ### TemplateBuilder 템플릿에서 슬롯 확인이 필요함
@@ -120,6 +139,6 @@ Illustrator에서 path 이름을 정확히 바꾸는 것이 가장 중요하다.
 - 프레임용 선과 clipping용 slot path를 분리한다.
 - 슬롯 번호 순서가 원하는 사진 순서와 맞는지 확인한다.
 
-### 컷터가 슬롯 기준선을 인식함
-- `a5_border`와 `slot_01..slot_N`에는 `CutContour` 스폿을 적용하지 않는다.
+### 컷터가 기준선을 인식함
+- `body`, `header`, `header_border`, `border`, `reg_border`, `a5_border`, `slot_01..slot_N` 같은 기준 path 에는 `CutContour` 스폿을 적용하지 않는다.
 - 컷터가 읽을 외곽선만 별도 path로 만들고 `CutContour`를 적용한다.

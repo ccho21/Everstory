@@ -1,44 +1,70 @@
-// Everstory — Name Included sheet prototype (v15, shelf/row + justify + round-robin filler + trace cache)
+// Everstory — Mixed-size photo sheet (Name Included header + 디자인 cap + multiselect)
 //
 // 목적:
-//   Everstory_Grid.jsx에 통합하기 전, A5 sheet 상단 production header와
-//   사진 다이컷 배치 영역을 검수하는 Illustrator 프로토타입.
+//   Name Included 시트 위에 사진 스티커를 단일 사이즈 (S/M/L/XL) 또는
+//   Mixed (45/30/20) 으로 배치한다. 다이얼로그 ListBox 에서 사용할 페어를 직접
+//   multiselect 하고, 사이즈별 디자인 cap 에 자동으로 맞춘다 (auto-cap).
+//
+// 디자인 cap (단일 사이즈, 각 디자인 ~4-5회 등장 보장 + shelf 효율 85%):
+//   20mm → 10 / 30mm → 5 / 45mm → 2 / 60mm → 1
+//   Mixed → 1 디자인 고정 (45×6 + 30×4 + 20×18 = 28 슬롯, A5 body 채움률 ~83%)
 //
 // 동작:
-//   1. 고객 이름 / 재질 / 날짜 / 사진 스티커 크기 (S/M/L/XL) / 칼선 여백 선택
-//   2. templates/template_cutout.ait 열기 (info > body, info > header PathItem 사용)
-//   3. info > header 영역에 좌측 고객 이름 + 우측 ORDER DETAIL 배치
-//   4. info > body 영역에 _clean.psd + _sil.png 사진 스티커를 shelf/row 로 pack
-//      - 행 간격: 고정 GAP_MM
-//      - 행 내부 cell 가로: 양끝 정렬(justify), gap 늘어남
-//      - 빈 자리 채움: round-robin 으로 입력 사진을 순환
-//   5. v15 stability: 같은 sil.png 는 시트당 1회만 Image Trace, 결과는 hidden TraceStash
-//      레이어에 캐시. placement 마다 cachedCutline.duplicate() 로 처리해서 clipboard 의존 제거
-//      (배치 N개 → trace N회 → trace = unique 페어 수)
-//   6. 저장하지 않고 열린 상태로 둠
+//   1. 02_cutout 폴더 선택
+//   2. 다이얼로그: 고객 이름 / 헤더 정보 / 페어 ListBox (multiselect) /
+//      사이즈 (S/M/L/XL/Mixed) / 칼선 여백
+//      - 사이즈 변경 시 cap 갱신 + 선택 자동 trim (auto-cap)
+//   3. templates/template_cutout.ait 열기 (info > body, info > header PathItem 사용)
+//   4. info > header 영역에 좌측 고객 이름 + 우측 ORDER DETAIL 배치
+//   5. info > body 영역에 선택한 페어를 shelf/row 로 pack
+//      - 단일 사이즈: 파일명 _NNmm override 적용
+//      - Mixed: 1 디자인을 45×6 + 30×4 + 20×18 로 복제 후 큰 거 우선 정렬
+//   6. v15 stability: 같은 sil.png 는 시트당 1회만 Image Trace, hidden TraceStash 캐시
+//   7. 03_output 폴더에 .ai 자동 저장 (timestamp_size_sheet01.ai)
 //
-// 사용법: File → Scripts → Other Script → Everstory_NameIncludedSheet.jsx
+// 사용법: File → Scripts → Other Script → Everstory_mixed.jsx
 
 // #target illustrator
 
 (function () {
   "use strict";
 
-  var SCRIPT_TITLE = "Everstory Name Included Sheet v15";
+  var SCRIPT_VARIANT = "v18 multiselect cap";
+  var SCRIPT_TITLE = "Everstory Mixed Sheet (" + SCRIPT_VARIANT + ")";
   var MM_TO_PT = 2.834645;
-  var BODY_PADDING_MM = 1;  // body 안쪽 상하좌우 여백
-  var GAP_MM = 2;           // 행 간격(세로) 고정. 행 내부 가로 gap 은 justify 로 늘어남
+  var BODY_PADDING_MM = 0;  // body 안쪽 상하좌우 여백 (0 = body PathItem 까지 끝까지 사용)
+  var GAP_DEFAULT_MM = 1.5; // 다이얼로그에서 미입력/범위 밖 입력 시 fallback. 모든 인접 사진의 가로/세로 gap 고정. dense + cluster center 통일
+  var GAP_MIN_MM = 0.5;     // 다이얼로그 input 검증 하한
+  var GAP_MAX_MM = 5.0;     // 다이얼로그 input 검증 상한
 
-  var SIZE_OPTIONS = ["S 2cm", "M 3cm", "L 4.5cm", "XL 6cm"];
-  var SIZE_VALUES = [20, 30, 45, 60];
-  var SIZE_LETTERS = ["S", "M", "L", "XL"];
+  // A5 body 148×195mm, padding 0, gap 1.5mm 기준 사이즈별 셀 수.
+  // minRepeat 동적 계산 baseline (floor(slots / designCount)).
+  var SLOTS_BY_SIZE = { 20: 54, 30: 24, 45: 12, 60: 6 };
+
+  // minRepeat 미세조정 override. key = "{sizeMm}_{designCount}", value = 강제 minRepeat 정수.
+  // 예: "30_5": 3 → 30mm 5디자인일 때 floor(24/5)=4 대신 3 으로 강제.
+  // 비워두면 동적 계산 그대로 사용. 운영 검수 후 필요한 case 만 채워 넣는다.
+  var MIN_REPEAT_OVERRIDE = {};
+
+  var MIXED_SIZE_VALUE = -1;     // sentinel for Mixed mode in SIZE_VALUES
+  var MIXED_MAX_DESIGNS = 1;     // Mixed 는 디자인 1개만 사용
+  var MIXED_45_COPIES = 6;       // Mixed: 45mm 6장 (행 2개)
+  var MIXED_30_COPIES = 4;       // Mixed: 30mm 4장 (행 1개)
+  var MIXED_20_COPIES = 18;      // Mixed: 20mm 18장 (행 3개)
+  // 행 구성: 45×3 두 행 + 30×4 한 행 + 20×6 세 행 = 28 슬롯
+  // A5 body 148×195mm (header 15mm 제외) / padding 0 / gap 1.5mm 기준 세로 186.5mm 사용 (여유 8.5mm)
+
+  // 단일 사이즈 디자인 cap. 각 디자인 ~4-5회 등장 보장 + shelf 효율 85% 기준
+  var DESIGN_LIMIT_BY_SIZE_MM = { 20: 10, 30: 5, 45: 2, 60: 1 };
+
+  var SIZE_OPTIONS = ["S 2cm", "M 3cm", "L 4.5cm", "XL 6cm", "Mixed 45/30/20"];
+  var SIZE_VALUES = [20, 30, 45, 60, MIXED_SIZE_VALUE];
+  var SIZE_LETTERS = ["S", "M", "L", "XL", "MIX"];
   var CUT_MARGIN_OPTIONS = ["1mm", "2mm"];
   var CUT_MARGIN_VALUES = [1, 2];
   var MATERIAL_OPTIONS = ["White", "Pearl Grey", "Silver", "Gold"];
 
   var testConfig = $.global.__EVERSTORY_NAME_INCLUDED_TEST__;
-  var options = (testConfig && testConfig.options) ? testConfig.options : _showDialog();
-  if (!options) return;
 
   var inputFolder = (testConfig && testConfig.inputFolder) ?
     new Folder(testConfig.inputFolder) :
@@ -50,6 +76,12 @@
     alert("선택한 폴더에 _clean.psd + _sil.png 페어가 없습니다.");
     return;
   }
+
+  var defaultCustomerName = _deriveDefaultCustomerName(inputFolder);
+  var options = (testConfig && testConfig.options) ? testConfig.options : _showDialog(pairs, defaultCustomerName);
+  if (!options) return;
+  // testConfig 경로 호환: gapMm 미지정이면 default 적용
+  if (options.gapMm == null) options.gapMm = GAP_DEFAULT_MM;
 
   var templateFile = _resolveTemplate();
   if (!templateFile || !templateFile.exists) {
@@ -69,7 +101,7 @@
   }
 
   var padPt = BODY_PADDING_MM * MM_TO_PT;
-  var gapPt = GAP_MM * MM_TO_PT;
+  var gapPt = options.gapMm * MM_TO_PT;
   var cutMarginPt = options.cutMarginMm * MM_TO_PT;
 
   var bodyBounds = bodyPath.geometricBounds;
@@ -95,46 +127,85 @@
   kissLayer.name = "KissCut";
   var cutSpot = _ensureCutContour(doc);
 
-  var orderDetail = _buildOrderDetail(options, pairs.length);
-  _drawProductionHeader(doc, printLayer, options.nameText, orderDetail, headerL, headerT, headerW, headerH);
+  // 다이얼로그에서 selectedPairs 받음. testConfig (selectedPairs 없음) 면 pairs 전체 사용.
+  var layoutPairs = (options.selectedPairs && options.selectedPairs.length > 0) ?
+    options.selectedPairs : pairs;
+
+  // 안전판: testConfig 경로에서도 cap 위반은 잘라낸다 (다이얼로그는 auto-cap 으로 자체 보장).
+  var designLimit = options.isMixed ? MIXED_MAX_DESIGNS : (DESIGN_LIMIT_BY_SIZE_MM[options.sizeMm] || layoutPairs.length);
+  if (layoutPairs.length > designLimit) {
+    var capped = [];
+    for (var ci = 0; ci < designLimit; ci++) capped.push(layoutPairs[ci]);
+    layoutPairs = capped;
+  }
+  var totalIgnoredCount = pairs.length - layoutPairs.length;
 
   var anyTooBig = false;
-  var hasCustomSize = false;
-  for (var pi = 0; pi < pairs.length; pi++) {
+  for (var pi = 0; pi < layoutPairs.length; pi++) {
     try {
-      _measurePairAspect(pairs[pi]);
+      _measurePairAspect(layoutPairs[pi]);
     } catch (eAsp) {
-      pairs[pi].aspect = 1;
+      layoutPairs[pi].aspect = 1;
     }
-    pairs[pi].sizeMm = _resolvePairSizeMm(pairs[pi], options.sizeMm);
-    if (pairs[pi].sizeMm !== options.sizeMm) hasCustomSize = true;
-    var pairSizePt = pairs[pi].sizeMm * MM_TO_PT;
-    if (pairs[pi].aspect >= 1) {
-      pairs[pi].cellW = pairSizePt;
-      pairs[pi].cellH = pairSizePt / pairs[pi].aspect;
+    if (options.isMixed) {
+      // Mixed: 20mm filler cell 이 시트에 들어가는지 검사
+      var minItem = _itemForSize(layoutPairs[pi], 20);
+      if (minItem.w > binW || minItem.h > binH) anyTooBig = true;
     } else {
-      pairs[pi].cellW = pairSizePt * pairs[pi].aspect;
-      pairs[pi].cellH = pairSizePt;
+      layoutPairs[pi].sizeMm = options.sizeMm;
+      var pairSizePt = options.sizeMm * MM_TO_PT;
+      if (layoutPairs[pi].aspect >= 1) {
+        layoutPairs[pi].cellW = pairSizePt;
+        layoutPairs[pi].cellH = pairSizePt / layoutPairs[pi].aspect;
+      } else {
+        layoutPairs[pi].cellW = pairSizePt * layoutPairs[pi].aspect;
+        layoutPairs[pi].cellH = pairSizePt;
+      }
+      if (layoutPairs[pi].cellW > binW || layoutPairs[pi].cellH > binH) anyTooBig = true;
     }
-    if (pairs[pi].cellW > binW || pairs[pi].cellH > binH) anyTooBig = true;
   }
 
   if (anyTooBig) {
     alert("일부 사진 셀이 info > body 영역보다 큽니다. 사진 스티커 크기를 줄이세요.");
+    try { doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eABig) {}
     return;
   }
 
-  var queue = [];
-  var primaryPairs = _sortedPairsForShelf(pairs, false);
-  for (var pi2 = 0; pi2 < primaryPairs.length; pi2++) queue.push(primaryPairs[pi2]);
+  var orderDetail = _buildOrderDetail(options, layoutPairs.length);
+  _drawProductionHeader(doc, printLayer, options.nameText, orderDetail, headerL, headerT, headerW, headerH);
 
-  var packItems = [];
-  for (var qi = 0; qi < queue.length; qi++) {
-    packItems.push({ w: queue[qi].cellW, h: queue[qi].cellH, payload: queue[qi] });
+  // minRepeat 결정 — 단일 사이즈 모드에서만 의미 있음. Mixed 는 1디자인 고정 + 28슬롯 패턴이라 의미 없음 (표시용 1).
+  var minRepeat = options.isMixed ? 1 : _resolveMinRepeat(options.sizeMm, layoutPairs.length);
+
+  var packResult;
+  if (options.isMixed) {
+    // Mixed: 1 디자인을 45×6 + 30×4 + 20×18 로 복제. 큰 거 우선 정렬.
+    var pair = layoutPairs[0];
+    var mixedItems = [];
+    var c;
+    for (c = 0; c < MIXED_45_COPIES; c++) mixedItems.push(_itemForSize(pair, 45));
+    for (c = 0; c < MIXED_30_COPIES; c++) mixedItems.push(_itemForSize(pair, 30));
+    for (c = 0; c < MIXED_20_COPIES; c++) mixedItems.push(_itemForSize(pair, 20));
+    mixedItems = _sortShelfItemsDesc(mixedItems);
+
+    var mixedPack = { rows: [], placed: [], leftover: [], repeatedCount: 0 };
+    mixedPack.leftover = _appendShelfRowsOnce(mixedPack, mixedItems, binW, binH, gapPt);
+    // 1 디자인이라 첫 placement 1개를 빼고 모두 repeated 로 카운트
+    mixedPack.repeatedCount = Math.max(0, mixedPack.placed.length - 1);
+    packResult = mixedPack;
+  } else {
+    var queue = [];
+    var primaryPairs = _sortedPairsForShelf(layoutPairs, false);
+    for (var pi2 = 0; pi2 < primaryPairs.length; pi2++) queue.push(primaryPairs[pi2]);
+
+    var packItems = [];
+    for (var qi = 0; qi < queue.length; qi++) {
+      packItems.push({ w: queue[qi].cellW, h: queue[qi].cellH, payload: queue[qi] });
+    }
+
+    var fillerItems = _buildShelfFillItems(layoutPairs);
+    packResult = _shelfPack(packItems, fillerItems, binW, binH, gapPt, minRepeat);
   }
-
-  var fillerItems = _buildShelfFillItems(pairs);
-  var packResult = _shelfPack(packItems, fillerItems, binW, binH, gapPt);
 
   _centerPlacedItems(packResult.placed, binW, binH);
 
@@ -171,19 +242,54 @@
   try { printLayer.move(doc, ElementPlacement.PLACEATEND); } catch (ePrint) {}
   doc.selection = null;
 
+  // 03_output 자동 저장 (legacy Everstory_Grid.jsx 의 _saveAi/_timestamp 패턴 준수)
+  var savedPath = "";
+  var saveError = "";
+  try {
+    var outFolder = _resolveOutputFolder(inputFolder);
+    var sizeTag = options.isMixed ? "MIX" : (options.sizeMm + "mm");
+    var fileName = _timestamp() + "_" + sizeTag + "_sheet01.ai";
+    var saveFile = new File(outFolder.fsName + "/" + fileName);
+    _saveAi(doc, saveFile);
+    savedPath = saveFile.fsName;
+  } catch (eSave) {
+    saveError = (eSave && eSave.message) ? eSave.message : String(eSave);
+  }
+
+  var sizeLineText;
+  if (options.isMixed) {
+    sizeLineText = "Mixed: 45×" + MIXED_45_COPIES + " + 30×" + MIXED_30_COPIES + " + 20×" + MIXED_20_COPIES +
+      " (디자인 1개) / 칼선 여백: " + options.cutMarginMm + "mm";
+  } else {
+    sizeLineText = "기본 사이즈: " + options.sizeMm + "mm (cap " + designLimit + ")" +
+      " / 칼선 여백: " + options.cutMarginMm + "mm";
+  }
+
+  var inputLine = "사진 입력: " + pairs.length + "개 / 사용: " + layoutPairs.length + "개";
+  if (totalIgnoredCount > 0) inputLine += " / 제외: " + totalIgnoredCount + "개";
+  inputLine += " / 사진 배치: " + packResult.placed.length + "개";
+
+  var saveLine = savedPath ?
+    ("저장: " + savedPath) :
+    ("저장 실패: " + (saveError || "unknown") + " — Illustrator 에서 직접 저장하세요.");
+
   var msg =
-    "완료: Name Included 시트 프로토타입 생성\n" +
-    "저장하지 않았으니 Illustrator에서 검수하세요.\n\n" +
+    "완료: Name Included 시트 생성\n\n" +
+    "스크립트: " + SCRIPT_VARIANT + "\n" +
+    "실행 파일: " + _scriptFileHint() + "\n" +
     "고객 이름: " + options.nameText + "\n" +
     "헤더: info > header / 이름 스티커: 없음\n" +
     "오더 디테일: " + _orderDetailToString(orderDetail) + "\n" +
-    "기본 사이즈: " + options.sizeMm + "mm" + (hasCustomSize ? " / 파일명 mm값 반영" : "") +
-    " / 칼선 여백: " + options.cutMarginMm + "mm\n" +
-    "사진 입력: " + pairs.length + "개 / 사진 배치: " + packResult.placed.length + "개" +
+    sizeLineText + "\n" +
+    inputLine +
     (packResult.repeatedCount > 0 ? " (반복 채움 " + packResult.repeatedCount + "개 포함)" : "") + "\n" +
-    "행: " + packResult.rows.length + "개 / 행 간격: " + GAP_MM + "mm / 가로: justify (round-robin filler)\n" +
+    "행: " + packResult.rows.length + "개 / gap: " + options.gapMm + "mm (가로/세로 모두 고정, dense+cluster center, 세로 center 정렬)\n" +
+    (options.isMixed
+      ? "Mixed 슬롯: 45×" + MIXED_45_COPIES + " + 30×" + MIXED_30_COPIES + " + 20×" + MIXED_20_COPIES + " = " + (MIXED_45_COPIES + MIXED_30_COPIES + MIXED_20_COPIES) + " (디자인 1개 고정)\n"
+      : "minRepeat 보장: " + minRepeat + "회 (slots " + SLOTS_BY_SIZE[options.sizeMm] + " / 디자인 " + layoutPairs.length + ")\n") +
     "Trace 캐시: unique " + uniquePairs.length + "개 (배치 " + packResult.placed.length + "회 → trace " + uniquePairs.length + "회)\n" +
-    "미배치 사진: " + packResult.leftover.length + "개";
+    "미배치 사진: " + packResult.leftover.length + "개\n" +
+    saveLine;
 
   if (failedItems.length > 0) {
     msg += "\n\ntrace 실패 " + failedItems.length + "건:";
@@ -206,7 +312,7 @@
   //  UI
   // ═════════════════════════════════════════════════════════
 
-  function _showDialog() {
+  function _showDialog(pairsArg, defaultCustomerName) {
     var dlg = new Window("dialog", SCRIPT_TITLE);
     dlg.orientation = "column";
     dlg.alignChildren = "fill";
@@ -217,7 +323,8 @@
     namePanel.orientation = "column";
     namePanel.alignChildren = "fill";
     namePanel.margins = [14, 18, 14, 14];
-    var nameInput = namePanel.add("edittext", undefined, "Mina");
+    var initialName = (defaultCustomerName && defaultCustomerName.length > 0) ? defaultCustomerName : "Mina";
+    var nameInput = namePanel.add("edittext", undefined, initialName);
     nameInput.preferredSize = [320, 24];
 
     var detailPanel = dlg.add("panel", undefined, "헤더 정보");
@@ -256,7 +363,68 @@
     for (var si = 0; si < SIZE_OPTIONS.length; si++) {
       sizeRadios.push(sizePanel.add("radiobutton", undefined, SIZE_OPTIONS[si]));
     }
-    sizeRadios[1].value = true;
+    sizeRadios[1].value = true;  // 기본 30mm
+
+    var pairsPanel = dlg.add("panel", undefined, "사용할 사진 페어 (multi-select)");
+    pairsPanel.orientation = "column";
+    pairsPanel.alignChildren = "fill";
+    pairsPanel.margins = [14, 18, 14, 14];
+    pairsPanel.spacing = 6;
+
+    var pairItems = [];
+    for (var pli = 0; pli < pairsArg.length; pli++) pairItems.push(pairsArg[pli].base);
+    var pairsListbox = pairsPanel.add("listbox", undefined, pairItems, { multiselect: true });
+    pairsListbox.preferredSize = [340, 180];
+
+    var countRow = pairsPanel.add("group");
+    countRow.orientation = "row";
+    countRow.alignChildren = "left";
+    countRow.spacing = 8;
+    var countLabel = countRow.add("statictext", undefined, "선택: 0 / 0");
+    countLabel.preferredSize = [180, 18];
+    var hintLabel = countRow.add("statictext", undefined, "사이즈에 따라 cap 자동 적용");
+    try { hintLabel.graphics.foregroundColor = hintLabel.graphics.newPen(hintLabel.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHi) {}
+
+    function _currentSizeMm() {
+      for (var i = 0; i < sizeRadios.length; i++) {
+        if (sizeRadios[i].value) return SIZE_VALUES[i];
+      }
+      return SIZE_VALUES[1];
+    }
+    function _capForSize(sizeMm) {
+      if (sizeMm === MIXED_SIZE_VALUE) return MIXED_MAX_DESIGNS;
+      return DESIGN_LIMIT_BY_SIZE_MM[sizeMm] || pairsArg.length;
+    }
+    var _syncing = false;
+    function _syncCapAndCount() {
+      if (_syncing) return;
+      _syncing = true;
+      try {
+        var cap = _capForSize(_currentSizeMm());
+        var sel = pairsListbox.selection;
+        var selLen = sel ? sel.length : 0;
+        if (sel && selLen > cap) {
+          var trimmed = [];
+          for (var t = 0; t < cap; t++) trimmed.push(sel[t]);
+          pairsListbox.selection = trimmed;
+          selLen = cap;
+        }
+        countLabel.text = "선택: " + selLen + " / " + cap;
+      } finally {
+        _syncing = false;
+      }
+    }
+    pairsListbox.onChange = _syncCapAndCount;
+    for (var sri = 0; sri < sizeRadios.length; sri++) {
+      sizeRadios[sri].onClick = _syncCapAndCount;
+    }
+
+    // 기본 선택: 처음 cap 개 자동 선택
+    var _initialCap = _capForSize(_currentSizeMm());
+    var _initialSel = [];
+    for (var isi = 0; isi < pairItems.length && isi < _initialCap; isi++) _initialSel.push(pairsListbox.items[isi]);
+    pairsListbox.selection = _initialSel;
+    _syncCapAndCount();
 
     var cutPanel = dlg.add("panel", undefined, "칼선 여백");
     cutPanel.orientation = "row";
@@ -267,6 +435,16 @@
       cutRadios.push(cutPanel.add("radiobutton", undefined, CUT_MARGIN_OPTIONS[cm]));
     }
     cutRadios[0].value = true;
+
+    var gapPanel = dlg.add("panel", undefined, "사진 간격 (mm, 0.1mm 단위)");
+    gapPanel.orientation = "row";
+    gapPanel.alignChildren = "center";
+    gapPanel.margins = [14, 18, 14, 14];
+    gapPanel.spacing = 8;
+    var gapInput = gapPanel.add("edittext", undefined, String(GAP_DEFAULT_MM));
+    gapInput.preferredSize = [60, 24];
+    var gapHint = gapPanel.add("statictext", undefined, "default " + GAP_DEFAULT_MM + " / 범위 " + GAP_MIN_MM + "–" + GAP_MAX_MM + "mm");
+    try { gapHint.graphics.foregroundColor = gapHint.graphics.newPen(gapHint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eGH) {}
 
     var hint = dlg.add("statictext", undefined, "info > header — 좌측 고객 이름, 우측 ORDER DETAIL. 이름 스티커는 생성하지 않습니다.");
     try { hint.graphics.foregroundColor = hint.graphics.newPen(hint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHint) {}
@@ -286,17 +464,31 @@
       return null;
     }
 
-    var sizeMm = SIZE_VALUES[1];
-    for (var sidx = 0; sidx < sizeRadios.length; sidx++) {
-      if (sizeRadios[sidx].value) { sizeMm = SIZE_VALUES[sidx]; break; }
-    }
+    var sizeMm = _currentSizeMm();
 
     var cutMarginMm = CUT_MARGIN_VALUES[0];
     for (var cidx = 0; cidx < cutRadios.length; cidx++) {
       if (cutRadios[cidx].value) { cutMarginMm = CUT_MARGIN_VALUES[cidx]; break; }
     }
 
+    var gapMm = parseFloat(gapInput.text);
+    if (isNaN(gapMm) || gapMm < GAP_MIN_MM || gapMm > GAP_MAX_MM) {
+      alert("사진 간격이 범위 (" + GAP_MIN_MM + "–" + GAP_MAX_MM + "mm) 밖입니다. default " + GAP_DEFAULT_MM + "mm 로 진행합니다.");
+      gapMm = GAP_DEFAULT_MM;
+    }
+
     var materialText = (materialDropdown.selection !== null) ? materialDropdown.selection.text : MATERIAL_OPTIONS[0];
+
+    var selectedPairs = [];
+    if (pairsListbox.selection) {
+      for (var spi = 0; spi < pairsListbox.selection.length; spi++) {
+        selectedPairs.push(pairsArg[pairsListbox.selection[spi].index]);
+      }
+    }
+    if (selectedPairs.length === 0) {
+      alert("페어가 선택되지 않았습니다. 최소 1개 선택하세요.");
+      return null;
+    }
 
     return {
       nameText: nameText,
@@ -304,12 +496,20 @@
       orderNumber: _trim(orderInput.text),
       orderDate: _trim(dateInput.text) || _todayIso(),
       sizeMm: sizeMm,
-      cutMarginMm: cutMarginMm
+      isMixed: (sizeMm === MIXED_SIZE_VALUE),
+      cutMarginMm: cutMarginMm,
+      gapMm: gapMm,
+      selectedPairs: selectedPairs
     };
   }
 
   function _buildOrderDetail(options, photoCount) {
-    var spec = _sizeLetter(options.sizeMm) + "/" + options.sizeMm + "mm/" + options.cutMarginMm + "mm";
+    var spec;
+    if (options.isMixed) {
+      spec = "MIX/45x" + MIXED_45_COPIES + "+30x" + MIXED_30_COPIES + "+20x" + MIXED_20_COPIES + "/" + options.cutMarginMm + "mm";
+    } else {
+      spec = _sizeLetter(options.sizeMm) + "/" + options.sizeMm + "mm/" + options.cutMarginMm + "mm";
+    }
     var orderNum = options.orderNumber ? options.orderNumber : "—";
     return {
       rows: [
@@ -326,6 +526,19 @@
       lines.push(detail.rows[i].left + "    " + detail.rows[i].right);
     }
     return lines.join("\r");
+  }
+
+  function _scriptFileHint() {
+    try {
+      return $.fileName ? String($.fileName) : "unknown";
+    } catch (eFileHint) {
+      return "unknown";
+    }
+  }
+
+  function _fmtMm(value) {
+    if (value === undefined || value === null || isNaN(value)) return "?";
+    return (Math.round(value * 10) / 10) + "mm";
   }
 
   function _sizeLetter(mm) {
@@ -765,6 +978,8 @@
 
     var pairs = [];
     for (var i = 0; i < pngFiles.length; i++) {
+      // pngFiles[i].name 은 ExtendScript 가 URL-encoded 로 반환 (macOS NFD 한글 포함).
+      // PSD 매칭은 같은 raw 형태로 (filesystem 매칭 보장), base 만 decodeURI 로 사람용 표시.
       var pngName = pngFiles[i].name;
       var psdName = pngName.replace(/_sil\.png$/i, "_clean.psd");
       var psdFile = new File(folder.fsName + "/" + psdName);
@@ -772,11 +987,15 @@
         pairs.push({
           psd: psdFile,
           sil: pngFiles[i],
-          base: pngName.replace(/_sil\.png$/i, "")
+          base: _decodeName(pngName.replace(/_sil\.png$/i, ""))
         });
       }
     }
     return pairs;
+  }
+
+  function _decodeName(s) {
+    try { return decodeURI(s); } catch (e) { return s; }
   }
 
   function _measurePairAspect(pair) {
@@ -792,13 +1011,17 @@
     return pair.aspect;
   }
 
-  function _resolvePairSizeMm(pair, defaultSizeMm) {
-    var m = pair.base.match(/(^|[_ -])([0-9]+(\.[0-9]+)?)mm($|[_ -])/i);
-    if (m && m[2]) {
-      var parsed = parseFloat(m[2]);
-      if (parsed > 0) return parsed;
+  function _deriveDefaultCustomerName(folder) {
+    if (!folder) return "";
+    try {
+      var name = decodeURIComponent(folder.name);
+      if (name === "02_cutout" && folder.parent) {
+        return decodeURIComponent(folder.parent.name);
+      }
+      return name;
+    } catch (e) {
+      return "";
     }
-    return defaultSizeMm;
   }
 
 
@@ -971,30 +1194,163 @@
   //  PACKING
   // ═════════════════════════════════════════════════════════
 
-  function _shelfPack(originalItems, fillerItems, binW, binH, gap) {
-    var rows = [];
-    var row = _newShelfRow(0);
-    var leftover = [];
-    var repeatedCount = 0;
+  // Mixed 모드 전용: pair.cellW/cellH 를 mutate 하지 않고 (단일 사이즈 기준이므로)
+  // size 별 packItem 을 즉석 생성. payload 는 항상 원본 pair 객체 그대로 가리켜야
+  // _uniquePairsFromPlaced (pair.base dedupe) 와 cachedCutline / cutInfo (pair 에 attach)
+  // 가 정확히 작동한다.
+  function _itemForSize(pair, sizeMm) {
+    var pt = sizeMm * MM_TO_PT;
+    var w, h;
+    if (pair.aspect >= 1) {
+      w = pt;
+      h = pt / pair.aspect;
+    } else {
+      w = pt * pair.aspect;
+      h = pt;
+    }
+    return { w: w, h: h, payload: pair, sizeMm: sizeMm };
+  }
 
-    for (var i = 0; i < originalItems.length; i++) {
-      if (_canAddToShelfRow(row, originalItems[i], binW, binH, gap)) {
-        _addToShelfRow(row, originalItems[i], gap);
+  function _copyItems(items) {
+    var copied = [];
+    for (var i = 0; i < items.length; i++) {
+      copied.push(items[i]);
+    }
+    return copied;
+  }
+
+  function _sortShelfItemsDesc(items) {
+    var sorted = _copyItems(items);
+    sorted.sort(function (a, b) {
+      var ah = a.h;
+      var bh = b.h;
+      var aa = a.w * a.h;
+      var bb = b.w * b.h;
+      if (ah !== bh) return bh - ah;
+      if (aa !== bb) return bb - aa;
+      var abase = a.payload && a.payload.base ? a.payload.base : "";
+      var bbase = b.payload && b.payload.base ? b.payload.base : "";
+      return abase < bbase ? -1 : (abase > bbase ? 1 : 0);
+    });
+    return sorted;
+  }
+
+  // Strict 변종: items 를 round-robin cycle 하지 않고 각 item 을 정확히 1번씩만 배치한다.
+  // primary round (사이즈별 1장 보장) 에 사용. _appendShelfFillerRows 는 cycling 이라
+  // 한 사이즈가 vertical 을 다 잡아먹어 다음 사이즈가 못 들어가는 문제를 회피.
+  // 반환값: leftover (들어가지 않은 items 배열)
+  function _appendShelfRowsOnce(packResult, items, binW, binH, gap) {
+    if (!packResult || !packResult.rows || !items || items.length === 0) return [];
+
+    var startY = 0;
+    if (packResult.rows.length > 0) {
+      var last = packResult.rows[packResult.rows.length - 1];
+      startY = last.y + last.h + gap;
+    }
+
+    var row = _newShelfRow(startY);
+    var leftover = [];
+
+    for (var i = 0; i < items.length; i++) {
+      if (_canAddToShelfRow(row, items[i], binW, binH, gap)) {
+        _addToShelfRow(row, items[i], gap);
         continue;
       }
 
       if (row.items.length > 0) {
-        rows.push(row);
+        packResult.rows.push(row);
         row = _newShelfRow(row.y + row.h + gap);
       }
 
-      if (_canAddToShelfRow(row, originalItems[i], binW, binH, gap)) {
-        _addToShelfRow(row, originalItems[i], gap);
+      if (_canAddToShelfRow(row, items[i], binW, binH, gap)) {
+        _addToShelfRow(row, items[i], gap);
       } else {
-        leftover.push(originalItems[i]);
+        leftover.push(items[i]);
       }
     }
 
+    if (row.items.length > 0) packResult.rows.push(row);
+    packResult.placed = _shelfRowsToPlaced(packResult.rows, binW, gap);
+
+    return leftover;
+  }
+
+  function _appendShelfFillerRows(packResult, fillerItems, binW, binH, gap) {
+    if (!packResult || !packResult.rows || !fillerItems || fillerItems.length === 0) return;
+
+    var startY = 0;
+    if (packResult.rows.length > 0) {
+      var last = packResult.rows[packResult.rows.length - 1];
+      startY = last.y + last.h + gap;
+    }
+
+    var row = _newShelfRow(startY);
+    var fillerIdx = 0;
+    while (true) {
+      var added = false;
+      for (var step = 0; step < fillerItems.length; step++) {
+        var fi = (fillerIdx + step) % fillerItems.length;
+        if (_canAddToShelfRow(row, fillerItems[fi], binW, binH, gap)) {
+          _addToShelfRow(row, fillerItems[fi], gap);
+          packResult.repeatedCount++;
+          fillerIdx = (fi + 1) % fillerItems.length;
+          added = true;
+          break;
+        }
+      }
+
+      if (added) {
+        continue;
+      }
+
+      if (row.items.length > 0) {
+        packResult.rows.push(row);
+        row = _newShelfRow(row.y + row.h + gap);
+        continue;
+      }
+
+      break;
+    }
+
+    if (row.items.length > 0) packResult.rows.push(row);
+    packResult.placed = _shelfRowsToPlaced(packResult.rows, binW, gap);
+  }
+
+  // _shelfPack — 단일 사이즈 모드 메인 packer.
+  //   1단계: originalItems (디자인 1회씩) 사이클을 minRepeat 회 반복 → 디자인당 정확 minRepeat 보장
+  //   2단계: leftover 가 0 이고 filler 가 있으면 round-robin 으로 시트 빈 자리 채움
+  //   leftover 가 발생하면 호출부에서 결과 알림에 표시 (자동 fallback 안 함)
+  function _shelfPack(originalItems, fillerItems, binW, binH, gap, minRepeat) {
+    var rows = [];
+    var row = _newShelfRow(0);
+    var leftover = [];
+    var repeatedCount = 0;
+    var reps = (minRepeat && minRepeat > 0) ? minRepeat : 1;
+
+    // 1단계: primary 사이클 minRepeat 회 반복
+    for (var rep = 0; rep < reps; rep++) {
+      for (var i = 0; i < originalItems.length; i++) {
+        if (_canAddToShelfRow(row, originalItems[i], binW, binH, gap)) {
+          _addToShelfRow(row, originalItems[i], gap);
+          if (rep > 0) repeatedCount++;
+          continue;
+        }
+
+        if (row.items.length > 0) {
+          rows.push(row);
+          row = _newShelfRow(row.y + row.h + gap);
+        }
+
+        if (_canAddToShelfRow(row, originalItems[i], binW, binH, gap)) {
+          _addToShelfRow(row, originalItems[i], gap);
+          if (rep > 0) repeatedCount++;
+        } else {
+          leftover.push(originalItems[i]);
+        }
+      }
+    }
+
+    // 2단계: leftover 0 이고 filler 있으면 round-robin
     if (leftover.length === 0 && fillerItems && fillerItems.length > 0) {
       var fillerIdx = 0;
       while (true) {
@@ -1034,6 +1390,18 @@
     };
   }
 
+  // minRepeat 결정 — 1순위: MIN_REPEAT_OVERRIDE lookup, 2순위: floor(slots / designs).
+  function _resolveMinRepeat(sizeMm, designCount) {
+    if (designCount <= 0) return 1;
+    var key = sizeMm + "_" + designCount;
+    if (MIN_REPEAT_OVERRIDE[key] != null) {
+      return Math.max(1, MIN_REPEAT_OVERRIDE[key]);
+    }
+    var slots = SLOTS_BY_SIZE[sizeMm];
+    if (!slots) return 1;
+    return Math.max(1, Math.floor(slots / designCount));
+  }
+
   function _newShelfRow(y) {
     return { y: y, w: 0, h: 0, items: [] };
   }
@@ -1051,6 +1419,13 @@
     row.items.push(item);
   }
 
+  // 행 정렬 정책 (dense 통일):
+  //   - 가로 stride = options.gapMm 고정 (모든 인접 사진 가로 간격 동일)
+  //   - cluster 폭 = sumW + (n-1)*gap. 시트 가로 가운데 정렬
+  //   - 세로 정렬 = row 안에서 center (사진 높이 차이 시 상하 여백 균등 분산)
+  //   세로 행 사이 gap 은 호출부 (_appendShelfRowsOnce / _shelfPack) 에서 동일 gap 고정.
+  //   결과: 모든 이미지의 상하좌우 여백이 gap 만큼의 균일한 그리드.
+
   function _shelfRowsToPlaced(rows, binW, gap) {
     var placed = [];
     for (var r = 0; r < rows.length; r++) {
@@ -1059,20 +1434,15 @@
       var sumW = 0;
       for (var k = 0; k < n; k++) sumW += row.items[k].w;
 
-      var x, stride;
-      if (n <= 1) {
-        x = (binW - sumW) / 2;
-        stride = 0;
-      } else {
-        var actualGap = (binW - sumW) / (n - 1);
-        if (actualGap < gap) actualGap = gap;
-        x = 0;
-        stride = actualGap;
-      }
+      var minRowW = (n > 0) ? sumW + (n - 1) * gap : 0;
+      var x = (binW - minRowW) / 2;
+      var stride = gap;
 
       for (var i = 0; i < n; i++) {
         var item = row.items[i];
-        placed.push({ x: x, y: row.y, w: item.w, h: item.h, payload: item.payload });
+        // 세로 center: 행 안에서 사진 높이 차이가 있을 때 상/하 여백을 균등 분산.
+        var yCentered = row.y + (row.h - item.h) / 2;
+        placed.push({ x: x, y: yCentered, w: item.w, h: item.h, payload: item.payload });
         x += item.w + stride;
       }
     }
@@ -1116,6 +1486,35 @@
   function _todayIso() {
     var d = new Date();
     return d.getFullYear() + "-" + _pad2(d.getMonth() + 1) + "-" + _pad2(d.getDate());
+  }
+
+  function _timestamp() {
+    var n = new Date();
+    return n.getFullYear() +
+           _pad2(n.getMonth() + 1) +
+           _pad2(n.getDate()) + "_" +
+           _pad2(n.getHours()) +
+           _pad2(n.getMinutes()) +
+           _pad2(n.getSeconds());
+  }
+
+  function _resolveOutputFolder(srcFolder) {
+    // 02_cutout → sibling 03_output
+    var srcName = decodeURIComponent(srcFolder.name);
+    if (srcName === "02_cutout") {
+      var out = new Folder(srcFolder.parent.fsName + "/03_output");
+      if (!out.exists) out.create();
+      return out;
+    }
+    return srcFolder;
+  }
+
+  function _saveAi(targetDoc, file) {
+    var aiOpts = new IllustratorSaveOptions();
+    aiOpts.compatibility = Compatibility.ILLUSTRATOR24;
+    aiOpts.pdfCompatible = true;
+    aiOpts.embedICCProfile = true;
+    targetDoc.saveAs(file, aiOpts);
   }
 
   function _pad2(n) {

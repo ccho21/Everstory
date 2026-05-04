@@ -41,7 +41,6 @@ async function runNukki() {
       return;
     }
 
-    const baseName = origDoc.name.replace(/\.[^.]+$/, "");
     const parsed = parsePath(docPath);
 
     // 1) 출력 폴더 entry 결정 (01_original → 02_cutout 라우팅)
@@ -53,7 +52,20 @@ async function runNukki() {
       outEntry = await pathToEntry(parsed.parentDir);
     }
 
-    // 2) 파일 entry 미리 생성
+    // 2) 파일명 결정 — {customerFolder}_{NN} 패턴.
+    //    01_original 라우팅이거나 02_cutout 직접 저장이면 grandparentName = 고객 폴더.
+    //    그 외 case (Desktop 등) 면 raw 원본 이름 유지 (안전 fallback).
+    const isProjectRouted = (parsed.parentName === "01_original" || parsed.parentName === "02_cutout");
+    let baseName;
+    if (isProjectRouted && parsed.grandparentName) {
+      const folderName = parsed.grandparentName;
+      const nextIdx = await nextSequenceNumber(outEntry, folderName);
+      baseName = `${folderName}_${pad2(nextIdx)}`;
+    } else {
+      baseName = origDoc.name.replace(/\.[^.]+$/, "");
+    }
+
+    // 3) 파일 entry 미리 생성. 새 번호라 overwrite 는 의미 없지만 안전상 유지.
     const cleanFile = await outEntry.createFile(`${baseName}_clean.psd`, { overwrite: true });
     const silFile = await outEntry.createFile(`${baseName}_sil.png`, { overwrite: true });
 
@@ -100,7 +112,38 @@ function parsePath(absPath) {
   const parentLastSep = parentDir.lastIndexOf(sep);
   const parentName = parentDir.substring(parentLastSep + 1);
   const grandparentDir = parentDir.substring(0, parentLastSep);
-  return { parentDir, parentName, grandparentDir };
+  const grandparentLastSep = grandparentDir.lastIndexOf(sep);
+  const grandparentName = grandparentDir.substring(grandparentLastSep + 1);
+  return { parentDir, parentName, grandparentDir, grandparentName };
+}
+
+async function nextSequenceNumber(folderEntry, prefix) {
+  // folderEntry 안의 `{prefix}_NN_clean.psd` 들 중 최대 번호 + 1 반환.
+  // 같은 PSD 를 다시 저장해도 새 번호가 할당되어 덮어쓰기를 피한다.
+  const re = new RegExp("^" + escapeRegex(prefix) + "_([0-9]+)_clean\\.psd$", "i");
+  let maxN = 0;
+  try {
+    const entries = await folderEntry.getEntries();
+    for (const e of entries) {
+      if (!e.isFile) continue;
+      const m = e.name.match(re);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n > maxN) maxN = n;
+      }
+    }
+  } catch (e) {
+    // getEntries 실패 시 1부터 시작
+  }
+  return maxN + 1;
+}
+
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function pad2(n) {
+  return n < 10 ? "0" + n : "" + n;
 }
 
 async function pathToEntry(absPath) {

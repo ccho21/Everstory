@@ -51,9 +51,10 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 **현재 파이프라인 범위**: 다이컷 × A5 스티커 시트는 `Everstory_Grid.jsx` 로 자동화. 기본도형/프레임 칼선 확장은 추후 단계. PhotoStrip은 MVP 범위에서 제외한다.
 
 **스크립트 분리 기준**:
-- `Everstory_Grid.jsx` — A5 스티커 시트처럼 여러 개별 스티커를 bin packing 하는 레이아웃
+- `Everstory_Grid.jsx` — legacy. `template_cutout.ait` 의 `info > body` 영역에 여러 개별 스티커를 bin packing 하는 A5 스티커 시트 레이아웃. 현재 운영은 `Everstory_mixed.jsx` 가 대체 (legacy 보관: `legacy/Everstory_Grid.jsx`)
 - `Everstory_NameSticker.jsx` — 다이컷 스타일 이름 스티커 단독 생성/검수용 프로토타입. 현재 시트에는 통합하지 않고 폰트/backing/CutContour 테스트에 사용
-- `Everstory_NameIncludedSheet.jsx` — `a5_border` 안쪽 상하좌우 2mm 안전 여백을 적용한 뒤, 상단 18mm production header에 좌측 고객 이름(uppercase)과 우측 ORDER DETAIL을 배치하고, 헤더 아래 전체 영역에는 사진 스티커만 pack하는 Name Included 시트 배치 프로토타입. 사진 스티커 사이즈는 S/M/L/XL = 2/3/4.5/6cm. 별도 이름 스티커는 생성하지 않음
+- `Everstory_NameIncludedSheet.jsx` — Name Included 단일 사이즈 시트 v15 baseline. 동결 운영 기준 (`docs/name_included_v15_baseline.md`). 새 기능은 `Everstory_mixed.jsx` 에 추가하고 v15 는 안정성용으로 유지
+- `Everstory_mixed.jsx` — 운영 메인. NameIncluded v15 의 superset. 폴더 → 페어 ListBox multiselect → 단일 사이즈 (S/M/L/XL) 또는 Mixed (45/30/20) 시트 생성 → `03_output/` 자동 저장. 사이즈별 디자인 cap auto-cap (단일 모드: 20/10·30/5·45/2·60/1, Mixed: 1 디자인 고정 + 45×6+30×4+20×18). v15 trace cache 흐름 그대로 상속
 - `Everstory_CleanOffsetPath.jsx` — 선택한 Offset Path/CompoundPath 안쪽 조각을 제거하는 검수 보조 도구
 - `Everstory_TemplateBuilder.jsx` — 고정 프레임 템플릿/slot PathItem을 생성하는 보조 도구
 
@@ -61,16 +62,19 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 ```
 .
-├── Everstory_Grid.jsx        # Phase B+D — 스티커 시트용 Illustrator ExtendScript (v9)
-├── Everstory_NameSticker.jsx # 다이컷 스타일 이름 스티커 단독 생성/검수용 Illustrator ExtendScript
-├── Everstory_NameIncludedSheet.jsx # Name Included 배치 검수용 Illustrator ExtendScript
+├── Everstory_mixed.jsx       # 운영 메인 — 단일사이즈+Mixed multiselect 시트 (v18)
+├── Everstory_NameIncludedSheet.jsx # Name Included 단일 사이즈 시트 (v15 baseline, 동결)
+├── Everstory_NameSticker.jsx # 다이컷 스타일 이름 스티커 단독 생성/검수용
 ├── Everstory_CleanOffsetPath.jsx # 선택한 offset/compound path 내부 조각 제거 유틸
 ├── Everstory_TemplateBuilder.jsx # 고정 프레임/slot PathItem 자동 생성기
+├── legacy/
+│   ├── Everstory_Grid.jsx                       # legacy Photo Only 시트 (v10)
+│   └── Everstory_NameIncludedSheet_deprecated.jsx
 ├── scripts/
 │   └── save_route.jsx        # PS PNG 라우팅 헬퍼 (legacy)
 ├── plugins/everstory_save/   # Phase A — UXP 패널 플러그인 (PS)
 ├── templates/
-│   └── template_heart.ait    # A4 베이스, info 레이어 안 a5_border PathItem
+│   └── template_cutout.ait   # A5 다이컷 시트 베이스, info 레이어 안 body/header/header_border/border/reg_border PathItem
 │   └── template_4cut.ait     # TemplateBuilder용 베이스, Info > a5_border + Frame > slot_01..slot_N PathItem
 ├── projects/{이름}/          # 작업별 폴더 (평면 구조)
 │   ├── 01_original/          # 원본 PSD/JPG/TIF
@@ -91,40 +95,64 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 ### 1) Phase A — UXP 패널 (`plugins/everstory_save/`)
 - 입력: 위 PSD
 - 동작: `layers[0]`만 표시 → `_sil.png` 저장 → `layers[1..N]`만 표시 → `_clean.psd` 저장. 둘 다 longest 1800px로 리사이즈.
-- 출력: `02_cutout/{base}_clean.psd` + `{base}_sil.png` (같은 치수 페어)
+- 출력: `02_cutout/{folderName}_NN_clean.psd` + `{folderName}_NN_sil.png` (같은 치수 페어). `folderName` = 02_cutout 의 부모 폴더 (= 고객명). `NN` = 폴더 안 기존 페어의 max + 1, zero-pad 2자리. 같은 PSD 를 다시 저장하면 새 번호가 할당된다 (덮어쓰기 회피)
+- 라우팅: 원본 PSD 가 `01_original/` 또는 `02_cutout/` 안에 있을 때만 위 패턴 적용. 그 외 (Desktop 등) 는 raw 파일명 유지 (안전 fallback)
 - 자동화 없음: Select Subject / Levels 같은 PS 액션은 호출하지 않음. 누끼 품질은 사용자 책임.
 
-### 2) Phase B+D — `Everstory_Grid.jsx` (Illustrator)
-**한 번 실행으로 A5 한 시트 .ai까지 완료**. v3에서 통합되었고 v4에서 offset/simplify 제거(외곽선 그대로), v6에서 템플릿 기반으로 전환, v7에서 bin packing, v8에서 파일명 기반 개별 크기와 칼선 여백 선택을 추가, v9에서 MVP 정책에 맞춰 한 시트 생성으로 정리.
+### 2) Phase B+D 운영 메인 — `Everstory_mixed.jsx` (Illustrator)
+NameIncluded v15 + 단일/Mixed 사이즈 + 페어 multiselect + 03_output 자동 저장. v15 trace cache 흐름 (`docs/name_included_v15_baseline.md`) 그대로 상속하고 다이얼로그 흐름과 사이즈 처리만 확장한다.
 
-**입력**: `02_cutout/` 폴더 안 `{base}_clean.psd` + `{base}_sil.png` 페어들
-**템플릿**: `templates/template_heart.ait` — `info` 레이어 안 `a5_border` PathItem이 그리드 영역 정의
-**출력**: `03_output/{YYYYMMDD_HHMMSS}_NNmm_sheet{N:02d}.ai`
+**입력**: `02_cutout/` 폴더 안 페어들 (다이얼로그 ListBox 에서 사용할 페어를 multiselect)
+**템플릿**: `templates/template_cutout.ait` — `info > body` (배치 영역) + `info > header` (ORDER DETAIL 영역)
+**출력**: `03_output/{YYYYMMDD_HHMMSS}_{sizeTag}_sheet01.ai` — sizeTag 는 단일 사이즈면 `30mm`, Mixed 면 `MIX`
 
-**다이얼로그 옵션**:
-- 기본 스티커 긴 변 — 20mm / 30mm / 60mm (파일명에 `_NNmm` 이 있으면 해당 페어만 개별 크기 적용)
-- 칼선 여백 — 1mm / 2mm (기본 1mm). 내부 제작 옵션이며, 최종 셀 크기는 유지하고 PSD/KissCut 기준 이미지만 안쪽으로 축소
-- MVP 시트 정책 — A5 한 시트만 생성. 넘치는 입력은 결과 알림에 미배치로 표시
-- 옵션: "저장 후 시트 자동 닫기" (기본 OFF — 검수 우선)
+**다이얼로그**:
+1. 폴더 선택 (`02_cutout`)
+2. 고객 이름 (default = 폴더명 자동 추출) / 헤더 정보 (재질·주문·날짜)
+3. **사진 페어 ListBox (multiselect)** + 카운트 라벨 `선택: N / cap`
+4. 사이즈 라디오: S 2cm / M 3cm / L 4.5cm / XL 6cm / Mixed 45/30/20 (기본 30mm)
+5. 칼선 여백: 1mm / 2mm
+6. **사진 간격 (gap, 0.1mm 단위 input)** — default 1.5mm, 범위 0.5–5.0mm. 범위 밖이면 default 로 fallback + 경고
 
-**시트 처리**:
-1. `info > a5_border` 영역에서 안전 여백(3mm) 빼고 사용 가능 bin 계산
-2. 페어별 sil.png aspect 측정 → 셀 W×H = (긴 변 = 기본 size 또는 파일명 `_NNmm`, 짧은 변은 aspect 기준 산출)
-3. **MaxRects + BSSF bin packing** 으로 시트 안에 가변 크기 셀 배치 (회전 OFF, gap=2mm) 후 pack 묶음을 bin 중앙 정렬
-4. PSD를 `PrintData` 레이어에 embed, 선택한 칼선 여백만큼 줄인 박스 안에 비율 유지 fit + 중앙 정렬
-5. PNG를 임시 doc에서 Image Trace + Pathfinder Unite → `Cutline` path
-6. PNG-relative 정규화 좌표로 PSD bbox에 정합 → `KissCut` 레이어에 paste, `CutContour` 스폿 강제
-7. 한 시트에 못 들어간 leftover 는 저장하지 않고 결과 알림에 미배치로 표시
-8. 입력 area < bin area × 0.6 이면 원본 페어를 먼저 모두 배치한 뒤 남는 공간만 cycling 으로 채움
+**디자인 cap (auto-cap)**:
+- 사이즈 변경 시 cap 갱신, ListBox 선택이 cap 초과면 자동 trim
+- 20mm → 10 / 30mm → 5 / 45mm → 2 / 60mm → 1 / Mixed → 1
+- 룰 도출: 각 디자인 시트당 최소 4–5회 등장 보장 + shelf 효율 85% 기준
+- 초기 선택은 cap 까지 자동 채움 (운영 편의)
 
-**최종 z-order** (위에서 아래): `KissCut` → `info` (템플릿 유지) → `PrintData`
+**minRepeat 보장 룰 (단일 사이즈 모드)**:
+- 디자인당 정확히 minRepeat 회 등장을 강제 (`_shelfPack` 1단계: primary 사이클을 minRepeat 회 반복, 2단계: round-robin filler)
+- 결정 우선순위: `MIN_REPEAT_OVERRIDE["{size}_{designs}"]` lookup → `Math.floor(SLOTS_BY_SIZE[size] / designCount)` 동적 계산
+- `SLOTS_BY_SIZE = {20: 54, 30: 24, 45: 12, 60: 6}` (gap 1.5mm + padding 0 + body 148×195 기준)
+- `MIN_REPEAT_OVERRIDE` 는 운영 검수 후 필요한 case 만 채움 (default `{}`)
+- minRepeat 사이클이 fit 안 되면 leftover 발생 → 결과 알림에 표시 (자동 fallback 안 함)
+- Mixed 모드는 1디자인 + 28슬롯 패턴 고정이라 minRepeat 룰 미적용
 
-**배너 영역 컨벤션**: `info > a5_border` 는 **그리드 영역만** 정의. 마케팅 배너 (브랜드명 + QR) 는 a5_border *외부* (보통 하단 12mm) 에 템플릿에서 직접 디자인. 스크립트는 a5_border 만 읽으므로 배너 변경에 영향받지 않음.
+**사이즈 모드 처리**:
+- **단일 사이즈**: 선택한 페어들을 cellW×cellH (긴 변 = 사이즈, 짧은 변 = aspect) 로 환산, `_shelfPack` (shelf/row + dense gap + cluster center + round-robin filler) 후 사진 배치
+- **Mixed**: 선택한 1 디자인을 `45×6 + 30×4 + 20×18 = 28 슬롯` 로 복제, 큰 거 우선 정렬 후 `_appendShelfRowsOnce` 한 번 호출. 행 구성: 45×3 두 행 + 30×4 한 행 + 20×6 세 행, A5 body (148×195mm, header 15mm 제외) 채움률 ~80%
 
-### 3) Name Sticker Prototype — `Everstory_NameSticker.jsx` (Illustrator)
+**행 정렬 (dense 통일)**:
+- 가로 stride = `GAP_MM` 고정 (모든 인접 사진 가로 간격 동일). 양 끝 stretched (justify) 분기 폐기
+- 행 cluster 폭 = `sumW + (n-1)*gap`, 시트 가로 가운데 정렬
+- 세로 행 사이 gap = `GAP_MM` 고정
+- 행 안 사진 세로 정렬 = **center** (사진 높이 차이가 있을 때 상/하 여백 균등 분산)
+- 결과: 모든 이미지의 상하좌우 여백이 균등한 그리드
+
+**z-order** (위에서 아래): `KissCut` → `info` (템플릿 유지) → `PrintData` (+ trace 중에는 hidden `TraceStash` 임시 레이어, 끝에 제거)
+
+**저장**: 결과 메시지 직전에 `03_output/` 으로 자동 saveAs (Illustrator 24 호환 + PDF 호환). 입력 폴더가 `02_cutout` 이 아니면 동일 폴더에 저장.
+
+### 3) Name Included v15 baseline — `Everstory_NameIncludedSheet.jsx` (Illustrator, 동결)
+단일 사이즈 전용 baseline. 새 기능은 `Everstory_mixed.jsx` 에 들어간다. 운영 안정성 백업으로 유지 (`docs/name_included_v15_baseline.md`).
+
+### 4) Photo Only legacy — `legacy/Everstory_Grid.jsx` (Illustrator, 운영 비사용)
+v10 까지 운영했던 Photo Only 단일 사이즈 시트 (MaxRects + BSSF bin packing, `info > body` 기반). 디자인 cap 룰 도입 후 운영 메인은 `Everstory_mixed.jsx` 단일 사이즈 모드로 흡수됐다. 알고리즘 참조용으로 `legacy/` 에 보관.
+
+### 5) Name Sticker Prototype — `Everstory_NameSticker.jsx` (Illustrator)
 이름 스티커 1개를 단독 생성하고 저장하지 않은 Illustrator 문서에 열린 채로 둔다. 이름 입력 → 한글/영문별 고정 폰트 후보 선택 → 컬러 선택 → `PrintData`의 다이컷 backing/text와 `KissCut`의 `CutContour` path를 생성한다. 선택한 PostScript 폰트가 없으면 자동 대체 없이 중단한다. 현재 Name Included 시트에는 통합하지 않고, 폰트/backing shape/칼선 안정성 검수용으로만 둔다.
 
-### 4) Template Builder — `Everstory_TemplateBuilder.jsx` (Illustrator)
+### 6) Template Builder — `Everstory_TemplateBuilder.jsx` (Illustrator)
 고정 프레임 템플릿의 검정 프레임과 `Frame > slot_01..slot_N` PathItem을 자동 생성하는 보조 스크립트. PhotoStrip 배치 상품은 MVP에서 제외하지만, 템플릿 생성 도구는 보조 유틸리티로 유지한다.
 
 **동작**: `templates/template_4cut.ait` 의 `Info > a5_border` 를 읽고 그 안쪽 margin 영역에 `Frame` 프레임과 `slot_01..slot_N` 을 재생성. `Info > a5_border` 는 148×210mm A5 기준선이며 스크립트가 삭제/재생성하지 않는다. `Frame` 내용은 a5_border 안에서 상/좌/우 3mm, 하단 15mm 마진을 둔다. 스크립트는 artboard 자체나 기존 템플릿 레이어의 위치/순서를 바꾸지 않고, 생성 대상인 `Frame`, `KissCut`, `PrintData`, 과거 `slot_*` 만 정리한다.
@@ -143,10 +171,10 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 ## 고정 컨벤션 (변경 시 파이프라인 전체 깨짐)
 
 - **AI 레이어**: `PrintData` (raster), `KissCut` (cutline), `info` (템플릿 디자인)
-- **PathItem**: `info > a5_border` (A5 사각형), `Cutline` (trace 임시 이름)
-- **템플릿 PathItem 제작법**: `docs/template_pathitems.md` 참고 (`a5_border`, TemplateBuilder용 `slot_01..slot_N`)
+- **PathItem (template_cutout.ait)**: `info > body` (스크립트가 사진 pack 영역으로 읽음, 필수), `info > header` (NameIncludedSheet / mixed 가 ORDER DETAIL 그릴 영역, 필수), `info > header_border` / `info > border` / `info > reg_border` (시각 가이드, 스크립트 무시), `Cutline` (trace 임시 이름)
+- **템플릿 PathItem 제작법**: `docs/template_pathitems.md` 참고 (`body`, `header`, TemplateBuilder용 `slot_01..slot_N`)
 - **Spot color**: `CutContour` — M=100, SPOT (Summa/Roland 표준)
-- **파일명**: `pet1_60mm.psd` → `pet1_60mm_clean.psd` + `pet1_60mm_sil.png` → `20260428_153045_60mm_sheet01.ai`
+- **파일명**: `01_original/cute_pet.psd` → `02_cutout/{folderName}_NN_clean.psd` + `{folderName}_NN_sil.png` (예: `로운_01_clean.psd`, `로운_01_sil.png`) → `03_output/{YYYYMMDD_HHMMSS}_30mm_sheet01.ai` (Mixed 면 `MIX` 태그)
 - **폴더명**: 영어 (`01_original` 등) — macOS NFD vs JS NFC 비교 실패 회피
 
 ## 작업 원칙
@@ -162,33 +190,42 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 - **프린터**: Epson ET-8550 (염료 잉크)
 - **컷터**: Summa D75 — CutContour 스폿 인식, 노드 500–1500개 선호 (Image Trace 2.0px tolerance 기준)
 
-## Everstory_Grid.jsx 주요 함수 (v9 파일명 크기 + 칼선 여백 + 한 시트 정책 반영 후)
+## Everstory_mixed.jsx 주요 함수 (v18 multiselect cap)
 
 | 함수 | 역할 |
 |------|------|
 | `_collectPairs` | `02_cutout/`에서 페어 수집, base 이름 정렬 |
+| `_showDialog(pairs, defaultName)` | ListBox multiselect + auto-cap. 사이즈 변경 시 cap 갱신, 선택 자동 trim. `defaultName` 으로 고객 이름 input 초기화 |
+| `_deriveDefaultCustomerName` | inputFolder 또는 그 부모 폴더명을 다이얼로그 default 고객 이름으로 추출 (`02_cutout` 폴더면 부모 폴더 사용) |
 | `_measurePairAspect` | 페어별 sil.png aspect 1회 측정 후 캐시 (`pair.aspect`) |
-| `_resolvePairSizeMm` | 파일명 `_NNmm` 크기 override 파싱, 없으면 다이얼로그 기본값 사용 |
-| `_sortedPairsByArea` / `_buildRepeatFillItems` | 원본 페어 우선 배치 + 남는 공간 cycling filler 생성 |
-| `_centerPlacedItems` | pack 결과 bounding box를 bin 중앙으로 이동 |
-| `_binPack` | MaxRects + BSSF heuristic. 회전 OFF. 반환 `{ placed, leftover, freeRects }` |
-| `_splitFreeRect` / `_pruneFreeRects` / `_rectContains` | bin packing 보조 |
+| `_itemForSize` | Mixed 모드에서 한 페어를 사이즈별 packItem (45/30/20) 으로 즉석 생성 |
+| `_sortedPairsForShelf` / `_buildShelfFillItems` | shelf packing 입력 정렬 + filler item 생성 |
+| `_shelfPack(items, fillers, binW, binH, gap, minRepeat)` | 단일 사이즈 모드 메인 packer. primary 사이클 minRepeat 회 반복 → leftover 0 이면 round-robin filler |
+| `_resolveMinRepeat(sizeMm, designCount)` | minRepeat 결정. `MIN_REPEAT_OVERRIDE` 우선, fallback 은 `floor(SLOTS_BY_SIZE[size] / designCount)` |
+| `_appendShelfRowsOnce` | items 를 cycle 없이 한 번씩만 row 에 누적. Mixed 모드 메인 packer |
+| `_shelfRowsToPlaced` | row → placed 변환. dense 통일 — 가로 stride = GAP_MM 고정, cluster 가운데 정렬, 행 안 세로 center |
+| `_centerPlacedItems` | placed 묶음을 bin 가운데로 이동 |
 | `_resolveTemplate` | `$.fileName` 기준 상대경로로 .ait 자동 발견 |
-| `_findInfoBorder` | `info` 레이어 안 `a5_border` PathItem 검색 |
-| `_placeSticker` | 선택한 칼선 여백만큼 PSD fit 영역 축소 + PNG trace + 정규화 paste 정합. trace 실패 시 throw |
-| `_traceAndUnite` | Image Trace + Pathfinder Add + expandStyle |
-| `_findCutline` / `_deepFindFirstPath` | trace 결과 path 찾기 (이름 + 깊이 fallback) |
-| `_stripPSDPaths` | embed된 PSD의 saved path 재귀 제거 (clipping mask는 보존) |
-| `_ensureCutContour` / `_forceCutContourStroke` | 스폿 색상 일관성 |
-| `_saveAi` | Illustrator 24 호환 + PDF 호환 저장 |
+| `_findInfoPath` | `info` 레이어 안 임의 이름 PathItem 검색 (`body` / `header`) |
+| `_buildCutlineCache` | unique pair 마다 1회 Image Trace, hidden `TraceStash` 레이어에 캐시 |
+| `_placePhotoSticker` | cached cutline `duplicate()` + PSD embed + 정규화 좌표 정합. trace cache 없으면 throw |
+| `_traceAndUnite` | Image Trace + Pathfinder Add + expandStyle (cache 빌드용 임시 doc 안에서) |
+| `_stripPSDPaths` / `_stripEmbeddedPSDPathsNear` | embed된 PSD 의 saved path 재귀 제거 (clipping mask 보존) |
+| `_ensureCutContour` / `_forceCutContourStroke` | `CutContour` 스폿 색상 일관성 |
+| `_drawProductionHeader` | `info > header` 안에 좌측 고객 이름 + 우측 ORDER DETAIL 그리기 |
+| `_buildOrderDetail` | TYPE/SPEC/ORDER + MATERIAL/PHOTOS/DATE 6쌍 메타 |
+| `_resolveOutputFolder` | `02_cutout` → sibling `03_output` 자동 생성, 그 외엔 입력 폴더 |
+| `_timestamp` / `_saveAi` | `YYYYMMDD_HHMMSS` 타임스탬프 + Illustrator 24 + PDF 호환 saveAs |
 
 ## 미해결 / 알려진 한계
 
-- **시트 문서 종료** — 다이얼로그 "저장 후 자동 닫기" 옵션으로 토글. 기본 OFF (검수 우선).
-- **trace 실패는 명시적 에러** — `_placeSticker` 가 throw → 상위 try/catch 가 `failedItems` 에 push → 결과 알림에 포함. 해당 셀은 PSD 만 남고 cutline 없음.
-- **회전 비활성** — bin packing 시 90° 회전 안 함. 스티커 방향 의도 보존.
-- **cutline offset/smooth는 수동 작업** — 스크립트는 선택한 1mm/2mm 만큼 이미지를 안쪽으로 줄여 공간만 확보하고, 자동 offset/smooth는 적용하지 않는다.
-- **한 시트 정책** — MVP에서는 A5 한 시트만 생성한다. 미배치 입력은 결과 알림에 표시하고 운영상 사진 수/크기를 조정한다.
-- **packing 효율** — MaxRects + BSSF 는 보장 최적해는 아님. 30개 이하에서 실용적 효율 (보통 80–90%).
+- **자동 저장** — `Everstory_mixed.jsx` 는 결과 알림 직전 `03_output/` 으로 자동 saveAs. 저장 실패는 알림 마지막 줄에 표시되고 문서는 열린 상태로 유지된다.
+- **trace 실패는 명시적 에러** — `_buildCutlineCache` 또는 `_placePhotoSticker` 에서 throw → `failedItems` 에 push → 결과 알림에 포함. 해당 셀은 PSD 만 남고 cutline 없음.
+- **회전 비활성** — shelf packing 시 90° 회전 안 함. 스티커 방향 의도 보존.
+- **cutline offset/smooth 는 수동 작업** — 스크립트는 선택한 1mm/2mm 만큼 이미지를 안쪽으로 줄여 공간만 확보하고, 자동 offset/smooth 는 적용하지 않는다.
+- **한 시트 정책** — A5 한 시트만 생성. 디자인 cap (auto-cap) 으로 입력 단계에서 운영자가 한 시트 분량으로 선택. testConfig 경로에서 cap 위반은 안전판으로 잘려서 들어감.
+- **shelf packing 효율** — 단일 사이즈 모드 약 75–85% (gap 1.5mm 기준, 20mm 9행/30mm 6행/45mm 4행/60mm 3행), Mixed 모드는 6/4/18 비율로 deterministic 행 구성 (~80%). gap 은 다이얼로그에서 0.1mm 단위로 조정 가능 (0.5–5.0mm).
+- **minRepeat 보장 실패 시** — primary 사이클이 minRepeat 회 못 들어가면 leftover 발생, 결과 알림에 표시. 운영자가 사이즈/디자인 수 조정해서 재실행 (자동 fallback 안 함).
+- **trace cache scope** — 시트당 unique 페어 1회 trace, hidden `TraceStash` 레이어에 캐시 후 끝에 제거.
 - **PhotoStrip 제외** — 현재 주력 파이프라인에서 사용하지 않는다.
-- **TemplateBuilder는 template_4cut 재생성용** — `template_4cut.ait` 의 `Info > a5_border` 를 기준으로 `Frame`, `KissCut`, `slot_*`을 재생성하므로 실행 후 검수하고 저장한다.
+- **TemplateBuilder 는 template_4cut 재생성용** — `template_4cut.ait` 의 `Info > a5_border` 를 기준으로 `Frame`, `KissCut`, `slot_*` 을 재생성하므로 실행 후 검수하고 저장한다.

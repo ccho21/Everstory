@@ -1,8 +1,8 @@
-// Everstory — 템플릿 기반 시트 배치기 (v9, filename size + cut inset + single-sheet MVP)
+// Everstory — 템플릿 기반 시트 배치기 (v10, template_cutout + body PathItem)
 //
-// 템플릿: templates/template_heart.ait
-//   info 레이어 안의 a5_border (PathItem) — 배치 가능 영역 정의
-//   배너 (브랜드명 + QR 등) 는 a5_border 외부에 별도 디자인 (스크립트 영향 없음)
+// 템플릿: templates/template_cutout.ait
+//   info 레이어 안의 body (PathItem) — 사진 배치 가능 영역 (header 제외)
+//   header / header_border / border / reg_border 는 템플릿 시각 요소로만 사용
 //
 // 입력: 02_cutout/ 폴더 안의 페어
 //   {base}_clean.psd  — 누끼 PSD
@@ -25,11 +25,11 @@
   "use strict";
 
   var MM_TO_PT = 2.834645;
-  var SAFETY_MM  = 3;     // 안전 여백 (a5_border 안쪽)
-  var GAP_MM     = 2;     // 셀 간격
+  var BODY_PADDING_MM = 2;  // body 안쪽 상하좌우 여백
+  var GAP_MM     = 2;       // 셀 간격
 
   // ═══ 다이얼로그 ═══════════════════════════════════════════
-  var dlg = new Window("dialog", "Everstory A5 시트 배치 v9");
+  var dlg = new Window("dialog", "Everstory A5 시트 배치 v10");
   dlg.orientation = "column";
   dlg.alignChildren = "fill";
   dlg.margins = 20;
@@ -100,15 +100,15 @@
   // ═══ 템플릿 ═══
   var templateFile = _resolveTemplate();
   if (!templateFile || !templateFile.exists) {
-    alert("template_heart.ait를 찾을 수 없습니다.");
+    alert("template_cutout.ait를 찾을 수 없습니다.");
     return;
   }
 
   var probeDoc = _openTemplateDoc(templateFile);
-  var probeBorder, borderBounds;
+  var probeBody, bodyBounds;
   try {
-    probeBorder = _findInfoBorder(probeDoc);
-    borderBounds = probeBorder.geometricBounds;
+    probeBody = _findInfoPath(probeDoc, "body");
+    bodyBounds = probeBody.geometricBounds;
   } catch (eFB) {
     alert(eFB.message);
     try { probeDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
@@ -116,17 +116,17 @@
   }
 
   // ═══ 단위 변환 ═══
-  var safetyPt = SAFETY_MM * MM_TO_PT;
+  var padPt = BODY_PADDING_MM * MM_TO_PT;
   var gapPt    = GAP_MM * MM_TO_PT;
   var cutMarginPt = cutMarginMm * MM_TO_PT;
 
-  // ═══ Bin (a5_border 안 사용 가능 영역) ═══
-  var bL = borderBounds[0], bT = borderBounds[1], bR = borderBounds[2], bB = borderBounds[3];
-  var binW = (bR - bL) - 2 * safetyPt;
-  var binH = (bT - bB) - 2 * safetyPt;
+  // ═══ Bin (info > body 영역 안쪽 BODY_PADDING_MM 인셋) ═══
+  var bL = bodyBounds[0], bT = bodyBounds[1], bR = bodyBounds[2], bB = bodyBounds[3];
+  var binW = (bR - bL) - 2 * padPt;
+  var binH = (bT - bB) - 2 * padPt;
 
   if (binW <= 0 || binH <= 0) {
-    alert("a5_border 영역이 안전 여백보다 작습니다.");
+    alert("info > body 영역이 BODY_PADDING_MM 보다 작습니다.");
     try { probeDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
     return;
   }
@@ -156,7 +156,7 @@
   }
 
   if (anyTooBig) {
-    alert("일부 셀이 a5_border 안 사용 가능 영역(" +
+    alert("일부 셀이 info > body 영역(" +
           (binW / MM_TO_PT).toFixed(1) + "×" + (binH / MM_TO_PT).toFixed(1) +
           "mm)보다 큽니다. 사이즈를 줄이세요.");
     try { probeDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
@@ -190,24 +190,24 @@
 
   try {
     while (queue.length > 0 && sheetCount < maxSheetCap) {
-      var sheetDoc, sheetBorder;
+      var sheetDoc, sheetBody;
       if (sheetCount === 0) {
         sheetDoc = probeDoc;
-        sheetBorder = probeBorder;
+        sheetBody = probeBody;
       } else {
         sheetDoc = _openTemplateDoc(templateFile);
         try {
-          sheetBorder = _findInfoBorder(sheetDoc);
+          sheetBody = _findInfoPath(sheetDoc, "body");
         } catch (eFB2) {
           try { sheetDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
           break;
         }
       }
 
-      var sbb = sheetBorder.geometricBounds;
+      var sbb = sheetBody.geometricBounds;
       var sbL = sbb[0], sbT = sbb[1], sbR = sbb[2], sbB = sbb[3];
-      var sheetBinW = (sbR - sbL) - 2 * safetyPt;
-      var sheetBinH = (sbT - sbB) - 2 * safetyPt;
+      var sheetBinW = (sbR - sbL) - 2 * padPt;
+      var sheetBinH = (sbT - sbB) - 2 * padPt;
 
       // 이번 시트 pack
       var packItems = [];
@@ -244,8 +244,8 @@
       for (var p = 0; p < packResult.placed.length; p++) {
         var pl = packResult.placed[p];
         // bin 좌표 (top-left, y down) → AI 좌표 (y up, top 이 큰 값)
-        var aiX = sbL + safetyPt + pl.x;
-        var aiY = sbT - safetyPt - pl.y;
+        var aiX = sbL + padPt + pl.x;
+        var aiY = sbT - padPt - pl.y;
 
         try {
           _placeSticker(sheetDoc, pl.payload, aiX, aiY, pl.w, pl.h, cutMarginPt, printLayer, kissLayer, cutSpot);
@@ -486,14 +486,14 @@
   function _resolveTemplate() {
     var scriptDir = (new File($.fileName)).parent;
     var candidates = [
-      scriptDir.fsName + "/templates/template_heart.ait",
-      scriptDir.parent.fsName + "/templates/template_heart.ait"
+      scriptDir.fsName + "/templates/template_cutout.ait",
+      scriptDir.parent.fsName + "/templates/template_cutout.ait"
     ];
     for (var i = 0; i < candidates.length; i++) {
       var f = new File(candidates[i]);
       if (f.exists) return f;
     }
-    return File.openDialog("template_heart.ait 위치 선택", "*.ait");
+    return File.openDialog("template_cutout.ait 위치 선택", "*.ait");
   }
 
   function _openTemplateDoc(templateFile) {
@@ -506,7 +506,7 @@
     return doc;
   }
 
-  function _findInfoBorder(doc) {
+  function _findInfoPath(doc, pathName) {
     var infoLayer = null;
     for (var i = 0; i < doc.layers.length; i++) {
       if (doc.layers[i].name.toLowerCase() === "info") {
@@ -515,9 +515,9 @@
       }
     }
     if (!infoLayer) throw new Error("템플릿에 'info' 레이어가 없습니다");
-    var border = _deepFindByName(infoLayer, "a5_border");
-    if (!border) throw new Error("info 레이어 안에 'a5_border'가 없습니다");
-    return border;
+    var item = _deepFindByName(infoLayer, pathName);
+    if (!item) throw new Error("info 레이어 안에 '" + pathName + "'가 없습니다");
+    return item;
   }
 
   function _newDocForImage() {
