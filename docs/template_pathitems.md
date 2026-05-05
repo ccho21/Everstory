@@ -2,7 +2,7 @@
 
 Everstory Illustrator 스크립트는 템플릿 안의 특정 **PathItem 이름**을 찾아서 배치 영역을 계산한다. 템플릿을 만들거나 수정할 때는 아래 규칙을 지킨다.
 
-현재 MVP 주력 파이프라인은 `template_cutout.ait` + `Everstory_Grid.jsx` / `Everstory_NameIncludedSheet.jsx` 기반 A5 사진 다이컷 스티커 시트다. PhotoStrip 배치 상품은 retired이며, `template_4cut.ait` 관련 내용은 `Everstory_TemplateBuilder.jsx` 보조 유틸리티 기준으로만 유지한다.
+현재 MVP 주력 파이프라인은 `template_cutout.ait` + **`Everstory_mixed.jsx` (운영 메인)** 기반 A5 사진 다이컷 스티커 시트다. `Everstory_NameIncludedSheet.jsx` v15 는 안정성 백업으로 동결, `Everstory_Grid.jsx` 는 `legacy/` 보관 (운영 비사용). PhotoStrip 배치 상품은 retired이며, `template_4cut.ait` 관련 내용은 `Everstory_TemplateBuilder.jsx` 보조 유틸리티 기준으로만 유지한다.
 
 ## 핵심 규칙
 
@@ -118,8 +118,9 @@ Illustrator에서 path 이름을 정확히 바꾸는 것이 가장 중요하다.
 
 | 템플릿 | 스크립트 | 필수 PathItem |
 |---|---|---|
-| `template_cutout.ait` | `Everstory_Grid.jsx` | `info > body` |
-| `template_cutout.ait` | `Everstory_NameIncludedSheet.jsx` | `info > body` + `info > header` |
+| `template_cutout.ait` | `Everstory_mixed.jsx` (운영 메인) | `info > body` + `info > header` |
+| `template_cutout.ait` | `Everstory_NameIncludedSheet.jsx` (v15 baseline 동결) | `info > body` + `info > header` |
+| `template_cutout.ait` | `legacy/Everstory_Grid.jsx` (운영 비사용) | `info > body` |
 | `template_4cut.ait` 재생성 | `Everstory_TemplateBuilder.jsx` | `Info > a5_border` 기준, `Frame > slot_01..slot_N`, `KissCut` 자동 생성 |
 
 ## 자주 나는 문제

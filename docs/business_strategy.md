@@ -115,8 +115,8 @@
 
 ## 8. 핵심 워크플로우 결정
 
-- **모크업 승인**: 모든 주문에 PDF 모크업 → 고객 승인 → 인쇄. `Everstory_Grid.jsx` 끝에 PDF export 추가 필요.
-- **Bin packing 보장**: 현재 fits-as-many-as-possible 에서 **minimum guaranteed mix** 우선 배치로 로직 조정 필요 (XL→L→M→S 우선, 자투리에 cycling filler).
+- **모크업 승인**: 모든 주문에 PDF 모크업 → 고객 승인 → 인쇄. `Everstory_mixed.jsx` 끝의 `_saveAi` 옆에 PDF export 추가 필요 (현재 .ai 만 자동 저장).
+- **Bin packing 보장**: minRepeat 룰로 해결됨 — `Everstory_mixed.jsx` 가 디자인당 정확히 minRepeat 회 등장 강제 (`floor(slots / designCount)` 동적 + `MIN_REPEAT_OVERRIDE` lookup), leftover 0 일 때만 round-robin filler. Mixed 모드는 1디자인 + 19슬롯 (1.75×3+1.5×3+1.25×8+1×5, 1.25" 두 배 비중) 인치 통일 패턴.
 - **누끼 워크플로우 단축**: 인건비를 30분/건으로 줄이는 게 마진의 진짜 레버 (PSD 액션·키보드 매크로·재구매 시 PSD 캐시).
 
 ## 9. 인정해야 할 trade-off
@@ -133,8 +133,8 @@
 |------|------|
 | 자재 #1 (LAMat-AF) 정확한 단가 | 미확정 — anysheet.co.kr 가격 확인 필요 |
 | 라미네이션 워크플로우 — `AGENTS.md` 반영 | 미반영 (모든 SKU 에 라미네이션 들어감) |
-| 모크업 PDF export — `Everstory_Grid.jsx` 수정 | 미구현 |
-| Bin packing minimum guarantee 로직 | 미구현 |
+| 모크업 PDF export — `Everstory_mixed.jsx` 수정 | 미구현 |
+| Bin packing minimum guarantee 로직 | 구현 완료 (`Everstory_mixed.jsx` minRepeat) |
 | 로고 / 브랜드 비주얼 정체성 | 미정 |
 | 상품 사진 촬영 컨셉 | 미정 |
 | 상품 카피 / About 페이지 | 미정 |
