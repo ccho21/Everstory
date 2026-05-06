@@ -54,7 +54,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 - `Everstory_Grid.jsx` — legacy. `template_cutout.ait` 의 `info > body` 영역에 여러 개별 스티커를 bin packing 하는 A5 스티커 시트 레이아웃. 현재 운영은 `Everstory_mixed.jsx` 가 대체 (legacy 보관: `legacy/Everstory_Grid.jsx`)
 - `Everstory_NameSticker.jsx` — 다이컷 스타일 이름 스티커 단독 생성/검수용 프로토타입. 현재 시트에는 통합하지 않고 폰트/backing/CutContour 테스트에 사용
 - `Everstory_NameIncludedSheet.jsx` — Name Included 단일 사이즈 시트 v15 baseline. 동결 운영 기준 (`docs/name_included_v15_baseline.md`). 새 기능은 `Everstory_mixed.jsx` 에 추가하고 v15 는 안정성용으로 유지
-- `Everstory_mixed.jsx` — 운영 메인. NameIncluded v15 의 superset. 폴더 → 페어 ListBox multiselect → 단일 사이즈 (XS/S/M/L/XL/XXL 인치 6단계) 또는 Mixed (1.75/1.5/1.25/1in 4 사이즈) 시트 생성 → `03_output/` 자동 저장. 사이즈별 디자인 cap auto-cap (단일 모드: XS 13 / S 7 / M 5 / L 3 / XL 3 / XXL 1, Mixed: 1 디자인 고정 + 1.75×3+1.5×3+1.25×8+1×5 = 19 슬롯). v15 trace cache 흐름 그대로 상속
+- `Everstory_mixed.jsx` — 운영 메인 (v19 uniform grid). NameIncluded v15 의 superset. 폴더 → 페어 ListBox multiselect → 단일 사이즈 (XS/S/M/L/XL/XXL 인치 6단계) 또는 Mixed (2.5/1.75/1.25/1in 4 사이즈) 시트 생성 → `03_output/` 자동 저장. 단일 사이즈는 적응형 직사각 셀 (max cellW × max cellH) 위 `cols × rows` uniform grid 로 배치 — 모든 행이 같은 디자인 round-robin 순서, 외곽 4면 = 내부 gap 자동 균등 분배. 사이즈별 디자인 cap auto-cap (단일 모드: XS 13 / S 7 / M 5 / L 3 / XL 3 / XXL 1, Mixed: 1 디자인 고정 + 2.5×1 + hero 옆 1.25×4 stack + 1.75×3 + filler 1.25/1in = 약 23 슬롯). v15 trace cache 흐름 그대로 상속
 - `Everstory_CleanOffsetPath.jsx` — 선택한 Offset Path/CompoundPath 안쪽 조각을 제거하는 검수 보조 도구
 - `Everstory_TemplateBuilder.jsx` — 고정 프레임 템플릿/slot PathItem을 생성하는 보조 도구
 
@@ -62,7 +62,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 ```
 .
-├── Everstory_mixed.jsx       # 운영 메인 — 단일사이즈+Mixed multiselect 시트 (v18)
+├── Everstory_mixed.jsx       # 운영 메인 — 단일사이즈+Mixed multiselect 시트 (v19 uniform grid)
 ├── Everstory_NameIncludedSheet.jsx # Name Included 단일 사이즈 시트 (v15 baseline, 동결)
 ├── Everstory_NameSticker.jsx # 다이컷 스타일 이름 스티커 단독 생성/검수용
 ├── Everstory_CleanOffsetPath.jsx # 선택한 offset/compound path 내부 조각 제거 유틸
@@ -111,9 +111,9 @@ NameIncluded v15 + 단일/Mixed 사이즈 + 페어 multiselect + 03_output 자�
 2. 고객 이름 (default = 폴더명 자동 추출) / 헤더 정보 (재질·주문·날짜)
 3. **사진 페어 ListBox (multiselect, 행 전체 hit area)** + 카운트 라벨 `선택: N / cap`. `numberOfColumns:1 + showHeaders:false` 로 이름 옆 빈 공간 클릭도 선택 가능
 4. 사이즈 드롭다운 (인치 6단계 + Mixed): XS 0.75" / S 1" / M 1.25" / L 1.5" / XL 1.75" / XXL 2.5" / Mixed 1.75/1.5/1.25/1in. 기본 S (1")
-5. 칼선 여백: 1mm / 2mm
-6. **사진 간격 (gap, 0.1mm 단위 input)** — default 1.5mm, 범위 0.5–5.0mm. 범위 밖이면 default 로 fallback + 경고
-7. **최적값 자동 (max fill) 체크박스** — 체크 시 input 무시하고 g ∈ [0.5, 5.0] 0.1 step 시뮬레이션해서 placed 가 최대인 g 채택 (동률이면 큰 g 선호). aspect 편차가 큰 입력에서 dead space 최소화
+5. 칼선 여백: 0mm / 0.5mm / 1mm / 2mm (default 1mm)
+
+uniform grid 가 시각 간격을 자동 균등 분배하므로 gap 입력은 다이얼로그에 없다. Mixed 모드 zone packer 는 내부적으로 `GAP_DEFAULT_MM = 1.5mm` 고정 사용.
 
 **사이즈별 셀/cap 표 (A5 body 148×195, padding 0, gap 1.5mm)**:
 
@@ -129,31 +129,29 @@ NameIncluded v15 + 단일/Mixed 사이즈 + 페어 multiselect + 03_output 자�
 
 **디자인 cap (auto-cap)**:
 - 사이즈 변경 시 cap 갱신, ListBox 선택이 cap 초과면 자동 trim
-- 룰 도출: 각 디자인 시트당 최소 4–5회 등장 보장 + shelf 효율 85% 기준
+- 룰 도출: 각 디자인 시트당 최소 4–5회 등장 보장 + uniform grid 슬롯 기준 (`SLOTS_BY_SIZE` 표는 정사각 셀 + gap 1.5mm baseline)
 - 초기 선택은 cap 까지 자동 채움 (운영 편의)
 
-**minRepeat 보장 룰 (단일 사이즈 모드)**:
-- 디자인당 정확히 minRepeat 회 등장을 강제 (`_shelfPack` 1단계: primary 사이클을 minRepeat 회 반복, 2단계: round-robin filler)
-- 결정 우선순위: `MIN_REPEAT_OVERRIDE["{sizeMm}_{designs}"]` lookup → `Math.floor(SLOTS_BY_SIZE[sizeMm] / designCount)` 동적 계산
-- `SLOTS_BY_SIZE` = 위 표 셀 수 (mm 키 — 19.05/25.4/31.75/38.1/44.45/63.5)
-- `MIN_REPEAT_OVERRIDE` 는 운영 검수 후 필요한 case 만 채움 (default `{}`)
-- minRepeat 사이클이 fit 안 되면 leftover 발생 → 결과 알림에 표시 (자동 fallback 안 함)
-- Mixed 모드는 1디자인 + 19슬롯 (`MIXED_PATTERN` 1.75×3+1.5×3+1.25×8+1×5) 고정이라 minRepeat 룰 미적용
+**Uniform grid 룰 (단일 사이즈 모드, v19)**:
+- 적응형 직사각 셀: `cellBoxW = max(pair.cellW)`, `cellBoxH = max(pair.cellH)`. 모든 페어 정사각이면 `sizeMm × sizeMm`. 한 방향 aspect (모두 가로 / 모두 세로) 면 짧은 변이 줄어들어 슬롯 늘어남
+- `cols = floor((binW + gap) / (cellBoxW + gap))`, `rowsCount = floor((binH + gap) / (cellBoxH + gap))`. `slots = cols × rowsCount`
+- 시각 간격: `hSpace = (binW - cols × cellBoxW) / (cols + 1)`, `vSpace = (binH - rowsCount × cellBoxH) / (rowsCount + 1)`. 외곽 4면 = 내부 모든 gap 동일
+- 슬롯 채우기: `placed[k] = layoutPairs[k % designCount]` 행 우선 round-robin. `slots mod D` 개의 보너스가 앞쪽 디자인에 배정 (전체 시트가 같은 디자인 순서로 보임)
+- `leftover` 항상 0 — 격자 슬롯에 round-robin 이라 못 들어가는 케이스 없음
+- Mixed 모드는 zone packer (`_packMixedZones`) 별도 — uniform grid 룰 미적용
 
 **trace 실패 자동 제외**:
 - `_buildCutlineCache` 가 fail 한 페어의 base 들을 set 으로 모아 placement 시도 자체를 skip
 - 결과 알림에는 base 별 dedupe 된 1줄 + skip 된 placement 수 안내. 운영자에게 IL 재시작 후 재시도 권장 메시지 포함
 
 **사이즈 모드 처리**:
-- **단일 사이즈**: 선택한 페어들을 cellW×cellH (긴 변 = 사이즈, 짧은 변 = aspect) 로 환산, `_shelfPack` (shelf/row packing + per-row + 세로 justify + round-robin filler) 후 사진 배치
-- **Mixed**: 선택한 1 디자인을 `MIXED_PATTERN` (`1.75×3 + 1.5×3 + 1.25×8 + 1×5 = 19 슬롯`) 로 복제, 큰 거 우선 정렬 후 `_appendShelfRowsOnce` 한 번 호출. 자연 행 분리: 1.75×3 / 1.5×3 / 1.25×4 ×2행 / 1×5 = 5행. Σrow.h = 171.45mm, vGap = (195-171.45)/6 = 3.92mm, A5 body 면적 fill ~75%. 1.25" 두 배 비중 (운영 기본 사이즈)
+- **단일 사이즈**: 선택한 페어들을 cellW×cellH (긴 변 = 사이즈, 짧은 변 = aspect) 로 환산, `_uniformGridPack` 으로 적응형 직사각 셀 위 cols × rows 격자 산출. 셀 안 사진은 `_placePhotoSticker` 가 정중앙 정렬 (한 변 비율 맞춤 + 다른 변 padding)
+- **Mixed**: `_packMixedZones` zone packer. (1) hero row = 2.5"×1 + 옆에 `MIXED_HERO_STACK` (1.25" 2×2 grid) compound item — 64.5×64.5mm 가 hero 높이(63.5mm)와 거의 매칭. (2) 다음 row 부터 `MIXED_FIXED_PATTERN` 의 1.75"×3 배치 + `_fillMixedRowBalanced` 가 행 끝 빈 폭에 1.25/1" horizontal filler. (3) 그 아래 `_appendMixedFillerRows` 가 used-area 기준으로 1.25" 또는 1" 단일 사이즈 row 를 vertical fit 까지 누적. 시트 면적 fill ~85%. stack item 은 `_shelfRowsToPlaced` 가 cols×rows 로 expand 하면서 vertical center 정렬
 
-**행 정렬 (per-row + 세로 justify)**:
-- **가로 (per-row justify)**: 행마다 outer L = inner = outer R = `(binW - ΣitemW) / (n+1)`. 행 안 사진 균등 분산. 행마다 가로 gap 다름 (행 안 사진 수에 따라)
-- **세로 (justify)**: outer top = 행 사이 gap = outer bottom = `(binH - ΣrowH) / (R+1)`. 시트 전체 세로 균등 분산
-- 행 안 사진 높이 차이는 row 안 center 정렬로 균등 분산
-- 입력 `gap` 은 packing decision (한 행에 몇 장 들어갈지) 에만 영향. 시각 spacing 은 자동 계산 (입력 gap 무시)
-- 결과: 사진 상하좌우 여백이 균등 자동 분산. 사용자 입력 gap 은 행 구성 seed 로만 작용
+**행 정렬**:
+- **단일 사이즈 (uniform grid, v19)**: 모든 셀 동일한 cellBoxW × cellBoxH. 외곽 4면 여백 = 내부 모든 gap = `hSpace`/`vSpace`. 행마다 hGap 변동 없음, 마지막 행도 동일 디자인 순서 유지
+- **Mixed (per-row + 세로 justify)**: 행마다 outer L = inner = outer R = `(binW - ΣitemW) / (n+1)`, 시트 전체 outer top = row gap = outer bottom = `(binH - ΣrowH) / (R+1)`. 행마다 가로 gap 다름 (행 안 사진 수에 따라)
+- 시각 spacing 은 binW/binH 와 cellBox 만으로 자동 계산. 단일 사이즈는 사용자 gap 입력 없음 (uniform grid 자동 분배). Mixed 는 내부 `GAP_DEFAULT_MM = 1.5mm` 고정
 
 **z-order** (위에서 아래): `KissCut` → `info` (템플릿 유지) → `PrintData` (+ trace 중에는 hidden `TraceStash` 임시 레이어, 끝에 제거)
 
@@ -206,7 +204,7 @@ v10 까지 운영했던 Photo Only 단일 사이즈 시트 (MaxRects + BSSF bin 
 - **프린터**: Epson ET-8550 (염료 잉크)
 - **컷터**: Summa D75 — CutContour 스폿 인식, 노드 500–1500개 선호 (Image Trace 2.0px tolerance 기준)
 
-## Everstory_mixed.jsx 주요 함수 (v18 multiselect cap)
+## Everstory_mixed.jsx 주요 함수 (v19 uniform grid)
 
 | 함수 | 역할 |
 |------|------|
@@ -216,13 +214,10 @@ v10 까지 운영했던 Photo Only 단일 사이즈 시트 (MaxRects + BSSF bin 
 | `_measurePairAspect` | 페어별 sil.png aspect 1회 측정 후 캐시 (`pair.aspect`) |
 | `_itemForSize` | Mixed 모드에서 한 페어를 사이즈별 packItem (44.45/38.1/31.75/25.4mm) 으로 즉석 생성 |
 | `_buildMixedItems(pair)` / `_mixedTotalSlots` / `_mixedSpecString` / `_mixedHumanString` | `MIXED_PATTERN` 기반 헬퍼 — 패턴 변경 시 자동 반영 |
-| `_sortedPairsForShelf` / `_buildShelfFillItems` | shelf packing 입력 정렬 + filler item 생성 |
-| `_shelfPack(items, fillers, binW, binH, gap, minRepeat)` | 단일 사이즈 모드 메인 packer. primary 사이클 minRepeat 회 반복 → leftover 0 이면 round-robin filler |
-| `_resolveMinRepeat(sizeMm, designCount)` | minRepeat 결정. `MIN_REPEAT_OVERRIDE` 우선, fallback 은 `floor(SLOTS_BY_SIZE[size] / designCount)` |
-| `_findOptimalGap(pairs, sizeMm, isMixed, binW, binH)` | gap auto. g ∈ [0.5, 5.0] 0.1 step 시뮬, placed 최대인 g 채택 (동률 시 큰 g) |
-| `_countPlacementsFor(pairs, sizeMm, isMixed, binW, binH, gap)` | gap auto 시뮬. `_shelfPack` / `_appendShelfRowsOnce` 호출, mutate 안 함 |
-| `_appendShelfRowsOnce` | items 를 cycle 없이 한 번씩만 row 에 누적. Mixed 모드 메인 packer |
-| `_shelfRowsToPlaced(rows, binW, binH, gap)` | row → placed 변환. per-row 가로 justify (outer L = inner = outer R), 세로 justify (outer top = inner = outer bottom). final body 좌표 직접 출력 |
+| `_uniformGridPack(layoutPairs, binW, binH, gap)` | **단일 사이즈 모드 메인 packer (v19)**. 적응형 직사각 셀 (max cellW × max cellH) 위 cols × rows 격자 산출, 외곽 4면 = 내부 gap 자동 균등, 모든 슬롯 round-robin 채움 |
+| `_appendShelfRowsOnce` | items 를 cycle 없이 한 번씩만 row 에 누적. Mixed 모드에서 사용 |
+| `_shelfRowsToPlaced(rows, binW, binH, gap)` | Mixed 모드 row → placed 변환. per-row 가로 justify (outer L = inner = outer R), 세로 justify (outer top = inner = outer bottom). final body 좌표 직접 출력 |
+| `_shelfPack` / `_resolveMinRepeat` / `_sortedPairsForShelf` / `_buildShelfFillItems` | v18 까지의 단일 사이즈 packer. v19 부터 dead path (회귀 비교용으로 보관) |
 | `_resolveTemplate` | `$.fileName` 기준 상대경로로 .ait 자동 발견 |
 | `_findInfoPath` | `info` 레이어 안 임의 이름 PathItem 검색 (`body` / `header`) |
 | `_buildCutlineCache` | unique pair 마다 1회 Image Trace, hidden `TraceStash` 레이어에 캐시 |
@@ -239,11 +234,11 @@ v10 까지 운영했던 Photo Only 단일 사이즈 시트 (MaxRects + BSSF bin 
 
 - **자동 저장** — `Everstory_mixed.jsx` 는 결과 알림 직전 `03_output/` 으로 자동 saveAs. 저장 실패는 알림 마지막 줄에 표시되고 문서는 열린 상태로 유지된다.
 - **trace 실패는 명시적 에러** — `_buildCutlineCache` 또는 `_placePhotoSticker` 에서 throw → `failedItems` 에 push → 결과 알림에 포함. 해당 셀은 PSD 만 남고 cutline 없음.
-- **회전 비활성** — shelf packing 시 90° 회전 안 함. 스티커 방향 의도 보존.
+- **회전 비활성** — uniform grid / shelf packing 시 90° 회전 안 함. 스티커 방향 의도 보존.
 - **cutline offset/smooth 는 수동 작업** — 스크립트는 선택한 1mm/2mm 만큼 이미지를 안쪽으로 줄여 공간만 확보하고, 자동 offset/smooth 는 적용하지 않는다.
 - **한 시트 정책** — A5 한 시트만 생성. 디자인 cap (auto-cap) 으로 입력 단계에서 운영자가 한 시트 분량으로 선택. testConfig 경로에서 cap 위반은 안전판으로 잘려서 들어감.
-- **shelf packing 효율** — 단일 사이즈 모드 약 75–85% (gap 1.5mm 기준, 0.75" 9행/1" 7행/1.25" 5행/1.5"·1.75" 4행/2.5" 3행), Mixed 모드는 6/4/18 비율로 deterministic 행 구성 (~80%). gap 은 다이얼로그에서 0.1mm 단위로 조정 가능 (0.5–5.0mm).
-- **minRepeat 보장 실패 시** — primary 사이클이 minRepeat 회 못 들어가면 leftover 발생, 결과 알림에 표시. 운영자가 사이즈/디자인 수 조정해서 재실행 (자동 fallback 안 함).
+- **uniform grid 효율** (v19) — 단일 사이즈 모드는 정사각 셀 baseline (gap 1.5mm 기준, `SLOTS_BY_SIZE` 표 그대로). 적응형 직사각이라 모든 art 가 한 방향 (가로/세로) 이면 슬롯 더 들어가고, aspect 가 섞이면 이론치 그대로. Mixed 모드는 zone packer (~80%).
+- **uniform grid 슬롯 분배** — `slots = cols × rows`. `slots mod D` 개의 보너스가 앞쪽 디자인에 배정 (round-robin 첫 사이클이 그 만큼 더 길어짐). leftover 발생 안 함 — 모든 슬롯 채움 보장.
 - **trace cache scope** — 시트당 unique 페어 1회 trace, hidden `TraceStash` 레이어에 캐시 후 끝에 제거.
 - **PhotoStrip 제외** — 현재 주력 파이프라인에서 사용하지 않는다.
 - **TemplateBuilder 는 template_4cut 재생성용** — `template_4cut.ait` 의 `Info > a5_border` 를 기준으로 `Frame`, `KissCut`, `slot_*` 을 재생성하므로 실행 후 검수하고 저장한다.

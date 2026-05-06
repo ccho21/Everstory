@@ -16,8 +16,9 @@
 //      - 사이즈 변경 시 cap 갱신 + 선택 자동 trim (auto-cap)
 //   3. templates/template_cutout.ait 열기 (info > body, info > header PathItem 사용)
 //   4. info > header 영역에 좌측 고객 이름 + 우측 ORDER DETAIL 배치
-//   5. info > body 영역에 선택한 페어를 per-row + 세로 justify 로 pack
-//      - 단일 사이즈: 디자인 cap 까지 + minRepeat 보장 + round-robin filler
+//   5. info > body 영역에 선택한 페어를 packing
+//      - 단일 사이즈: 적응형 직사각 셀 (max cellW × max cellH) 위 cols × rows uniform grid.
+//        모든 행이 같은 디자인 round-robin 순서, 외곽 4면 = 내부 gap 자동 균등 분배
 //      - Mixed: 2.5×1 + 1.75×3 를 먼저 같은 row 우선으로 배치하고, 남은 공간은 1.25/1in 균형 fill
 //   6. v15 stability: 같은 sil.png 는 시트당 1회만 Image Trace, hidden TraceStash 캐시
 //   7. 03_output 폴더에 .ai 자동 저장 (timestamp_size_sheet01.ai)
@@ -29,13 +30,13 @@
 (function () {
   "use strict";
 
-  var SCRIPT_VARIANT = "v18 multiselect cap";
+  var SCRIPT_VARIANT = "v19 uniform grid";
   var SCRIPT_TITLE = "Everstory Mixed Sheet (" + SCRIPT_VARIANT + ")";
   var MM_TO_PT = 2.834645;
   var BODY_PADDING_MM = 0;  // body 안쪽 상하좌우 여백 (0 = body PathItem 까지 끝까지 사용)
-  var GAP_DEFAULT_MM = 1.5; // 다이얼로그에서 미입력/범위 밖 입력 시 fallback. 모든 인접 사진의 가로/세로 gap 고정. dense + cluster center 통일
-  var GAP_MIN_MM = 0.5;     // 다이얼로그 input 검증 하한
-  var GAP_MAX_MM = 5.0;     // 다이얼로그 input 검증 상한
+  // 단일 사이즈 (uniform grid) 는 시각 간격을 자동 균등 분배하므로 gap 입력 불필요.
+  // Mixed 모드 _packMixedZones 만 zone 사이 간격으로 이 default 를 사용.
+  var GAP_DEFAULT_MM = 1.5;
 
   // A5 body 148×195mm, padding 0, gap 1.5mm 기준 사이즈별 셀 수.
   // 인치 6단계 (XS 0.75 / S 1 / M 1.25 / L 1.5 / XL 1.75 / XXL 2.5") 기준.
@@ -104,8 +105,9 @@
   var SIZE_VALUES = [19.05, 25.4, 31.75, 38.1, 44.45, 63.5, MIXED_SIZE_VALUE];
   var SIZE_LETTERS = ["XS", "S", "M", "L", "XL", "XXL", "MIX"];
   var SIZE_DEFAULT_INDEX = 1;  // S = 1" — 다이어리 표준 사이즈
-  var CUT_MARGIN_OPTIONS = ["1mm", "2mm"];
-  var CUT_MARGIN_VALUES = [1, 2];
+  var CUT_MARGIN_OPTIONS = ["0mm", "0.5mm", "1mm", "2mm"];
+  var CUT_MARGIN_VALUES = [0, 0.5, 1, 2];
+  var CUT_MARGIN_DEFAULT_INDEX = 2; // 기본 1mm 유지 — 0/0.5mm 는 운영자가 의도적으로 선택
   var MATERIAL_OPTIONS = ["White", "Pearl Grey", "Silver", "Gold"];
 
   var testConfig = $.global.__EVERSTORY_NAME_INCLUDED_TEST__;
@@ -124,9 +126,6 @@
   var defaultCustomerName = _deriveDefaultCustomerName(inputFolder);
   var options = (testConfig && testConfig.options) ? testConfig.options : _showDialog(pairs, defaultCustomerName);
   if (!options) return;
-  // testConfig 경로 호환: gapMm / gapAuto 미지정이면 default 적용
-  if (options.gapMm == null) options.gapMm = GAP_DEFAULT_MM;
-  if (options.gapAuto == null) options.gapAuto = false;
 
   var templateFile = _resolveTemplate();
   if (!templateFile || !templateFile.exists) {
@@ -146,7 +145,9 @@
   }
 
   var padPt = BODY_PADDING_MM * MM_TO_PT;
-  var gapPt = options.gapMm * MM_TO_PT;
+  // 단일 사이즈는 uniform grid 가 시각 간격을 자동 균등 분배하므로 gap 입력 불필요.
+  // Mixed 모드는 _packMixedZones 가 zone 사이 간격으로 사용 — GAP_DEFAULT_MM 고정.
+  var gapPt = GAP_DEFAULT_MM * MM_TO_PT;
   var cutMarginPt = options.cutMarginMm * MM_TO_PT;
 
   var bodyBounds = bodyPath.geometricBounds;
@@ -216,17 +217,6 @@
     return;
   }
 
-  // 추천 gap 자동 적용 — max-fill 시뮬레이션으로 g 결정 (사용자 입력값 무시).
-  // aspect 측정 후라 layoutPairs[i].aspect 가 셋업돼 있다.
-  if (options.gapAuto) {
-    var optGapMm = _findOptimalGap(layoutPairs, options.sizeMm, options.isMixed, binW, binH);
-    options.gapMm = optGapMm;
-    gapPt = optGapMm * MM_TO_PT;
-  }
-
-  // minRepeat 결정 — 단일 사이즈 모드에서만 의미 있음. Mixed 는 1디자인 zone pack 이라 의미 없음 (표시용 1).
-  var minRepeat = options.isMixed ? 1 : _resolveMinRepeat(options.sizeMm, layoutPairs.length);
-
   var packResult;
   if (options.isMixed) {
     // Mixed: 2.5×1 + 1.75×3 를 보장하고, 가능한 경우 같은 row 에 먼저 배치.
@@ -235,17 +225,9 @@
     // 1 디자인이라 첫 placement 1개를 빼고 모두 repeated 로 카운트.
     packResult.repeatedCount = Math.max(0, packResult.placed.length - 1);
   } else {
-    var queue = [];
-    var primaryPairs = _sortedPairsForShelf(layoutPairs, false);
-    for (var pi2 = 0; pi2 < primaryPairs.length; pi2++) queue.push(primaryPairs[pi2]);
-
-    var packItems = [];
-    for (var qi = 0; qi < queue.length; qi++) {
-      packItems.push({ w: queue[qi].cellW, h: queue[qi].cellH, payload: queue[qi] });
-    }
-
-    var fillerItems = _buildShelfFillItems(layoutPairs);
-    packResult = _shelfPack(packItems, fillerItems, binW, binH, gapPt, minRepeat);
+    // 단일 사이즈: 적응형 직사각 셀 위 격자 packer. 모든 행 동일 순서, 외곽 4면 = 내부 gap 균등.
+    // gap 입력은 최소 floor 이고 시각 간격은 (binW - cols × cellBoxW) / (cols + 1) 로 자동 분배.
+    packResult = _uniformGridPack(layoutPairs, binW, binH, gapPt);
   }
 
   // _shelfRowsToPlaced 가 per-row + 세로 justify 로 final body 좌표 직접 산출 — 별도 centering 불필요
@@ -340,15 +322,16 @@
     sizeLineText + "\n" +
     inputLine +
     (packResult.repeatedCount > 0 ? " (반복 채움 " + packResult.repeatedCount + "개 포함)" : "") + "\n" +
-    "행: " + packResult.rows.length + "개 / gap input: " + options.gapMm + "mm" + (options.gapAuto ? " (max-fill 자동)" : "") +
-    (options.isMixed ? " (2.5/1.75 고정 + 1.25/1 half fill)\n" : " (per-row + 세로 justify — 외곽 = 내부 gap 균등 자동 분산)\n") +
+    "행: " + packResult.rows.length + "개" +
+    (options.isMixed ? " (2.5/1.75 고정 + 1.25/1 half fill)\n" : " (uniform grid — 외곽 4면 = 내부 gap 균등 자동 분배)\n") +
     (options.isMixed
       ? "Mixed 슬롯: " + (packResult.mixedSummary ? packResult.mixedSummary.human : _mixedHumanString()) +
         " = " + (packResult.mixedSummary ? packResult.mixedSummary.total : _mixedTotalSlots()) +
         " (디자인 1개 / " + (packResult.mixedSummary ? packResult.mixedSummary.zoneRows : "zone") + ")\n"
-      : "minRepeat 보장: " + minRepeat + "회 (slots " + SLOTS_BY_SIZE[options.sizeMm] + " / 디자인 " + layoutPairs.length + ")\n") +
+      : "그리드: " + packResult.cols + "×" + packResult.gridRows + " = " + packResult.slots + " 슬롯 / 디자인 " + layoutPairs.length + "개" +
+        (layoutPairs.length > 0 ? " × " + Math.floor(packResult.slots / layoutPairs.length) + "회" + ((packResult.slots % layoutPairs.length) > 0 ? " (+" + (packResult.slots % layoutPairs.length) + " 보너스)" : "") : "") + "\n") +
     "Trace 캐시: unique " + uniquePairs.length + "개 (배치 " + packResult.placed.length + "회 → trace " + uniquePairs.length + "회)\n" +
-    "미배치 사진: " + packResult.leftover.length + "개\n" +
+    (packResult.leftover.length > 0 ? "미배치 사진: " + packResult.leftover.length + "개\n" : "") +
     saveLine;
 
   if (failedItems.length > 0) {
@@ -509,23 +492,7 @@
     for (var cm = 0; cm < CUT_MARGIN_OPTIONS.length; cm++) {
       cutRadios.push(cutPanel.add("radiobutton", undefined, CUT_MARGIN_OPTIONS[cm]));
     }
-    cutRadios[0].value = true;
-
-    var gapPanel = dlg.add("panel", undefined, "사진 간격 (mm, 0.1mm 단위)");
-    gapPanel.orientation = "column";
-    gapPanel.alignChildren = "left";
-    gapPanel.margins = [14, 18, 14, 14];
-    gapPanel.spacing = 6;
-    var gapInputRow = gapPanel.add("group");
-    gapInputRow.orientation = "row";
-    gapInputRow.alignChildren = "center";
-    gapInputRow.spacing = 8;
-    var gapInput = gapInputRow.add("edittext", undefined, String(GAP_DEFAULT_MM));
-    gapInput.preferredSize = [60, 24];
-    var gapHint = gapInputRow.add("statictext", undefined, "default " + GAP_DEFAULT_MM + " / 범위 " + GAP_MIN_MM + "–" + GAP_MAX_MM + "mm");
-    try { gapHint.graphics.foregroundColor = gapHint.graphics.newPen(gapHint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eGH) {}
-    var gapAutoCheck = gapPanel.add("checkbox", undefined, "최적값 자동 (max fill — 입력값 무시)");
-    gapAutoCheck.value = false;
+    cutRadios[CUT_MARGIN_DEFAULT_INDEX].value = true;
 
     var hint = dlg.add("statictext", undefined, "info > header — 좌측 고객 이름, 우측 ORDER DETAIL. 이름 스티커는 생성하지 않습니다.");
     try { hint.graphics.foregroundColor = hint.graphics.newPen(hint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHint) {}
@@ -547,15 +514,9 @@
 
     var sizeMm = _currentSizeMm();
 
-    var cutMarginMm = CUT_MARGIN_VALUES[0];
+    var cutMarginMm = CUT_MARGIN_VALUES[CUT_MARGIN_DEFAULT_INDEX];
     for (var cidx = 0; cidx < cutRadios.length; cidx++) {
       if (cutRadios[cidx].value) { cutMarginMm = CUT_MARGIN_VALUES[cidx]; break; }
-    }
-
-    var gapMm = parseFloat(gapInput.text);
-    if (isNaN(gapMm) || gapMm < GAP_MIN_MM || gapMm > GAP_MAX_MM) {
-      alert("사진 간격이 범위 (" + GAP_MIN_MM + "–" + GAP_MAX_MM + "mm) 밖입니다. default " + GAP_DEFAULT_MM + "mm 로 진행합니다.");
-      gapMm = GAP_DEFAULT_MM;
     }
 
     var materialText = (materialDropdown.selection !== null) ? materialDropdown.selection.text : MATERIAL_OPTIONS[0];
@@ -579,8 +540,6 @@
       sizeMm: sizeMm,
       isMixed: (sizeMm === MIXED_SIZE_VALUE),
       cutMarginMm: cutMarginMm,
-      gapMm: gapMm,
-      gapAuto: gapAutoCheck.value,
       selectedPairs: selectedPairs
     };
   }
@@ -1654,10 +1613,79 @@
     packResult.placed = _shelfRowsToPlaced(packResult.rows, binW, binH, gap);
   }
 
-  // _shelfPack — 단일 사이즈 모드 메인 packer.
-  //   1단계: originalItems (디자인 1회씩) 사이클을 minRepeat 회 반복 → 디자인당 정확 minRepeat 보장
-  //   2단계: leftover 가 0 이고 filler 가 있으면 round-robin 으로 시트 빈 자리 채움
-  //   leftover 가 발생하면 호출부에서 결과 알림에 표시 (자동 fallback 안 함)
+  // _uniformGridPack — 단일 사이즈 모드 packer (v19).
+  //   적응형 직사각 셀 (cellBoxW = max cellW, cellBoxH = max cellH) 위에 cols × rows 격자 산출.
+  //   gap 입력은 "최소 사진 간격 floor" 이며, 실제 시각 간격은 (binW - cols × cellBoxW) / (cols + 1) 로
+  //   균등 자동 분배 (외곽 4면 = 내부 모든 gap 동일). 모든 슬롯은 layoutPairs 를 round-robin 으로
+  //   순서대로 채워서 모든 행이 같은 디자인 순서로 보임 — 이전 _shelfPack 의 행마다 hGap 변동 / 마지막
+  //   filler 행 듬성듬성 / 디자인 순서 불일치 문제 해결.
+  //
+  //   반환 shape 은 _shelfPack 과 호환: {placed, leftover, rows, repeatedCount, cols, gridRows, slots, hSpace, vSpace, cellBoxW, cellBoxH}.
+  //   leftover 는 항상 [] (격자 슬롯에 디자인 round-robin 이라 못 들어가는 케이스 없음).
+  function _uniformGridPack(layoutPairs, binW, binH, gap) {
+    if (!layoutPairs || layoutPairs.length === 0) {
+      return { placed: [], leftover: [], rows: [], repeatedCount: 0, cols: 0, gridRows: 0, slots: 0, hSpace: 0, vSpace: 0, cellBoxW: 0, cellBoxH: 0 };
+    }
+
+    var cellBoxW = 0;
+    var cellBoxH = 0;
+    for (var i = 0; i < layoutPairs.length; i++) {
+      if (layoutPairs[i].cellW > cellBoxW) cellBoxW = layoutPairs[i].cellW;
+      if (layoutPairs[i].cellH > cellBoxH) cellBoxH = layoutPairs[i].cellH;
+    }
+
+    var safeGap = gap < 0 ? 0 : gap;
+    var cols = Math.floor((binW + safeGap) / (cellBoxW + safeGap));
+    var rowsCount = Math.floor((binH + safeGap) / (cellBoxH + safeGap));
+    if (cols < 1 || rowsCount < 1) {
+      return { placed: [], leftover: [], rows: [], repeatedCount: 0, cols: 0, gridRows: 0, slots: 0, hSpace: 0, vSpace: 0, cellBoxW: cellBoxW, cellBoxH: cellBoxH };
+    }
+
+    var hSpace = (binW - cols * cellBoxW) / (cols + 1);
+    var vSpace = (binH - rowsCount * cellBoxH) / (rowsCount + 1);
+    if (hSpace < 0) hSpace = 0;
+    if (vSpace < 0) vSpace = 0;
+
+    var slots = cols * rowsCount;
+    var D = layoutPairs.length;
+
+    var placed = [];
+    var rowsList = [];
+    for (var r = 0; r < rowsCount; r++) {
+      var rowItems = [];
+      var rowY = vSpace + r * (cellBoxH + vSpace);
+      for (var c = 0; c < cols; c++) {
+        var slotIdx = r * cols + c;
+        var pair = layoutPairs[slotIdx % D];
+        var x = hSpace + c * (cellBoxW + hSpace);
+        var item = { w: cellBoxW, h: cellBoxH, payload: pair };
+        placed.push({ x: x, y: rowY, w: cellBoxW, h: cellBoxH, payload: pair });
+        rowItems.push(item);
+      }
+      rowsList.push({ y: rowY, w: cols * cellBoxW + (cols - 1) * hSpace, h: cellBoxH, items: rowItems });
+    }
+
+    var repeatedCount = (slots > D) ? (slots - D) : 0;
+
+    return {
+      placed: placed,
+      leftover: [],
+      rows: rowsList,
+      repeatedCount: repeatedCount,
+      cols: cols,
+      gridRows: rowsCount,
+      slots: slots,
+      hSpace: hSpace,
+      vSpace: vSpace,
+      cellBoxW: cellBoxW,
+      cellBoxH: cellBoxH
+    };
+  }
+
+  // _shelfPack — legacy 단일 사이즈 모드 packer (v18 까지 기본). v19 부터 _uniformGridPack 으로 교체.
+  //   현재 파이프라인에서 호출하지 않음. Mixed 모드 (`_packMixedZones`) 도 사용하지 않으므로 사실상 dead.
+  //   행마다 hGap 이 변동하고 마지막 filler 행이 듬성듬성한 시각 문제를 해결하려고 격자 packer 로 전환했다.
+  //   의도적으로 남겨둔 이유: 시뮬레이션/회귀 비교용 + 운영 검수 후 필요시 fallback 으로 되돌리기 쉬움.
   function _shelfPack(originalItems, fillerItems, binW, binH, gap, minRepeat) {
     var rows = [];
     var row = _newShelfRow(0);
@@ -1726,57 +1754,6 @@
       rows: rows,
       repeatedCount: repeatedCount
     };
-  }
-
-  // _findOptimalGap — 채움률 최대화 (max fill).
-  //   g ∈ [GAP_MIN_MM, GAP_MAX_MM] 0.1 step 으로 시뮬레이션해 placed 가 최대인 g 채택.
-  //   동률이면 큰 g 선호 (덜 빡빡한 시각). aspect 편차가 큰 입력에서 dead space 최소화.
-  //   호출 전 layoutPairs 의 aspect 가 측정돼 있어야 한다 (_measurePairAspect 루프 후).
-  function _findOptimalGap(pairs, sizeMm, isMixed, binWPt, binHPt) {
-    if (!pairs || pairs.length === 0) return GAP_DEFAULT_MM;
-    var bestPlaced = -1;
-    var bestGap = GAP_DEFAULT_MM;
-    var minStep = Math.round(GAP_MIN_MM * 10);
-    var maxStep = Math.round(GAP_MAX_MM * 10);
-    for (var s = minStep; s <= maxStep; s++) {
-      var gMm = s / 10;
-      var gapPt = gMm * MM_TO_PT;
-      var placed = _countPlacementsFor(pairs, sizeMm, isMixed, binWPt, binHPt, gapPt);
-      if (placed > bestPlaced || (placed === bestPlaced && gMm > bestGap)) {
-        bestPlaced = placed;
-        bestGap = gMm;
-      }
-    }
-    return bestGap;
-  }
-
-  // 시뮬레이션용 placement count. 실제 _shelfPack / _packMixedZones 호출 (Illustrator API 안 씀).
-  // pairs/items mutate 안 함. 시트당 여러 번 호출해도 안전.
-  function _countPlacementsFor(pairs, sizeMm, isMixed, binW, binH, gap) {
-    if (isMixed) {
-      return _packMixedZones(pairs[0], binW, binH, gap).placed.length;
-    }
-
-    // 단일 사이즈 — pairs 의 aspect 로 cellW/cellH 산출 후 _shelfPack 시뮬.
-    // 원본 pairs 객체는 mutate 안 함 (별도 simPairs 사용).
-    var simPairs = [];
-    for (var i = 0; i < pairs.length; i++) {
-      var p = pairs[i];
-      var pt = sizeMm * MM_TO_PT;
-      var cellW, cellH;
-      if (p.aspect >= 1) { cellW = pt; cellH = pt / p.aspect; }
-      else { cellW = pt * p.aspect; cellH = pt; }
-      simPairs.push({ aspect: p.aspect, cellW: cellW, cellH: cellH, base: p.base });
-    }
-    var primary = _sortedPairsForShelf(simPairs, false);
-    var packItems = [];
-    for (var qi = 0; qi < primary.length; qi++) {
-      packItems.push({ w: primary[qi].cellW, h: primary[qi].cellH, payload: primary[qi] });
-    }
-    var fillers = _buildShelfFillItems(simPairs);
-    var minRepeat = _resolveMinRepeat(sizeMm, simPairs.length);
-    var result = _shelfPack(packItems, fillers, binW, binH, gap, minRepeat);
-    return result.placed.length;
   }
 
   // minRepeat 결정 — 1순위: MIN_REPEAT_OVERRIDE lookup, 2순위: floor(slots / designs).
