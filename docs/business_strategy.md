@@ -1,12 +1,18 @@
-# Everstory 사업 전략 정리
+# Everstory Studio 사업 전략 정리
 
-마지막 업데이트: 2026-05-03
+마지막 업데이트: 2026-05-06
 
-이 문서는 Everstory 의 가격·채널·원가·셋업 시퀀스 등 *비즈니스 레이어* 결정을 한 곳에 모은다. 상품·생산 파이프라인 규칙은 `AGENTS.md` 와 `docs/product_mvp_photo_sheet.md` 를 본다. 결정이 바뀔 때마다 이 문서를 업데이트하고 하단 변경 이력에 한 줄 남긴다.
+이 문서는 **Everstory Studio** 의 가격·채널·원가·셋업 시퀀스 등 *비즈니스 레이어* 결정을 한 곳에 모은다. 상품·생산 파이프라인 규칙은 `CLAUDE.md` 와 `docs/product_mvp_photo_sheet.md` 를 본다. 결정이 바뀔 때마다 이 문서를 업데이트하고 하단 변경 이력에 한 줄 남긴다.
 
-## 1. 사업 정체성
+## 1. One-liner
 
-**Everstory** — 토론토(Brampton) 기반 커스텀 사진 다이컷 스티커 브랜드.
+**Everstory Studio 는 토론토 GTA + 한인 디아스포라를 위한 A5 커스텀 사진 다이컷 스티커 브랜드다** — 한국 프리미엄 substrate + 손 누끼 + 인쇄 전 모크업 승인 + 자체 ExtendScript 운영 파이프라인으로 Etsy 자동/AI 셀러와 다른 카테고리에 포지셔닝.
+
+외부 (지인·디자이너·세무사·투자자) 에게 한 문장으로 설명할 때 그대로 인용한다.
+
+## 2. 사업 정체성
+
+**Everstory Studio** (브랜드 표기는 Everstory 단독도 가능, 공식 사업체·도메인·법인 등록 시점 표기는 Everstory Studio) — 토론토(Brampton) 기반 커스텀 사진 다이컷 스티커 브랜드.
 
 - 타겟: 토론토 GTA + 한인 디아스포라 + 펫맘/MZ 감성 굿즈 시장
 - 차별화 포인트:
@@ -18,13 +24,21 @@
 
 → Etsy 평균 셀러 ($18–25 CAD) 와 직접 비교 안 당하는 카테고리로 포지셔닝.
 
-## 2. 상품 정의 — Shelf-style mix 기반
+## 3. 상품 정의 — Shelf-style mix 기반
 
 스티커 N개를 파는 게 아니라, **A5 시트 한 장 분량의 다이컷 면적**을 판다. bin packing 결과는 사진 비율과 사이즈 mix 에 따라 8–14개 사이로 변동.
 
 **프레이밍**: "Guaranteed minimum mix + bonus"
 
 > "1 large + 4 medium + 6 small = 11 stickers from your photo, plus bonus stickers in the leftover space"
+
+**상품 모드 (현 운영)**:
+
+| 모드 | 정의 | 운영 상태 |
+|------|------|----------|
+| **Photo Only** | 사진 누끼 스티커만 A5 한 시트에 자동 배치 | 기본형 옵션 — `Everstory_mixed.jsx` 단일 사이즈 모드 |
+| **Name Included** | 사진 중심 + 상단 production header 에 고객 이름·주문 정보 (별도 이름 스티커 없음) | **대표 MVP 모드** — `Everstory_mixed.jsx` (NameIncluded v15 superset) |
+| Mini Decor | 미니 데코 소량 추가 — 사진 보조 | 후순위 확장 |
 
 **SKU 4종**:
 
@@ -35,9 +49,52 @@
 | Trio | 3 designs, A5 시트 |
 | Memory Pack | 4+ designs, 2 시트 (한계비용 낮음, AOV 부스트) |
 
-문구 스티커·PhotoStrip 은 MVP 범위 외. Mini Decor 는 후순위.
+**MVP 제외**: 문구 스티커, PhotoStrip/인생네컷 배치 상품, 다중 시트 자동 분할.
 
-## 3. 가격 구조 (CAD)
+(원천: `docs/product_mvp_photo_sheet.md:15-35,76-80`)
+
+## 4. 사이즈·재질·옵션
+
+운영자가 `Everstory_mixed.jsx` 다이얼로그에서 직접 입력하는 항목들. 고객 표시 vs 내부 제작 옵션을 명확히 구분한다.
+
+### 사이즈 (긴 변 기준 인치 6단계 + Mixed)
+
+| 사이즈 | 인치 | mm | 디자인 cap (auto) |
+|--------|------|------|-------------------|
+| XS | 0.75" | 19.05 | 13 |
+| **S (기본)** | **1"** | **25.4** | **7** |
+| M | 1.25" | 31.75 | 5 |
+| L | 1.5" | 38.1 | 3 |
+| XL | 1.75" | 44.45 | 3 |
+| XXL | 2.5" | 63.5 | 1 |
+| Mixed | 2.5/1.75/1.25/1" 4 사이즈 | 혼합 | 1 |
+
+디자인 cap = 시트당 디자인당 최소 4–5회 등장 보장 + uniform grid 슬롯 기준. 사이즈 변경 시 ListBox 선택이 cap 초과면 자동 trim.
+
+### 재질 (고객 노출, 4종)
+
+White / Pearl Grey / Silver / Gold — 모두 한국 프리미엄 잉크젯 레이블 + LAMat-AF/Oraguard 라미.
+
+### 칼선 여백 (내부 제작 옵션, 고객 노출 X)
+
+0 / 0.5 / **1** (기본) / 2 mm — 운영자가 사진에 따라 선택.
+
+### 헤더 메타 6필드
+
+`info > header` 에 들어가는 ORDER DETAIL 6쌍 (3행 × 2열):
+
+| 필드 | 기본값 / 출처 |
+|------|---------------|
+| TYPE | "Name Add-on" |
+| SPEC | 사이즈 letter + 인치 + 칼선 여백 |
+| ORDER | 주문 번호 (공백 시 "—") |
+| MATERIAL | 옵션 선택값 |
+| PHOTOS | 사진 개수 |
+| DATE | ISO 날짜 (기본) |
+
+(원천: `CLAUDE.md:71-80`, `docs/product_mvp_photo_sheet.md:37-46`, `Everstory_mixed.jsx:85-105,547-564`)
+
+## 5. 가격 구조 (CAD)
 
 기본 원칙: **너 손에 떨어지는 net 을 기준으로 채널별 표시가 역산**.
 
@@ -50,7 +107,7 @@
 
 모두 *free shipping 포함* 표시. 첫 50건은 "Launch price" 명목으로 박아두고, 후기 쌓이면 +$3–5 인상 명분 확보.
 
-## 4. 원가 구조
+## 6. 원가 구조
 
 ### 변동원가 (COGS) — 가격 결정 시 이것만 본다 (1 주문 = 1 Solo 시트 기준)
 
@@ -77,7 +134,7 @@
 
 원칙: *볼륨에 비례하면 COGS, 비례하지 않으면 OpEx*. 구독료(Adobe·Claude·Codex)는 OpEx — 단가에 끼우면 매출 부진 시 단가 인상 → 더 안 팔림 → 죽음의 스파이럴.
 
-## 5. 마진 시나리오 (Solo $12.99 net 기준)
+## 7. 마진 시나리오 (Solo $12.99 net 기준)
 
 | 시나리오 | 광고비 | 주문당 contribution |
 |---------|--------|---------------------|
@@ -94,7 +151,7 @@
 
 → **첫 분기 목표: 월 22건** (광고 없이, 한인 커뮤니티·인스타 오가닉 중심)
 
-## 6. 채널 전략
+## 8. 채널 전략
 
 **Shopify 메인** — 인스타 우선이 아니라 Shopify 우선. 전문성 인지가 차별화의 일관성을 유지한다.
 
@@ -102,24 +159,38 @@
 - **Etsy**: 일단 보류. 첫 5–10건 후기 쌓인 후 추가 (USD 트래픽 보조)
 - **로컬 픽업**: 한인 커뮤니티·KakaoTalk 그룹 대상
 
-## 7. 6주 셋업 시퀀스
+## 9. 6주 셋업 시퀀스
 
-| 주차 | 작업 |
-|------|------|
-| Week 1 | 도메인 + Shopify 가입 + Payments 활성화 + 테마 선택 |
-| Week 2 | 로고 + 샘플 시트 사진 + 상품 카피 |
-| Week 3 | SKU 4종 등록 + 가격 셋업 + Customily 사진 업로드 앱 |
-| Week 4 | About / Shipping / Refund / FAQ 페이지 |
-| Week 5 | Order tag 자동화 + 이메일 템플릿 + production calendar |
-| Week 6 | Soft launch (친구 5–10명) + 인스타 개설 + 한인 커뮤니티 첫 포스팅 + Meta 광고 $5–10/일 |
+| 주차 | 작업 | 진행 |
+|------|------|------|
+| Week 1 | 도메인 + Shopify 가입 + Payments 활성화 + 테마 선택 | ☐ |
+| Week 2 | 로고 + 샘플 시트 사진 + 상품 카피 | ☐ |
+| Week 3 | SKU 4종 등록 + 가격 셋업 + Customily 사진 업로드 앱 | ☐ |
+| Week 4 | About / Shipping / Refund / FAQ 페이지 | ☐ |
+| Week 5 | Order tag 자동화 + 이메일 템플릿 + production calendar | ☐ |
+| Week 6 | Soft launch (친구 5–10명) + 인스타 개설 + 한인 커뮤니티 첫 포스팅 + Meta 광고 $5–10/일 | ☐ |
 
-## 8. 핵심 워크플로우 결정
+진행 칸 표기: `☐` 대기 / `◐` 진행 중 / `✓` 완료. 사용자가 매주 직접 갱신.
+
+## 10. 운영 파이프라인 요약
+
+상세는 `CLAUDE.md` "파이프라인" 섹션 참조. 비즈니스 레이어 의사결정에 영향을 주는 핵심 흐름만 요약:
+
+- **Phase 0 (수동 PS)**: 사용자가 PSD 에 두 레이어 직접 — `[0]` 실루엣, `[1..N]` 누끼 + 보정. 인건비의 핵심 비중 (11번 절 누끼 워크플로우 단축이 마진 레버).
+- **Phase A (UXP `everstory_save` 패널)**: 레이어 visibility 토글 + 저장만 (자동화 액션 호출 없음). `_clean.psd` + `_sil.png` 페어 → `02_cutout/`.
+- **Phase B+D (`Everstory_mixed.jsx`, Illustrator)**: 폴더 → 페어 ListBox multiselect → 단일 사이즈 (XS–XXL) 또는 Mixed → uniform grid 또는 zone packer → `03_output/{timestamp}_{sizeTag}_sheet01.ai` 자동 저장.
+- **하드웨어**: Epson ET-8550 (염료 잉크) + Summa D75 (CutContour 스폿 인식, 노드 500–1500 선호).
+- **컨벤션**: AI 레이어 `PrintData` (raster) / `KissCut` (cutline) / `info` (템플릿). 파일명 `01_original/{원본}.psd` → `02_cutout/{folderName}_NN_clean.psd` + `_sil.png` → `03_output/{YYYYMMDD_HHMMSS}_{sizeTag}_sheet01.ai`.
+
+(원천: `CLAUDE.md:82-198`)
+
+## 11. 핵심 워크플로우 결정
 
 - **모크업 승인**: 모든 주문에 PDF 모크업 → 고객 승인 → 인쇄. `Everstory_mixed.jsx` 끝의 `_saveAi` 옆에 PDF export 추가 필요 (현재 .ai 만 자동 저장).
 - **Bin packing 보장**: minRepeat 룰로 해결됨 — `Everstory_mixed.jsx` 가 디자인당 정확히 minRepeat 회 등장 강제 (`floor(slots / designCount)` 동적 + `MIN_REPEAT_OVERRIDE` lookup), leftover 0 일 때만 round-robin filler. Mixed 모드는 1디자인 + 19슬롯 (1.75×3+1.5×3+1.25×8+1×5, 1.25" 두 배 비중) 인치 통일 패턴.
 - **누끼 워크플로우 단축**: 인건비를 30분/건으로 줄이는 게 마진의 진짜 레버 (PSD 액션·키보드 매크로·재구매 시 PSD 캐시).
 
-## 9. 인정해야 할 trade-off
+## 12. 인정해야 할 trade-off
 
 - 부업 시작 = 인건비 0 가정 — 의식적 선택
 - 첫 50건 = 유료 R&D — 마진보다 데이터·후기·UGC 산출
@@ -127,12 +198,12 @@
 - 자체 디자인 자산 부족 — Mini Decor 는 multi-photo 번들로 우회, 후일 일러스트 외주($150–400)로 본격화
 - 트래픽은 직접 끌어와야 — Shopify 는 빈 가게. 한인 커뮤니티 + 인스타 오가닉 + Meta 광고 조합
 
-## 10. 미해결 / 다음 결정 포인트
+## 13. 미해결 / 다음 결정 포인트
 
 | 항목 | 상태 |
 |------|------|
 | 자재 #1 (LAMat-AF) 정확한 단가 | 미확정 — anysheet.co.kr 가격 확인 필요 |
-| 라미네이션 워크플로우 — `AGENTS.md` 반영 | 미반영 (모든 SKU 에 라미네이션 들어감) |
+| 라미네이션 워크플로우 — `CLAUDE.md` 반영 | 미반영 (모든 SKU 에 라미네이션 들어감) |
 | 모크업 PDF export — `Everstory_mixed.jsx` 수정 | 미구현 |
 | Bin packing minimum guarantee 로직 | 구현 완료 (`Everstory_mixed.jsx` minRepeat) |
 | 로고 / 브랜드 비주얼 정체성 | 미정 |
@@ -142,4 +213,5 @@
 
 ## 변경 이력
 
+- **2026-05-06** — 1-13 절 재번호. 정식명 "Everstory Studio" 명시 (브랜드 표기는 Everstory 단독도 가능). One-liner (1) / 사이즈·재질·옵션 (4) / 운영 파이프라인 요약 (10) 신규 절 추가. 6주 셋업 시퀀스에 진행도 칸 추가. 상품 정의에 Photo Only / Name Included / Mini Decor 모드 표 보강. 11·13 절의 `AGENTS.md` 참조를 `CLAUDE.md` 로 통일.
 - **2026-05-03** — 초기 버전. 가격 ($12.99 / $15.99 / $18.99 / $24.99 net) lock, Shopify 메인 채널 결정, 6주 셋업 시퀀스, COGS $6.40 lock.
