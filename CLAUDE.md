@@ -55,6 +55,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 - `Everstory_NameSticker.jsx` — 다이컷 스타일 이름 스티커 단독 생성/검수용 프로토타입. 현재 시트에는 통합하지 않고 폰트/backing/CutContour 테스트에 사용
 - `Everstory_NameIncludedSheet.jsx` — Name Included 단일 사이즈 시트 v15 baseline. 동결 운영 기준 (`docs/name_included_v15_baseline.md`). 새 기능은 `Everstory_mixed.jsx` 에 추가하고 v15 는 안정성용으로 유지
 - `Everstory_mixed.jsx` — 운영 메인 (v19 uniform grid). NameIncluded v15 의 superset. 폴더 → 페어 ListBox multiselect → 단일 사이즈 (XS/S/M/L/XL/XXL 인치 6단계) 또는 Mixed (2.5/1.75/1.25/1in 4 사이즈) 시트 생성 → `03_output/` 자동 저장. 단일 사이즈는 적응형 직사각 셀 (max cellW × max cellH) 위 `cols × rows` uniform grid 로 배치 — 모든 행이 같은 디자인 round-robin 순서, 외곽 4면 = 내부 gap 자동 균등 분배. 사이즈별 디자인 cap auto-cap (단일 모드: XS 13 / S 7 / M 5 / L 3 / XL 3 / XXL 1, Mixed: 1 디자인 고정 + 2.5×1 + hero 옆 1.25×4 stack + 1.75×3 + filler 1.25/1in = 약 23 슬롯). v15 trace cache 흐름 그대로 상속
+- `Everstory_mixed_v2.jsx` — v2 브랜드 템플릿(`template_cutout_v2.ait`) 변종 (v20). v1 superset, packing/cap 룰 동일. 차이점: `info > body` 142×175mm (v1 148×195) + `info > header_right` 우측 영역에만 값 주입 (라벨은 .ait 정적). 헤더 우측 2줄 우측 정렬: `{N} photos * {sizeLetter} / {inch} / {cut}mm  * {material}` / `Name add-on * Order date {date}`. 고객명/주문번호는 다이얼로그에 남겨두고 파일명·메타용으로만 사용. v1 은 안정성 백업으로 동결
 - `Everstory_CleanOffsetPath.jsx` — 선택한 Offset Path/CompoundPath 안쪽 조각을 제거하는 검수 보조 도구
 - `Everstory_TemplateBuilder.jsx` — 고정 프레임 템플릿/slot PathItem을 생성하는 보조 도구
 
@@ -63,6 +64,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 ```
 .
 ├── Everstory_mixed.jsx       # 운영 메인 — 단일사이즈+Mixed multiselect 시트 (v19 uniform grid)
+├── Everstory_mixed_v2.jsx    # v2 브랜드 템플릿용 변종 (v20, template_cutout_v2.ait + info > header_right)
 ├── Everstory_NameIncludedSheet.jsx # Name Included 단일 사이즈 시트 (v15 baseline, 동결)
 ├── Everstory_NameSticker.jsx # 다이컷 스타일 이름 스티커 단독 생성/검수용
 ├── Everstory_CleanOffsetPath.jsx # 선택한 offset/compound path 내부 조각 제거 유틸
@@ -74,7 +76,8 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 │   └── save_route.jsx        # PS PNG 라우팅 헬퍼 (legacy)
 ├── plugins/everstory_save/   # Phase A — UXP 패널 플러그인 (PS)
 ├── templates/
-│   └── template_cutout.ait   # A5 다이컷 시트 베이스, info 레이어 안 body/header/header_border/border/reg_border PathItem
+│   ├── template_cutout.ait   # A5 다이컷 시트 베이스 (v1), info 레이어 안 body/header/header_border/border/reg_border PathItem
+│   ├── template_cutout_v2.ait # v2 브랜드 템플릿 (Everstory_mixed_v2.jsx 전용). body 142×175 + info > header > header_right (값만)
 │   └── template_4cut.ait     # TemplateBuilder용 베이스, Info > a5_border + Frame > slot_01..slot_N PathItem
 ├── projects/{이름}/          # 작업별 폴더 (평면 구조)
 │   ├── 01_original/          # 원본 PSD/JPG/TIF
