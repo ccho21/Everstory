@@ -134,10 +134,10 @@
   }
 
   var doc = _openTemplateDoc(templateFile);
-  var bodyPath, headerRightPath;
+  var bodyPath, headerRightText;
   try {
     bodyPath = _findInfoPath(doc, "body");
-    headerRightPath = _findInfoPath(doc, "header_right");
+    headerRightText = _findInfoPath(doc, "header_right");
   } catch (eBorder) {
     alert(eBorder.message);
     try { doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eClose) {}
@@ -160,12 +160,6 @@
     try { doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eClose2) {}
     return;
   }
-
-  var headerRightBounds = headerRightPath.geometricBounds;
-  var headerRightL = headerRightBounds[0];
-  var headerRightT = headerRightBounds[1];
-  var headerRightW = headerRightBounds[2] - headerRightBounds[0];
-  var headerRightH = headerRightBounds[1] - headerRightBounds[3];
 
   var printLayer = doc.layers.add();
   printLayer.name = "PrintData";
@@ -233,7 +227,7 @@
   // _shelfRowsToPlaced 가 per-row + 세로 justify 로 final body 좌표 직접 산출 — 별도 centering 불필요
 
   var orderDetail = _buildOrderDetail(options, layoutPairs.length, packResult);
-  _drawProductionHeader(doc, printLayer, options, layoutPairs.length, headerRightL, headerRightT, headerRightW, headerRightH);
+  _drawProductionHeader(options, layoutPairs.length, headerRightText);
 
   var uniquePairs = _uniquePairsFromPlaced(packResult.placed);
   var failedItems = [];
@@ -642,14 +636,9 @@
     return parts.join(" + ");
   }
 
-  function _drawProductionHeader(doc, layer, options, photoCount, headerRightL, headerRightT, headerRightW, headerRightH) {
-    doc.activeLayer = layer;
-
-    var infoFont = _resolveInfoFont();
-    var dark = _rgb(54, 54, 50);
-    var marginPt = 2 * MM_TO_PT;
-    var centerY = headerRightT - headerRightH / 2;
-
+  function _drawProductionHeader(options, photoCount, headerRightText) {
+    // 템플릿의 info > header > header_right TextFrame 에 폰트·사이즈·정렬이 미리 잡혀 있다.
+    // 값만 contents 로 교체. 새 TextFrame 만들지 않음.
     var sizeToken = options.isMixed
       ? "MIX"
       : _sizeLetter(options.sizeMm) + " / " + _inchStr(options.sizeMm);
@@ -657,19 +646,7 @@
     var line1 = photoCount + " photos * " + sizeToken + " / " + options.cutMarginMm + "mm  * " + options.material;
     var line2 = "Name add-on * Order date " + options.orderDate;
 
-    var tf = layer.textFrames.add();
-    tf.contents = line1 + "\r" + line2;
-    tf.left = 0;
-    tf.top = 0;
-    var attrs = tf.textRange.characterAttributes;
-    if (infoFont) attrs.textFont = infoFont;
-    attrs.size = 7;
-    attrs.leading = 9;
-    attrs.tracking = 20;
-    attrs.fillColor = dark;
-    try { tf.textRange.paragraphAttributes.justification = Justification.RIGHT; } catch (eJust) {}
-    _moveItemCenterRight(tf, headerRightL + headerRightW - marginPt, centerY);
-    try { tf.name = "HeaderValues_Print"; } catch (eName) {}
+    headerRightText.contents = line1 + "\r" + line2;
   }
 
   function _moveItemCenterLeft(item, left, centerY) {
@@ -1160,6 +1137,11 @@
     if (container.compoundPathItems) {
       for (var j = 0; j < container.compoundPathItems.length; j++) {
         if (container.compoundPathItems[j].name === name) return container.compoundPathItems[j];
+      }
+    }
+    if (container.textFrames) {
+      for (var t = 0; t < container.textFrames.length; t++) {
+        if (container.textFrames[t].name === name) return container.textFrames[t];
       }
     }
     if (container.groupItems) {
