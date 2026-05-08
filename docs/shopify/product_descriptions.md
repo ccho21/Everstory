@@ -8,6 +8,29 @@
 
 ---
 
+## Product Setup Baseline
+
+| 항목 | 기준 |
+|------|------|
+| Products | Solo, Duo, Trio, Memory Pack |
+| Status | `Draft` 로 등록. storefront launch 직전 `Active` 전환 |
+| Variant option 1 | Size: XS / S / M / L / XL / XXL / Mixed. 숫자 size 는 6종이고, Mixed 는 curated combination 옵션 |
+| Variant option 2 | Material: White Matte / Pearl Grey / Silver / Gold |
+| Fulfillment | Made-to-order. 자동 fulfill 끔 |
+| Sales channels | Online Store 만 사용. POS / Shop / Facebook 은 MVP 이후 |
+
+### Easify Option Set
+
+Easify Product Options Free plan 에서 동일 option set 을 4개 상품에 적용한다.
+
+| Field | Type | 기준 |
+|-------|------|------|
+| Photo upload | File upload | Solo 1장, Duo 2장, Trio 3장, Memory Pack 4-8장 |
+| Customer/pet name | Text input | sheet header 에 들어갈 이름 |
+| Special instructions | Long text | crop 금지, 선호 tone, 강조 detail, 한국어 요청 |
+
+---
+
 ## SKU 1 — Custom Photo Sticker Sheet · Solo
 
 **Title**: `Custom Photo Sticker Sheet — Solo`
@@ -170,7 +193,7 @@ Sticker count varies with photo proportion. We hand-pack each sheet to maximize 
 
 ### Made in Toronto
 
-Hand cut around every subject. Hair, ears, paws, and the tiny gaps between fingers — all done by a person, not an algorithm. Each order is reviewed, mocked up, and approved before it goes to print.
+Hand cut around every subject. Hair, ears, paws, and the tiny gaps between fingers — all done by a person, not an algorithm. Each order is reviewed before production starts. We work from your photo and order notes, and email only if the photo needs replacement.
 
 Printed on Epson ET-8550 (dye ink, fade resistant), cut on Summa D75 (industrial precision). All in Toronto, by Everstory Studio.
 

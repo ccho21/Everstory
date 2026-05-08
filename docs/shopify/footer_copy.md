@@ -1,6 +1,6 @@
-# 한국어 Footer 카피 — Stage 4 추가
+# 한국어 Footer 카피
 
-영어 페이지 끝에 한국어 요약을 추가하는 1차 launch 전략. 50건+ 후 Shopify Translate & Adapt 앱으로 전체 한국어 페이지 전환 검토.
+영어 페이지 끝에 한국어 요약을 추가할 때 사용하는 copy SOT. 영어 원문이 기준이고, 한국어 footer 는 한국어 고객이 핵심 조건을 빠르게 확인하도록 돕는 요약이다.
 
 각 영어 페이지 마지막에 다음 형식으로 추가:
 
@@ -65,7 +65,7 @@
 
 ---
 
-## 3. Privacy Policy — 한국어 footer (선택)
+## 3. Privacy Policy — 한국어 footer
 
 Shopify 자동 생성 본문에 추가. 한국어 사용자 대비 핵심 안내만.
 
@@ -81,7 +81,7 @@ Shopify 자동 생성 본문에 추가. 한국어 사용자 대비 핵심 안내
 
 ---
 
-## 4. Terms of Service — 한국어 footer (선택)
+## 4. Terms of Service — 한국어 footer
 
 ```
 한국어 안내
@@ -173,15 +173,3 @@ GTA 한인 커뮤니티 분들 환영합니다. 결제는 영어로 진행되지
 - Shopify Rich Text Editor 의 Heading 3 사용 → "한국어 안내" 헤더는 영어 컨텐츠와 시각적 구분
 - horizontal rule (`<hr>`) 로 영어 / 한국어 구분
 - footer 의 "Contact" 이메일 주소는 영어와 동일한 placeholder `[orders@everstory-domain.com]` — 도메인 확정 후 일괄 교체
-
-## 향후 옵션 C 마이그레이션 (50건+ 후)
-
-한인 사용자 첫 5건 이상 발생 시 검토:
-
-1. Shopify 어드민 → Apps → "Translate & Adapt" install (무료, Shopify 자체 제공)
-2. Settings → Markets → Languages → Korean 추가
-3. Translate & Adapt 에서 영어 → 한국어 페이지 본문 번역 (자동 번역 + 수동 검수)
-4. 브라우저 언어 한국어 사용자에게 자동으로 한국어 버전 노출
-5. 영어 페이지의 한국어 footer 는 그대로 유지 (검색 유입 영어 사용자도 한국어 안내 발견 가능)
-
-전체 페이지 한국어 전환은 옵션 A footer 전략의 SEO 데이터 (한국어 검색어 유입, 한국어 footer 클릭률) 보고 결정.

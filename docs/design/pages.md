@@ -1,6 +1,8 @@
 # Everstory — Storefront Spec
 
-> Shopify MVP 11 페이지의 *제목·H1·subtitle·primary CTA* 명세. 본문 카피 운영 규칙은 [`voice.md`](voice.md), 사진 출력 스펙은 [`photography.md`](photography.md).
+> Shopify MVP 11 페이지의 *제목·H1·subtitle·primary CTA* 명세. 본문 카피 운영 규칙은 [`voice.md`](voice.md), 사진 출력 스펙은 [`photography.md`](photography.md). 붙여넣기용 본문은 [`pages_copy.md`](../shopify/pages_copy.md), 상품 설명은 [`product_descriptions.md`](../shopify/product_descriptions.md), 정책 본문은 [`policies.md`](../shopify/policies.md) 를 기준으로 한다.
+
+`A5 sheet` 는 고객-facing 상품 표현이다. 내부 Illustrator pack area 치수는 [`brand.md`](brand.md) 의 Format Boundaries 를 따른다.
 
 페이지 acceptance gate (모든 페이지 공통): ① 모바일 반응형 ② SEO meta (title / description / og:image) ③ 접근성 contrast 4.5:1.
 
@@ -83,9 +85,9 @@
 | 슬롯 | 값 |
 |------|-----|
 | `title` | `Shipping & Pickup · Everstory Studio` |
-| `meta.description` | `GTA pickup available. Canada Post 2–5 business days from order.` |
+| `meta.description` | `Ontario shipping and Toronto pickup for Everstory photo sticker orders.` |
 | H1 | `Shipping & Pickup` |
-| Sections | GTA pickup 1 카드 / Canada Post 1 카드 / 일정 (1영업일 안 시작, 2–5영업일 안 발송) / 해외 배송 미지원 안내 |
+| Sections | Ontario shipping 1 카드 / Toronto pickup 1 카드 / 일정 (1영업일 안 시작, 2–5영업일 안 발송) / Ontario 외 지역 미지원 안내 |
 
 ## C.8 Refund Policy — `/pages/refund`
 
@@ -120,7 +122,7 @@
 | 슬롯 | 값 |
 |------|-----|
 | `title` | `Terms of Service · Everstory Studio` |
-| `meta.description` | `Terms governing Everstory custom orders and mockup approval.` |
+| `meta.description` | `Terms governing Everstory custom photo sticker orders and customer-supplied images.` |
 | H1 | `Terms of Service` |
 | 베이스 | Shopify 기본 generator + 톤 다듬기 |
 | 핵심 추가 | 커스텀 상품 / 환불 조건 / 사진 사용 권한 명시. |

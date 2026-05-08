@@ -4,7 +4,13 @@
 
 ## 사업 메시지
 
-One-liner / 차별화 5축 / 타겟 → [`strategy.md`](../business/strategy.md) §1·§2.
+One-liner / 차별화 5축 / 타겟 → [`business.md`](../business/business.md).
+
+## Format Boundaries
+
+- **Customer-facing product**: A5 photo sticker sheet.
+- **Print design frame**: `template_cutout_v2.ait` 가 보유.
+- **Photo pack area**: `info > body` 142 x 175mm. 이 치수는 내부 배치 영역이며 고객-facing sheet size 로 쓰지 않는다.
 
 ## Voice / Tone
 
@@ -16,7 +22,8 @@ One-liner / 차별화 5축 / 타겟 → [`strategy.md`](../business/strategy.md)
 
 - **EVERSTORY** — `Amandine Bold` (Didone 계열 high-contrast 디스플레이 세리프, 얇은 stem + 두꺼운 bowl).
 - **STUDIO** — `Titular Bold` (compact sans, 워드마크 옆 underline 동반).
-- 자산: `assets/online_logo.png`
+- **MVP web asset**: `assets/online_logo.png` (2048 x 2048 RGBA).
+- **Later asset**: `assets/wordmark.svg` 는 Illustrator 에서 outline export 후 교체. MVP blocker 아님.
 
 ## Typography
 
@@ -74,7 +81,7 @@ One-liner / 차별화 5축 / 타겟 → [`strategy.md`](../business/strategy.md)
 
 - **Wordmark**: MVP 는 `assets/online_logo.png` (2048×2048 RGBA) 직접 사용 — retina 충분. SVG 변환 (`assets/wordmark.svg`) 은 Illustrator 에서 Amandine Bold + Titular Bold 텍스트 → outline → SVG export 의 수동 작업으로 분리 (Phase B 또는 이후). 폰트 의존성 회피 + 작은 파일 크기는 SVG 가 우월하지만, MVP 출시 블로커 아님.
 - **Body / UI 스택**: `'Avenir Next LT Pro', 'Avenir Next', 'Helvetica Neue', system-ui, sans-serif` — Adobe Fonts 구독으로 Avenir Next LT Pro 커버.
-- **Editorial display 스택**: `'Cormorant Garamond', 'Playfair Display', Georgia, serif` — 큰 헤딩 (Hero / About) 전용.
+- **Editorial display 스택**: `'Cormorant Garamond', 'Playfair Display', Georgia, serif` — 큰 헤딩 (Hero / About) 전용. MVP 기본은 `Cormorant Garamond` 600.
 - **Hangul fallback**: 미설정. 영어 단일 정책.
 
 **Type scale (rem)**: 0.75 / 0.875 / 1.0 / 1.125 / 1.25 / 1.5 / 2.0 / 3.0 / 4.0 — 1rem = 16px, mobile 기준. desktop 은 step +1.
@@ -123,4 +130,4 @@ One-liner / 차별화 5축 / 타겟 → [`strategy.md`](../business/strategy.md)
 3. **품질** — `PREMIUM QUALITY PHOTO STICKERS`
 4. **슬로건 + QR** — `MADE TO KEEP. MADE FOR YOU.` + QR (`SCAN TO REORDER OR SHARE YOUR EXPERIENCE`)
 
-미해결·결정 대기 항목은 [`pending.md`](../business/pending.md) 참조.
+사업 기준은 [`business.md`](../business/business.md) 를 참조한다.

@@ -1,8 +1,8 @@
-# Stage 1 — Shopify Settings 입력 시트
+# Shopify Settings Checklist
 
-humming-giggling-canyon.md Stage 1 (1A–1J) 의 어드민 입력값. 어드민 → Settings 경로 따라가면서 한 칸씩 채우면 됨. 검증 칸은 입력 후 즉시 확인.
+Shopify admin Stage 1 (1A–1J) 입력값. 어드민 → Settings 경로 따라가면서 한 칸씩 채우면 됨. 검증 칸은 입력 후 즉시 확인.
 
-브랜드 표기는 `docs/design/brand.md` 와 `docs/business/strategy.md` 기준으로 **Everstory Studio** 단일.
+브랜드 표기는 `docs/design/brand.md` 와 `docs/business/business.md` 기준으로 **Everstory Studio** 단일.
 
 ---
 
@@ -105,7 +105,7 @@ humming-giggling-canyon.md Stage 1 (1A–1J) 의 어드민 입력값. 어드민 
 
 ## 1E. Shipping & Delivery — `Settings → Shipping and delivery`
 
-플랜의 "GTA + 픽업" 정책. Shopify Basic 플랜은 postal code prefix zone 분기 가능 (Custom shipping zone).
+현재 launch 기준은 **Ontario free shipping + Toronto Studio pickup**. Shopify Basic 에서는 Ontario zone 1개와 local pickup 으로 처리한다.
 
 ### Shipping profile: General
 
@@ -117,11 +117,6 @@ humming-giggling-canyon.md Stage 1 (1A–1J) 의 어드민 입력값. 어드민 
 | Rate name | `Free shipping (lettermail)` |
 | Price | `$0.00` |
 | Conditions | None (모든 주문 free) |
-
-> 메모: Ontario 전체로 잡는 이유 — Shopify Basic 은 postal code prefix 단위 zone 이 가능하지만 GTA 만 정확히 prefix 로 잘라내려면 prefix 30+ 개 입력해야 함 (M\*, L1G–L1Z, L3P–L7T, L9\* 등). 1차 launch 는 Ontario 전체 + lettermail 가정 (GTA 외 Ontario 도 lettermail 비용 비슷). 2차에서 prefix 제한 추가.
->
-> 만약 정말 GTA 만 원하면 → Zone name `GTA Free Shipping`, Postal code 옵션에서 다음 prefix 입력:
-> `M*, L1G*, L1H*, L1J*, L1K*, L1L*, L1M*, L1N*, L1P*, L1R*, L1S*, L1T*, L1V*, L1W*, L1X*, L1Y*, L1Z*, L3P*, L3R*, L3S*, L3T*, L4A*, L4B*, L4C*, L4E*, L4G*, L4H*, L4J*, L4K*, L4L*, L4S*, L4T*, L4W*, L4X*, L4Y*, L4Z*, L5A*, L5B*, L5C*, L5E*, L5G*, L5H*, L5J*, L5K*, L5L*, L5M*, L5N*, L5P*, L5R*, L5S*, L5T*, L5V*, L5W*, L6A*, L6B*, L6C*, L6E*, L6G*, L6H*, L6J*, L6K*, L6L*, L6M*, L6P*, L6R*, L6S*, L6T*, L6V*, L6W*, L6X*, L6Y*, L6Z*, L7A*, L7B*, L7C*, L7E*, L7G*, L7J*, L7K*, L7L*, L7M*, L7N*, L7P*, L7R*, L7S*, L7T*`
 
 **Zone 2: Local Pickup**
 | 필드 | 값 |
@@ -198,15 +193,15 @@ humming-giggling-canyon.md Stage 1 (1A–1J) 의 어드민 입력값. 어드민 
 
 ## 1I. Policies — `Settings → Policies`
 
-자동 생성 템플릿 → 4개 페이지 추가. 본문 보강은 **Stage 4** 에서 (`docs/shopify/policies.md` 작성 예정).
+정책 본문은 [`policies.md`](policies.md) 기준으로 Stage 1I 에서 publish 한다. Privacy / Terms 는 Shopify 자동 생성 템플릿을 사용하되 placeholder 와 made-to-order 조항을 보강한다.
 
-| Page | Stage 1 액션 | Stage 4 액션 |
-|------|--------------|--------------|
-| Refund policy | "Generate from template" 클릭 → 토론토 주소만 수정 | made-to-order 환불 불가 / 인쇄 결함 100% 재제작 추가 |
-| Shipping policy | 템플릿 → GTA + 픽업 placeholder | lead time (1영업일 안 시작, 총 2–5영업일), 사진 부적합 시 이메일 안내 정책 추가 |
-| Privacy policy | 템플릿 그대로 (PIPEDA 호환) | (선택) 한국어 번역 |
-| Terms of service | 템플릿 그대로 | 토론토 관할 명시 |
-| Contact information | 사업자 이메일·주소 |
+| Page | 액션 | 검증 |
+|------|------|------|
+| Refund policy | [`policies.md`](policies.md) §1 붙여넣기 | made-to-order, no mockup approval, print defect reprint 기준 포함 |
+| Shipping policy | [`policies.md`](policies.md) §2 붙여넣기 | Ontario free shipping, Toronto Studio pickup, 2-5 business days to shipped 포함 |
+| Privacy policy | Shopify template 생성 → 5개 placeholder 교체 | PIPEDA, photo use, business info placeholder 없음 |
+| Terms of service | Shopify template 생성 → 5개 placeholder 교체 → made-to-order 조항 삽입 | customer-supplied image license, Ontario jurisdiction 포함 |
+| Contact information | 사업자 이메일·주소·HST/GST 입력 | footer 자동 링크 노출 |
 
 **검증**: 4개 페이지 published. Footer 에 자동 링크 노출.
 
@@ -230,14 +225,17 @@ humming-giggling-canyon.md Stage 1 (1A–1J) 의 어드민 입력값. 어드민 
 
 1. 어드민 → Storefront password 활성 (테마 작업 전 노출 차단)
 2. Test order 1건:
-   - 상품: Stage 2 등록 후 가능 → **Stage 2 종료 후 통합 smoke test**
-   - postal code: M5V 3A8 (Toronto)
+   - 상품: Stage 2 등록 상품 1개 (`Solo` / `S` / `White Matte`)
+   - Easify option: photo upload, customer/pet name, special instructions 입력
+   - postal code: M5V 3A8 (Toronto) 또는 K1A 0B1 (Ontario)
    - 결제: 4242 카드
-   - 결과: HST 13% 라인 + Free shipping + confirmation 이메일 수신
+   - 결과: HST 13% 라인 + Free shipping + confirmation 이메일 수신 + order detail 에 option data/file URL 표시
 3. 비Ontario postal code (V6B 1A1) → "shipping not available" 차단
 
 ---
 
 ## 다음 단계
 
-- **Stage 2 진입 시**: `product_descriptions.md` (작성 예정) 카피 복붙
+- **Stage 2 상품 등록**: [`product_descriptions.md`](product_descriptions.md) 기준으로 4 SKU 를 Draft 로 만든다.
+- **Easify Product Options Free plan**: 동일 option set 을 4 SKU 에 붙인다.
+- **Stage 2 종료 후**: 위 smoke test 를 다시 통과한 뒤 상품 Active 전환을 검토한다.

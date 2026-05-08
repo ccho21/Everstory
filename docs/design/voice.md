@@ -15,8 +15,8 @@
 | Substance | keep, kept, made, hand, finish, paper, ink, edge, slow, considered |
 | Time | moment(s), morning, evening, every day, the years, before & after |
 | Place | Toronto, the studio, the table, by hand |
-| Object | sheet, sticker, mockup, photo, archive, page |
-| Process | trace, cut, lay out, print, review, approve |
+| Object | sheet, sticker, photo, archive, page, note |
+| Process | trace, cut, lay out, print, finish, send |
 
 **원칙**: 명사·동사 중심. 형용사는 최소화 (luxury 톤은 "luxury" 라고 말해서 만들어지지 않음 — 절제로 만들어짐).
 
@@ -57,18 +57,18 @@
 | About hero | 40-80 | (founder + Toronto + craft 한 묶음) |
 | Footer one-liner | 5-10 | (태그라인 또는 thank-you) |
 | FAQ answer | 30-80 | (한 질문당) |
-| Email subject | 4-8 | (mockup ready / order received) |
+| Email subject | 4-8 | (order received / photo needed / order shipped) |
 
 ## 카피 톤 예시 (Do)
 
-> "Every order begins with a photograph. We trace it by hand, lay out a sheet, and send you a proof to approve before anything is printed. Made to keep, in Toronto."
+> "Every order begins with a photograph and a few notes from you. We trace the outline by hand, lay out the sheet, and begin within one business day. Made to keep, in Toronto."
 
 이게 통과한 이유:
-- 명사·동사 중심 ("photograph", "trace", "lay out", "send", "approve", "printed")
+- 명사·동사 중심 ("photograph", "notes", "trace", "lay out", "begin")
 - 형용사 1개만 ("Made to keep" — 태그라인 변형)
 - 자가 라벨링 없음
 - 토론토 local craft 앵글 자연스럽게 박힘
-- 모크업 승인 워크플로우 정보 전달 + 톤 양립
+- 주문 노트 기반 제작 흐름을 차분하게 설명
 
 ## 카피 톤 예시 (Don't)
 

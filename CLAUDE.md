@@ -6,7 +6,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 첫 주력 상품은 **A5 커스텀 사진 다이컷 스티커 시트**. 대표 모드는 **Name Included** (사진 + 상단 헤더에 고객/주문 정보). 운영 메인은 **`Everstory_mixed_v2.jsx`** (v2 브랜드 템플릿). 한 시트 정책 — A5 한 시트만 생성, 넘치는 입력은 사이즈별 디자인 cap (auto-cap) 으로 입력 단계에서 제한. 칼선 여백 (0/0.5/1/2mm) 은 고객 옵션이 아니라 내부 제작 옵션.
 
-상품/운영 정책은 [docs/business/strategy.md](docs/business/strategy.md) §3.
+상품/운영 정책은 [docs/business/business.md](docs/business/business.md).
 
 ## 디렉토리 구조
 
@@ -62,8 +62,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 - [**비즈니스**](docs/business/) — 사업·전략
   - [plan.md](docs/business/plan.md) — 비즈니스 문서 목적·중요도·정리 계획
-  - [strategy.md](docs/business/strategy.md) — 사업 전략·가격·채널·원가
-  - [pending.md](docs/business/pending.md) — 미해결·결정 대기 항목
+  - [business.md](docs/business/business.md) — 사업 정의·상품·장비·가격·채널·배송·런칭 목표
 - [**디자인**](docs/design/) — 인쇄·웹 디자인 정의
   - [plan.md](docs/design/plan.md) — 디자인 문서 목적·중요도·정리 계획
   - [brand.md](docs/design/brand.md) — voice·워드마크·typography·color·layout·사진 큐레이션 (인쇄+웹 통합)
@@ -78,8 +77,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 - [**Shopify**](docs/shopify/) — 웹 스토어
   - [plan.md](docs/shopify/plan.md) — Shopify 문서 목적·중요도·정리 계획
   - **셋업·어드민**
-    - [admin_setup_plan.md](docs/shopify/admin_setup_plan.md) — 어드민 백엔드 셋업 1A–1J 실행 플랜
-    - [settings_checklist.md](docs/shopify/settings_checklist.md) — 1A–1J 설정 체크리스트
+    - [settings_checklist.md](docs/shopify/settings_checklist.md) — 1A–1J 설정 체크리스트와 통합 smoke test
   - **카피·콘텐츠**
     - [pages_copy.md](docs/shopify/pages_copy.md) — About/FAQ/가이드 페이지 카피
     - [product_descriptions.md](docs/shopify/product_descriptions.md) — 4 SKU 상품 설명

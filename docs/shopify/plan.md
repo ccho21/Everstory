@@ -30,31 +30,19 @@ Shopify 문서에서 제외한다.
 
 ## Document Purpose Table
 
-| 문서 | 역할 | 중요도 | 처리 | 채워야 할 내용 |
-|------|------|--------|------|----------------|
-| `plan.md` | Shopify 문서 정리 기준과 작업 우선순위. | P0 | 신설 유지 | admin 실행 SOT와 copy SOT 역할 구분 |
-| `settings_checklist.md` | Shopify admin 실행 SOT. Settings 1A-1J 입력값과 검증. | P0 | 유지, 최신 기준으로 정리 | Ontario vs GTA 표현 통일, Stage 2 연결 문구 최신화 |
-| `product_descriptions.md` | 상품 4종 description copy SOT. Shopify product page에 붙여넣는 본문. | P0 | 유지, copy 충돌 제거 | approval/mockup 문구 삭제, Easify/order notes 기준 반영 |
-| `policies.md` | Refund, Shipping, Privacy, Terms policy SOT. | P0 | 유지 | no mockup approval, Ontario shipping, photo rights 기준 일치 |
-| `pages_copy.md` | About, FAQ, Sizing, Materials page copy SOT. | P1 | 유지 | FAQ와 policy의 shipping/lead time 표현 일치 |
-| `footer_copy.md` | 한국어 footer copy SOT. | P1 | 유지, 선택 표현 축소 | 실제 적용 위치와 적용 전제 명확화 |
-| `admin_setup_plan.md` | 과거 통합 실행 plan. `settings_checklist.md`와 중복이 많다. | P0 | 삭제 또는 강한 축소 | 고유 정보만 `plan.md`/`settings_checklist.md`로 흡수 |
-| `preview.html`, `wireframes.html` | 시각 시안. admin 실행에는 직접 필요 없음. | P2 | 유지 가능 | 디자인 정리 후 필요 없으면 삭제 후보 |
+| 문서 | 역할 | 중요도 | 상태 |
+|------|------|--------|------|
+| `plan.md` | Shopify 문서 범위와 남은 작업 우선순위. | P0 | 유지 |
+| `settings_checklist.md` | Shopify admin 실행 SOT. Settings 1A-1J 입력값과 통합 smoke test. | P0 | 유지 |
+| `product_descriptions.md` | 상품 4종 description copy, variant 기준, Easify 최소 option set SOT. | P0 | 유지 |
+| `policies.md` | Refund, Shipping, Privacy, Terms policy SOT. | P0 | 유지 |
+| `pages_copy.md` | About, FAQ, Sizing, Materials page copy SOT. | P1 | 유지 |
+| `footer_copy.md` | 한국어 footer copy SOT. | P1 | 유지 |
+| `preview.html`, `wireframes.html` | 시각 시안. admin 실행에는 직접 필요 없음. | P2 | 디자인 정리 후 삭제 또는 갱신 판단 |
 
-## P0 Cleanup
+## Remaining Work
 
-- `admin_setup_plan.md` 의 중복 정보를 줄인다. Shopify 실행값은 `settings_checklist.md`로, 문서 정리 기준은 이 파일로, 사업 판단은 `docs/business/`로 이동한다.
-- 배송 기준을 통일한다. 현재 권장 기준은 Ontario free shipping + Toronto Studio pickup.
-- `product_descriptions.md` 의 "reviewed, mocked up, and approved before print" 문구를 제거한다.
-- `settings_checklist.md`, `policies.md`, `pages_copy.md`, `product_descriptions.md` 의 lead time과 shipping 표현을 맞춘다.
-- Customily는 현재 실행 기준에서 제거한다. 현재 MVP 앱은 Easify Product Options Free plan.
-
-## P1 Fill
-
-- Easify option set 최소 설정: photo upload, customer/pet name, special instructions.
-- Product 4종 등록 기준: Solo, Duo, Trio, Memory Pack; size 6; material 4; made-to-order.
-- Test order acceptance: Toronto/Ontario address, HST, payment, attached option data, email confirmation.
-- Policy placeholder 교체 목록: email, address, business number, jurisdiction.
+현재 Shopify MVP 실행 문서의 P0/P1 정리는 완료된 상태로 본다. 남은 항목은 MVP 이후 고도화와 시안 파일 정리 판단이다.
 
 ## P2 Later
 
@@ -63,3 +51,4 @@ Shopify 문서에서 제외한다.
 - Translate & Adapt 한국어 전체 페이지 전환.
 - Customily 또는 live preview 앱 전환.
 - Meta Pixel, newsletter, review app, Etsy sync.
+- `preview.html`, `wireframes.html` 의 과거 proof approval 흐름은 MVP 실행 문서에서 제외되어 있으므로, 디자인 재사용 가치가 없으면 삭제한다.

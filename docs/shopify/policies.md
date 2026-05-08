@@ -2,7 +2,7 @@
 
 Shopify 어드민 → Settings → Policies 에 4개 페이지로 등록. Refund / Shipping 은 made-to-order 운영 반영해서 직접 작성. Privacy / Terms 는 Shopify "Generate from template" 사용하고 사업장 정보만 채우면 됨 (PIPEDA / 토론토 관할 호환).
 
-본문은 Stage 1I 진입 시 그대로 붙여넣음. 한국어 footer 추가는 한국 사용자 비중 검토 후 Stage 5 에서 결정.
+본문은 Stage 1I 진입 시 그대로 붙여넣음. 한국어 footer 를 함께 붙이는 경우 [`footer_copy.md`](footer_copy.md) 의 해당 정책 섹션을 같은 본문 마지막에 추가한다.
 
 대괄호 `[…]` 는 placeholder — 사용자 사업체 정보로 교체 후 publish.
 
@@ -139,14 +139,6 @@ footer 자동 노출. 추가 작업 없음.
 
 ---
 
-## 한국어 footer (선택, Stage 5 이후 결정)
+## 한국어 Footer 적용
 
-한인 디아스포라 사용자가 영어 정책에 익숙하지 않은 경우 대비 — 각 정책 본문 마지막에 한국어 요약 4-5줄 추가 가능. 1차 launch 는 영어 단일 (`docs/design/brand.md` Web Extensions §Hangul fallback `미설정. 영어 단일 정책` 일치).
-
-만약 추가한다면 핵심 4줄:
-- 환불: 인쇄 시작 전 (보통 주문 후 1영업일 이내) 환불 가능, 인쇄 결함 시 100% 재제작
-- 배송: 온타리오 무료, 토론토 픽업 가능
-- 분실: 14영업일 미수령 시 1회 무상 재제작
-- 문의: [한국어 가능 이메일]
-
-이 추가는 한인 커뮤니티 첫 포스팅 (`business_strategy.md:168`) 직전에 결정.
+정책 페이지에 한국어 안내를 붙일 때는 [`footer_copy.md`](footer_copy.md) 의 Refund / Shipping / Privacy / Terms 섹션을 같은 Shopify policy body 마지막에 추가한다. 영어 정책 본문이 기준이고, 한국어 footer 는 고객 이해를 돕는 요약이다.

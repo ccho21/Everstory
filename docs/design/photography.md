@@ -17,6 +17,19 @@
 
 **총 8 컷, 1 일 촬영 가능.** 자연광 의존이라 맑은 날 11AM-2PM 박스 잡기.
 
+## Asset Mapping
+
+| Asset | Source shot | 사용 위치 |
+|-------|-------------|-----------|
+| `home_hero.jpg` | #1 Cream linen flat lay | Home hero / OG 후보 |
+| `product_hero_solo.jpg` | #1 또는 #2 | Product hero |
+| `product_detail_lift.jpg` | #3 tactile 컷 | Product detail / How it works |
+| `size_laptop.jpg` | #4 laptop lifestyle | Sizing Guide |
+| `size_journal.jpg` | #5 journal lifestyle | Sizing Guide |
+| `size_phone.jpg` | #6 phone case lifestyle | Sizing Guide |
+| `process_lamination.jpg` | #7 macro detail | About process strip |
+| `about_hero.jpg` | #8 작업대 wide shot | About hero |
+
 ## 컬러 그레이딩
 
 - **WB**: 5400K (warm white). cool / blue 톤 금지.
