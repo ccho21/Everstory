@@ -1,6 +1,6 @@
 # Everstory — Storefront Spec
 
-> Shopify MVP 11 페이지의 *제목·H1·subtitle·primary CTA* 명세. 본문 카피는 Phase C 에서 작성 (`docs/shopify/voice.md` 규칙 적용). photography 슬롯은 `docs/shopify/photography.md` 의 출력 스펙 참조.
+> Shopify MVP 11 페이지의 *제목·H1·subtitle·primary CTA* 명세. 본문 카피 운영 규칙은 [`voice.md`](voice.md), 사진 출력 스펙은 [`photography.md`](photography.md).
 
 페이지 acceptance gate (모든 페이지 공통): ① 모바일 반응형 ② SEO meta (title / description / og:image) ③ 접근성 contrast 4.5:1.
 
@@ -11,7 +11,7 @@
 | 슬롯 | 값 |
 |------|-----|
 | `title` (browser tab) | `Everstory Studio — Photo stickers, made in Toronto` |
-| `meta.description` | `A5 die-cut photo sticker sheets, traced and finished by hand. Order with a photo, approve a mockup, made in Toronto.` |
+| `meta.description` | `A5 die-cut photo sticker sheets, traced and finished by hand. Made in Toronto, shipped in 2–5 business days.` |
 | Hero H1 | (display serif, large) `Photographs, kept by hand.` (placeholder, Phase C 확정) |
 | Hero subtitle | (body, 1줄) Toronto 시작 + die-cut sheet 핵심 한 줄 |
 | Hero primary CTA | `Shop the lookbook` → `/collections/all` |
@@ -24,7 +24,7 @@
 | 슬롯 | 값 |
 |------|-----|
 | `title` | `Solo — 1 design, A5 sheet · Everstory Studio` |
-| `meta.description` | `One design, multiple stickers per sheet. Pick a size, send a photo, approve the mockup.` |
+| `meta.description` | `One design, multiple stickers per sheet. Pick a size, send a photo, made in Toronto.` |
 | H1 | `Solo` |
 | Subtitle | `1 design · A5 sheet` |
 | Price | `$15.99 CAD` |
@@ -65,7 +65,7 @@
 | Subtitle | `4 designs · 2 sheets` |
 | Price | `$28.99 CAD` |
 | Line item properties | Photo slot 1-4 · Name slot 1-4 · Optional notes |
-| 추가 카피 | "Need more than 4 designs? Order Memory Pack again — we'll batch them." (Open Decision #3, MVP 4 고정) |
+| 추가 카피 | "Need more than 4 designs? Order Memory Pack again — we'll batch them." |
 
 ## C.6 About — `/pages/about`
 
@@ -83,9 +83,9 @@
 | 슬롯 | 값 |
 |------|-----|
 | `title` | `Shipping & Pickup · Everstory Studio` |
-| `meta.description` | `GTA pickup available. Canada Post 7-10 business days after mockup approval.` |
+| `meta.description` | `GTA pickup available. Canada Post 2–5 business days from order.` |
 | H1 | `Shipping & Pickup` |
-| Sections | GTA pickup 1 카드 / Canada Post 1 카드 / 일정 표 (mockup 3d + 제작 2d + 배송 2-5d) / 해외 배송 미지원 안내 |
+| Sections | GTA pickup 1 카드 / Canada Post 1 카드 / 일정 (1영업일 안 시작, 2–5영업일 안 발송) / 해외 배송 미지원 안내 |
 
 ## C.8 Refund Policy — `/pages/refund`
 
@@ -94,7 +94,7 @@
 | `title` | `Refund Policy · Everstory Studio` |
 | `meta.description` | `Refund and replacement policy for custom photo sticker orders.` |
 | H1 | `Refund Policy` |
-| Sections | 모크업 승인 전 = full refund / 승인 후 = no refund (custom) / 결함·배송 사고 = replacement or refund / contact 라인 |
+| Sections | 인쇄 시작 전 = full refund / 인쇄 시작 후 = no refund (custom) / 결함·배송 사고 = replacement or refund / contact 라인 |
 
 ## C.9 FAQ — `/pages/faq`
 
@@ -123,14 +123,14 @@
 | `meta.description` | `Terms governing Everstory custom orders and mockup approval.` |
 | H1 | `Terms of Service` |
 | 베이스 | Shopify 기본 generator + 톤 다듬기 |
-| 핵심 추가 | 커스텀 상품 / 모크업 승인 / 환불 조건 명시. |
+| 핵심 추가 | 커스텀 상품 / 환불 조건 / 사진 사용 권한 명시. |
 
 ---
 
 ## Global elements
 
 ### Header
-- 좌측: 워드마크 — MVP 는 `assets/online_logo.png` (2048×2048 RGBA, retina 충분) 직접 사용. SVG 변환 (`assets/wordmark.svg`) 은 Illustrator 수동 작업으로 분리 (Open Decision 추가).
+- 좌측: 워드마크 — `assets/online_logo.png` (2048×2048 RGBA).
 - 우측: nav `Shop` / `About` / `FAQ` + cart icon
 - 메뉴 스타일: lower-case + tracking +0.05em + Avenir Next Bold 14px
 
@@ -142,23 +142,3 @@
 
 ### Cart drawer
 - Shopify 기본 cart drawer 사용. 라인 아이템에 attached photo 파일명 + customer name 표시.
-
----
-
-## Mockup PDF Footer Copy
-
-(별도 산출물, web 사이트 외) — 모크업 PDF 하단 footer 카피. 사이즈 use-case 한 줄 (예: `Your stickers are 1″ — perfect for diaries, planners, phone cases`). Phase D 에서 product page 카피와 함께 작성.
-
-## Instagram Tone Board
-
-Phase 2 (MVP 이후). 사용자 결정 #12 — 가이드 범위 Web 전용 MVP. discovery 채널 정착하면 별도 가이드 추가.
-
-## Email Templates
-
-(별도 산출물, web 사이트 외) — Phase D.1 의 Order Confirmation 추가 단락만 본 MVP 에 포함. 별도 mockup ready / shipping ready 이메일은 Phase 2.
-
----
-
-## 변경 이력
-
-- **2026-05-07** — v1 초안. TODO 채움. 11 페이지 명세 (이전 9p → Privacy + Terms 추가, ADR-0006 검토 결과). 본문 카피는 Phase C 에서.

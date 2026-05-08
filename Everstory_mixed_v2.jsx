@@ -20,7 +20,7 @@
 //      - 단일 사이즈: 적응형 직사각 셀 (max cellW × max cellH) 위 cols × rows uniform grid.
 //        모든 행이 같은 디자인 round-robin 순서, 외곽 4면 = 내부 gap 자동 균등 분배
 //      - Mixed: 2.5×1 + 1.75×3 를 먼저 같은 row 우선으로 배치하고, 남은 공간은 1.25/1in 균형 fill
-//   6. v15 stability: 같은 sil.png 는 시트당 1회만 Image Trace, hidden TraceStash 캐시
+//   6. trace cache: 같은 sil.png 는 시트당 1회만 Image Trace, hidden TraceStash 캐시
 //   7. 03_output 폴더에 .ai 자동 저장 (timestamp_size_sheet01.ai)
 //
 // 사용법: File → Scripts → Other Script → Everstory_mixed_v2.jsx
@@ -271,7 +271,7 @@
   try { printLayer.move(doc, ElementPlacement.PLACEATEND); } catch (ePrint) {}
   doc.selection = null;
 
-  // 03_output 자동 저장 (legacy Everstory_Grid.jsx 의 _saveAi/_timestamp 패턴 준수)
+  // 03_output 자동 저장
   var savedPath = "";
   var saveError = "";
   try {
@@ -698,7 +698,7 @@
 
 
   // ═════════════════════════════════════════════════════════
-  //  CUTLINE TRACE CACHE (v15)
+  //  CUTLINE TRACE CACHE
   //  같은 sil.png 는 시트당 1회만 Image Trace.
   //  결과 cutline 을 sheet doc 의 hidden TraceStash 레이어에 저장하고
   //  placement 마다 cachedCutline.duplicate() 로 복제한다.
@@ -1630,10 +1630,7 @@
     };
   }
 
-  // _shelfPack — legacy 단일 사이즈 모드 packer (v18 까지 기본). v19 부터 _uniformGridPack 으로 교체.
-  //   현재 파이프라인에서 호출하지 않음. Mixed 모드 (`_packMixedZones`) 도 사용하지 않으므로 사실상 dead.
-  //   행마다 hGap 이 변동하고 마지막 filler 행이 듬성듬성한 시각 문제를 해결하려고 격자 packer 로 전환했다.
-  //   의도적으로 남겨둔 이유: 시뮬레이션/회귀 비교용 + 운영 검수 후 필요시 fallback 으로 되돌리기 쉬움.
+  // _shelfPack — 단일 사이즈 모드 packer (미사용, _uniformGridPack 이 담당).
   function _shelfPack(originalItems, fillerItems, binW, binH, gap, minRepeat) {
     var rows = [];
     var row = _newShelfRow(0);

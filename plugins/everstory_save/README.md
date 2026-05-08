@@ -56,5 +56,4 @@ bash watch.sh
 
 ## 다음 Phase
 
-- **Phase B/C**: `scripts/ai_batch_cutline.jsx` (Illustrator) — `_sil.png` → Cutline → Offset+Simplify
-- **Phase D**: `Everstory_Grid.jsx` (Illustrator) — A5 시트 그리드 배치
+- **Phase B**: `Everstory_mixed_v2.jsx` (Illustrator) — `_sil.png` trace + cutline + A5 시트 배치 + `03_output/` 자동 저장

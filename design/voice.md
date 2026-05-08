@@ -1,12 +1,12 @@
 # Everstory — Voice & Copy Guide
 
-> 모든 web 카피 / 이메일 / 소셜 텍스트가 이 가이드를 통과해야 한다. 톤은 `brand_identity.md` 의 "에디토리얼 / 부티크 / 럭셔리" 와 동일 — 본 문서는 그걸 *카피 단위* 로 운영 가능한 규칙으로 풀어둠.
+> 모든 web 카피 / 이메일 / 소셜 텍스트가 이 가이드를 통과해야 한다. 톤은 [`brand.md`](brand.md) 의 "에디토리얼 / 부티크 / 럭셔리" 와 동일 — 본 문서는 그걸 *카피 단위* 로 운영 가능한 규칙으로 풀어둠.
 
 ## Tone in one line
 
 **Calm, confident, warm — but never cute.** 잡지 표지의 결. 향수 카피의 절제. 펫 굿즈 도메인의 "so adorable!!" 톤과 의도적으로 거리.
 
-타깃 (토론토 GTA + 한인 디아스포라 + 펫맘/MZ) 이 디아스포라이지만 카피는 **영어 단일** (사용자 결정 #3). 영어로 따뜻함을 만들되 sentimental 하지 않게.
+타깃 (토론토 GTA + 한인 디아스포라 + 펫맘/MZ) 이 디아스포라이지만 카피는 **영어 단일**. 영어로 따뜻함을 만들되 sentimental 하지 않게.
 
 ## DO 어휘 (권장)
 
@@ -86,7 +86,3 @@
 - **Primary**: 동사 1-2 단어. `Shop`, `Order`, `Choose`, `Begin`, `Send a photo`
 - **Secondary**: 보조 동작. `View sizes`, `See materials`, `How it works`
 - **Avoid**: `Click here`, `Learn more`, `Buy now`, `Get yours today`
-
-## 변경 이력
-
-- **2026-05-07** — v1 초안. brand_identity.md 의 voice/tone 을 web 카피 운영 규칙으로 풀어냄. ADR-0006 부속.

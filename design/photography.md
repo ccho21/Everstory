@@ -1,6 +1,6 @@
 # Everstory — Photography Direction
 
-> Shopify product / hero / about 이미지 큐레이션. 사용자 결정 #8 — 기존 시트 mockup 활용 + iPhone 추가 촬영 (cream linen 무드). 펫 직접 촬영은 금지 (고객 사진이 hero).
+> Shopify product / hero / about 이미지 큐레이션. 기존 시트 mockup 활용 + iPhone 추가 촬영 (cream linen 무드). 펫 직접 촬영은 금지 (고객 사진이 hero).
 
 ## Shot list (iPhone 추가 촬영)
 
@@ -63,7 +63,3 @@ iPhone 기본 사진 앱의 "Mellow" 또는 Lightroom 의 "Modern 04" 가 출발
 - 원본 (raw) : `assets/photo_raw/{YYYYMMDD}_{shotN}.heic`
 - 편집본 (export) : `assets/photo/{slot_name}.jpg` (예: `home_hero.jpg`, `product_hero_solo.jpg`)
 - ZIP 백업: 분기별 외장 SSD
-
-## 변경 이력
-
-- **2026-05-07** — v1 초안. 8컷 shot list + 컬러 그레이딩 4축 + 금지 사항 정리. brand_identity.md 의 "사진 큐레이션" (펫 / 가족 사진 큐레이션 = 고객 제출분) 과 본 문서 (시트 / 환경 촬영 = 우리 측 산출분) 역할 분리.

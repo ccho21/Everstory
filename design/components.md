@@ -1,8 +1,8 @@
 # Everstory — Component Rationale
 
-> ADR-0007: 컴포넌트 스펙의 **source of truth 는 Shopify 테마의 Liquid `{% schema %}` settings 와 CSS custom properties**. 본 문서는 *왜 그렇게 만들었는지* (rationale) 만 담는다. 두 군데에 spec 두면 drift 100%.
+> 운영 원칙: 컴포넌트 spec 의 source of truth = Shopify 테마의 Liquid `{% schema %}` settings + CSS custom properties. 본 문서는 *왜 그렇게 만들었는지* (rationale) 만 담는다. 두 군데에 spec 두면 drift 발생.
 
-## Component inventory (Phase B 에서 코드로 lock)
+## Component inventory
 
 | 컴포넌트 | Liquid file (예정) | 관련 토큰 |
 |----------|-------------------|----------|
@@ -16,7 +16,7 @@
 ## Rationale
 
 ### 왜 button.primary 가 black 인가
-- 사용자 결정 #10. Coral 버튼이 따뜻하지만 luxury / editorial 톤은 약해짐.
+- Coral 버튼이 따뜻하지만 luxury / editorial 톤은 약해짐.
 - Coral 은 텍스트 액센트 (link hover underline) 로만 — 시트의 "감사·온기 chip" 역할을 web 에서도 동일하게 유지.
 - Hover 시 라벨 아래 1px coral underline 으로 "이 브랜드는 black 만 쓰지 않는다" 시그널.
 
@@ -51,11 +51,3 @@
 ### 왜 pricing-display 가 단독 컴포넌트인가
 - 사이즈 변형 시 가격 변동 (variant price update). `$15.99 — $28.99` 또는 `From $15.99` 패턴 lock 필요.
 - font-tabular-nums + 통화 기호 위치 (앞: `$15.99`) 통일.
-
-## 다음 단계 (Phase B)
-
-각 컴포넌트의 실제 spec (정확한 padding / 색상 binding / hover transition / focus ring) 은 Liquid `{% schema %}` settings 와 함께 코드로 lock. 본 문서는 그때 변경 없이 유지 — *왜* 만 담은 문서니까.
-
-## 변경 이력
-
-- **2026-05-07** — v1 초안. ADR-0007 부속. component 목록 + rationale. 실제 spec 은 Phase B 에서 Liquid 로.

@@ -6,7 +6,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 첫 주력 상품은 **A5 커스텀 사진 다이컷 스티커 시트**. 대표 모드는 **Name Included** (사진 + 상단 헤더에 고객/주문 정보). 운영 메인은 **`Everstory_mixed_v2.jsx`** (v2 브랜드 템플릿). 한 시트 정책 — A5 한 시트만 생성, 넘치는 입력은 사이즈별 디자인 cap (auto-cap) 으로 입력 단계에서 제한. 칼선 여백 (0/0.5/1/2mm) 은 고객 옵션이 아니라 내부 제작 옵션.
 
-상품/운영 정책은 [docs/implementation/product_mvp.md](docs/implementation/product_mvp.md). 다이컷 외 칼선 (기본도형/프레임) 은 미구현. PhotoStrip·문구 스티커는 MVP 외.
+상품/운영 정책은 [docs/business/strategy.md](docs/business/strategy.md) §3.
 
 ## 디렉토리 구조
 
@@ -22,9 +22,10 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 │   ├── 02_cutout/                 # Phase A 산출 (_clean.psd + _sil.png 페어)
 │   └── 03_output/                 # Phase B 산출 (.ai 시트)
 └── docs/
-    ├── business/                  # 전략·브랜드·결정 기록
-    ├── implementation/            # 파이프라인·패킹·템플릿·플러그인
-    └── shopify/                   # 웹·카피·정책·스토어 설정
+    ├── business/                  # 사업·전략
+    ├── design/                    # 인쇄·웹 디자인 정의
+    ├── implementation/            # 운영 코드 자산 (sheet_tokens.json)
+    └── shopify/                   # 웹 스토어 — 어드민·카피·정책·시안
 ```
 
 ## 파이프라인 요약
@@ -33,14 +34,11 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 2. **Phase A — UXP 패널** (`plugins/everstory_save/`): `_sil.png` + `_clean.psd` 저장, longest 1800px.
 3. **Phase B — Illustrator** (`Everstory_mixed_v2.jsx`): 폴더 → 페어 ListBox multiselect → 사이즈 (XS/S/M/L/XL/XXL 또는 Mixed) → 시트 생성 → `03_output/` 자동 saveAs. 다이얼로그 5단계 (폴더 / 고객 정보 / 페어 / 사이즈 / 칼선 여백).
 
-상세 파이프라인은 [docs/implementation/pipeline.md](docs/implementation/pipeline.md).
-
 ## 고정 컨벤션 (변경 시 파이프라인 깨짐)
 
 - **AI 레이어**: `PrintData` (raster), `KissCut` (cutline), `info` (템플릿 디자인). z-order 위→아래 = `KissCut` → `info` → `PrintData` (+ trace 중 hidden `TraceStash` 임시 레이어).
 - **TextFrame (template_cutout_v2.ait)**: `info > header > header_right` (필수, **TextFrame** — PathItem 아님). 폰트/사이즈/우측 정렬은 .ait 가 보유, 스크립트는 `.contents` 만 inplace 교체.
 - **PathItem (template_cutout_v2.ait)**: `info > body` (사진 pack 영역, 142×175mm, 필수).
-- **PathItem/TextFrame 제작법**: [docs/implementation/template_pathitems.md](docs/implementation/template_pathitems.md).
 - **Spot color**: `CutContour` — M=100, SPOT (Summa/Roland 표준).
 - **파일명**: `01_original/cute_pet.psd` → `02_cutout/{folderName}_NN_clean.psd` + `{folderName}_NN_sil.png` (예: `로운_01_clean.psd`, `로운_01_sil.png`) → `03_output/{YYYYMMDD_HHMMSS}_1in_sheet01.ai` (Mixed 면 `MIX` 태그).
 - **폴더명**: 영어 (`01_original` 등) — macOS NFD vs JS NFC 비교 실패 회피.
@@ -58,33 +56,33 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 - **프린터**: Epson ET-8550 (염료 잉크)
 - **컷터**: Summa D75 — CutContour 스폿 인식, 노드 500-1500개 선호 (Image Trace 2.0px tolerance 기준)
 
-## 운영 한계
-
-- 자동 saveAs 실패 시 결과 알림 마지막 줄에 표시되고 문서는 열린 상태로 유지.
-- packing 시 90° 회전 안 함 — 스티커 방향 의도 보존.
-- trace 실패한 페어는 placement skip + 결과 알림에 base 별 안내. 셀은 PSD 만 남고 cutline 없음 → IL 재시작 후 재시도 권장.
-
 ## 문서 인덱스
 
-- [**비즈니스**](docs/business/) — 전략·브랜드·결정 기록
+각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **design**: 디자인 정의 (인쇄+웹) / **implementation**: 운영 코드 자산 / **shopify**: 웹 스토어 (어드민·카피·정책·시안).
+
+- [**비즈니스**](docs/business/) — 사업·전략
   - [strategy.md](docs/business/strategy.md) — 사업 전략·가격·채널·원가
-  - [brand_identity.md](docs/business/brand_identity.md) — 브랜드 정체성·컬러·톤
-  - [decisions.md](docs/business/decisions.md) — ADR 로그
-- [**구현**](docs/implementation/) — 파이프라인·패킹·템플릿
-  - [product_mvp.md](docs/implementation/product_mvp.md) — MVP 상품 정의·재질/대상/모양 분류
-  - [pipeline.md](docs/implementation/pipeline.md) — Phase 0/A/B 상세
-  - [packing_internals.md](docs/implementation/packing_internals.md) — `Everstory_mixed_v2.jsx` packing 알고리즘·cap 표·함수 매핑
-  - [template_pathitems.md](docs/implementation/template_pathitems.md) — Illustrator 템플릿 PathItem/TextFrame 제작 가이드
+  - [pending.md](docs/business/pending.md) — 미해결·결정 대기 항목
+- [**디자인**](docs/design/) — 인쇄·웹 디자인 정의
+  - [brand.md](docs/design/brand.md) — voice·워드마크·typography·color·layout·사진 큐레이션 (인쇄+웹 통합)
+  - [pages.md](docs/design/pages.md) — Shopify MVP 11 페이지 spec (H1·CTA·SEO)
+  - [components.md](docs/design/components.md) — UI 컴포넌트 rationale
+  - [voice.md](docs/design/voice.md) — 카피 톤 운영 규칙
+  - [photography.md](docs/design/photography.md) — 우리 측 촬영 디렉션
+  - [tokens.json](docs/design/tokens.json) — 인쇄 + 웹 디자인 토큰
+- [**구현**](docs/implementation/) — 운영 코드 자산
+  - [sheet_tokens.json](docs/implementation/sheet_tokens.json) — 시트 packing 토큰
   - [plugins/everstory_save/README.md](plugins/everstory_save/README.md) — Phase A UXP 패널 플러그인 설치/사용
-- [**Shopify**](docs/shopify/) — 웹·카피·정책·스토어 설정
-  - [plan.md](docs/shopify/plan.md) — 웹·스토어프론트 설계 계획
-  - [storefront.md](docs/shopify/storefront.md) — 웹 구현 스펙
-  - [components.md](docs/shopify/components.md) — UI 컴포넌트 정의
-  - [voice.md](docs/shopify/voice.md) — 웹/SNS 카피 톤 가이드
-  - [photography.md](docs/shopify/photography.md) — 사진 큐레이션 디렉션
-  - [settings_checklist.md](docs/shopify/settings_checklist.md) — Shopify 1A–1J 설정 체크리스트
-  - [pages_copy.md](docs/shopify/pages_copy.md) — About/FAQ/가이드 페이지 카피
-  - [product_descriptions.md](docs/shopify/product_descriptions.md) — 9 SKU 상품 설명
-  - [policies.md](docs/shopify/policies.md) — 배송/반품/개인정보 정책
-  - [footer_copy.md](docs/shopify/footer_copy.md) — 한글 푸터·법률 문구
-  - [decisions_pending.md](docs/shopify/decisions_pending.md) — 미결정 항목
+- [**Shopify**](docs/shopify/) — 웹 스토어
+  - **셋업·어드민**
+    - [admin_setup_plan.md](docs/shopify/admin_setup_plan.md) — 어드민 백엔드 셋업 1A–1J 실행 플랜
+    - [settings_checklist.md](docs/shopify/settings_checklist.md) — 1A–1J 설정 체크리스트
+  - **카피·콘텐츠**
+    - [pages_copy.md](docs/shopify/pages_copy.md) — About/FAQ/가이드 페이지 카피
+    - [product_descriptions.md](docs/shopify/product_descriptions.md) — 4 SKU 상품 설명
+    - [footer_copy.md](docs/shopify/footer_copy.md) — 한국어 footer 카피
+  - **정책**
+    - [policies.md](docs/shopify/policies.md) — 환불/배송 정책 본문
+  - **시안**
+    - [wireframes.html](docs/shopify/wireframes.html) — 와이어프레임 시안
+    - [preview.html](docs/shopify/preview.html) — 스토어프론트 프리뷰 시안
