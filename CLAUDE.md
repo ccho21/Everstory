@@ -61,9 +61,11 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **design**: 디자인 정의 (인쇄+웹) / **implementation**: 운영 코드 자산 / **shopify**: 웹 스토어 (어드민·카피·정책·시안).
 
 - [**비즈니스**](docs/business/) — 사업·전략
+  - [plan.md](docs/business/plan.md) — 비즈니스 문서 목적·중요도·정리 계획
   - [strategy.md](docs/business/strategy.md) — 사업 전략·가격·채널·원가
   - [pending.md](docs/business/pending.md) — 미해결·결정 대기 항목
 - [**디자인**](docs/design/) — 인쇄·웹 디자인 정의
+  - [plan.md](docs/design/plan.md) — 디자인 문서 목적·중요도·정리 계획
   - [brand.md](docs/design/brand.md) — voice·워드마크·typography·color·layout·사진 큐레이션 (인쇄+웹 통합)
   - [pages.md](docs/design/pages.md) — Shopify MVP 11 페이지 spec (H1·CTA·SEO)
   - [components.md](docs/design/components.md) — UI 컴포넌트 rationale
@@ -74,6 +76,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
   - [sheet_tokens.json](docs/implementation/sheet_tokens.json) — 시트 packing 토큰
   - [plugins/everstory_save/README.md](plugins/everstory_save/README.md) — Phase A UXP 패널 플러그인 설치/사용
 - [**Shopify**](docs/shopify/) — 웹 스토어
+  - [plan.md](docs/shopify/plan.md) — Shopify 문서 목적·중요도·정리 계획
   - **셋업·어드민**
     - [admin_setup_plan.md](docs/shopify/admin_setup_plan.md) — 어드민 백엔드 셋업 1A–1J 실행 플랜
     - [settings_checklist.md](docs/shopify/settings_checklist.md) — 1A–1J 설정 체크리스트

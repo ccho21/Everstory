@@ -4,7 +4,7 @@
 
 ## 사업 메시지
 
-One-liner / 차별화 5축 / 타겟 → [`strategy.md`](strategy.md) §1·§2.
+One-liner / 차별화 5축 / 타겟 → [`strategy.md`](../business/strategy.md) §1·§2.
 
 ## Voice / Tone
 
@@ -123,4 +123,4 @@ One-liner / 차별화 5축 / 타겟 → [`strategy.md`](strategy.md) §1·§2.
 3. **품질** — `PREMIUM QUALITY PHOTO STICKERS`
 4. **슬로건 + QR** — `MADE TO KEEP. MADE FOR YOU.` + QR (`SCAN TO REORDER OR SHARE YOUR EXPERIENCE`)
 
-미해결·결정 대기 항목은 [`pending.md`](pending.md) 참조.
+미해결·결정 대기 항목은 [`pending.md`](../business/pending.md) 참조.

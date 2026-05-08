@@ -110,15 +110,15 @@
 
 | 페이지 | 작성 가이드 | 산출 |
 |--------|-------------|------|
-| Refund Policy | 인쇄 시작 (보통 주문 후 1영업일 이내) 전까지 환불 가능 / 인쇄 결함 100% 재제작 / 분실 1회 재제작 / 사진 부적합 시 인쇄 전 이메일 안내 | [policies.md](docs/shopify/policies.md) §1 ✅ |
-| Shipping Policy | Ontario 무료 배송 + 토론토 픽업 / 1영업일 안 작업 시작 / 총 2–5영업일 안 발송 | [policies.md](docs/shopify/policies.md) §2 ✅ |
-| Privacy | Shopify "Generate from template" + placeholder 5개 교체 | [policies.md](docs/shopify/policies.md) §3 ✅ |
-| Terms of Service | Shopify 템플릿 + made-to-order SECTION X (사진 사용 권한 + 인쇄 시작 후 취소 불가) | [policies.md](docs/shopify/policies.md) §4 ✅ |
-| About | docs/design/brand.md 톤 (boutique/editorial) + "SAY IT IN THE NOTES" 섹션 (모크업 대체) | [pages_copy.md](docs/shopify/pages_copy.md) §1 ✅ |
-| FAQ | 사이즈/재질/리드타임/사진 요건 + 디테일 노트 가이드 | [pages_copy.md](docs/shopify/pages_copy.md) §2 ✅ |
-| Sizing Guide | 6단계 + Mixed 사이즈별 use case | [pages_copy.md](docs/shopify/pages_copy.md) §3 ✅ |
-| Materials Guide | 4종 substrate 차이·use case·care | [pages_copy.md](docs/shopify/pages_copy.md) §4 ✅ |
-| **한국어 footer** | 정책 4종 + About + FAQ + 4개 SKU description 끝에 한국어 요약. 50건+ 후 Translate & Adapt 앱 마이그레이션 검토 | [footer_copy.md](docs/shopify/footer_copy.md) ✅ |
+| Refund Policy | 인쇄 시작 (보통 주문 후 1영업일 이내) 전까지 환불 가능 / 인쇄 결함 100% 재제작 / 분실 1회 재제작 / 사진 부적합 시 인쇄 전 이메일 안내 | [policies.md](policies.md) §1 ✅ |
+| Shipping Policy | Ontario 무료 배송 + 토론토 픽업 / 1영업일 안 작업 시작 / 총 2–5영업일 안 발송 | [policies.md](policies.md) §2 ✅ |
+| Privacy | Shopify "Generate from template" + placeholder 5개 교체 | [policies.md](policies.md) §3 ✅ |
+| Terms of Service | Shopify 템플릿 + made-to-order SECTION X (사진 사용 권한 + 인쇄 시작 후 취소 불가) | [policies.md](policies.md) §4 ✅ |
+| About | docs/design/brand.md 톤 (boutique/editorial) + "SAY IT IN THE NOTES" 섹션 (모크업 대체) | [pages_copy.md](pages_copy.md) §1 ✅ |
+| FAQ | 사이즈/재질/리드타임/사진 요건 + 디테일 노트 가이드 | [pages_copy.md](pages_copy.md) §2 ✅ |
+| Sizing Guide | 6단계 + Mixed 사이즈별 use case | [pages_copy.md](pages_copy.md) §3 ✅ |
+| Materials Guide | 4종 substrate 차이·use case·care | [pages_copy.md](pages_copy.md) §4 ✅ |
+| **한국어 footer** | 정책 4종 + About + FAQ + 4개 SKU description 끝에 한국어 요약. 50건+ 후 Translate & Adapt 앱 마이그레이션 검토 | [footer_copy.md](footer_copy.md) ✅ |
 
 ---
 
@@ -136,11 +136,11 @@ Stage 1–4 어드민 입력값. Shopify 어드민에 그대로 복붙 가능한
 
 | 파일 | 사용 시점 | 내용 |
 |------|-----------|------|
-| [settings_checklist.md](docs/shopify/settings_checklist.md) | Stage 1 어드민 진입 | 1A General–1J Customer accounts 입력값 시트 (Shopify Payments 활성화 가이드 + GTA postal code prefix 30+개) |
-| [product_descriptions.md](docs/shopify/product_descriptions.md) | Stage 2 4종 SKU 등록 | Solo / Duo / Trio / Memory Pack 영어 description + §Common (Materials / Sizes / Care / How to order) |
-| [policies.md](docs/shopify/policies.md) | Stage 1I + Stage 4 | Refund / Shipping 직접 작성 본문 + Privacy / Terms 템플릿 가이드 |
-| [pages_copy.md](docs/shopify/pages_copy.md) | Stage 4 | About / FAQ / Sizing Guide / Materials Guide 4개 페이지 본문 + SEO meta |
-| [footer_copy.md](docs/shopify/footer_copy.md) | Stage 4 한국어 footer | 정책 4종 + About + FAQ + 4개 SKU description 한국어 요약 |
+| [settings_checklist.md](settings_checklist.md) | Stage 1 어드민 진입 | 1A General–1J Customer accounts 입력값 시트 (Shopify Payments 활성화 가이드 + GTA postal code prefix 30+개) |
+| [product_descriptions.md](product_descriptions.md) | Stage 2 4종 SKU 등록 | Solo / Duo / Trio / Memory Pack 영어 description + §Common (Materials / Sizes / Care / How to order) |
+| [policies.md](policies.md) | Stage 1I + Stage 4 | Refund / Shipping 직접 작성 본문 + Privacy / Terms 템플릿 가이드 |
+| [pages_copy.md](pages_copy.md) | Stage 4 | About / FAQ / Sizing Guide / Materials Guide 4개 페이지 본문 + SEO meta |
+| [footer_copy.md](footer_copy.md) | Stage 4 한국어 footer | 정책 4종 + About + FAQ + 4개 SKU description 한국어 요약 |
 
 ## 검증
 
@@ -206,7 +206,7 @@ Stage 1–4 완료 후 별도 플랜으로 Stage 5 진입:
 
 ### Stage 5: 테마/스타일 (별도 plan)
 
-본 plan 범위 밖. Phase A–E 빌드 plan 참조: [plan.md](plan.md)
+본 plan 범위 밖. Phase A–E 빌드 plan 은 별도 작성 예정.
 
 ---
 
