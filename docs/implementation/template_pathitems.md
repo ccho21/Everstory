@@ -84,7 +84,7 @@ v2 는 브랜드 헤더 (로고, 라벨, 푸터 등) 가 .ait 정적 디자인�
 6. 저장한다.
 
 권장:
-- v2 의 `body` 좌표를 바꾸면 `Everstory_mixed_v2.jsx` 의 packing 결과가 그대로 따라간다. 운영 중인 사이즈 cap 표 (`docs/everstory_mixed_internals.md` 참고) 와 맞지 않게 조정하면 시트가 비거나 잘릴 수 있다.
+- v2 의 `body` 좌표를 바꾸면 `Everstory_mixed_v2.jsx` 의 packing 결과가 그대로 따라간다. 운영 중인 사이즈 cap 표 (`docs/implementation/packing_internals.md` 참고) 와 맞지 않게 조정하면 시트가 비거나 잘릴 수 있다.
 - `header_right` 는 한 TextFrame 안에 2줄 (`{N} photos * {sizeLetter} / {inch} / {cut}mm  *  {material}` / `Name add-on * Order date {date}`) 을 넣는다. 줄바꿈은 스크립트가 `\r` 로 넣으므로 .ait 의 paragraph 설정만 우측 정렬이면 충분하다.
 - 헤더의 라벨 (브랜드명, 정적 텍스트) 은 별도 TextFrame 으로 두고 `header_right` 와 섞지 않는다.
 

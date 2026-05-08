@@ -1,12 +1,12 @@
 # Everstory Studio — Brand Identity (v1)
 
-> 디자인 결정의 입력값. 모든 시트·스토어프론트·패키징 디자인이 이 문서를 참조한다. 변경 시 `design/decisions.md` 에 ADR 한 줄 추가.
+> 디자인 결정의 입력값. 모든 시트·스토어프론트·패키징 디자인이 이 문서를 참조한다. 변경 시 `docs/business/decisions.md` 에 ADR 한 줄 추가.
 
 ## One-liner
 
-**Everstory Studio 는 토론토 GTA + 한인 디아스포라를 위한 A5 커스텀 사진 다이컷 스티커 브랜드다** — 한국 프리미엄 substrate + 손 누끼 + 인쇄 전 모크업 승인 + 자체 ExtendScript 운영 파이프라인으로 Etsy 자동/AI 셀러와 다른 카테고리에 포지셔닝.
+**Everstory Studio 는 토론토 GTA + 한인 디아스포라를 위한 A5 커스텀 사진 다이컷 스티커 브랜드다** — 한국 프리미엄 substrate + 손 누끼 + 빠른 제작 (1영업일 안 작업 시작) + 자체 ExtendScript 운영 파이프라인으로 Etsy 자동/AI 셀러와 다른 카테고리에 포지셔닝.
 
-(원천: `docs/business_strategy.md` §1)
+(원천: `docs/business/strategy.md` §1)
 
 ## 차별화 5축
 
@@ -14,11 +14,11 @@
 
 1. **Korean premium substrate** — 잉크젯 레이블 + LAMat-AF/Oraguard 라미네이션. White / Pearl Grey / Silver / Gold 4종.
 2. **사람이 손으로 누끼** — 펫 털, 다리 사이, 귀-머리 틈까지. Etsy 빅셀러는 자동/AI 마스킹.
-3. **인쇄 전 모크업 승인** — PDF 모크업을 고객에게 보내고 컨펌 받은 뒤 인쇄. 고객 first-touch artifact 이자 UGC 트리거.
+3. **빠른 제작** — 주문 후 1영업일 안 작업 시작, 2–5영업일 안 발송. 모크업 컨펌 없이 디테일 노트 + 손 누끼 + 한국 substrate + 자체 파이프라인 결합으로 가능. Etsy 자동/AI 셀러 평균 1–3주 대비 우위.
 4. **토론토 로컬** — GTA 며칠 내 도착, 한인 커뮤니티 픽업 가능.
 5. **자체 ExtendScript 파이프라인** — Phase A UXP 패널 + Phase B Illustrator 자동화. 운영 효율 = 가격 경쟁력.
 
-(원천: `docs/business_strategy.md` §2)
+(원천: `docs/business/strategy.md` §2)
 
 ## 타겟
 
@@ -55,7 +55,7 @@
 | chip.subline | Avenir Next LT Pro Bold | ~6-7pt | normal | mixed |
 | qr.caption | Avenir Next LT Pro Bold | ~5-6pt | +50 | UPPER |
 
-정확한 size·tracking 은 `.ait` 보유 (스크립트 inplace 교체). web/Shopify 측 매핑은 `design/storefront.md` 에서 별도 정의.
+정확한 size·tracking 은 `.ait` 보유 (스크립트 inplace 교체). web/Shopify 측 매핑은 `docs/shopify/storefront.md` 에서 별도 정의.
 
 ## 사진 큐레이션
 
@@ -81,7 +81,7 @@
 
 **원칙**: 무채 4 + 강조 1 = 5 색만. Print 시트 안에서 추가 컬러 도입 금지. Web/Shopify 는 derived neutral + state 추가 — 아래 §Web Extensions 참조 (ADR-0006).
 
-**측정 방법** (재현 가능): `python3` + Pillow 로 1402×1122 PNG 의 corner box (10×10 평균) + darkest-pixel scan. 정확한 좌표·로직 — `design/decisions.md` ADR-0005.
+**측정 방법** (재현 가능): `python3` + Pillow 로 1402×1122 PNG 의 corner box (10×10 평균) + darkest-pixel scan. 정확한 좌표·로직 — `docs/business/decisions.md` ADR-0005.
 
 ---
 
@@ -91,7 +91,7 @@
 
 ### Web Typography
 
-- **Wordmark**: MVP 는 `assets/online_logo.png` (2048×2048 RGBA) 직접 사용 — retina 충분. SVG 변환 (`design/wordmark.svg`) 은 Illustrator 에서 Amandine Bold + Titular Bold 텍스트 → outline → SVG export 의 수동 작업으로 분리 (Phase B 또는 이후). 폰트 의존성 회피 + 작은 파일 크기는 SVG 가 우월하지만, MVP 출시 블로커 아님.
+- **Wordmark**: MVP 는 `assets/online_logo.png` (2048×2048 RGBA) 직접 사용 — retina 충분. SVG 변환 (`assets/wordmark.svg`) 은 Illustrator 에서 Amandine Bold + Titular Bold 텍스트 → outline → SVG export 의 수동 작업으로 분리 (Phase B 또는 이후). 폰트 의존성 회피 + 작은 파일 크기는 SVG 가 우월하지만, MVP 출시 블로커 아님.
 - **Body / UI 스택**: `'Avenir Next LT Pro', 'Avenir Next', 'Helvetica Neue', system-ui, sans-serif` — Adobe Fonts 구독으로 Avenir Next LT Pro 커버 (사용자 결정 #1).
 - **Editorial display 스택**: `'Cormorant Garamond', 'Playfair Display', Georgia, serif` — 큰 헤딩 (Hero / About) 전용. 둘 중 1개 lock 은 Phase A 끝에 시안 비교 후 결정 (Open Decision #1).
 - **Hangul fallback**: 미설정. 영어 단일 정책 (사용자 결정 #3).
@@ -152,6 +152,7 @@
 
 ## 변경 이력
 
+- **2026-05-08** — 차별화 5축 #3 "인쇄 전 모크업 승인" → **"빠른 제작"** (1영업일 안 작업 시작, 2–5영업일 안 발송) 으로 교체. `strategy.md` §1 One-liner 와 동기화. Shopify 운영 결정 (모크업 컨펌 단계 제거) 후속.
 - **2026-05-07** — v1 초안. `business_strategy.md` §1-2 + `assets/` mockup 분석 + `AGENTS.md` 의 차별화 5축 정리.
 - **2026-05-07** — Typography 섹션 추가. 폰트 family 3종 잠금 (Amandine Bold / Titular Bold / Avenir Next LT Pro Bold). ADR-0004.
 - **2026-05-07** — Color Palette 정밀 측정 잠금. 5 슬롯 hex 박음 (text.primary #000000 / bg.matte_white #FEFDFE / bg.pearl_grey #E0D3CB / sticker.padding #FFFFFF / accent.coral #FBAAA8). ADR-0005.

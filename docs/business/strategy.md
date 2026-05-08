@@ -2,11 +2,11 @@
 
 마지막 업데이트: 2026-05-06
 
-이 문서는 **Everstory Studio** 의 가격·채널·원가·셋업 시퀀스 등 *비즈니스 레이어* 결정을 한 곳에 모은다. 상품·생산 파이프라인 규칙은 `CLAUDE.md` 와 `docs/product_mvp_photo_sheet.md` 를 본다. 결정이 바뀔 때마다 이 문서를 업데이트하고 하단 변경 이력에 한 줄 남긴다.
+이 문서는 **Everstory Studio** 의 가격·채널·원가·셋업 시퀀스 등 *비즈니스 레이어* 결정을 한 곳에 모은다. 상품·생산 파이프라인 규칙은 `CLAUDE.md` 와 `docs/implementation/product_mvp.md` 를 본다. 결정이 바뀔 때마다 이 문서를 업데이트하고 하단 변경 이력에 한 줄 남긴다.
 
 ## 1. One-liner
 
-**Everstory Studio 는 토론토 GTA + 한인 디아스포라를 위한 A5 커스텀 사진 다이컷 스티커 브랜드다** — 한국 프리미엄 substrate + 손 누끼 + 인쇄 전 모크업 승인 + 자체 ExtendScript 운영 파이프라인으로 Etsy 자동/AI 셀러와 다른 카테고리에 포지셔닝.
+**Everstory Studio 는 토론토 GTA + 한인 디아스포라를 위한 A5 커스텀 사진 다이컷 스티커 브랜드다** — 한국 프리미엄 substrate + 손 누끼 + 빠른 제작 (1영업일 안 작업 시작) + 자체 ExtendScript 운영 파이프라인으로 Etsy 자동/AI 셀러와 다른 카테고리에 포지셔닝.
 
 외부 (지인·디자이너·세무사·투자자) 에게 한 문장으로 설명할 때 그대로 인용한다.
 
@@ -18,7 +18,7 @@
 - 차별화 포인트:
   1. Korean premium substrate (잉크젯 레이블 + LAMat-AF/Oraguard 라미네이션)
   2. 사람이 손으로 누끼 (펫 털·다리 사이까지) — Etsy 빅셀러는 자동/AI
-  3. 모크업 승인 워크플로우 (인쇄 전 PDF 컨펌)
+  3. 빠른 제작 — 주문 후 1영업일 안 작업 시작, 2–5영업일 안 발송 (Etsy 자동/AI 셀러 평균 1–3주 대비 우위)
   4. 토론토 로컬 (며칠 내 도착, 픽업 가능)
   5. 자체 ExtendScript 파이프라인 (운영 효율 = 가격 경쟁력)
 
@@ -50,7 +50,7 @@
 
 **MVP 제외**: 문구 스티커, PhotoStrip/인생네컷 배치 상품, 다중 시트 자동 분할.
 
-(원천: `docs/product_mvp_photo_sheet.md:15-35,76-80`)
+(원천: `docs/implementation/product_mvp.md:15-35,76-80`)
 
 ## 4. 사이즈·재질·옵션
 
@@ -89,7 +89,7 @@ White / Pearl Grey / Silver / Gold — 모두 한국 프리미엄 잉크젯 레�
 
 v1 (`Everstory_mixed.jsx`, 안정성 백업) 은 `info > header` PathItem 안에 6쌍 ORDER DETAIL grid (TYPE / SPEC / ORDER / MATERIAL / PHOTOS / DATE) 를 직접 그린다.
 
-(원천: `Everstory_mixed_v2.jsx:639-660` (v2 inline), `Everstory_mixed.jsx:547-564` (v1 grid), `docs/everstory_mixed_internals.md`, `assets/illustrator_template_*.png`)
+(원천: `Everstory_mixed_v2.jsx:639-660` (v2 inline), `Everstory_mixed.jsx:547-564` (v1 grid), `docs/implementation/packing_internals.md`, `assets/illustrator_template_*.png`)
 
 ## 5. 가격 구조 (CAD)
 
@@ -183,7 +183,7 @@ v1 (`Everstory_mixed.jsx`, 안정성 백업) 은 `info > header` PathItem 안에
 
 ## 11. 핵심 워크플로우 결정
 
-- **모크업 승인**: 모든 주문에 PDF 모크업 → 고객 승인 → 인쇄. `Everstory_mixed.jsx` 끝의 `_saveAi` 옆에 PDF export 추가 필요 (현재 .ai 만 자동 저장).
+- **디테일 노트 + 빠른 작업**: Easify special instructions textarea 로 고객 디테일 (특정 얼굴 크롭 금지·선호 톤·강조 부분) 받음. 모크업 컨펌 단계 없이 1영업일 안 작업 시작. 사진 부적합 (저해상도 < 1500px / 심한 흐림) 시만 인쇄 전 이메일 재요청.
 - **Bin packing 보장**: minRepeat 룰로 해결됨 — `Everstory_mixed.jsx` 가 디자인당 정확히 minRepeat 회 등장 강제 (`floor(slots / designCount)` 동적 + `MIN_REPEAT_OVERRIDE` lookup), leftover 0 일 때만 round-robin filler. Mixed 모드는 1디자인 + 19슬롯 (1.75×3+1.5×3+1.25×8+1×5, 1.25" 두 배 비중) 인치 통일 패턴.
 - **누끼 워크플로우 단축**: 인건비를 30분/건으로 줄이는 게 마진의 진짜 레버 (PSD 액션·키보드 매크로·재구매 시 PSD 캐시).
 
@@ -201,7 +201,6 @@ v1 (`Everstory_mixed.jsx`, 안정성 백업) 은 `info > header` PathItem 안에
 |------|------|
 | 자재 #1 (LAMat-AF) 정확한 단가 | 미확정 — anysheet.co.kr 가격 확인 필요 |
 | 라미네이션 워크플로우 — `CLAUDE.md` 반영 | 미반영 (모든 SKU 에 라미네이션 들어감) |
-| 모크업 PDF export — `Everstory_mixed.jsx` 수정 | 미구현 |
 | Bin packing minimum guarantee 로직 | 구현 완료 (`Everstory_mixed.jsx` minRepeat) |
 | 로고 / 브랜드 비주얼 정체성 | 미정 |
 | 상품 사진 촬영 컨셉 | 미정 |
@@ -210,6 +209,7 @@ v1 (`Everstory_mixed.jsx`, 안정성 백업) 은 `info > header` PathItem 안에
 
 ## 변경 이력
 
+- **2026-05-08** — 차별화 5축 #3 "모크업 승인 워크플로우" → **"빠른 제작"** (1영업일 안 작업 시작, 2–5영업일 안 발송) 으로 교체. Shopify 운영 워크플로우에서 모크업 컨펌 단계 제거 후속 동기화. 모크업 PDF export 미구현 항목 폐기. 11절 핵심 워크플로우의 "모크업 승인" → "디테일 노트 + 빠른 작업" 으로 재작성. One-liner (1) 동기화.
 - **2026-05-07** — 토론토 표기 단일화 (Brampton 제거). Photo Only 모드 docs 전반에서 제거 (운영 코드 = Name Included 단일 출력 현실 반영). `design/` 디렉토리 도입 (`brand_identity.md` v1 + `tokens.json` legacy Grid.jsx 매직 넘버 추출 + `storefront.md` / `decisions.md` TODO). AGENTS.md 라우팅 단락 추가.
 - **2026-05-06** — 1-13 절 재번호. 정식명 "Everstory Studio" 명시 (브랜드 표기는 Everstory 단독도 가능). One-liner (1) / 사이즈·재질·옵션 (4) / 운영 파이프라인 요약 (10) 신규 절 추가. 6주 셋업 시퀀스에 진행도 칸 추가. 상품 정의에 Photo Only / Name Included / Mini Decor 모드 표 보강. 11·13 절의 `AGENTS.md` 참조를 `CLAUDE.md` 로 통일.
 - **2026-05-03** — 초기 버전. 가격 ($12.99 / $15.99 / $18.99 / $24.99 net) lock, Shopify 메인 채널 결정, 6주 셋업 시퀀스, COGS $6.40 lock.

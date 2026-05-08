@@ -31,13 +31,13 @@
 
 코드처럼 관리 — 자산 = 현재 상태, decisions = 변경 이력.
 
-**Consequences**: `AGENTS.md` 에 `design/` 라우팅 단락 추가 (line 96~). 우선순위 (충돌 시): `design/decisions.md` 최신 entry > `design/{brand_identity,tokens,storefront}` 자산 > `AGENTS.md`. 자산 변경 시 ADR 한 줄 함께 추가.
+**Consequences**: `AGENTS.md` 에 `design/` 라우팅 단락 추가 (line 96~). 우선순위 (충돌 시): `docs/business/decisions.md` 최신 entry > `design/{brand_identity,tokens,storefront}` 자산 > `AGENTS.md`. 자산 변경 시 ADR 한 줄 함께 추가.
 
 ## 0002 — Toronto 표기 단일화, Brampton 제거 (2026-05-07)
 
 **Status**: Accepted
 
-**Context**: `docs/business_strategy.md:15` 에 "토론토(Brampton) 기반" 한 줄. 다른 모든 자리 (§1 one-liner, §2 타겟) 는 "토론토 GTA". 차별화 4축 "토론토 로컬 (며칠 내 도착, 픽업 가능)" 와 직결되는 핵심 포지셔닝 문구라 Brampton 표기는 한인 디아스포라 대상 메시지에서 신뢰 흔드는 노이즈.
+**Context**: `docs/business/strategy.md:15` 에 "토론토(Brampton) 기반" 한 줄. 다른 모든 자리 (§1 one-liner, §2 타겟) 는 "토론토 GTA". 차별화 4축 "토론토 로컬 (며칠 내 도착, 픽업 가능)" 와 직결되는 핵심 포지셔닝 문구라 Brampton 표기는 한인 디아스포라 대상 메시지에서 신뢰 흔드는 노이즈.
 
 **Decision**: 모든 외부·내부 카피에서 "Toronto" 단일화. `business_strategy.md:15` Brampton 제거.
 
@@ -47,7 +47,7 @@
 
 **Status**: Accepted
 
-**Context**: `AGENTS.md` / `CLAUDE.md` / `docs/business_strategy.md` / `docs/product_mvp_photo_sheet.md` 가 "Photo Only / Name Included 두 모드" 로 표현했지만 운영 코드 `Everstory_mixed_v2.jsx:553` 는 항상 `TYPE: Name Add-on` 박고 헤더 line2 도 항상 `Name add-on` — v2 는 Name Included 단일 출력만 가능. Photo Only 모드는 코드에 없음. docs ↔ 코드 불일치.
+**Context**: `AGENTS.md` / `CLAUDE.md` / `docs/business/strategy.md` / `docs/implementation/product_mvp.md` 가 "Photo Only / Name Included 두 모드" 로 표현했지만 운영 코드 `Everstory_mixed_v2.jsx:553` 는 항상 `TYPE: Name Add-on` 박고 헤더 line2 도 항상 `Name add-on` — v2 는 Name Included 단일 출력만 가능. Photo Only 모드는 코드에 없음. docs ↔ 코드 불일치.
 
 **Decision**: docs 에서 Photo Only 모드 표현 제거. legacy `Everstory_Grid.jsx` 코멘트는 "Photo Only 시트" → "단일 사이즈 시트" 로 rename (legacy 스크립트 자체는 보관). frozen baseline 문서 (`name_included_v14_layout.md`, `name_included_v15_baseline.md`) 의 historical 언급은 그대로 둠 — legacy 역할 설명 컨텍스트라 현재 모드 주장 아님.
 
@@ -66,7 +66,7 @@
 
 추가 family 도입 시 본 ADR superseded 으로 처리 + `brand_identity.md` Typography 섹션 갱신 필요.
 
-**Consequences**: `brand_identity.md` Typography 섹션 신설 (8 slot 매핑 표). `tokens.json` 에 `typography.families` + `typography.slots` 박음 — `_meta.version` v1 → v2 갱신. Shopify 가도 동일 3 family 운영 (web 측 fallback stack 별도 정의 필요 — `design/storefront.md` TODO). PostScript 이름 잠금은 본 ADR 로 종결, `brand_identity.md` 미해결 결정에서 제거.
+**Consequences**: `brand_identity.md` Typography 섹션 신설 (8 slot 매핑 표). `tokens.json` 에 `typography.families` + `typography.slots` 박음 — `_meta.version` v1 → v2 갱신. Shopify 가도 동일 3 family 운영 (web 측 fallback stack 별도 정의 필요 — `docs/shopify/storefront.md` TODO). PostScript 이름 잠금은 본 ADR 로 종결, `brand_identity.md` 미해결 결정에서 제거.
 
 ## 0005 — Color palette 정밀 측정·잠금 (2026-05-07)
 
@@ -124,11 +124,11 @@
 
 **Status**: Accepted
 
-**Context**: Shopify 테마 빌드 시작. button / input / card 같은 web 컴포넌트 spec 을 (a) `design/components.md` prose 로 lock 할지, (b) Liquid `{% schema %}` settings 와 CSS custom properties 로 lock 할지 결정 필요. Plan agent (검증 단계) 가 두 군데에 두면 drift 100% 라고 지적 — 직접 경험.
+**Context**: Shopify 테마 빌드 시작. button / input / card 같은 web 컴포넌트 spec 을 (a) `docs/shopify/components.md` prose 로 lock 할지, (b) Liquid `{% schema %}` settings 와 CSS custom properties 로 lock 할지 결정 필요. Plan agent (검증 단계) 가 두 군데에 두면 drift 100% 라고 지적 — 직접 경험.
 
-**Decision**: 컴포넌트의 실제 spec (정확한 padding / 색상 binding / hover transition / focus ring 등) 은 **Liquid `{% schema %}` + CSS custom properties 가 source of truth**. `design/components.md` 는 *rationale only* (왜 black 버튼인지 / 왜 shadow 안 쓰는지 등 의도 보존). 토큰 (`tokens.json` 의 `colors.web` / `typography.web` / `web_layout`) 은 Liquid CSS 가 직접 import 하는 *값* 만 담고, 결합 규칙은 Liquid 안에서.
+**Decision**: 컴포넌트의 실제 spec (정확한 padding / 색상 binding / hover transition / focus ring 등) 은 **Liquid `{% schema %}` + CSS custom properties 가 source of truth**. `docs/shopify/components.md` 는 *rationale only* (왜 black 버튼인지 / 왜 shadow 안 쓰는지 등 의도 보존). 토큰 (`tokens.json` 의 `colors.web` / `typography.web` / `web_layout`) 은 Liquid CSS 가 직접 import 하는 *값* 만 담고, 결합 규칙은 Liquid 안에서.
 
-**Consequences**: `design/components.md` 신규 — rationale 만 담는 짧은 문서. Phase B 에서 Liquid snippet `snippets/button.liquid` 등을 만들 때, 본 ADR 따라 spec 을 prose 로 옮겨 적지 않음. 이 패턴은 ADR-0001 의 "코드처럼 관리" 원칙의 web 적용 — `tokens.json` = 값, Liquid schema = 결합 규칙, MD = 의도. 세 layer 분리.
+**Consequences**: `docs/shopify/components.md` 신규 — rationale 만 담는 짧은 문서. Phase B 에서 Liquid snippet `snippets/button.liquid` 등을 만들 때, 본 ADR 따라 spec 을 prose 로 옮겨 적지 않음. 이 패턴은 ADR-0001 의 "코드처럼 관리" 원칙의 web 적용 — `tokens.json` = 값, Liquid schema = 결합 규칙, MD = 의도. 세 layer 분리.
 
 ---
 
@@ -142,4 +142,4 @@
 - TODO — mockup 헤더 "White matte · Finish Matte" 중복 노출 정리 여부
 - TODO — Editorial display 폰트 lock — Cormorant Garamond 600 vs Playfair Display 700 (Phase A 끝 시안 비교)
 - TODO — Shopify 테마 lock — Sense vs Dawn 30분 비교 후 (Phase B Day 1)
-- TODO — `design/wordmark.svg` 생성 — Illustrator 에서 online_logo.png reference + Amandine Bold + Titular Bold 텍스트 박스 → outline to paths → SVG export. MVP 는 PNG 로 진행, 출시 후 폰트 의존 없는 SVG 로 교체.
+- TODO — `assets/wordmark.svg` 생성 — Illustrator 에서 online_logo.png reference + Amandine Bold + Titular Bold 텍스트 박스 → outline to paths → SVG export. MVP 는 PNG 로 진행, 출시 후 폰트 의존 없는 SVG 로 교체.

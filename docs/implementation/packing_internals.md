@@ -1,6 +1,6 @@
-# Everstory_mixed.jsx 내부 구현
+# Everstory_mixed_v2.jsx 내부 구현
 
-`Everstory_mixed.jsx` (v19 uniform grid) 와 `Everstory_mixed_v2.jsx` (v20 v2 브랜드 템플릿) 의 packing 알고리즘, 사이즈별 cap, 함수 매핑. v2 는 v1 의 superset (packing/cap 룰 동일, 차이는 템플릿/헤더 처리뿐).
+운영 메인 **`Everstory_mixed_v2.jsx`** (v20 v2 브랜드 템플릿) 와 v1 백업 `Everstory_mixed.jsx` (v19 uniform grid) 의 packing 알고리즘, 사이즈별 cap, 함수 매핑. v2 는 v1 의 superset — packing/cap 룰 동일, 차이는 템플릿/헤더 처리뿐.
 
 ## 사이즈별 셀/cap 표 (A5 body 148×195, padding 0, gap 1.5mm)
 

@@ -1,6 +1,6 @@
 # Everstory — Storefront Spec
 
-> Shopify MVP 11 페이지의 *제목·H1·subtitle·primary CTA* 명세. 본문 카피는 Phase C 에서 작성 (`design/voice.md` 규칙 적용). photography 슬롯은 `design/photography.md` 의 출력 스펙 참조.
+> Shopify MVP 11 페이지의 *제목·H1·subtitle·primary CTA* 명세. 본문 카피는 Phase C 에서 작성 (`docs/shopify/voice.md` 규칙 적용). photography 슬롯은 `docs/shopify/photography.md` 의 출력 스펙 참조.
 
 페이지 acceptance gate (모든 페이지 공통): ① 모바일 반응형 ② SEO meta (title / description / og:image) ③ 접근성 contrast 4.5:1.
 
@@ -130,7 +130,7 @@
 ## Global elements
 
 ### Header
-- 좌측: 워드마크 — MVP 는 `assets/online_logo.png` (2048×2048 RGBA, retina 충분) 직접 사용. SVG 변환 (`design/wordmark.svg`) 은 Illustrator 수동 작업으로 분리 (Open Decision 추가).
+- 좌측: 워드마크 — MVP 는 `assets/online_logo.png` (2048×2048 RGBA, retina 충분) 직접 사용. SVG 변환 (`assets/wordmark.svg`) 은 Illustrator 수동 작업으로 분리 (Open Decision 추가).
 - 우측: nav `Shop` / `About` / `FAQ` + cart icon
 - 메뉴 스타일: lower-case + tracking +0.05em + Avenir Next Bold 14px
 
