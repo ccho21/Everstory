@@ -12,30 +12,19 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 ```
 .
-├── Everstory_mixed_v2.jsx    # 운영 메인 (v20). v2 브랜드 템플릿용, info > header > header_right TextFrame 주입
-├── Everstory_mixed.jsx       # v1 백업 (v19 uniform grid). v2 의 superset baseline
-├── Everstory_NameIncludedSheet.jsx # v15 baseline 동결, mixed 가 깨졌을 때 안정성용
-├── Everstory_NameSticker.jsx # 이름 스티커 단독 검수 프로토타입 (시트 통합 안 함)
-├── Everstory_CleanOffsetPath.jsx # offset/compound path 내부 조각 제거 유틸
-├── Everstory_TemplateBuilder.jsx # template_4cut.ait 의 frame/slot 자동 생성 (PhotoStrip 라인용 보조 도구)
-├── legacy/
-│   ├── Everstory_Grid.jsx                       # legacy 단일 사이즈 시트 (v10, 운영 비사용)
-│   ├── Everstory_NameIncludedSheet_deprecated.jsx
-│   └── Everstory_PhotoStrip.jsx                 # retired, MVP 외
-├── plugins/everstory_save/   # Phase A — UXP 패널 플러그인 (PS)
+├── Everstory_mixed_v2.jsx         # 운영 메인 (v20). v2 브랜드 템플릿용, info > header > header_right TextFrame 주입
+├── Everstory_CleanOffsetPath.jsx  # offset/compound path 내부 조각 제거 유틸
+├── plugins/everstory_save/        # Phase A — UXP 패널 플러그인 (PS)
 ├── templates/
-│   ├── template_cutout_v2.ait # v2 브랜드 템플릿 (운영 메인). info > body 142×175mm + info > header > header_right (TextFrame, 값만 주입)
-│   ├── template_cutout.ait    # v1 베이스. info > body 148×195mm + header / header_border / border / reg_border
-│   └── template_4cut.ait      # TemplateBuilder 보조용. Info > a5_border + Frame > slot_01..slot_N
+│   └── template_cutout_v2.ait     # v2 브랜드 템플릿 (운영 메인). info > body 142×175mm + info > header > header_right (TextFrame, 값만 주입)
 ├── projects/{이름}/
-│   ├── 01_original/          # 원본 PSD/JPG/TIF
-│   ├── 02_cutout/            # Phase A 산출 (_clean.psd + _sil.png 페어)
-│   └── 03_output/            # Phase B 산출 (.ai 시트)
+│   ├── 01_original/               # 원본 PSD/JPG/TIF
+│   ├── 02_cutout/                 # Phase A 산출 (_clean.psd + _sil.png 페어)
+│   └── 03_output/                 # Phase B 산출 (.ai 시트)
 └── docs/
-    ├── business/             # 전략·브랜드·결정 기록
-    ├── implementation/       # 파이프라인·패킹·템플릿·플러그인
-    ├── shopify/              # 웹·카피·정책·스토어 설정
-    └── archive/              # 구식 버전 문서 (v13/v14/v15 plan)
+    ├── business/                  # 전략·브랜드·결정 기록
+    ├── implementation/            # 파이프라인·패킹·템플릿·플러그인
+    └── shopify/                   # 웹·카피·정책·스토어 설정
 ```
 
 ## 파이프라인 요약
@@ -44,13 +33,13 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 2. **Phase A — UXP 패널** (`plugins/everstory_save/`): `_sil.png` + `_clean.psd` 저장, longest 1800px.
 3. **Phase B — Illustrator** (`Everstory_mixed_v2.jsx`): 폴더 → 페어 ListBox multiselect → 사이즈 (XS/S/M/L/XL/XXL 또는 Mixed) → 시트 생성 → `03_output/` 자동 saveAs. 다이얼로그 5단계 (폴더 / 고객 정보 / 페어 / 사이즈 / 칼선 여백).
 
-상세 파이프라인 + 보조 스크립트 (NameSticker, TemplateBuilder, CleanOffsetPath, legacy Grid) 는 [docs/implementation/pipeline.md](docs/implementation/pipeline.md).
+상세 파이프라인은 [docs/implementation/pipeline.md](docs/implementation/pipeline.md).
 
 ## 고정 컨벤션 (변경 시 파이프라인 깨짐)
 
 - **AI 레이어**: `PrintData` (raster), `KissCut` (cutline), `info` (템플릿 디자인). z-order 위→아래 = `KissCut` → `info` → `PrintData` (+ trace 중 hidden `TraceStash` 임시 레이어).
-- **TextFrame (template_cutout_v2.ait, 운영)**: `info > header > header_right` (필수, **TextFrame** — PathItem 아님). 폰트/사이즈/우측 정렬은 .ait 가 보유, 스크립트는 `.contents` 만 inplace 교체.
-- **PathItem (template_cutout.ait, v1 백업)**: `info > body` (사진 pack 영역, 필수), `info > header` (ORDER DETAIL 영역, 필수), `info > header_border` / `info > border` / `info > reg_border` (시각 가이드, 스크립트 무시).
+- **TextFrame (template_cutout_v2.ait)**: `info > header > header_right` (필수, **TextFrame** — PathItem 아님). 폰트/사이즈/우측 정렬은 .ait 가 보유, 스크립트는 `.contents` 만 inplace 교체.
+- **PathItem (template_cutout_v2.ait)**: `info > body` (사진 pack 영역, 142×175mm, 필수).
 - **PathItem/TextFrame 제작법**: [docs/implementation/template_pathitems.md](docs/implementation/template_pathitems.md).
 - **Spot color**: `CutContour` — M=100, SPOT (Summa/Roland 표준).
 - **파일명**: `01_original/cute_pet.psd` → `02_cutout/{folderName}_NN_clean.psd` + `{folderName}_NN_sil.png` (예: `로운_01_clean.psd`, `로운_01_sil.png`) → `03_output/{YYYYMMDD_HHMMSS}_1in_sheet01.ai` (Mixed 면 `MIX` 태그).
@@ -83,9 +72,8 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
   - [decisions.md](docs/business/decisions.md) — ADR 로그
 - [**구현**](docs/implementation/) — 파이프라인·패킹·템플릿
   - [product_mvp.md](docs/implementation/product_mvp.md) — MVP 상품 정의·재질/대상/모양 분류
-  - [pipeline.md](docs/implementation/pipeline.md) — Phase 0/A/B 상세 + 보조 스크립트
+  - [pipeline.md](docs/implementation/pipeline.md) — Phase 0/A/B 상세
   - [packing_internals.md](docs/implementation/packing_internals.md) — `Everstory_mixed_v2.jsx` packing 알고리즘·cap 표·함수 매핑
-  - [name_included.md](docs/implementation/name_included.md) — v15 baseline + v14 layout 알고리즘 (동결 백업)
   - [template_pathitems.md](docs/implementation/template_pathitems.md) — Illustrator 템플릿 PathItem/TextFrame 제작 가이드
   - [plugins/everstory_save/README.md](plugins/everstory_save/README.md) — Phase A UXP 패널 플러그인 설치/사용
 - [**Shopify**](docs/shopify/) — 웹·카피·정책·스토어 설정
@@ -100,5 +88,3 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
   - [policies.md](docs/shopify/policies.md) — 배송/반품/개인정보 정책
   - [footer_copy.md](docs/shopify/footer_copy.md) — 한글 푸터·법률 문구
   - [decisions_pending.md](docs/shopify/decisions_pending.md) — 미결정 항목
-- [**Archive**](docs/archive/) — 구식 버전 문서 (참조용)
-  - `name_included_v13_plan.md` / `name_included_v14_layout.md` / `name_included_v15_baseline.md`

@@ -42,7 +42,7 @@ Everstory 의 첫 주력 상품은 고객 사진을 중심으로 만드는 **A5 
 
 | 레이아웃 | 설명 | 현재 지원 | 확장 시 접근 |
 |----------|------|-----------|--------------|
-| **A5 스티커 시트** | A5 판형 (v2 = body 142×175mm, v1 = 148×195mm), 11인치 롤 폭 활용 | ✓ `Everstory_mixed_v2.jsx` (운영 메인) | — |
+| **A5 스티커 시트** | A5 판형 (body 142×175mm), 11인치 롤 폭 활용 | ✓ `Everstory_mixed_v2.jsx` (운영 메인) | — |
 
 **현재 파이프라인 범위**: 다이컷 × A5 스티커 시트 자동화. 기본도형/프레임 칼선 확장은 추후 단계. PhotoStrip 은 MVP 외.
 
@@ -54,7 +54,7 @@ Everstory 의 첫 주력 상품은 고객 사진을 중심으로 만드는 **A5 
 
 이름은 스티커 아이템이 아니라 header metadata 로만 사용한다. 헤더 아래 영역은 사진 스티커로만 채운다.
 
-**운영 메인은 `Everstory_mixed_v2.jsx`** (v2 브랜드 템플릿용, v20). v1 (`Everstory_mixed.jsx`, v19 uniform grid) 은 안정성 백업으로 동결 유지. v1·v2 는 packing/cap 룰 동일 — 차이는 템플릿/헤더 처리뿐. 자세한 내용은 [name_included.md](name_included.md), packing 알고리즘은 [packing_internals.md](packing_internals.md) 참조.
+**운영 메인은 `Everstory_mixed_v2.jsx`** (v2 브랜드 템플릿용, v20). packing 알고리즘은 [packing_internals.md](packing_internals.md) 참조.
 
 ### Name + Mini Decor
 
@@ -71,47 +71,15 @@ Everstory 의 첫 주력 상품은 고객 사진을 중심으로 만드는 **A5 
 - 디자인 cap (auto-cap): XS 13 / S 7 / M 5 / L 3 / XL 3 / XXL 1 / Mixed 1. 사이즈 변경 시 ListBox 선택이 cap 초과면 자동 trim.
 - 칼선 여백 0/0.5/1/2mm 는 고객 선택지가 아니라 내부 제작 옵션 (기본 1mm).
 
-## 이름 스티커 프로토타입
-
-`Everstory_NameSticker.jsx` 는 단독 검수용 프로토타입으로 유지한다. 현재 Name Included 시트에는 이름 스티커를 넣지 않는다.
-
-추천 방향:
-- **영문 이름**: script/serif/sans 후보를 고정 PostScript 폰트로 검수한다.
-- **한글 이름**: 한글 전용 후보를 고정 PostScript 폰트로 검수한다.
-- **Minimal Text**: 텍스트 중심 + 글자 외곽을 따라가는 다이컷 backing shape
-
-`Everstory_NameSticker.jsx` 프로토타입에서는 이름 텍스트에 한글이 있으면 한글 후보, 그 외에는 영문 후보만 보여준다. 선택한 PostScript 폰트가 없으면 자동 대체 없이 중단한다.
-
-현재 검수 후보:
-- 영문: Snell Roundhand, SignPainter HouseScript, Apple Chancery, Didot, Avenir Next Regular
-- 한글: Apple SD Gothic Neo SemiBold, Regular, Medium, Bold, Light
-
-추천 컬러:
-- Cocoa Brown
-- Soft Black
-- Warm Taupe
-- Dusty Rose
-- Blue Gray
-- Sage Gray
-
-이름 입력 권장:
-- 영문 3~10자
-- 한글 2~5자
-- 긴 문구는 이름 스티커로 처리하지 않는다.
-
 ## 제외 항목
 
 - phrase / 문구 스티커
+- 이름 스티커 (단독 아이템)
 - PhotoStrip / 인생네컷 배치 상품
 - 다중 시트 자동 분할 상품
 
 ## 구현 상태
 
 - **`Everstory_mixed_v2.jsx` (운영 메인, v20)**: v2 브랜드 템플릿 (`template_cutout_v2.ait`). 폴더 → 페어 ListBox multiselect → 단일 사이즈 (XS/S/M/L/XL/XXL) 또는 Mixed → 시트 생성 → `03_output/` 자동 저장. `info > body` 142×175mm + `info > header > header_right` TextFrame `.contents` 만 inplace 주입 (브랜드 로고/라벨/푸터는 .ait 정적). 우측 정렬 2줄: `{N} photos * {sizeLetter} / {inch} / {cut}mm  *  {material}` / `Name add-on * Order date {date}`. 고객명/주문번호는 다이얼로그에 남겨두고 파일명·메타용으로만 사용.
-- **`Everstory_mixed.jsx` (v1 백업, v19)**: v2 와 packing/cap 룰 동일. 템플릿 = `template_cutout.ait`, `info > body` 148×195mm + `info > header` PathItem 에 ORDER DETAIL 직접 그리기. v2 가 깨졌을 때 fallback.
-- **`Everstory_NameIncludedSheet.jsx` (v15 baseline 동결)**: mixed 가 깨졌을 때 안정성 백업으로만 유지. 새 기능 추가 안 함. layout 정책은 dense + cluster center (mixed 와 다름). 자세한 내용은 [name_included.md](name_included.md).
-- **`legacy/Everstory_Grid.jsx` (운영 비사용)**: v10 까지 운영했던 단일 사이즈 시트. 알고리즘 참조용 보관.
-- **`Everstory_NameSticker.jsx`**: 다이컷 스타일 이름 스티커 단독 생성 프로토타입. 현재 시트에 통합하지 않음.
 - **`Everstory_CleanOffsetPath.jsx`**: 수동 Offset Path 검수 중 생긴 내부 조각 제거 보조 도구.
-- **`Everstory_TemplateBuilder.jsx`**: `template_4cut.ait` (PhotoStrip 라인) 의 고정 프레임 템플릿 생성용 보조 도구. 추후 다른 라인업 제작에도 사용.
 - Mini Decor: 후순위 확장.
