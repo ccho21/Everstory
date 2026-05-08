@@ -3,7 +3,7 @@
 `Everstory_NameIncludedSheet.jsx` 의 shelf/row layout 알고리즘을 정리한다. 현재 운영 동결 기준은 `docs/name_included_v15_baseline.md` 이며, 이 문서는 v15 baseline 의 layout 세부 규칙으로 참조한다. `docs/name_included_v13_plan.md` 는 이전 계획 문서로만 본다.
 
 > ⚠️ **운영 메인 `Everstory_mixed.jsx` 는 이 v14 알고리즘을 더 이상 사용하지 않는다.**
-> mixed.jsx 는 **per-row + 세로 justify** 정책 (`(binW - ΣitemW) / (n+1)` per row 가로, `(binH - ΣrowH) / (R+1)` 세로) 으로 외곽/내부 gap 균등 자동 분산. 이 v14 문서의 shelf/justify (행 간 세로 gap = `GAP_MM` 고정 + 행 내부 가로 양끝 stretched) 는 v15 frozen baseline `Everstory_NameIncludedSheet.jsx` 에만 유효. 운영 layout 정책은 `CLAUDE.md` "행 정렬" 섹션 참조.
+> mixed.jsx 는 **per-row + 세로 justify** 정책 (`(binW - ΣitemW) / (n+1)` per row 가로, `(binH - ΣrowH) / (R+1)` 세로) 으로 외곽/내부 gap 균등 자동 분산. 이 v14 문서의 shelf/justify (행 간 세로 gap = `GAP_MM` 고정 + 행 내부 가로 양끝 stretched) 는 v15 frozen baseline `Everstory_NameIncludedSheet.jsx` 에만 유효. 운영 layout 정책은 `docs/everstory_mixed_internals.md` "행 정렬" 섹션 참조.
 
 ## 목표
 

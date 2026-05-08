@@ -12,13 +12,33 @@ Everstory의 첫 주력 상품은 고객 사진을 중심으로 만드는 **A5 �
 - 문구 스티커는 MVP에서 제외한다.
 - 자유배치가 아니라 자동화 가능한 구조를 유지한다.
 
+## 참고 분류
+
+스크립트가 직접 다루는 영역은 **모양(Shapes)** — 다이컷 칼선과 A5 시트 레이아웃. 재질·대상은 입력 단계 컨텍스트로만 기록한다.
+
+### 재질 (Materials)
+- **일반**: 흰색 (다이어리, 패키징용)
+- **방수**: 흰색 / 펄그레이 / 은색 / 금색 (텀블러, 폰케이스, 야외용)
+- **반투명**: 답례품, 유리병 (은은한 비침)
+
+### 대상 (Subjects)
+- **인물/생물**: 사람, 반려동물
+- **텍스트**: 캘리그라피, 네임택
+- **그래픽**: 로고, 아이들 그림, 애착 사물, 풍경/건물
+
+### 모양 (Shapes)
+
+칼선(per-sticker) + 시트 레이아웃 두 축으로 분해.
+
+| 종류 | 설명 | 현재 지원 |
+|------|------|-----------|
+| **다이컷** | 피사체 외곽선 따라 자름 — PNG trace | ✓ 현재 기본 |
+| **기본도형** | 원·하트·사각형 등 고정 도형 | ✗ 미구현 |
+| **프레임 (가운데 타공)** | 폴라로이드형, 외곽 + 내곽 compound path | ✗ 미구현 |
+
+레이아웃은 **A5 스티커 시트** (148×195mm 또는 v2 142×175mm body) 1종. 11인치 롤 폭 활용.
+
 ## 상품 모드
-
-### Photo Only
-
-기본형 옵션. 사진 누끼 스티커만 A5 한 시트에 자동 배치한다.
-
-운영 메인은 `Everstory_mixed.jsx` 단일 사이즈 모드. 고객 이름은 입력하지만 헤더 표시 비중이 낮은 운영 흐름이라면 그대로 사용. legacy `Everstory_Grid.jsx` 는 v10 까지 운영했던 별도 single-size 시트로 `legacy/` 에 보관 (운영 비사용).
 
 ### Name Included
 
@@ -26,7 +46,7 @@ Everstory의 첫 주력 상품은 고객 사진을 중심으로 만드는 **A5 �
 
 이름은 스티커 아이템이 아니라 header metadata로만 사용한다. 헤더 아래 영역은 사진 스티커로만 채운다.
 
-**운영 메인은 `Everstory_mixed.jsx`** (NameIncluded v15 superset, 사이즈 dropdown + multiselect + max-fill 자동 + per-row + 세로 justify + 03_output 자동 저장). v15 baseline (`Everstory_NameIncludedSheet.jsx`) 은 dense + cluster center 기반 안정성 백업으로 동결 유지 — 운영 기준은 `docs/name_included_v15_baseline.md`, layout 세부 규칙은 `docs/name_included_v14_layout.md`. 운영 메인의 layout 정책은 `CLAUDE.md` "행 정렬" 섹션 참조 (per-row + 세로 justify, 외곽/내부 gap 균등 자동 분산).
+**운영 메인은 `Everstory_mixed.jsx`** (NameIncluded v15 superset, 사이즈 dropdown + multiselect + max-fill 자동 + per-row + 세로 justify + 03_output 자동 저장). v15 baseline (`Everstory_NameIncludedSheet.jsx`) 은 dense + cluster center 기반 안정성 백업으로 동결 유지 — 운영 기준은 `docs/name_included_v15_baseline.md`, layout 세부 규칙은 `docs/name_included_v14_layout.md`. 운영 메인의 layout 정책은 `docs/everstory_mixed_internals.md` "행 정렬" 섹션 참조 (per-row + 세로 justify, 외곽/내부 gap 균등 자동 분산).
 
 ### Name + Mini Decor
 
@@ -81,10 +101,11 @@ Everstory의 첫 주력 상품은 고객 사진을 중심으로 만드는 **A5 �
 
 ## 구현 상태
 
-- **`Everstory_mixed.jsx` (운영 메인)**: 폴더 → 페어 ListBox multiselect → 단일 사이즈 (XS/S/M/L/XL/XXL) 또는 Mixed → 시트 생성 → `03_output/` 자동 저장. NameIncluded v15 superset. 사이즈 dropdown, multiselect 행 전체 hit area, max-fill 자동 체크박스, per-row + 세로 justify 외곽/내부 gap 균등 자동 분산, trace cache 안정성, 디자인 cap auto-cap 모두 포함.
+- **`Everstory_mixed.jsx` (운영 메인 v1)**: 폴더 → 페어 ListBox multiselect → 단일 사이즈 (XS/S/M/L/XL/XXL) 또는 Mixed → 시트 생성 → `03_output/` 자동 저장. NameIncluded v15 superset. 사이즈 dropdown, multiselect 행 전체 hit area, max-fill 자동 체크박스, per-row + 세로 justify 외곽/내부 gap 균등 자동 분산, trace cache 안정성, 디자인 cap auto-cap 모두 포함. 템플릿 = `template_cutout.ait` (`info > body` 148×195mm + `info > header` PathItem 에 ORDER DETAIL 그림).
+- **`Everstory_mixed_v2.jsx` (v2 브랜드 템플릿 변종)**: v1 superset, packing/cap 룰 동일. 템플릿 = `template_cutout_v2.ait`. 차이점은 헤더 처리 — 브랜드 로고/라벨/푸터는 .ait 정적 디자인이고 스크립트는 `info > header > header_right` TextFrame 에 우측 정렬 2줄 (`{N} photos * {sizeLetter} / {inch} / {cut}mm  *  {material}` / `Name add-on * Order date {date}`) 만 inplace 주입한다. `info > body` 는 142×175mm 로 v1 보다 작다. 고객명/주문번호는 다이얼로그에 남겨두고 파일명·메타용으로만 사용. 앞으로 운영 메인은 v2 로 이동.
 - `Everstory_NameIncludedSheet.jsx` (v15 baseline 동결): mixed.jsx 가 깨졌을 때 안정성 백업으로만 유지. 새 기능 추가 안 함. layout 정책은 dense + cluster center (mixed.jsx 와 다름).
-- `legacy/Everstory_Grid.jsx` (운영 비사용): v10 까지 운영했던 Photo Only 단일 사이즈 시트. 알고리즘 참조용 보관.
+- `legacy/Everstory_Grid.jsx` (운영 비사용): v10 까지 운영했던 단일 사이즈 시트. 알고리즘 참조용 보관.
 - `Everstory_NameSticker.jsx`: 다이컷 스타일 이름 스티커 단독 생성 프로토타입. 현재 시트에 통합하지 않음.
 - `Everstory_CleanOffsetPath.jsx`: 수동 Offset Path 검수 중 생긴 내부 조각 제거 보조 도구
-- `Everstory_TemplateBuilder.jsx`: 고정 프레임 템플릿 생성용 보조 도구
+- `Everstory_TemplateBuilder.jsx`: `template_4cut.ait` (PhotoStrip 라인) 의 고정 프레임 템플릿 생성용 보조 도구. 추후 다른 라인업 제작에도 사용.
 - Mini Decor: 후순위 확장

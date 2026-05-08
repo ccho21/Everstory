@@ -14,8 +14,8 @@
 //   2. 다이얼로그: 고객 이름 / 헤더 정보 / 페어 ListBox (multiselect) /
 //      사이즈 dropdown (인치 6단계 + Mixed) / 칼선 여백 / gap input + 최적값 자동
 //      - 사이즈 변경 시 cap 갱신 + 선택 자동 trim (auto-cap)
-//   3. templates/template_cutout_v2.ait 열기 (info > body, info > header_right PathItem 사용)
-//   4. info > header_right 영역에 우측 정렬 2줄 (사진수/사이즈/재질, "Name add-on * Order date") 배치
+//   3. templates/template_cutout_v2.ait 열기 (info > body PathItem, info > header > header_right TextFrame 사용)
+//   4. info > header > header_right 영역에 우측 정렬 2줄 (사진수/사이즈/재질, "Name add-on * Order date") 배치
 //   5. info > body 영역에 선택한 페어를 packing
 //      - 단일 사이즈: 적응형 직사각 셀 (max cellW × max cellH) 위 cols × rows uniform grid.
 //        모든 행이 같은 디자인 round-robin 순서, 외곽 4면 = 내부 gap 자동 균등 분배
@@ -311,7 +311,7 @@
     "스크립트: " + SCRIPT_VARIANT + "\n" +
     "실행 파일: " + _scriptFileHint() + "\n" +
     "고객 이름: " + options.nameText + "\n" +
-    "헤더: info > header_right (값만) / 이름 스티커: 없음\n" +
+    "헤더: info > header > header_right (값만) / 이름 스티커: 없음\n" +
     "오더 디테일: " + _orderDetailToString(orderDetail) + "\n" +
     sizeLineText + "\n" +
     inputLine +
@@ -488,7 +488,7 @@
     }
     cutRadios[CUT_MARGIN_DEFAULT_INDEX].value = true;
 
-    var hint = dlg.add("statictext", undefined, "info > header_right — 우측 정렬 2줄 (사진수/사이즈/재질, Name add-on/주문일). 고객명·주문번호는 파일명/메타 용도.");
+    var hint = dlg.add("statictext", undefined, "info > header > header_right — 우측 정렬 2줄 (사진수/사이즈/재질, Name add-on/주문일). 고객명·주문번호는 파일명/메타 용도.");
     try { hint.graphics.foregroundColor = hint.graphics.newPen(hint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHint) {}
 
     var btnGroup = dlg.add("group");

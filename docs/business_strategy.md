@@ -12,7 +12,7 @@
 
 ## 2. 사업 정체성
 
-**Everstory Studio** (브랜드 표기는 Everstory 단독도 가능, 공식 사업체·도메인·법인 등록 시점 표기는 Everstory Studio) — 토론토(Brampton) 기반 커스텀 사진 다이컷 스티커 브랜드.
+**Everstory Studio** (브랜드 표기는 Everstory 단독도 가능, 공식 사업체·도메인·법인 등록 시점 표기는 Everstory Studio) — 토론토 기반 커스텀 사진 다이컷 스티커 브랜드.
 
 - 타겟: 토론토 GTA + 한인 디아스포라 + 펫맘/MZ 감성 굿즈 시장
 - 차별화 포인트:
@@ -36,7 +36,6 @@
 
 | 모드 | 정의 | 운영 상태 |
 |------|------|----------|
-| **Photo Only** | 사진 누끼 스티커만 A5 한 시트에 자동 배치 | 기본형 옵션 — `Everstory_mixed.jsx` 단일 사이즈 모드 |
 | **Name Included** | 사진 중심 + 상단 production header 에 고객 이름·주문 정보 (별도 이름 스티커 없음) | **대표 MVP 모드** — `Everstory_mixed.jsx` (NameIncluded v15 superset) |
 | Mini Decor | 미니 데코 소량 추가 — 사진 보조 | 후순위 확장 |
 
@@ -79,20 +78,18 @@ White / Pearl Grey / Silver / Gold — 모두 한국 프리미엄 잉크젯 레�
 
 0 / 0.5 / **1** (기본) / 2 mm — 운영자가 사진에 따라 선택.
 
-### 헤더 메타 6필드
+### 헤더 메타 (운영 메인 v2)
 
-`info > header` 에 들어가는 ORDER DETAIL 6쌍 (3행 × 2열):
+`info > header > header_right` TextFrame 에 우측 정렬 2줄 주입:
 
-| 필드 | 기본값 / 출처 |
-|------|---------------|
-| TYPE | "Name Add-on" |
-| SPEC | 사이즈 letter + 인치 + 칼선 여백 |
-| ORDER | 주문 번호 (공백 시 "—") |
-| MATERIAL | 옵션 선택값 |
-| PHOTOS | 사진 개수 |
-| DATE | ISO 날짜 (기본) |
+- line 1: `{N} photos · {sizeLetter} / {inch} / {cut}mm · {material}` — e.g., `7 photos · S / 1in / 0.5mm · White matte`
+- line 2: `Name add-on · Order date {date}` — e.g., `Name add-on Yes · Order date 05 May 2026`
 
-(원천: `CLAUDE.md:71-80`, `docs/product_mvp_photo_sheet.md:37-46`, `Everstory_mixed.jsx:85-105,547-564`)
+라벨/로고/푸터 (`Finish Matte`, 4-chip, QR 등) 는 `template_cutout_v2.ait` 의 정적 디자인. 고객명/주문번호는 다이얼로그 입력으로만 받고 파일명·메타에만 사용 (헤더에 직접 노출 X).
+
+v1 (`Everstory_mixed.jsx`, 안정성 백업) 은 `info > header` PathItem 안에 6쌍 ORDER DETAIL grid (TYPE / SPEC / ORDER / MATERIAL / PHOTOS / DATE) 를 직접 그린다.
+
+(원천: `Everstory_mixed_v2.jsx:639-660` (v2 inline), `Everstory_mixed.jsx:547-564` (v1 grid), `docs/everstory_mixed_internals.md`, `assets/illustrator_template_*.png`)
 
 ## 5. 가격 구조 (CAD)
 
@@ -182,7 +179,7 @@ White / Pearl Grey / Silver / Gold — 모두 한국 프리미엄 잉크젯 레�
 - **하드웨어**: Epson ET-8550 (염료 잉크) + Summa D75 (CutContour 스폿 인식, 노드 500–1500 선호).
 - **컨벤션**: AI 레이어 `PrintData` (raster) / `KissCut` (cutline) / `info` (템플릿). 파일명 `01_original/{원본}.psd` → `02_cutout/{folderName}_NN_clean.psd` + `_sil.png` → `03_output/{YYYYMMDD_HHMMSS}_{sizeTag}_sheet01.ai`.
 
-(원천: `CLAUDE.md:82-198`)
+(원천: `CLAUDE.md` "파이프라인" / "고정 컨벤션" / "하드웨어" 섹션)
 
 ## 11. 핵심 워크플로우 결정
 
@@ -213,5 +210,6 @@ White / Pearl Grey / Silver / Gold — 모두 한국 프리미엄 잉크젯 레�
 
 ## 변경 이력
 
+- **2026-05-07** — 토론토 표기 단일화 (Brampton 제거). Photo Only 모드 docs 전반에서 제거 (운영 코드 = Name Included 단일 출력 현실 반영). `design/` 디렉토리 도입 (`brand_identity.md` v1 + `tokens.json` legacy Grid.jsx 매직 넘버 추출 + `storefront.md` / `decisions.md` TODO). AGENTS.md 라우팅 단락 추가.
 - **2026-05-06** — 1-13 절 재번호. 정식명 "Everstory Studio" 명시 (브랜드 표기는 Everstory 단독도 가능). One-liner (1) / 사이즈·재질·옵션 (4) / 운영 파이프라인 요약 (10) 신규 절 추가. 6주 셋업 시퀀스에 진행도 칸 추가. 상품 정의에 Photo Only / Name Included / Mini Decor 모드 표 보강. 11·13 절의 `AGENTS.md` 참조를 `CLAUDE.md` 로 통일.
 - **2026-05-03** — 초기 버전. 가격 ($12.99 / $15.99 / $18.99 / $24.99 net) lock, Shopify 메인 채널 결정, 6주 셋업 시퀀스, COGS $6.40 lock.
