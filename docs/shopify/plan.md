@@ -38,7 +38,8 @@ Shopify 문서에서 제외한다.
 | `policies.md` | Refund, Shipping, Privacy, Terms policy SOT. | P0 | 유지 |
 | `pages_copy.md` | About, FAQ, Sizing, Materials page copy SOT. | P1 | 유지 |
 | `footer_copy.md` | 한국어 footer copy SOT. | P1 | 유지 |
-| `preview.html`, `wireframes.html` | 시각 시안. admin 실행에는 직접 필요 없음. | P2 | 디자인 정리 후 삭제 또는 갱신 판단 |
+| `preview.html` | 디자인 토큰 / 컴포넌트 라이브러리 시안. admin 실행에 직접 필요 없음. | P2 | 디자인 정리 후 삭제 또는 갱신 판단 |
+| `wireframes/` | Horizon 테마 기반 11페이지 분리 HTML 와이어프레임. Shopify customizer 작업 시 section/block 어휘 매칭 청사진. | P1 | 유지 |
 
 ## Remaining Work
 
@@ -51,4 +52,4 @@ Shopify 문서에서 제외한다.
 - Translate & Adapt 한국어 전체 페이지 전환.
 - Customily 또는 live preview 앱 전환.
 - Meta Pixel, newsletter, review app, Etsy sync.
-- `preview.html`, `wireframes.html` 의 과거 proof approval 흐름은 MVP 실행 문서에서 제외되어 있으므로, 디자인 재사용 가치가 없으면 삭제한다.
+- `preview.html` 의 과거 proof approval 흐름은 MVP 실행 문서에서 제외되어 있으므로, 디자인 재사용 가치가 없으면 삭제한다.

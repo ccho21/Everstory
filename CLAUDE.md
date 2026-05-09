@@ -85,5 +85,5 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
   - **정책**
     - [policies.md](docs/shopify/policies.md) — 환불/배송 정책 본문
   - **시안**
-    - [wireframes.html](docs/shopify/wireframes.html) — 와이어프레임 시안
+    - [wireframes/index.html](docs/shopify/wireframes/index.html) — Horizon 테마 기반 11페이지 와이어프레임 (페이지별 분리 HTML)
     - [preview.html](docs/shopify/preview.html) — 스토어프론트 프리뷰 시안
