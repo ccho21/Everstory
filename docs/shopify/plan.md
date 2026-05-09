@@ -39,7 +39,7 @@ Shopify 문서에서 제외한다.
 | `pages_copy.md` | About, FAQ, Sizing, Materials page copy SOT. | P1 | 유지 |
 | `footer_copy.md` | 한국어 footer copy SOT. | P1 | 유지 |
 | `preview.html` | 디자인 토큰 / 컴포넌트 라이브러리 시안. admin 실행에 직접 필요 없음. | P2 | 디자인 정리 후 삭제 또는 갱신 판단 |
-| `wireframes/` | Horizon 테마 기반 11페이지 분리 HTML 와이어프레임. Shopify customizer 작업 시 section/block 어휘 매칭 청사진. | P1 | 유지 |
+| `wireframes/` | Horizon 테마 기반 13페이지 분리 HTML 와이어프레임. Shopify customizer 작업 시 section/block 어휘 매칭 청사진. | P1 | 유지 |
 
 ## Remaining Work
 
