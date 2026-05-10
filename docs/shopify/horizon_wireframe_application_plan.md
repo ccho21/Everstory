@@ -136,6 +136,18 @@ Horizon 테마 작업을 시작하기 전:
 
 사진 업로드는 Easify로 처리한다.
 
+#### 현재 검증 메모
+
+Horizon의 `_product-details` block schema는 `@app` block을 허용한다. 따라서 Easify app block은 product details 영역 안에서 variant picker 아래, buy buttons 위에 배치하는 방향이 가능하다. `product-information` section 자체도 `@app` block을 허용하지만, 상품 옵션은 add-to-cart form 주변에 있어야 하므로 product details 내부 배치를 우선한다.
+
+Easify Shopify App Store listing 기준으로 파일 업로드와 이미지 업로드 기능은 앱 기능에 포함되어 있고, Pro plan에는 `Multi-file Upload (10 files, 10MB each)`, Premium plan에는 더 큰 file upload 기능이 명시되어 있다. MVP에서 Memory Pack을 4-8장 업로드로 받을 경우 다음 중 하나를 admin에서 확인해야 한다.
+
+1. Free plan에서 단일 file upload field를 여러 개 만드는 방식이 가능한지
+2. 하나의 multi-file field로 받을 경우 Pro/Premium plan이 필요한지
+3. 업로드 파일이 cart, order detail, packing slip/email에 표시되는지
+
+Reference: [Easify Custom Product Options - Shopify App Store](https://apps.shopify.com/easify-product-options)
+
 #### MVP 기준 field
 
 | Product | Photo upload | Name field | Notes |
@@ -625,4 +637,4 @@ MVP에서는 file upload를 custom Liquid로 만들지 않는다. Easify가 담�
 2. Privacy/Terms를 Shopify policy로만 갈지, 일반 page도 만들지
 3. Blog section을 launch에 포함할지, 숨길지
 4. Home hero와 About banner에 사용할 최종 이미지
-
+5. Memory Pack 4-8장 업로드를 Easify Free plan의 여러 단일 file field로 처리할지, Pro/Premium multi-file field로 처리할지
