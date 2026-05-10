@@ -11,7 +11,7 @@
 <header style="margin-bottom: 32px;">
   <div class="eyebrow">Everstory · Shopify Horizon · Wireframes</div>
   <h1>Storefront wireframe set</h1>
-  <p>11 pages, structural-only. Component labels follow Shopify Horizon section/block names so the wireframe can be mapped 1:1 in the theme editor. Design (typography, color, real images) is intentionally absent.</p>
+  <p>13 pages, structural-only. Component labels follow Shopify Horizon section/block names so the wireframe can be mapped 1:1 in the theme editor. Design (typography, color, real images) is intentionally absent.</p>
   <div class="note">
     <strong>Horizon coverage</strong> — 15 of 18 components are no-code in Horizon's editor. 3 items need extra work and are marked <strong>⚠ NEEDS APP/CODE</strong> on the relevant page: product photo upload (Easify Product Options app or custom Liquid), KakaoTalk social icon (custom snippet), policy side-nav (dropped — accordion-only).
   </div>
@@ -63,6 +63,18 @@
       <div class="meta">hero · media-with-content × 4 · CTA</div>
     </a>
 
+    <a class="hub-card" href="sizing-guide.html">
+      <div class="url">/pages/sizing-guide</div>
+      <div class="title">Sizing Guide</div>
+      <div class="meta">hero · 7 size cards · use case matrix · proportion note</div>
+    </a>
+
+    <a class="hub-card" href="materials-guide.html">
+      <div class="url">/pages/materials-guide</div>
+      <div class="title">Materials Guide</div>
+      <div class="meta">hero · media-with-content × 4 · comparison table</div>
+    </a>
+
     <a class="hub-card" href="shipping.html">
       <div class="url">/pages/shipping</div>
       <div class="title">Shipping & Pickup</div>
@@ -87,6 +99,18 @@
       <div class="meta">page · 2 sections (Privacy / Terms)</div>
     </a>
 
+  </div>
+</section>
+
+<section style="margin-bottom: 32px;">
+  <h2>Header utility policy</h2>
+  <div class="note">
+    The header shows three utility icons across all pages — <strong>search (⌕)</strong>, <strong>account (☺)</strong>, and <strong>cart (🛒)</strong>. No language toggle: Everstory ships English-only with a Korean helper section embedded in each page body.
+    <ul style="margin: 8px 0 0; padding-left: 20px;">
+      <li><strong>Search</strong> — Horizon's built-in <code>predictive-search</code> drawer. No separate search-results wireframe; uses Horizon's default <code>search.json</code> template.</li>
+      <li><strong>Account</strong> — Horizon's default <code>customer/login</code>, <code>customer/register</code>, <code>customer/account</code> templates. No custom wireframe; checkout supports guest as well.</li>
+      <li><strong>Language</strong> — no toggle. English single-locale. Korean copy lives inline as a "한국어 안내" block on each page.</li>
+    </ul>
   </div>
 </section>
 
