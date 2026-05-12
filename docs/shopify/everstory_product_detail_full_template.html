@@ -16,15 +16,12 @@
       --bg-canvas:  #FEFDFE;
       --bg-muted:   #F8F5F2;
       --bg-warm:    #E0D3CB;
-      --bg-paper:   #FBF8F4;
 
       --line:        #ECE6E0;
       --line-strong: #1A1A1A;
 
-      --tape: #D9CDB9;
-
-      /* Editorial / luxury: no drop shadows, sharp corners. Depth = spacing + bg.muted. */
-      --radius: 2px;
+      /* Editorial / luxury: no drop shadows, no panel borders, sharp corners.
+         Depth comes from spacing + bg.warm callouts. */
       --max: 1120px;
     }
 
@@ -46,7 +43,7 @@
       word-break: keep-all;
     }
 
-    /* English brand wordmark (sheet mock 등) 전용 */
+    /* English brand wordmark — sheet mockup tiny-mark, RGB/CMYK headings */
     .wordmark {
       font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
       font-weight: 600;
@@ -61,7 +58,7 @@
     }
 
     .section {
-      margin: 0 0 96px;
+      margin: 0 0 112px;
     }
 
     .section:last-child {
@@ -69,70 +66,48 @@
     }
 
     .section-shell {
-      position: relative;
-      background: var(--bg-canvas);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: clamp(44px, 6vw, 88px) clamp(28px, 5vw, 72px);
-      overflow: hidden;
+      padding: clamp(28px, 4vw, 56px) clamp(20px, 4vw, 56px);
     }
 
-    .section-inner {
-      position: relative;
-      z-index: 1;
+    /* notice 섹션만 pearl-grey callout block 유지 */
+    .notice-section .section-shell {
+      background: var(--bg-warm);
+      padding: clamp(48px, 6vw, 88px) clamp(28px, 5vw, 72px);
     }
 
-    /* Masking-tape editorial collage device */
-    .tape {
-      position: absolute;
-      top: -16px;
-      left: 50%;
-      transform: translateX(-50%);
-      min-width: 200px;
-      padding: 10px 26px 11px;
-      text-align: center;
-      background: var(--tape);
-      color: var(--text-primary);
+    /* Eyebrow — 작은 uppercase coral 라벨 */
+    .eyebrow {
+      display: block;
+      margin: 0 0 18px;
+      color: var(--accent-coral);
+      font-size: clamp(10px, 1vw, 12px);
       font-weight: 700;
-      font-size: clamp(13px, 1.3vw, 16px);
-      letter-spacing: 0.04em;
-      line-height: 1.1;
-      z-index: 3;
-    }
-
-    .tape::before,
-    .tape::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      width: 16px;
-      height: 100%;
-      background: var(--tape);
-      opacity: 0.85;
-    }
-
-    .tape::before {
-      left: -4px;
-      clip-path: polygon(24% 0, 100% 0, 100% 100%, 0 100%, 28% 78%, 0 55%, 26% 28%, 0 0);
-    }
-
-    .tape::after {
-      right: -4px;
-      clip-path: polygon(0 0, 80% 0, 55% 28%, 100% 52%, 60% 74%, 100% 100%, 0 100%);
-    }
-
-    .simple-title {
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
       text-align: center;
-      margin: 0 0 44px;
     }
 
-    .simple-title h2 {
+    /* 통일된 섹션 헤딩: eyebrow + h2 + (optional) sub */
+    .heading-block {
+      text-align: center;
+      margin: 0 0 56px;
+    }
+
+    .heading-block h2 {
       margin: 0;
       font-weight: 700;
-      font-size: clamp(28px, 3.6vw, 44px);
+      font-size: clamp(26px, 3.4vw, 42px);
       line-height: 1.25;
       letter-spacing: -0.035em;
       color: var(--text-primary);
+    }
+
+    .heading-block .sub {
+      margin: 18px auto 0;
+      max-width: 620px;
+      color: var(--text-secondary);
+      font-size: clamp(14px, 1.4vw, 17px);
+      line-height: 1.85;
     }
 
     .copy {
@@ -169,12 +144,11 @@
     code {
       background: var(--bg-muted);
       padding: 2px 6px;
-      border-radius: 2px;
       font-size: 12px;
       letter-spacing: 0;
     }
 
-    /* 1. 제품 소개 / 사용 예시 */
+    /* 1. 제품 소개 */
     .photo-pair {
       display: grid;
       grid-template-columns: 1fr 0.9fr;
@@ -184,35 +158,30 @@
 
     .photo-frame {
       min-height: 460px;
-      background: var(--bg-canvas);
-      border: 1px solid var(--line);
+      background: var(--bg-muted);
       overflow: hidden;
     }
 
     .single-photo {
       max-width: 760px;
       margin: 0 auto 36px;
-      background: var(--bg-canvas);
-      border: 1px solid var(--line);
+      background: var(--bg-muted);
       overflow: hidden;
       aspect-ratio: 4 / 3;
     }
 
-    /* 2. SKU 카드 (디자인 선택 자리) */
+    /* 2. SKU 카드 */
     .sku-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 22px;
     }
 
-    .sku-card {
-      text-align: center;
-    }
+    .sku-card { text-align: center; }
 
     .sku-card .sku-image {
       aspect-ratio: 1 / 1.2;
-      background: var(--bg-canvas);
-      border: 1px solid var(--line);
+      background: var(--bg-muted);
       overflow: hidden;
       margin-bottom: 16px;
     }
@@ -239,30 +208,26 @@
       font-size: clamp(14px, 1.4vw, 17px);
     }
 
-    /* 3. 옵션 — 사이즈 + 재질 */
+    /* 3. 옵션 */
     .option-compare {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 28px;
+      gap: 36px;
     }
 
-    .option-block {
-      display: grid;
-      gap: 16px;
-    }
+    .option-block { display: grid; gap: 16px; }
 
     .option-title {
       margin: 0;
       text-align: center;
       color: var(--text-primary);
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 700;
-      letter-spacing: 0.02em;
+      letter-spacing: -0.01em;
     }
 
     .option-image {
       aspect-ratio: 4 / 5;
-      border: 1px solid var(--line);
       background: var(--bg-muted);
       overflow: hidden;
     }
@@ -282,40 +247,16 @@
     }
 
     /* 4. 시트 구성 */
-    .composition-intro {
-      text-align: center;
-      margin-bottom: 44px;
-    }
-
-    .composition-intro h2 {
-      margin: 0 0 14px;
-      font-weight: 700;
-      font-size: clamp(22px, 2.6vw, 30px);
-      letter-spacing: -0.03em;
-      color: var(--text-primary);
-    }
-
-    .composition-intro .sub {
-      margin: 0 auto;
-      max-width: 620px;
-      color: var(--text-secondary);
-      font-size: clamp(14px, 1.4vw, 17px);
-      line-height: 1.85;
-    }
-
     .size-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 42px;
+      gap: 56px 42px;
     }
 
-    .size-card {
-      min-width: 0;
-      text-align: center;
-    }
+    .size-card { min-width: 0; text-align: center; }
 
     .size-title {
-      margin: 0 0 14px;
+      margin: 0 0 16px;
       font-weight: 700;
       font-size: clamp(17px, 1.9vw, 22px);
       letter-spacing: -0.02em;
@@ -333,16 +274,15 @@
 
     .mockup-wrap {
       position: relative;
-      padding: 22px 22px 22px;
+      padding: 26px 26px 22px;
       background: var(--bg-canvas);
-      border: 1px solid var(--line);
     }
 
     .measure-top {
       position: absolute;
-      top: 8px;
-      left: 22px;
-      right: 22px;
+      top: 10px;
+      left: 26px;
+      right: 26px;
       height: 1px;
       background: var(--accent-coral);
     }
@@ -372,9 +312,9 @@
 
     .measure-left {
       position: absolute;
-      top: 22px;
+      top: 26px;
       bottom: 22px;
-      left: 8px;
+      left: 10px;
       width: 1px;
       background: var(--accent-coral);
     }
@@ -403,15 +343,16 @@
       white-space: nowrap;
     }
 
-    /* A5 sheet mockup — 148 x 195mm */
+    /* A5 시트 mockup */
     .sheet {
       aspect-ratio: 148 / 195;
-      border: 1px solid var(--line);
       background: var(--bg-canvas);
-      padding: 16px 16px 16px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      outline: 1px solid var(--line);
+      outline-offset: -1px;
     }
 
     .sheet-header {
@@ -449,9 +390,9 @@
       gap: 10px;
     }
 
-    .face-grid.s   { grid-template-columns: repeat(3, 1fr); gap: 14px 14px; }
+    .face-grid.s   { grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .face-grid.m   { grid-template-columns: repeat(3, 1fr); gap: 16px 14px; }
-    .face-grid.l   { grid-template-columns: repeat(2, 1fr); gap: 18px 18px; }
+    .face-grid.l   { grid-template-columns: repeat(2, 1fr); gap: 18px; }
     .face-grid.mix { grid-template-columns: repeat(4, 1fr); gap: 10px; }
 
     .face {
@@ -493,37 +434,24 @@
     }
 
     .caption {
-      margin: 14px 0 0;
+      margin: 16px 0 0;
       color: var(--text-secondary);
       font-size: 13px;
       line-height: 1.7;
     }
 
     /* 5. 사이즈 가이드 */
-    .size-guide-intro {
-      text-align: center;
-      margin-bottom: 56px;
-    }
-
-    .size-guide-intro .lead {
-      margin: 0 auto;
-      max-width: 680px;
-      color: var(--text-secondary);
-      font-size: clamp(15px, 1.5vw, 18px);
-      line-height: 1.85;
-    }
-
     .measure-group {
-      margin-top: 48px;
+      margin-top: 56px;
     }
+
+    .measure-group:first-of-type { margin-top: 0; }
 
     .group-label {
       width: fit-content;
-      min-width: 240px;
-      margin: 0 auto 36px;
-      padding: 10px 24px;
-      background: var(--bg-canvas);
-      border: 1px solid var(--line);
+      margin: 0 auto 40px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--text-primary);
       color: var(--text-primary);
       text-align: center;
       font-size: 13px;
@@ -561,7 +489,7 @@
     .guide-square {
       position: absolute;
       inset: 0;
-      border: 1px dotted rgba(0, 0, 0, 0.3);
+      border: 1px dotted rgba(0, 0, 0, 0.28);
     }
 
     .vertical-measure {
@@ -632,30 +560,11 @@
       color: var(--text-muted);
     }
 
-    /* 6. 주문 안내 */
-    .notice-section .section-shell {
-      background: var(--bg-warm);
-      border-color: transparent;
-    }
-
-    .notice-header {
-      text-align: center;
-      margin: 0 0 36px;
-    }
-
-    .notice-title {
-      margin: 0;
-      font-weight: 700;
-      font-size: clamp(28px, 3.6vw, 44px);
-      line-height: 1.2;
-      letter-spacing: -0.035em;
-      color: var(--text-primary);
-    }
-
+    /* 6. 주문 안내 (callout) */
     .notice-rule {
       height: 1px;
       background: var(--line-strong);
-      opacity: 0.7;
+      opacity: 0.5;
       width: 100%;
       margin: 0 0 36px;
     }
@@ -695,29 +604,18 @@
     }
 
     /* 7. 보정 안내 */
-    .retouch-intro {
-      text-align: center;
-      max-width: 720px;
-      margin: 0 auto 40px;
-    }
-
-    .retouch-intro p {
-      margin: 0;
-      color: var(--text-secondary);
-      font-size: clamp(14px, 1.4vw, 17px);
-      line-height: 1.85;
-    }
-
     .retouch-block {
-      margin-top: 36px;
+      margin-top: 48px;
     }
+
+    .retouch-block:first-of-type { margin-top: 0; }
 
     .retouch-block h3 {
       margin: 0 0 6px;
       text-align: center;
       font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 0.02em;
+      font-size: 15px;
+      letter-spacing: -0.01em;
       color: var(--text-primary);
     }
 
@@ -739,7 +637,6 @@
 
     .retouch-image {
       aspect-ratio: 1 / 1;
-      border: 1px solid var(--line);
       background: var(--bg-muted);
       overflow: hidden;
     }
@@ -760,18 +657,6 @@
     }
 
     /* 8. 색상 (RGB / CMYK) */
-    .color-guide {
-      text-align: center;
-    }
-
-    .color-guide .lead {
-      margin: 0 auto 36px;
-      max-width: 720px;
-      color: var(--text-secondary);
-      font-size: clamp(14px, 1.4vw, 17px);
-      line-height: 1.85;
-    }
-
     .diagram-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -781,9 +666,9 @@
     }
 
     .diagram-card {
-      border: 1px solid var(--line);
-      background: var(--bg-canvas);
-      padding: 32px 28px;
+      background: var(--bg-muted);
+      padding: 36px 32px;
+      text-align: center;
     }
 
     .diagram-card h3 {
@@ -804,10 +689,11 @@
     }
 
     .diagram-card .caption {
-      font-size: 12px;
-      letter-spacing: 0.04em;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
       color: var(--text-muted);
-      margin-top: 14px;
+      margin-top: 18px;
       text-align: center;
     }
 
@@ -835,11 +721,11 @@
         padding: 36px 0 60px;
       }
 
-      .section { margin-bottom: 64px; }
+      .section { margin-bottom: 72px; }
 
-      .section-shell {
-        padding: 48px 22px 36px;
-      }
+      .section-shell { padding: 24px 4px; }
+
+      .notice-section .section-shell { padding: 40px 22px; }
 
       .photo-pair,
       .sku-grid,
@@ -851,7 +737,6 @@
       }
 
       .photo-frame { min-height: 320px; }
-
       .single-photo { max-width: 100%; }
 
       .option-image {
@@ -895,123 +780,126 @@
     <!-- 1. 제품 소개 / 사용 예시 -->
     <section class="section" aria-label="제품 소개 및 사용 예시">
       <div class="section-shell">
-        <div class="section-inner">
-          <div class="simple-title">
-            <h2>버리지 않고 두고두고 쓰는 시트.</h2>
-          </div>
-
-          <div class="photo-pair">
-            <div class="photo-frame">
-              <div class="image-placeholder">사용 예시 1<br>A5 스티커 시트 사진</div>
-            </div>
-            <div class="photo-frame">
-              <div class="image-placeholder">사용 예시 2<br>다이어리 · 폰케이스 · 텀블러 부착</div>
-            </div>
-          </div>
-
-          <p class="copy">
-            사진을 손으로 정리해 잘라낸 우리 아이 · 반려동물 커스텀 스티커입니다.
-            흰 배경과 얇은 아웃라인으로 다이어리, 폰케이스, 텀블러, 노트북처럼
-            매끈한 면에 가장 잘 어울려요.
-          </p>
+        <div class="heading-block">
+          <span class="eyebrow">Made to keep</span>
+          <h2>버리지 않고 두고두고 쓰는 시트.</h2>
         </div>
+
+        <div class="photo-pair">
+          <div class="photo-frame">
+            <div class="image-placeholder">사용 예시 1<br>A5 스티커 시트 사진</div>
+          </div>
+          <div class="photo-frame">
+            <div class="image-placeholder">사용 예시 2<br>다이어리 · 폰케이스 · 텀블러 부착</div>
+          </div>
+        </div>
+
+        <p class="copy">
+          사진을 손으로 정리해 잘라낸 우리 아이 · 반려동물 커스텀 스티커입니다.
+          흰 배경과 얇은 아웃라인으로 다이어리, 폰케이스, 텀블러, 노트북처럼
+          매끈한 면에 가장 잘 어울려요.
+        </p>
       </div>
     </section>
 
     <!-- 2. 포장 안내 -->
     <section class="section" aria-label="포장 안내">
       <div class="section-shell">
-        <div class="section-inner">
-          <div class="single-photo">
-            <div class="image-placeholder">포장 예시<br>주문 수량별 스튜디오 포장</div>
-          </div>
-
-          <p class="copy">
-            주문하신 수량만큼 한 장 한 장 정성스럽게 포장해 보내드려요. 1장 주문도 환영합니다.
-          </p>
+        <div class="heading-block">
+          <span class="eyebrow">Packaging</span>
+          <h2>한 장씩 손으로 포장합니다.</h2>
         </div>
+
+        <div class="single-photo">
+          <div class="image-placeholder">포장 예시<br>주문 수량별 스튜디오 포장</div>
+        </div>
+
+        <p class="copy">
+          주문하신 수량만큼 한 장 한 장 정성스럽게 포장해 보내드려요. 1장 주문도 환영합니다.
+        </p>
       </div>
     </section>
 
-    <!-- 3. SKU 선택 (디자인 선택 자리 → 4 SKU 카드) -->
+    <!-- 3. 시트 종류 선택 -->
     <section class="section" aria-label="시트 종류 선택">
       <div class="section-shell">
-        <div class="section-inner">
-          <div class="simple-title">
-            <h2>사진 한 장, 또는 여러 장.</h2>
-          </div>
+        <div class="heading-block">
+          <span class="eyebrow">Choose your sheet</span>
+          <h2>사진 한 장, 또는 여러 장.</h2>
+        </div>
 
-          <div class="sku-grid">
-            <article class="sku-card">
-              <div class="sku-image">
-                <div class="image-placeholder">Solo<br>시트 미리보기</div>
-              </div>
-              <h3>Solo</h3>
-              <p class="sku-meta">사진 1장 · A5 시트 1장</p>
-              <p class="sku-price">$15.99 CAD</p>
-            </article>
+        <div class="sku-grid">
+          <article class="sku-card">
+            <div class="sku-image">
+              <div class="image-placeholder">Solo<br>시트 미리보기</div>
+            </div>
+            <h3>Solo</h3>
+            <p class="sku-meta">사진 1장 · A5 시트 1장</p>
+            <p class="sku-price">$15.99 CAD</p>
+          </article>
 
-            <article class="sku-card">
-              <div class="sku-image">
-                <div class="image-placeholder">Duo<br>시트 미리보기</div>
-              </div>
-              <h3>Duo</h3>
-              <p class="sku-meta">사진 2장 · A5 시트 1장</p>
-              <p class="sku-price">$18.99 CAD</p>
-            </article>
+          <article class="sku-card">
+            <div class="sku-image">
+              <div class="image-placeholder">Duo<br>시트 미리보기</div>
+            </div>
+            <h3>Duo</h3>
+            <p class="sku-meta">사진 2장 · A5 시트 1장</p>
+            <p class="sku-price">$18.99 CAD</p>
+          </article>
 
-            <article class="sku-card">
-              <div class="sku-image">
-                <div class="image-placeholder">Trio<br>시트 미리보기</div>
-              </div>
-              <h3>Trio</h3>
-              <p class="sku-meta">사진 3장 · A5 시트 1장</p>
-              <p class="sku-price">$21.99 CAD</p>
-            </article>
+          <article class="sku-card">
+            <div class="sku-image">
+              <div class="image-placeholder">Trio<br>시트 미리보기</div>
+            </div>
+            <h3>Trio</h3>
+            <p class="sku-meta">사진 3장 · A5 시트 1장</p>
+            <p class="sku-price">$21.99 CAD</p>
+          </article>
 
-            <article class="sku-card">
-              <div class="sku-image">
-                <div class="image-placeholder">Memory Pack<br>시트 2장 미리보기</div>
-              </div>
-              <h3>Memory Pack</h3>
-              <p class="sku-meta">사진 4장 이상 · A5 시트 2장</p>
-              <p class="sku-price">$28.99 CAD</p>
-            </article>
-          </div>
+          <article class="sku-card">
+            <div class="sku-image">
+              <div class="image-placeholder">Memory Pack<br>시트 2장 미리보기</div>
+            </div>
+            <h3>Memory Pack</h3>
+            <p class="sku-meta">사진 4장 이상 · A5 시트 2장</p>
+            <p class="sku-price">$28.99 CAD</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <!-- 4. 옵션 — 사이즈 + 재질 -->
+    <!-- 4. 옵션 -->
     <section class="section" aria-label="옵션 안내">
       <div class="section-shell">
-        <div class="tape">옵션 안내</div>
-        <div class="section-inner">
-          <div class="option-compare">
-            <article class="option-block">
-              <h2 class="option-title">옵션 선택 — 사이즈</h2>
-              <div class="option-image">
-                <div class="image-placeholder">사이즈 비교<br>XS · S · M · L · XL · XXL · Mixed</div>
-              </div>
-              <p class="option-detail">
-                <strong>XS · S · M · L · XL · XXL · Mixed</strong>
-                가장 긴 변을 기준으로 사이즈를 정해요. <br>
-                0.75"(19 mm) 부터 2.5"(64 mm) 까지 6종 + Mixed.
-              </p>
-            </article>
+        <div class="heading-block">
+          <span class="eyebrow">Options</span>
+          <h2>옵션 선택.</h2>
+        </div>
 
-            <article class="option-block">
-              <h2 class="option-title">옵션 선택 — 재질</h2>
-              <div class="option-image">
-                <div class="image-placeholder">재질 샘플<br>White Matte · Pearl Grey · Silver · Gold</div>
-              </div>
-              <p class="option-detail">
-                <strong>White Matte · Pearl Grey · Silver · Gold</strong>
-                한국 프리미엄 substrate, LAMat-AF / Oraguard 라미네이팅. <br>
-                4종 모두 방수입니다.
-              </p>
-            </article>
-          </div>
+        <div class="option-compare">
+          <article class="option-block">
+            <h3 class="option-title">사이즈</h3>
+            <div class="option-image">
+              <div class="image-placeholder">사이즈 비교<br>XS · S · M · L · XL · XXL · Mixed</div>
+            </div>
+            <p class="option-detail">
+              <strong>XS · S · M · L · XL · XXL · Mixed</strong>
+              가장 긴 변을 기준으로 사이즈를 정해요.
+              0.75"(19 mm) 부터 2.5"(64 mm) 까지 6종 + Mixed.
+            </p>
+          </article>
+
+          <article class="option-block">
+            <h3 class="option-title">재질</h3>
+            <div class="option-image">
+              <div class="image-placeholder">재질 샘플<br>White Matte · Pearl Grey · Silver · Gold</div>
+            </div>
+            <p class="option-detail">
+              <strong>White Matte · Pearl Grey · Silver · Gold</strong>
+              한국 프리미엄 substrate, LAMat-AF / Oraguard 라미네이팅.
+              4종 모두 방수입니다.
+            </p>
+          </article>
         </div>
       </div>
     </section>
@@ -1019,346 +907,338 @@
     <!-- 5. 시트 구성 -->
     <section class="section" aria-label="A5 시트 구성">
       <div class="section-shell">
-        <div class="tape">A5 시트 구성</div>
-        <div class="section-inner">
-          <section class="composition-intro">
-            <h2>A5 한 시트, 손으로 배치.</h2>
-            <p class="sub">
-              A5 시트 (148 × 195 mm) 안에 선택하신 사이즈에 맞춰 한 장씩 손으로 배치합니다.
-              시트는 한 사이즈, 스티커 개수만 사이즈에 따라 달라집니다.
-            </p>
-          </section>
-
-          <section class="size-grid">
-            <article class="size-card">
-              <h2 class="size-title">스몰 S <small>1" · 25 mm · 기본</small></h2>
-              <div class="mockup-wrap">
-                <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
-                <div class="measure-left"><span class="measure-label-left">195 mm</span></div>
-                <div class="sheet">
-                  <div class="sheet-header">
-                    <span>DEAR · ORDER NO.</span>
-                    <span class="tiny-mark wordmark">Everstory</span>
-                  </div>
-                  <div class="sample-area">
-                    <div class="face-grid s">
-                      <span class="face small"></span><span class="face small"></span><span class="face small"></span>
-                      <span class="face small"></span><span class="face small"></span><span class="face small"></span>
-                      <span class="face small"></span>
-                    </div>
-                  </div>
-                  <div class="sheet-footer">
-                    <span class="wordmark" style="text-transform:none;letter-spacing:0;font-size:7px;">Everstory Studio</span>
-                    <span class="heart">♡</span>
-                  </div>
-                </div>
-              </div>
-              <p class="caption">한 시트 약 7장. 다이어리, 폰케이스, 물병에 적합.</p>
-            </article>
-
-            <article class="size-card">
-              <h2 class="size-title">미디움 M <small>1.25" · 32 mm</small></h2>
-              <div class="mockup-wrap">
-                <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
-                <div class="measure-left"><span class="measure-label-left">195 mm</span></div>
-                <div class="sheet">
-                  <div class="sheet-header">
-                    <span>DEAR · ORDER NO.</span>
-                    <span class="tiny-mark wordmark">Everstory</span>
-                  </div>
-                  <div class="sample-area">
-                    <div class="face-grid m">
-                      <span class="face medium"></span><span class="face medium"></span>
-                      <span class="face medium"></span><span class="face medium"></span>
-                      <span class="face medium"></span>
-                    </div>
-                  </div>
-                  <div class="sheet-footer">
-                    <span class="wordmark" style="text-transform:none;letter-spacing:0;font-size:7px;">Everstory Studio</span>
-                    <span class="heart">♡</span>
-                  </div>
-                </div>
-              </div>
-              <p class="caption">한 시트 약 5장. 텀블러, 노트북 커버에 적합.</p>
-            </article>
-
-            <article class="size-card">
-              <h2 class="size-title">라지 L <small>1.5" · 38 mm</small></h2>
-              <div class="mockup-wrap">
-                <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
-                <div class="measure-left"><span class="measure-label-left">195 mm</span></div>
-                <div class="sheet">
-                  <div class="sheet-header">
-                    <span>DEAR · ORDER NO.</span>
-                    <span class="tiny-mark wordmark">Everstory</span>
-                  </div>
-                  <div class="sample-area">
-                    <div class="face-grid l">
-                      <span class="face large"></span><span class="face large"></span>
-                      <span class="face large"></span>
-                    </div>
-                  </div>
-                  <div class="sheet-footer">
-                    <span class="wordmark" style="text-transform:none;letter-spacing:0;font-size:7px;">Everstory Studio</span>
-                    <span class="heart">♡</span>
-                  </div>
-                </div>
-              </div>
-              <p class="caption">한 시트 약 3장. 노트북, 대형 텀블러, 임팩트 있는 단독 배치.</p>
-            </article>
-
-            <article class="size-card">
-              <h2 class="size-title">믹스 Mixed <small>1" · 1.25" · 1.75" 조합</small></h2>
-              <div class="mockup-wrap">
-                <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
-                <div class="measure-left"><span class="measure-label-left">195 mm</span></div>
-                <div class="sheet">
-                  <div class="sheet-header">
-                    <span>DEAR · ORDER NO.</span>
-                    <span class="tiny-mark wordmark">Everstory</span>
-                  </div>
-                  <div class="sample-area">
-                    <div class="face-grid mix">
-                      <span class="face xlarge" style="grid-column: span 2; grid-row: span 2;"></span>
-                      <span class="face medium"></span><span class="face medium"></span>
-                      <span class="face medium"></span><span class="face medium"></span>
-                      <span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span>
-                    </div>
-                  </div>
-                  <div class="sheet-footer">
-                    <span class="wordmark" style="text-transform:none;letter-spacing:0;font-size:7px;">Everstory Studio</span>
-                    <span class="heart">♡</span>
-                  </div>
-                </div>
-              </div>
-              <p class="caption">한 시트 안에 여러 사이즈를 큐레이션. 용도별로 골라 쓸 수 있어요.</p>
-            </article>
-          </section>
+        <div class="heading-block">
+          <span class="eyebrow">On one A5 sheet</span>
+          <h2>A5 한 시트, 손으로 배치.</h2>
+          <p class="sub">
+            A5 시트 (148 × 195 mm) 안에 선택하신 사이즈에 맞춰 한 장씩 손으로 배치합니다.
+            시트는 한 사이즈, 스티커 개수만 사이즈에 따라 달라집니다.
+          </p>
         </div>
+
+        <section class="size-grid">
+          <article class="size-card">
+            <h3 class="size-title">스몰 S <small>1" · 25 mm · 기본</small></h3>
+            <div class="mockup-wrap">
+              <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
+              <div class="measure-left"><span class="measure-label-left">195 mm</span></div>
+              <div class="sheet">
+                <div class="sheet-header">
+                  <span>DEAR · ORDER NO.</span>
+                  <span class="tiny-mark wordmark">Everstory</span>
+                </div>
+                <div class="sample-area">
+                  <div class="face-grid s">
+                    <span class="face small"></span><span class="face small"></span><span class="face small"></span>
+                    <span class="face small"></span><span class="face small"></span><span class="face small"></span>
+                    <span class="face small"></span>
+                  </div>
+                </div>
+                <div class="sheet-footer">
+                  <span class="wordmark" style="text-transform:none;letter-spacing:0;font-size:7px;">Everstory Studio</span>
+                  <span class="heart">♡</span>
+                </div>
+              </div>
+            </div>
+            <p class="caption">한 시트 약 7장. 다이어리, 폰케이스, 물병에 적합.</p>
+          </article>
+
+          <article class="size-card">
+            <h3 class="size-title">미디움 M <small>1.25" · 32 mm</small></h3>
+            <div class="mockup-wrap">
+              <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
+              <div class="measure-left"><span class="measure-label-left">195 mm</span></div>
+              <div class="sheet">
+                <div class="sheet-header">
+                  <span>DEAR · ORDER NO.</span>
+                  <span class="tiny-mark wordmark">Everstory</span>
+                </div>
+                <div class="sample-area">
+                  <div class="face-grid m">
+                    <span class="face medium"></span><span class="face medium"></span>
+                    <span class="face medium"></span><span class="face medium"></span>
+                    <span class="face medium"></span>
+                  </div>
+                </div>
+                <div class="sheet-footer">
+                  <span class="wordmark" style="text-transform:none;letter-spacing:0;font-size:7px;">Everstory Studio</span>
+                  <span class="heart">♡</span>
+                </div>
+              </div>
+            </div>
+            <p class="caption">한 시트 약 5장. 텀블러, 노트북 커버에 적합.</p>
+          </article>
+
+          <article class="size-card">
+            <h3 class="size-title">라지 L <small>1.5" · 38 mm</small></h3>
+            <div class="mockup-wrap">
+              <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
+              <div class="measure-left"><span class="measure-label-left">195 mm</span></div>
+              <div class="sheet">
+                <div class="sheet-header">
+                  <span>DEAR · ORDER NO.</span>
+                  <span class="tiny-mark wordmark">Everstory</span>
+                </div>
+                <div class="sample-area">
+                  <div class="face-grid l">
+                    <span class="face large"></span><span class="face large"></span>
+                    <span class="face large"></span>
+                  </div>
+                </div>
+                <div class="sheet-footer">
+                  <span class="wordmark" style="text-transform:none;letter-spacing:0;font-size:7px;">Everstory Studio</span>
+                  <span class="heart">♡</span>
+                </div>
+              </div>
+            </div>
+            <p class="caption">한 시트 약 3장. 노트북, 대형 텀블러, 임팩트 있는 단독 배치.</p>
+          </article>
+
+          <article class="size-card">
+            <h3 class="size-title">믹스 Mixed <small>1" · 1.25" · 1.75" 조합</small></h3>
+            <div class="mockup-wrap">
+              <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
+              <div class="measure-left"><span class="measure-label-left">195 mm</span></div>
+              <div class="sheet">
+                <div class="sheet-header">
+                  <span>DEAR · ORDER NO.</span>
+                  <span class="tiny-mark wordmark">Everstory</span>
+                </div>
+                <div class="sample-area">
+                  <div class="face-grid mix">
+                    <span class="face xlarge" style="grid-column: span 2; grid-row: span 2;"></span>
+                    <span class="face medium"></span><span class="face medium"></span>
+                    <span class="face medium"></span><span class="face medium"></span>
+                    <span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span>
+                  </div>
+                </div>
+                <div class="sheet-footer">
+                  <span class="wordmark" style="text-transform:none;letter-spacing:0;font-size:7px;">Everstory Studio</span>
+                  <span class="heart">♡</span>
+                </div>
+              </div>
+            </div>
+            <p class="caption">한 시트 안에 여러 사이즈를 큐레이션. 용도별로 골라 쓸 수 있어요.</p>
+          </article>
+        </section>
       </div>
     </section>
 
-    <!-- 6. 사이즈 측정 가이드 -->
+    <!-- 6. 사이즈 가이드 -->
     <section class="section" aria-label="사이즈 안내">
       <div class="section-shell">
-        <div class="tape">사이즈</div>
-        <div class="section-inner">
-          <section class="size-guide-intro">
-            <p class="lead">
-              각 스티커는 가장 긴 변을 기준으로 사이즈를 정합니다.
-              세로 사진과 가로 사진이 같은 사이즈 라벨일 때 긴 변 길이는 같고,
-              짧은 변만 사진 비율에 따라 달라져요.
-            </p>
-          </section>
-
-          <section class="measure-group">
-            <div class="group-label">작은 사이즈 — XS · S · M</div>
-            <div class="examples">
-              <article class="example">
-                <div class="measure-box size-s">
-                  <div class="guide-square"></div>
-                  <div class="vertical-measure"></div>
-                  <div class="measure-text">19 mm</div>
-                  <div class="cutout"></div>
-                </div>
-                <p class="size-name">XS<small>0.75" · 19 mm</small></p>
-              </article>
-              <article class="example">
-                <div class="measure-box size-m">
-                  <div class="guide-square"></div>
-                  <div class="vertical-measure"></div>
-                  <div class="measure-text">25 mm</div>
-                  <div class="cutout"></div>
-                </div>
-                <p class="size-name">S<small>1" · 25 mm · 기본</small></p>
-              </article>
-              <article class="example">
-                <div class="measure-box size-l">
-                  <div class="guide-square"></div>
-                  <div class="vertical-measure"></div>
-                  <div class="measure-text">32 mm</div>
-                  <div class="cutout"></div>
-                </div>
-                <p class="size-name">M<small>1.25" · 32 mm</small></p>
-              </article>
-            </div>
-          </section>
-
-          <section class="measure-group">
-            <div class="group-label">큰 사이즈 — L · XL · XXL</div>
-            <div class="examples">
-              <article class="example">
-                <div class="measure-box size-s">
-                  <div class="guide-square"></div>
-                  <div class="vertical-measure"></div>
-                  <div class="measure-text">38 mm</div>
-                  <div class="cutout"></div>
-                </div>
-                <p class="size-name">L<small>1.5" · 38 mm</small></p>
-              </article>
-              <article class="example">
-                <div class="measure-box size-m">
-                  <div class="guide-square"></div>
-                  <div class="vertical-measure"></div>
-                  <div class="measure-text">45 mm</div>
-                  <div class="cutout"></div>
-                </div>
-                <p class="size-name">XL<small>1.75" · 45 mm</small></p>
-              </article>
-              <article class="example">
-                <div class="measure-box size-l">
-                  <div class="guide-square"></div>
-                  <div class="vertical-measure"></div>
-                  <div class="measure-text">64 mm</div>
-                  <div class="cutout"></div>
-                </div>
-                <p class="size-name">XXL<small>2.5" · 64 mm</small></p>
-              </article>
-            </div>
-          </section>
+        <div class="heading-block">
+          <span class="eyebrow">Sizes</span>
+          <h2>가장 긴 변 기준.</h2>
+          <p class="sub">
+            각 스티커는 가장 긴 변을 기준으로 사이즈를 정합니다.
+            세로 사진과 가로 사진이 같은 사이즈 라벨일 때 긴 변 길이는 같고,
+            짧은 변만 사진 비율에 따라 달라져요.
+          </p>
         </div>
+
+        <section class="measure-group">
+          <div class="group-label">작은 사이즈 — XS · S · M</div>
+          <div class="examples">
+            <article class="example">
+              <div class="measure-box size-s">
+                <div class="guide-square"></div>
+                <div class="vertical-measure"></div>
+                <div class="measure-text">19 mm</div>
+                <div class="cutout"></div>
+              </div>
+              <p class="size-name">XS<small>0.75" · 19 mm</small></p>
+            </article>
+            <article class="example">
+              <div class="measure-box size-m">
+                <div class="guide-square"></div>
+                <div class="vertical-measure"></div>
+                <div class="measure-text">25 mm</div>
+                <div class="cutout"></div>
+              </div>
+              <p class="size-name">S<small>1" · 25 mm · 기본</small></p>
+            </article>
+            <article class="example">
+              <div class="measure-box size-l">
+                <div class="guide-square"></div>
+                <div class="vertical-measure"></div>
+                <div class="measure-text">32 mm</div>
+                <div class="cutout"></div>
+              </div>
+              <p class="size-name">M<small>1.25" · 32 mm</small></p>
+            </article>
+          </div>
+        </section>
+
+        <section class="measure-group">
+          <div class="group-label">큰 사이즈 — L · XL · XXL</div>
+          <div class="examples">
+            <article class="example">
+              <div class="measure-box size-s">
+                <div class="guide-square"></div>
+                <div class="vertical-measure"></div>
+                <div class="measure-text">38 mm</div>
+                <div class="cutout"></div>
+              </div>
+              <p class="size-name">L<small>1.5" · 38 mm</small></p>
+            </article>
+            <article class="example">
+              <div class="measure-box size-m">
+                <div class="guide-square"></div>
+                <div class="vertical-measure"></div>
+                <div class="measure-text">45 mm</div>
+                <div class="cutout"></div>
+              </div>
+              <p class="size-name">XL<small>1.75" · 45 mm</small></p>
+            </article>
+            <article class="example">
+              <div class="measure-box size-l">
+                <div class="guide-square"></div>
+                <div class="vertical-measure"></div>
+                <div class="measure-text">64 mm</div>
+                <div class="cutout"></div>
+              </div>
+              <p class="size-name">XXL<small>2.5" · 64 mm</small></p>
+            </article>
+          </div>
+        </section>
       </div>
     </section>
 
-    <!-- 7. 주문 전 안내 -->
+    <!-- 7. 주문 전 안내 (pearl-grey callout) -->
     <section class="section notice-section" aria-label="주문 및 제작 안내">
       <div class="section-shell">
-        <div class="section-inner">
-          <header class="notice-header">
-            <h2 class="notice-title">주문 전 안내</h2>
-          </header>
-          <div class="notice-rule"></div>
-
-          <ul class="notice-list">
-            <li>
-              <span>
-                모든 시트는 주문 후 제작되는 맞춤 상품이에요.
-                제작 시작 후 단순 변심에 의한 <em>환불은 어렵습니다.</em>
-              </span>
-            </li>
-            <li>
-              <span>
-                결제 시 업로드한 사진과 주문 노트가 작업의 기준이 됩니다.
-                별도의 시안 단계 없이 노트 기준으로 작업을 진행해요.
-              </span>
-            </li>
-            <li>
-              <span>선명하고 해상도가 높은 사진일수록 결과물이 좋아져요.</span>
-            </li>
-            <li>
-              <span>
-                인쇄·컷팅은 <em>1–3 영업일</em> 소요되며, 출고는 당일 또는 익일에 진행됩니다.
-              </span>
-            </li>
-            <li>
-              <span>
-                주문일 기준 출고까지 보통 <em>2–5 영업일</em> 정도 소요될 수 있습니다.
-              </span>
-            </li>
-            <li>
-              <span>
-                인쇄·컷팅 특성상 0.2–2 mm 정도의 오차나 밀림이 발생할 수 있습니다.
-              </span>
-            </li>
-            <li>
-              <span>
-                <em>화면 색상과 실제 인쇄물의 색상에는 차이가 있을 수 있습니다.</em>
-                아래 색상 안내 참고.
-              </span>
-            </li>
-            <li>
-              <span>
-                사진 비율에 따라 스티커 개수가 달라질 수 있습니다.
-              </span>
-            </li>
-            <li>
-              <span>
-                <em>온타리오 전역 무료 배송</em> (Canada Post lettermail). <em>토론토 스튜디오 픽업</em>도 가능합니다.
-              </span>
-            </li>
-            <li>
-              <span>
-                문의는 <em>orders@everstory-domain.com</em> 으로 보내주세요. 한국어 응대 가능합니다.
-              </span>
-            </li>
-          </ul>
-
-          <div class="notice-rule" style="margin-top:44px;margin-bottom:0;"></div>
+        <div class="heading-block">
+          <span class="eyebrow">Before you order</span>
+          <h2>주문 전 안내.</h2>
         </div>
+        <div class="notice-rule"></div>
+
+        <ul class="notice-list">
+          <li>
+            <span>
+              모든 시트는 주문 후 제작되는 맞춤 상품이에요.
+              제작 시작 후 단순 변심에 의한 <em>환불은 어렵습니다.</em>
+            </span>
+          </li>
+          <li>
+            <span>
+              결제 시 업로드한 사진과 주문 노트가 작업의 기준이 됩니다.
+              별도의 시안 단계 없이 노트 기준으로 작업을 진행해요.
+            </span>
+          </li>
+          <li>
+            <span>선명하고 해상도가 높은 사진일수록 결과물이 좋아져요.</span>
+          </li>
+          <li>
+            <span>
+              인쇄·컷팅은 <em>1–3 영업일</em> 소요되며, 출고는 당일 또는 익일에 진행됩니다.
+            </span>
+          </li>
+          <li>
+            <span>
+              주문일 기준 출고까지 보통 <em>2–5 영업일</em> 정도 소요될 수 있습니다.
+            </span>
+          </li>
+          <li>
+            <span>
+              인쇄·컷팅 특성상 0.2–2 mm 정도의 오차나 밀림이 발생할 수 있습니다.
+            </span>
+          </li>
+          <li>
+            <span>
+              <em>화면 색상과 실제 인쇄물의 색상에는 차이가 있을 수 있습니다.</em>
+              아래 색상 안내 참고.
+            </span>
+          </li>
+          <li>
+            <span>사진 비율에 따라 스티커 개수가 달라질 수 있습니다.</span>
+          </li>
+          <li>
+            <span>
+              <em>온타리오 전역 무료 배송</em> (Canada Post lettermail).
+              <em>토론토 스튜디오 픽업</em>도 가능합니다.
+            </span>
+          </li>
+          <li>
+            <span>
+              문의는 <em>orders@everstory-domain.com</em> 으로 보내주세요. 한국어 응대 가능합니다.
+            </span>
+          </li>
+        </ul>
       </div>
     </section>
 
     <!-- 8. 보정 안내 -->
     <section class="section" aria-label="보정 안내">
       <div class="section-shell">
-        <div class="tape">보정 안내</div>
-        <div class="section-inner">
-          <div class="retouch-intro">
-            <p>
-              눈곱, 작은 피부 잡티, 가벼운 상처 같은 간단한 보정은 주문 노트에 함께 적어주세요.
-              객체의 큰 면적을 가리거나 형태 자체를 바꾸는 경우는 보정이 어렵습니다.
-            </p>
-          </div>
-
-          <section class="retouch-block">
-            <h3>가능한 보정 예시</h3>
-            <p class="sub">피부의 점, 작은 상처 등 깔끔하게 제거 가능</p>
-
-            <div class="possible-flow">
-              <div class="retouch-image"><div class="image-placeholder">Before</div></div>
-              <div class="arrow">→</div>
-              <div class="retouch-image"><div class="image-placeholder">After</div></div>
-            </div>
-          </section>
-
-          <section class="retouch-block">
-            <h3>불가능한 보정 예시</h3>
-            <p class="sub">큰 면적을 가리거나 객체의 형태를 바꾸는 경우는 어렵습니다</p>
-
-            <div class="impossible-grid">
-              <div class="retouch-image"><div class="image-placeholder">불가 예시 1</div></div>
-              <div class="retouch-image"><div class="image-placeholder">불가 예시 2</div></div>
-              <div class="retouch-image"><div class="image-placeholder">불가 예시 3</div></div>
-            </div>
-          </section>
+        <div class="heading-block">
+          <span class="eyebrow">Retouching</span>
+          <h2>보정 안내.</h2>
+          <p class="sub">
+            눈곱, 작은 피부 잡티, 가벼운 상처 같은 간단한 보정은 주문 노트에 함께 적어주세요.
+            객체의 큰 면적을 가리거나 형태 자체를 바꾸는 경우는 보정이 어렵습니다.
+          </p>
         </div>
+
+        <section class="retouch-block">
+          <h3>가능한 보정 예시</h3>
+          <p class="sub">피부의 점, 작은 상처 등 깔끔하게 제거 가능</p>
+
+          <div class="possible-flow">
+            <div class="retouch-image"><div class="image-placeholder">Before</div></div>
+            <div class="arrow">→</div>
+            <div class="retouch-image"><div class="image-placeholder">After</div></div>
+          </div>
+        </section>
+
+        <section class="retouch-block">
+          <h3>불가능한 보정 예시</h3>
+          <p class="sub">큰 면적을 가리거나 객체의 형태를 바꾸는 경우는 어렵습니다</p>
+
+          <div class="impossible-grid">
+            <div class="retouch-image"><div class="image-placeholder">불가 예시 1</div></div>
+            <div class="retouch-image"><div class="image-placeholder">불가 예시 2</div></div>
+            <div class="retouch-image"><div class="image-placeholder">불가 예시 3</div></div>
+          </div>
+        </section>
       </div>
     </section>
 
-    <!-- 9. 색상 안내 (RGB / CMYK) -->
+    <!-- 9. 색상 안내 -->
     <section class="section" aria-label="색상 유의사항">
       <div class="section-shell">
-        <div class="tape">색상 안내</div>
-        <div class="section-inner color-guide">
-          <p class="lead">
-            화면 색상과 인쇄 색상은 다릅니다.
+        <div class="heading-block">
+          <span class="eyebrow">Color</span>
+          <h2>화면 색상과 인쇄 색상.</h2>
+          <p class="sub">
             모니터·스마트폰은 RGB, 인쇄물은 CMYK 영역에서 표현되며,
             톤·밝기·채도에 약간의 차이가 생길 수 있습니다.
           </p>
+        </div>
 
-          <div class="diagram-row">
-            <article class="diagram-card">
-              <h3>RGB</h3>
-              <svg viewBox="0 0 360 260" role="img" aria-label="RGB 색상 모델">
-                <circle cx="180" cy="88" r="86" fill="#254db5" fill-opacity="0.88"/>
-                <circle cx="120" cy="174" r="86" fill="#67b52d" fill-opacity="0.88"/>
-                <circle cx="240" cy="174" r="86" fill="#e81721" fill-opacity="0.88"/>
-                <circle cx="180" cy="148" r="39" fill="#fffdf8" fill-opacity="0.8"/>
-              </svg>
-              <p class="caption">화면 · RGB</p>
-            </article>
+        <div class="diagram-row">
+          <article class="diagram-card">
+            <h3>RGB</h3>
+            <svg viewBox="0 0 360 260" role="img" aria-label="RGB 색상 모델">
+              <circle cx="180" cy="88" r="86" fill="#254db5" fill-opacity="0.88"/>
+              <circle cx="120" cy="174" r="86" fill="#67b52d" fill-opacity="0.88"/>
+              <circle cx="240" cy="174" r="86" fill="#e81721" fill-opacity="0.88"/>
+              <circle cx="180" cy="148" r="39" fill="#fffdf8" fill-opacity="0.8"/>
+            </svg>
+            <p class="caption">화면 · RGB</p>
+          </article>
 
-            <article class="diagram-card">
-              <h3>CMYK</h3>
-              <svg viewBox="0 0 360 260" role="img" aria-label="CMYK 색상 모델">
-                <circle cx="180" cy="88" r="86" fill="#cf0f73" fill-opacity="0.88"/>
-                <circle cx="120" cy="174" r="86" fill="#f1df18" fill-opacity="0.88"/>
-                <circle cx="240" cy="174" r="86" fill="#168fc4" fill-opacity="0.88"/>
-                <circle cx="180" cy="148" r="39" fill="#171615" fill-opacity="0.92"/>
-              </svg>
-              <p class="caption">인쇄 · CMYK</p>
-            </article>
-          </div>
+          <article class="diagram-card">
+            <h3>CMYK</h3>
+            <svg viewBox="0 0 360 260" role="img" aria-label="CMYK 색상 모델">
+              <circle cx="180" cy="88" r="86" fill="#cf0f73" fill-opacity="0.88"/>
+              <circle cx="120" cy="174" r="86" fill="#f1df18" fill-opacity="0.88"/>
+              <circle cx="240" cy="174" r="86" fill="#168fc4" fill-opacity="0.88"/>
+              <circle cx="180" cy="148" r="39" fill="#171615" fill-opacity="0.92"/>
+            </svg>
+            <p class="caption">인쇄 · CMYK</p>
+          </article>
         </div>
       </div>
     </section>
