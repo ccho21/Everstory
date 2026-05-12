@@ -1,0 +1,1256 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Everstory Studio — Product Detail Guide</title>
+  <style>
+    :root {
+      --page-bg: #eef1ef;
+      --warm-bg: #f8f1ed;
+      --panel: #fffefa;
+      --panel-soft: #fbf7f2;
+      --text: #2f2b26;
+      --muted: #6f675e;
+      --line: #ded6cc;
+      --line-dark: #8f8580;
+      --tape: #d7c6b1;
+      --pink: #c83f58;
+      --pink-soft: #ef6f78;
+      --green: #3d9a62;
+      --measure: #e85f73;
+      --guide: rgba(232, 95, 115, 0.42);
+      --peach: #f4b98f;
+      --shadow: 0 18px 42px rgba(58, 52, 44, 0.08);
+      --soft-shadow: 0 8px 22px rgba(58, 52, 44, 0.06);
+      --radius: 22px;
+      --max: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.72), transparent 34%),
+        linear-gradient(135deg, #f2f5f3 0%, #e7ebe8 100%);
+      color: var(--text);
+      font-family:
+        "Pretendard",
+        "Apple SD Gothic Neo",
+        "Noto Sans KR",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+      letter-spacing: -0.025em;
+    }
+
+    .page {
+      width: min(var(--max), calc(100% - 36px));
+      margin: 0 auto;
+      padding: 56px 0 88px;
+    }
+
+    .section {
+      margin: 0 0 72px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-shell {
+      position: relative;
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(44px, 6vw, 76px);
+      overflow: hidden;
+    }
+
+    .section-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(92, 78, 62, 0.04) 0.7px, transparent 0.7px);
+      background-size: 9px 9px;
+      opacity: 0.26;
+      pointer-events: none;
+    }
+
+    .section-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .tape {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 190px;
+      padding: 10px 28px 11px;
+      text-align: center;
+      background:
+        linear-gradient(90deg, transparent 0 8px, var(--tape) 8px calc(100% - 8px), transparent calc(100% - 8px)),
+        linear-gradient(#dac9b5, #ccb79f);
+      color: #2f2a24;
+      font-size: clamp(20px, 2.1vw, 28px);
+      line-height: 1;
+      letter-spacing: 0.02em;
+      box-shadow: 0 7px 14px rgba(64, 52, 38, 0.12);
+      z-index: 3;
+    }
+
+    .tape::before,
+    .tape::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      width: 18px;
+      height: 100%;
+      background: #ccb79f;
+      opacity: 0.75;
+    }
+
+    .tape::before {
+      left: -4px;
+      clip-path: polygon(24% 0, 100% 0, 100% 100%, 0 100%, 28% 78%, 0 55%, 26% 28%, 0 0);
+    }
+
+    .tape::after {
+      right: -4px;
+      clip-path: polygon(0 0, 80% 0, 55% 28%, 100% 52%, 60% 74%, 100% 100%, 0 100%);
+    }
+
+    .simple-title {
+      text-align: center;
+      margin: 0 0 44px;
+    }
+
+    .simple-title h2 {
+      display: inline-block;
+      margin: 0;
+      font-size: clamp(34px, 4.2vw, 56px);
+      font-weight: 400;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      position: relative;
+    }
+
+    .simple-title h2::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -8px;
+      width: 90%;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--peach);
+      opacity: 0.72;
+      transform: translateX(-50%);
+      z-index: -1;
+    }
+
+    .intro-copy {
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+      color: #49443e;
+      font-size: clamp(16px, 1.6vw, 21px);
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .image-placeholder {
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: #8c857c;
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 24px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.82), rgba(244,240,234,0.95)),
+        repeating-linear-gradient(-14deg, transparent 0 18px, rgba(205,197,184,0.12) 18px 19px);
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    code {
+      background: #eee9e2;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    /* 1. 제품 소개 / 사용 예시 */
+    .photo-pair {
+      display: grid;
+      grid-template-columns: 1fr 0.9fr;
+      gap: 18px;
+      margin-bottom: 34px;
+    }
+
+    .photo-frame {
+      min-height: 460px;
+      background: #fff;
+      border: 1px solid rgba(225,220,211,0.85);
+      box-shadow: var(--soft-shadow);
+      overflow: hidden;
+    }
+
+    .center-copy {
+      max-width: 860px;
+      margin: 0 auto;
+      text-align: center;
+      color: #3a3732;
+      font-size: clamp(22px, 2.35vw, 34px);
+      line-height: 1.65;
+      letter-spacing: -0.035em;
+      word-break: keep-all;
+    }
+
+    .single-photo {
+      max-width: 760px;
+      margin: 0 auto 34px;
+      background: #fff;
+      border: 1px solid rgba(225,220,211,0.85);
+      box-shadow: var(--soft-shadow);
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+    }
+
+    /* 2. 디자인 선택 / 옵션 안내 */
+    .design-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+    }
+
+    .design-card {
+      text-align: center;
+    }
+
+    .design-card h3 {
+      margin: 0 0 20px;
+      font-size: clamp(22px, 2.35vw, 34px);
+      font-weight: 400;
+    }
+
+    .design-image {
+      aspect-ratio: 1 / 1.35;
+      background: #fff;
+      box-shadow: var(--soft-shadow);
+      overflow: hidden;
+      border: 1px solid rgba(225,220,211,0.85);
+    }
+
+    .option-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .option-block {
+      display: grid;
+      gap: 14px;
+    }
+
+    .option-title {
+      margin: 0;
+      text-align: center;
+      color: #4c463f;
+      font-size: clamp(14px, 1.45vw, 18px);
+      font-weight: 500;
+    }
+
+    .option-image {
+      aspect-ratio: 4 / 5.72;
+      border: 1px solid var(--line);
+      background: #f7f5f0;
+      overflow: hidden;
+    }
+
+    /* 3. 구성 / 사이즈 */
+    .composition-intro {
+      text-align: center;
+      margin-bottom: 34px;
+    }
+
+    .composition-intro h2 {
+      margin: 0 0 22px;
+      font-size: clamp(19px, 2.2vw, 28px);
+      font-weight: 500;
+    }
+
+    .composition-intro p {
+      margin: 0 auto;
+      max-width: 610px;
+      color: #4d4842;
+      font-size: clamp(14px, 1.55vw, 18px);
+      line-height: 1.85;
+      word-break: keep-all;
+    }
+
+    .size-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 38px 42px;
+    }
+
+    .size-card {
+      min-width: 0;
+      text-align: center;
+    }
+
+    .size-title {
+      margin: 0 0 14px;
+      font-size: clamp(17px, 1.9vw, 23px);
+      font-weight: 700;
+    }
+
+    .mockup-wrap {
+      position: relative;
+      padding: 18px 18px 20px;
+      background: #fff;
+      border: 1px solid #ebe5dc;
+      box-shadow: var(--soft-shadow);
+    }
+
+    .measure-top {
+      position: absolute;
+      top: 6px;
+      left: 18px;
+      right: 18px;
+      height: 1px;
+      background: #efb4ad;
+    }
+
+    .measure-top::before,
+    .measure-top::after {
+      content: "";
+      position: absolute;
+      top: -5px;
+      width: 1px;
+      height: 10px;
+      background: #efb4ad;
+    }
+
+    .measure-top::before { left: 0; }
+    .measure-top::after { right: 0; }
+
+    .measure-label-top {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #b48d86;
+      font-size: 10px;
+    }
+
+    .measure-left {
+      position: absolute;
+      top: 18px;
+      bottom: 20px;
+      left: 6px;
+      width: 1px;
+      background: #efb4ad;
+    }
+
+    .measure-left::before,
+    .measure-left::after {
+      content: "";
+      position: absolute;
+      left: -5px;
+      width: 10px;
+      height: 1px;
+      background: #efb4ad;
+    }
+
+    .measure-left::before { top: 0; }
+    .measure-left::after { bottom: 0; }
+
+    .measure-label-left {
+      position: absolute;
+      left: -18px;
+      top: 50%;
+      transform: translateY(-50%) rotate(-90deg);
+      color: #b48d86;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .sheet {
+      aspect-ratio: 1 / 1.38;
+      border: 1px solid #cfc9bf;
+      background: #fbfaf7;
+      padding: 18px 18px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .sheet-header {
+      height: 18px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      border-bottom: 1px solid #cfc9bf;
+      color: #58534c;
+      font-size: 8px;
+      text-align: left;
+    }
+
+    .tiny-logo {
+      width: 20px;
+      height: 5px;
+      background: #222;
+      display: inline-block;
+      opacity: 0.8;
+      border-radius: 1px;
+    }
+
+    .sample-area {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      padding: 12px 0;
+    }
+
+    .face-grid {
+      width: 100%;
+      display: grid;
+      justify-items: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .face-grid.l { grid-template-columns: repeat(3, 1fr); }
+    .face-grid.m { grid-template-columns: repeat(3, 1fr); gap: 13px 12px; }
+    .face-grid.s { grid-template-columns: repeat(5, 1fr); gap: 10px 8px; }
+    .face-grid.set { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+
+    .face {
+      width: var(--face-size);
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 52% 56%, #ffe1d3 0 35%, transparent 36%),
+        radial-gradient(circle at 37% 45%, #2d2520 0 3%, transparent 4%),
+        radial-gradient(circle at 63% 45%, #2d2520 0 3%, transparent 4%),
+        radial-gradient(ellipse at 50% 78%, #d76d72 0 4%, transparent 5%),
+        radial-gradient(ellipse at 50% 28%, #3b2923 0 28%, transparent 29%);
+      background-color: #f8cdbd;
+      box-shadow: 0 1px 4px rgba(40,32,28,0.12);
+    }
+
+    .face.large { --face-size: 62px; }
+    .face.medium { --face-size: 44px; }
+    .face.small { --face-size: 29px; }
+    .face.xlarge { --face-size: 76px; }
+
+    .sheet-footer {
+      height: 14px;
+      border-top: 1px solid #cfc9bf;
+      display: flex;
+      align-items: end;
+      justify-content: end;
+      color: #969087;
+      font-size: 6px;
+    }
+
+    .caption {
+      margin: 12px 0 0;
+      color: #655f57;
+      font-size: clamp(12px, 1.22vw, 15px);
+      line-height: 1.55;
+      word-break: keep-all;
+    }
+
+    .size-guide-intro {
+      text-align: center;
+      margin-bottom: 52px;
+    }
+
+    .size-guide-intro p {
+      margin: 0;
+      color: #3d3832;
+      font-size: clamp(17px, 1.8vw, 24px);
+      line-height: 1.65;
+      word-break: keep-all;
+    }
+
+    .measure-group {
+      margin-top: 40px;
+    }
+
+    .group-label {
+      width: fit-content;
+      min-width: 270px;
+      margin: 0 auto 34px;
+      padding: 9px 22px;
+      background: #f0f0ef;
+      color: #2f2b26;
+      text-align: center;
+      font-size: clamp(16px, 1.65vw, 22px);
+      font-weight: 700;
+    }
+
+    .examples {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr 0.72fr;
+      align-items: end;
+      gap: clamp(34px, 5vw, 70px);
+    }
+
+    .example {
+      text-align: center;
+      display: grid;
+      justify-items: center;
+      gap: 14px;
+    }
+
+    .measure-box {
+      --size: 180px;
+      width: var(--size);
+      height: var(--size);
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+
+    .measure-box.large { --size: 260px; }
+    .measure-box.medium { --size: 184px; }
+    .measure-box.small { --size: 128px; }
+
+    .guide-square {
+      position: absolute;
+      inset: 0;
+      border: 1.5px dotted var(--guide);
+    }
+
+    .guide-square::before,
+    .guide-square::after {
+      content: "";
+      position: absolute;
+      background: var(--guide);
+    }
+
+    .guide-square::before {
+      left: 50%;
+      top: -20px;
+      width: 1px;
+      height: calc(100% + 40px);
+      transform: translateX(-50%);
+      opacity: 0.55;
+    }
+
+    .guide-square::after {
+      top: 50%;
+      left: -20px;
+      width: calc(100% + 40px);
+      height: 1px;
+      transform: translateY(-50%);
+      opacity: 0.55;
+    }
+
+    .vertical-measure {
+      position: absolute;
+      left: -42px;
+      top: 14px;
+      bottom: 14px;
+      width: 1px;
+      background: var(--measure);
+    }
+
+    .vertical-measure::before,
+    .vertical-measure::after {
+      content: "";
+      position: absolute;
+      left: -5px;
+      width: 10px;
+      height: 1px;
+      background: var(--measure);
+    }
+
+    .vertical-measure::before { top: 0; }
+    .vertical-measure::after { bottom: 0; }
+
+    .measure-text {
+      position: absolute;
+      left: -79px;
+      top: 50%;
+      transform: translateY(-50%) rotate(-90deg);
+      color: var(--measure);
+      font-size: clamp(20px, 2vw, 30px);
+      line-height: 1;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .cutout {
+      position: relative;
+      width: 76%;
+      height: 76%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 38% 44%, #2a211d 0 3%, transparent 4%),
+        radial-gradient(circle at 62% 44%, #2a211d 0 3%, transparent 4%),
+        radial-gradient(ellipse at 50% 73%, #e28183 0 5%, transparent 6%),
+        radial-gradient(ellipse at 50% 30%, #3b2923 0 32%, transparent 33%),
+        radial-gradient(circle at 50% 54%, #ffe1d3 0 52%, transparent 53%);
+      background-color: #f7d0c0;
+      box-shadow: 0 2px 8px rgba(52,40,33,0.14);
+      overflow: hidden;
+    }
+
+    .cutout.wide {
+      border-radius: 46% 48% 40% 42%;
+      transform: rotate(-13deg);
+    }
+
+    .size-name {
+      margin: 0;
+      color: #111;
+      font-size: clamp(16px, 1.8vw, 24px);
+      font-weight: 500;
+    }
+
+    /* 4. 주문 및 제작 안내 */
+    .notice-section {
+      background: var(--warm-bg);
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .notice-section .section-shell {
+      background: rgba(255, 247, 244, 0.84);
+      box-shadow: var(--shadow);
+    }
+
+    .notice-title {
+      margin: 0;
+      text-align: center;
+      color: var(--pink);
+      font-weight: 400;
+      font-size: clamp(42px, 5vw, 72px);
+      line-height: 1.05;
+      letter-spacing: 0.035em;
+    }
+
+    .notice-rule {
+      height: 2px;
+      background: var(--line-dark);
+      opacity: 0.86;
+      width: 100%;
+      margin: 26px 0 44px;
+    }
+
+    .notice-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: clamp(16px, 1.8vw, 24px);
+    }
+
+    .notice-list li {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      column-gap: 18px;
+      align-items: start;
+      color: var(--text);
+      font-size: clamp(18px, 1.9vw, 27px);
+      line-height: 1.48;
+      word-break: keep-all;
+    }
+
+    .notice-list li::before {
+      content: "★";
+      color: #211f1d;
+      font-size: 0.58em;
+      line-height: 2.15;
+    }
+
+    .highlight { color: var(--pink); font-weight: 500; }
+    .green { color: var(--green); font-weight: 800; }
+
+    /* 5. 보정 / 색상 */
+    .retouch-intro {
+      text-align: center;
+      max-width: 720px;
+      margin: 22px auto 34px;
+      color: #4a453f;
+      font-size: 17px;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .retouch-title {
+      text-align: center;
+      font-size: 18px;
+      color: #49433d;
+      margin: 0 0 6px;
+      font-weight: 500;
+    }
+
+    .retouch-subtitle {
+      text-align: center;
+      font-size: 12px;
+      color: #7b746a;
+      margin: 0 0 18px;
+    }
+
+    .possible-flow {
+      display: grid;
+      grid-template-columns: 1fr 36px 1fr;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      max-width: 560px;
+      margin: 0 auto 34px;
+    }
+
+    .retouch-image {
+      aspect-ratio: 1 / 1;
+      border: 1px solid #cfc9bf;
+      background: #f7f6f3;
+      overflow: hidden;
+    }
+
+    .arrow {
+      text-align: center;
+      font-size: 26px;
+      color: #8f877d;
+      user-select: none;
+    }
+
+    .impossible-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 160px));
+      gap: 14px;
+      justify-content: center;
+    }
+
+    .color-guide {
+      text-align: center;
+    }
+
+    .color-guide p {
+      margin: 0 auto 30px;
+      max-width: 720px;
+      color: #4a453f;
+      font-size: 17px;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .diagram-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .diagram-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.7);
+      padding: 28px;
+      box-shadow: var(--soft-shadow);
+    }
+
+    .diagram-card h3 {
+      margin: 0 0 18px;
+      font-family: "Times New Roman", "Noto Serif KR", serif;
+      font-size: 44px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+
+    .diagram-card svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+
+    .diagram-card .caption {
+      font-size: 15px;
+      margin-top: 10px;
+    }
+
+    /* Utility */
+    .replace-note {
+      margin-top: 34px;
+      padding: 14px 16px;
+      border: 1px dashed #cfc7bc;
+      border-radius: 10px;
+      background: rgba(247,244,239,0.76);
+      color: #605951;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    @media (max-width: 860px) {
+      .page {
+        width: min(100% - 28px, var(--max));
+        padding: 36px 0 60px;
+      }
+
+      .section {
+        margin-bottom: 46px;
+      }
+
+      .section-shell {
+        padding: 48px 22px 30px;
+      }
+
+      .photo-pair,
+      .design-grid,
+      .option-compare,
+      .size-grid,
+      .examples,
+      .diagram-row {
+        grid-template-columns: 1fr;
+      }
+
+      .photo-frame {
+        min-height: 340px;
+      }
+
+      .single-photo {
+        max-width: 100%;
+      }
+
+      .design-image,
+      .option-image {
+        max-width: 340px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      .mockup-wrap {
+        max-width: 320px;
+        margin: 0 auto;
+      }
+
+      .examples {
+        justify-items: center;
+        gap: 34px;
+      }
+
+      .measure-box.large { --size: 220px; }
+      .measure-box.medium { --size: 170px; }
+      .measure-box.small { --size: 130px; }
+
+      .vertical-measure {
+        left: -28px;
+      }
+
+      .measure-text {
+        left: -62px;
+        font-size: 18px;
+      }
+
+      .possible-flow {
+        grid-template-columns: 1fr;
+        max-width: 240px;
+      }
+
+      .arrow {
+        transform: rotate(90deg);
+      }
+
+      .impossible-grid {
+        grid-template-columns: 1fr;
+        max-width: 220px;
+        margin-inline: auto;
+      }
+
+      .notice-list li {
+        font-size: 18px;
+        grid-template-columns: 18px 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+
+    <!-- 1. 제품 소개 / 사용 예시 -->
+    <section class="section" aria-label="제품 소개 및 사용 예시">
+      <div class="section-shell">
+        <div class="section-inner">
+          <div class="simple-title">
+            <h2>우리 아이 스티커, 이렇게 사용해요</h2>
+          </div>
+
+          <div class="photo-pair">
+            <div class="photo-frame">
+              <div class="image-placeholder">사용 예시 이미지 1<br />스티커 시트 사진</div>
+            </div>
+            <div class="photo-frame">
+              <div class="image-placeholder">사용 예시 이미지 2<br />다이어리 / 폰케이스 / 소품 부착 예시</div>
+            </div>
+          </div>
+
+          <p class="center-copy">
+            흰색 배경과 아웃라인이 있는 우리아이 커스텀 스티커입니다.<br />
+            다이어리 꾸미기, 에어팟, 폰케이스 등 매끈한 부착면에<br />
+            가장 적합하고 예쁜 스티커예요.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-label="포장 안내">
+      <div class="section-shell">
+        <div class="section-inner">
+          <div class="single-photo">
+            <div class="image-placeholder">포장 예시 이미지<br />주문 수량별 포장 사진</div>
+          </div>
+
+          <p class="center-copy">
+            주문수량 만큼 꼼꼼하고 정성스럽게 포장해서 보내드려요.<br />
+            1장도 주문 가능합니다 :)
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 디자인 선택 / 옵션 안내 -->
+    <section class="section" aria-label="디자인 선택하기">
+      <div class="section-shell">
+        <div class="section-inner">
+          <div class="simple-title">
+            <h2>디자인 선택하기</h2>
+          </div>
+
+          <div class="design-grid">
+            <article class="design-card">
+              <h3>1. 카톡 이모티콘</h3>
+              <div class="design-image">
+                <div class="image-placeholder">카톡 이모티콘<br />디자인 예시</div>
+              </div>
+            </article>
+
+            <article class="design-card">
+              <h3>2. 하트</h3>
+              <div class="design-image">
+                <div class="image-placeholder">하트<br />디자인 예시</div>
+              </div>
+            </article>
+
+            <article class="design-card">
+              <h3>3. 이름</h3>
+              <div class="design-image">
+                <div class="image-placeholder">이름<br />디자인 예시</div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-label="옵션 안내">
+      <div class="section-shell">
+        <div class="tape">옵션 안내</div>
+        <div class="section-inner">
+          <div class="option-compare">
+            <article class="option-block">
+              <h2 class="option-title">옵션선택 - 얼굴</h2>
+              <div class="option-image">
+                <div class="image-placeholder">얼굴 옵션<br />예시 이미지</div>
+              </div>
+            </article>
+
+            <article class="option-block">
+              <h2 class="option-title">옵션선택 - 전신</h2>
+              <div class="option-image">
+                <div class="image-placeholder">전신 옵션<br />예시 이미지</div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 구성 / 사이즈 -->
+    <section class="section" aria-label="기본 1장 구성">
+      <div class="section-shell">
+        <div class="tape">기본 1장 구성</div>
+        <div class="section-inner">
+          <section class="composition-intro">
+            <h2>구성 : 라지 L, 미디움 M, 스몰 S, 3종 세트</h2>
+            <p>
+              여기저기 붙이고 싶은 마음, 가지처럼 잘라냅니다.<br />
+              그래서 넉넉히 드립니다.<br />
+              기본구성 수량 확인 후 쓰임새에 맞게 주문해주세요.
+            </p>
+          </section>
+
+          <section class="size-grid">
+            <article class="size-card">
+              <h2 class="size-title">&lt; 라지 L &gt;</h2>
+              <div class="mockup-wrap">
+                <div class="measure-top"><span class="measure-label-top">128mm</span></div>
+                <div class="measure-left"><span class="measure-label-left">182mm</span></div>
+                <div class="sheet">
+                  <div class="sheet-header">Dear. <span class="tiny-logo"></span></div>
+                  <div class="sample-area">
+                    <div class="face-grid l">
+                      <span class="face large"></span><span class="face large"></span><span class="face large"></span>
+                      <span class="face large"></span><span class="face large"></span><span class="face large"></span>
+                      <span class="face large"></span><span class="face large"></span><span class="face large"></span>
+                    </div>
+                  </div>
+                  <div class="sheet-footer">everstory studio</div>
+                </div>
+              </div>
+              <p class="caption">라지 L 사이즈의 스티커가 구성됩니다.</p>
+            </article>
+
+            <article class="size-card">
+              <h2 class="size-title">&lt; 미디움 M &gt;</h2>
+              <div class="mockup-wrap">
+                <div class="measure-top"><span class="measure-label-top">128mm</span></div>
+                <div class="measure-left"><span class="measure-label-left">182mm</span></div>
+                <div class="sheet">
+                  <div class="sheet-header">Dear. <span class="tiny-logo"></span></div>
+                  <div class="sample-area">
+                    <div class="face-grid m">
+                      <span class="face medium"></span><span class="face medium"></span><span class="face medium"></span>
+                      <span class="face medium"></span><span class="face medium"></span><span class="face medium"></span>
+                      <span class="face medium"></span><span class="face medium"></span><span class="face medium"></span>
+                      <span class="face medium"></span><span class="face medium"></span><span class="face medium"></span>
+                    </div>
+                  </div>
+                  <div class="sheet-footer">everstory studio</div>
+                </div>
+              </div>
+              <p class="caption">미디움 M 사이즈의 스티커가 구성됩니다.</p>
+            </article>
+
+            <article class="size-card">
+              <h2 class="size-title">&lt; 스몰 S &gt;</h2>
+              <div class="mockup-wrap">
+                <div class="measure-top"><span class="measure-label-top">128mm</span></div>
+                <div class="measure-left"><span class="measure-label-left">182mm</span></div>
+                <div class="sheet">
+                  <div class="sheet-header">Dear. <span class="tiny-logo"></span></div>
+                  <div class="sample-area">
+                    <div class="face-grid s">
+                      <span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span>
+                      <span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span>
+                      <span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span>
+                      <span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span>
+                      <span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span>
+                    </div>
+                  </div>
+                  <div class="sheet-footer">everstory studio</div>
+                </div>
+              </div>
+              <p class="caption">스몰 S 사이즈의 스티커가 구성됩니다.</p>
+            </article>
+
+            <article class="size-card">
+              <h2 class="size-title">&lt; 3종 세트 &gt;</h2>
+              <div class="mockup-wrap">
+                <div class="measure-top"><span class="measure-label-top">128mm</span></div>
+                <div class="measure-left"><span class="measure-label-left">182mm</span></div>
+                <div class="sheet">
+                  <div class="sheet-header">Dear. <span class="tiny-logo"></span></div>
+                  <div class="sample-area">
+                    <div class="face-grid set">
+                      <span class="face medium"></span><span class="face medium"></span>
+                      <span class="face xlarge" style="grid-row: span 2; grid-column: span 2;"></span>
+                      <span class="face medium"></span><span class="face medium"></span>
+                      <span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span>
+                      <span class="face small"></span><span class="face small"></span><span class="face small"></span><span class="face small"></span>
+                    </div>
+                  </div>
+                  <div class="sheet-footer">everstory studio</div>
+                </div>
+              </div>
+              <p class="caption">한 장으로 다양한 크기를 구성할 수 있습니다.</p>
+            </article>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-label="사이즈 안내">
+      <div class="section-shell">
+        <div class="tape">사이즈</div>
+        <div class="section-inner">
+          <section class="size-guide-intro">
+            <p>
+              구성 : 라지 L, 미디움 M, 스몰<br />
+              측정 기준 : 정면 기준 가로, 세로 면 중 길이가 더 긴 면을 높이로 지정합니다.
+            </p>
+          </section>
+
+          <section class="measure-group">
+            <div class="group-label">세로면이 높이가 되는 경우</div>
+            <div class="examples">
+              <article class="example">
+                <div class="measure-box large"><div class="guide-square"></div><div class="vertical-measure"></div><div class="measure-text">45mm</div><div class="cutout"></div></div>
+                <p class="size-name">Large</p>
+              </article>
+              <article class="example">
+                <div class="measure-box medium"><div class="guide-square"></div><div class="vertical-measure"></div><div class="measure-text">30mm</div><div class="cutout"></div></div>
+                <p class="size-name">Medium</p>
+              </article>
+              <article class="example">
+                <div class="measure-box small"><div class="guide-square"></div><div class="vertical-measure"></div><div class="measure-text">20mm</div><div class="cutout"></div></div>
+                <p class="size-name">Small</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="measure-group">
+            <div class="group-label">가로면이 높이가 되는 경우</div>
+            <div class="examples">
+              <article class="example">
+                <div class="measure-box large"><div class="guide-square"></div><div class="vertical-measure"></div><div class="measure-text">45mm</div><div class="cutout wide"></div></div>
+                <p class="size-name">Large</p>
+              </article>
+              <article class="example">
+                <div class="measure-box medium"><div class="guide-square"></div><div class="vertical-measure"></div><div class="measure-text">30mm</div><div class="cutout wide"></div></div>
+                <p class="size-name">Medium</p>
+              </article>
+              <article class="example">
+                <div class="measure-box small"><div class="guide-square"></div><div class="vertical-measure"></div><div class="measure-text">20mm</div><div class="cutout wide"></div></div>
+                <p class="size-name">Small</p>
+              </article>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 주문 및 제작 안내 -->
+    <section class="section notice-section" aria-label="주문 및 제작 안내">
+      <div class="section-shell">
+        <div class="section-inner">
+          <h2 class="notice-title">주문 및 제작 안내</h2>
+          <div class="notice-rule"></div>
+
+          <ul class="notice-list">
+            <li>모든 제품은 맞춤 제작 상품으로, 주문 후 단순 변심에 의한 <span class="highlight">환불은 어렵습니다.</span></li>
+            <li>주문 완료 후 <span class="green">네이버 톡</span>으로 사진을 보내주셔야 작업이 시작됩니다.</li>
+            <li>사진을 보내주신 순서대로 작업이 진행됩니다.</li>
+            <li>선명한 사진일수록 결과물의 퀄리티가 좋아집니다.</li>
+            <li>시안은 사진 전달일 기준 1~3일 정도 소요됩니다. 주말 및 공휴일은 제외됩니다.</li>
+            <li>제작 및 출고까지는 주문 후 약 3~5 영업일이 소요될 수 있습니다.</li>
+            <li>인쇄 및 컷팅 특성상 0.2~2mm 정도의 오차나 밀림이 발생할 수 있습니다.</li>
+            <li><span class="highlight">화면으로 보는 색상과 실제 출력물의 색상에는 차이</span>가 있을 수 있습니다.</li>
+            <li>사진 비율과 여백에 따라 스티커 개수, 하트, 이름 장식 개수는 달라질 수 있습니다.</li>
+            <li>얼굴만 따로 제작하는 작업은 어려울 수 있으며, 요청 시 추가금이 발생할 수 있습니다.</li>
+            <li>문의사항은 <span class="green">네이버 톡</span>으로 부탁드립니다.</li>
+          </ul>
+
+          <div class="notice-rule" style="margin-top:44px;margin-bottom:0;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. 보정 / 색상 유의사항 -->
+    <section class="section" aria-label="보정 안내">
+      <div class="section-shell">
+        <div class="tape">보정 안내</div>
+        <div class="section-inner">
+          <p class="retouch-intro">
+            눈곱, 얼굴에 작은 상처 등 간단한 보정작업은 원하실 경우<br />
+            네이버 톡으로 파일 전달 시 함께 요청해주세요.<br />
+            제거 영역이 객체의 큰 부분을 차지할 경우 작업이 어렵습니다.
+          </p>
+
+          <h2 class="retouch-title">[가능한 제거 작업 예시]</h2>
+          <p class="retouch-subtitle">피부의 점, 작은 상처 등은 간단히 제거 가능</p>
+
+          <div class="possible-flow">
+            <div class="retouch-image"><div class="image-placeholder">Before</div></div>
+            <div class="arrow">→</div>
+            <div class="retouch-image"><div class="image-placeholder">After</div></div>
+          </div>
+
+          <h2 class="retouch-title">[불가능한 제거 작업 예시]</h2>
+          <p class="retouch-subtitle">객체가 큰 면적을 가리거나 주요 형태를 바꾸는 경우</p>
+
+          <div class="impossible-grid">
+            <div class="retouch-image"><div class="image-placeholder">불가 예시 1</div></div>
+            <div class="retouch-image"><div class="image-placeholder">불가 예시 2</div></div>
+            <div class="retouch-image"><div class="image-placeholder">불가 예시 3</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-label="색상 유의사항">
+      <div class="section-shell">
+        <div class="tape">색상 유의사항</div>
+        <div class="section-inner color-guide">
+          <p>
+            화면상의 색상과 인쇄 색상이 다릅니다.<br />
+            스마트폰, 모니터 화면으로 보는 색상과 실제 출력물에는 차이가 있을 수 있습니다.
+          </p>
+
+          <div class="diagram-row">
+            <article class="diagram-card">
+              <h3>RGB</h3>
+              <svg viewBox="0 0 360 260" role="img" aria-label="RGB color diagram">
+                <circle cx="180" cy="88" r="86" fill="#254db5" fill-opacity="0.88"/>
+                <circle cx="120" cy="174" r="86" fill="#67b52d" fill-opacity="0.88"/>
+                <circle cx="240" cy="174" r="86" fill="#e81721" fill-opacity="0.88"/>
+                <circle cx="180" cy="148" r="39" fill="#fffdf8" fill-opacity="0.8"/>
+              </svg>
+              <p class="caption">모니터 RGB</p>
+            </article>
+
+            <article class="diagram-card">
+              <h3>CMYK</h3>
+              <svg viewBox="0 0 360 260" role="img" aria-label="CMYK color diagram">
+                <circle cx="180" cy="88" r="86" fill="#cf0f73" fill-opacity="0.88"/>
+                <circle cx="120" cy="174" r="86" fill="#f1df18" fill-opacity="0.88"/>
+                <circle cx="240" cy="174" r="86" fill="#168fc4" fill-opacity="0.88"/>
+                <circle cx="180" cy="148" r="39" fill="#171615" fill-opacity="0.92"/>
+              </svg>
+              <p class="caption">인쇄물 CMYK</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-label="이미지 교체 안내">
+      <div class="replace-note">
+        <strong>이미지 교체 방법</strong><br />
+        현재 HTML은 대부분 placeholder 또는 CSS 예시로 구성되어 있습니다.
+        실제 이미지를 사용할 때는 각 <code>.image-placeholder</code> 영역을
+        <code>&lt;img src="https://cdn.shopify.com/..." alt="설명" /&gt;</code>로 바꾸면 됩니다.
+        Shopify Custom Liquid에 붙여 넣을 경우에는 <code>&lt;html&gt;</code>, <code>&lt;head&gt;</code>, <code>&lt;body&gt;</code>는 제거하고
+        필요한 section markup과 style만 옮기면 됩니다.
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>
