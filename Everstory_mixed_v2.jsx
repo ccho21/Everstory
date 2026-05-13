@@ -15,7 +15,7 @@
 //      사이즈 dropdown (인치 6단계 + Mixed) / 칼선 여백 / gap input + 최적값 자동
 //      - 사이즈 변경 시 cap 갱신 + 선택 자동 trim (auto-cap)
 //   3. templates/template_cutout_v2.ait 열기 (info > body PathItem, info > header > header_right TextFrame 사용)
-//   4. info > header > header_right 영역에 우측 정렬 2줄 (사진수/사이즈/재질, "Name add-on * Order date") 배치
+//   4. info > header > header_right 영역에 우측 정렬 2줄 (사진수/사이즈/재질, "이름 • Order date") 배치
 //   5. info > body 영역에 선택한 페어를 packing
 //      - 단일 사이즈: 적응형 직사각 셀 (max cellW × max cellH) 위 cols × rows uniform grid.
 //        모든 행이 같은 디자인 round-robin 순서, 외곽 4면 = 내부 gap 자동 균등 분배
@@ -488,7 +488,7 @@
     }
     cutRadios[CUT_MARGIN_DEFAULT_INDEX].value = true;
 
-    var hint = dlg.add("statictext", undefined, "info > header > header_right — 우측 정렬 2줄 (사진수/사이즈/재질, Name add-on/주문일). 고객명·주문번호는 파일명/메타 용도.");
+    var hint = dlg.add("statictext", undefined, "info > header > header_right — 우측 정렬 2줄 (사진수/사이즈/재질, 고객명/주문일). 주문번호는 파일명/메타 용도.");
     try { hint.graphics.foregroundColor = hint.graphics.newPen(hint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHint) {}
 
     var btnGroup = dlg.add("group");
@@ -643,10 +643,11 @@
       ? "MIX"
       : _sizeLetter(options.sizeMm) + " / " + _inchStr(options.sizeMm);
 
-    var line1 = photoCount + " photos * " + sizeToken + " / " + options.cutMarginMm + "mm  * " + options.material;
-    var line2 = "Name add-on * Order date " + options.orderDate;
+    var line1 = photoCount + " photos • " + sizeToken + " / " + options.cutMarginMm + "mm  • " + options.material;
+    var line2 = _nfcHangul(options.nameText) + " • Order date " + options.orderDate;
 
     headerRightText.contents = line1 + "\r" + line2;
+    _applyHangulFontOverride(headerRightText, _resolveHangulFont());
   }
 
   function _moveItemCenterLeft(item, left, centerY) {
@@ -668,6 +669,54 @@
     }
     if (app.textFonts.length > 0) return app.textFonts[0];
     return null;
+  }
+
+  // macOS Finder/paste 로 들어온 NFD 자모를 NFC 음절로 합성. ES3 의 String.normalize 부재 대체.
+  // L(초성) U+1100-1112 + V(중성) U+1161-1175 [+ T(종성) U+11A8-11C2] → S(음절) U+AC00-D7A3.
+  function _nfcHangul(s) {
+    if (!s) return s;
+    var out = "";
+    var i = 0;
+    while (i < s.length) {
+      var L = s.charCodeAt(i);
+      if (L >= 0x1100 && L <= 0x1112 && i + 1 < s.length) {
+        var V = s.charCodeAt(i + 1);
+        if (V >= 0x1161 && V <= 0x1175) {
+          var Tidx = 0;
+          var step = 2;
+          if (i + 2 < s.length) {
+            var T = s.charCodeAt(i + 2);
+            if (T >= 0x11A8 && T <= 0x11C2) { Tidx = T - 0x11A7; step = 3; }
+          }
+          out += String.fromCharCode(0xAC00 + ((L - 0x1100) * 21 + (V - 0x1161)) * 28 + Tidx);
+          i += step;
+          continue;
+        }
+      }
+      out += s.charAt(i);
+      i++;
+    }
+    return out;
+  }
+
+  function _resolveHangulFont() {
+    var candidates = ["AppleSDGothicNeo-Bold", "AppleSDGothicNeo-SemiBold", "AppleGothic"];
+    for (var i = 0; i < candidates.length; i++) {
+      try { return app.textFonts.getByName(candidates[i]); } catch (eFont) {}
+    }
+    return null;
+  }
+
+  function _applyHangulFontOverride(textFrame, hangulFont) {
+    if (!hangulFont) return;
+    var s = textFrame.contents;
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      // Hangul Syllables AC00–D7AF, Jamo 1100–11FF, Compatibility Jamo 3130–318F
+      if ((c >= 0xAC00 && c <= 0xD7AF) || (c >= 0x1100 && c <= 0x11FF) || (c >= 0x3130 && c <= 0x318F)) {
+        try { textFrame.textRange.characters[i].textFont = hangulFont; } catch (eChar) {}
+      }
+    }
   }
 
   function _fitTextToBoxMin(textItem, maxW, maxH, startSize, minSize) {
