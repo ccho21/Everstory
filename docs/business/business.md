@@ -131,5 +131,5 @@ Customer-facing fulfillment 기준은 **Ontario free shipping + Toronto Studio p
 ## Operating Principles
 
 - Shopify 앱, admin setting, policy input detail 은 `docs/shopify/` 에 둔다.
-- Brand 보이스·표기 기준은 이 문서에 둔다. 색상·타이포·컴포넌트는 Horizon 테마 설정에서 관리하며 MVP 는 테마 기본값을 유지한다.
+- Brand·voice·typography·color·photography·component 기준은 `docs/design/` 에 둔다.
 - Business 문서는 사업 판단에 필요한 현재 기준만 남긴다.

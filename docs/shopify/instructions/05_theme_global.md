@@ -110,7 +110,7 @@ shopify theme push --unpublished
 
 ## Step 5.3 — Theme settings (high-level, 정확한 토큰은 별도)
 
-> 색상 / 폰트 / 간격은 Horizon 테마 설정에서 관리한다. 이 batch 에서는 high-level 만 잡고, MVP 는 테마 기본값을 유지하며 정밀 조정은 launch 전 별도 단계에서 한다. 브랜드 표기 기준은 [`../../business/business.md`](../../business/business.md).
+> 색상 / 폰트 / 간격은 [`../../design/tokens.json`](../../design/tokens.json) 과 [`../../design/brand.md`](../../design/brand.md) 가 SOT. 이 batch 에서는 high-level 만 잡고, 정확한 토큰은 launch 전 별도 단계에서 정밀 조정.
 
 [Action 5.3.a] Theme Editor 좌측 하단 ⚙ 또는 `Theme settings` 클릭
 
@@ -121,7 +121,7 @@ shopify theme push --unpublished
 
 [Action 5.3.c] **Colors / Color schemes**:
 - Horizon 은 default 6개 color scheme (`scheme-1` ~ `scheme-6`) 제공
-- MVP 는 default 유지, launch 전 테마 color scheme 으로 정밀 조정
+- MVP 는 default 유지, launch 전 [`../../design/tokens.json`](../../design/tokens.json) 으로 정밀 조정
 
 [Action 5.3.d] **Typography**:
 - Default 유지. brand.md 의 폰트 결정 후 별도 조정.
