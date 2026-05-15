@@ -32,9 +32,12 @@
 
 | 문서 | 역할 | 중요도 | 처리 |
 |------|------|--------|------|
-| `business.md` | 사업 본체 SOT. 사업 정의, 목표, 상품, 장비, 가격, 원가, 채널, 배송, KPI를 한 곳에 둔다. | P0 | 유지 |
+| `business.md` | 사업 본체 SOT. 사업 정의, 장비, 원가, 마진, 채널, 배송, 런칭 목표를 둔다. 상품 상세·가격은 `products.md` 참조. | P0 | 유지 |
+| `products.md` | 상품 상세 SOT. Launch SKU, Package 구조, upload/pick 규칙, 사진 QC, 가격 가정을 둔다. | P0 | 유지 |
 
 ## Remaining Work
+
+현재 open P0/P1 없음 — `business.md` ↔ `products.md` 정합성 점검 완료 기준.
 
 ## P2 Later
 

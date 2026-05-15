@@ -11,7 +11,10 @@
 <header style="margin-bottom: 32px;">
   <div class="eyebrow">Everstory · Shopify Horizon · Wireframes</div>
   <h1>Storefront wireframe set</h1>
-  <p>13 pages, structural-only. Component labels follow Shopify Horizon section/block names so the wireframe can be mapped 1:1 in the theme editor. Design (typography, color, real images) is intentionally absent.</p>
+  <p>11 pages, structural-only. Component labels follow Shopify Horizon section/block names so the wireframe can be mapped 1:1 in the theme editor. Design (typography, color, real images) is intentionally absent.</p>
+  <div class="note">
+    <strong>Product model</strong> — 5 SKUs across 2 PDP archetypes: <strong>Non-Package</strong> (Face / Full Body / Circle Sticker — Size · Material · Photos to include) and <strong>Package</strong> (Package Mini / Full — Material only, Big/Medium/Small tier upload). Sizes are inch/mm only. <code>product-face-sticker.html</code> and <code>product-package-mini.html</code> are the two shared templates; the 5 live products reuse them.
+  </div>
   <div class="note">
     <strong>Horizon coverage</strong> — 15 of 18 components are no-code in Horizon's editor. 3 items need extra work and are marked <strong>⚠ NEEDS APP/CODE</strong> on the relevant page: product photo upload (Easify Product Options app or custom Liquid), KakaoTalk social icon (custom snippet), policy side-nav (dropped — accordion-only).
   </div>
@@ -24,37 +27,25 @@
     <a class="hub-card" href="home.html">
       <div class="url">/</div>
       <div class="title">Home</div>
-      <div class="meta">hero · media-with-content × 2 · product-list (4) · footer</div>
+      <div class="meta">hero · media-with-content × 2 · product-list (5) · footer</div>
     </a>
 
     <a class="hub-card" href="collection.html">
-      <div class="url">/collections/all</div>
+      <div class="url">/collections/photo-sheets</div>
       <div class="title">Collection</div>
-      <div class="meta">main-collection · filters · 4 product-card</div>
+      <div class="meta">main-collection · filters · 5 product-card</div>
     </a>
 
-    <a class="hub-card" href="product-solo.html">
-      <div class="url">/products/solo</div>
-      <div class="title">Product · Solo</div>
-      <div class="meta">$15.99 · 1 photo slot</div>
+    <a class="hub-card" href="product-face-sticker.html">
+      <div class="url">/products/face-sticker</div>
+      <div class="title">Product · Non-Package (archetype)</div>
+      <div class="meta">from $15.99 · Size · Material · Photos to include (1–13)</div>
     </a>
 
-    <a class="hub-card" href="product-duo.html">
-      <div class="url">/products/duo</div>
-      <div class="title">Product · Duo</div>
-      <div class="meta">$18.99 · 2 photo slots</div>
-    </a>
-
-    <a class="hub-card" href="product-trio.html">
-      <div class="url">/products/trio</div>
-      <div class="title">Product · Trio</div>
-      <div class="meta">$21.99 · 3 photo slots</div>
-    </a>
-
-    <a class="hub-card" href="product-memory-pack.html">
-      <div class="url">/products/memory-pack</div>
-      <div class="title">Product · Memory Pack</div>
-      <div class="meta">$28.99 · 4–8 slots · 2 sheets</div>
+    <a class="hub-card" href="product-package-mini.html">
+      <div class="url">/products/package-mini</div>
+      <div class="title">Product · Package (archetype)</div>
+      <div class="meta">$24.99 · Material only · Big/Medium/Small tier upload · 2 sheets</div>
     </a>
 
     <a class="hub-card" href="about.html">
@@ -66,7 +57,7 @@
     <a class="hub-card" href="sizing-guide.html">
       <div class="url">/pages/sizing-guide</div>
       <div class="title">Sizing Guide</div>
-      <div class="meta">hero · 7 size cards · use case matrix · proportion note</div>
+      <div class="meta">hero · 6 size cards · use case matrix · proportion note</div>
     </a>
 
     <a class="hub-card" href="materials-guide.html">
@@ -90,7 +81,7 @@
     <a class="hub-card" href="faq.html">
       <div class="url">/pages/faq</div>
       <div class="title">FAQ</div>
-      <div class="meta">page · accordion × 10 · KR section</div>
+      <div class="meta">page · accordion × grouped · KR section</div>
     </a>
 
     <a class="hub-card" href="policies.html">

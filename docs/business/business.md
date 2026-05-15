@@ -24,7 +24,7 @@ Everstory Studio 는 Toronto GTA + Korean diaspora 를 위한 A5 custom photo di
 
 ## Product
 
-주력 상품은 **A5 custom photo die-cut sticker sheet** 다. 스티커 개수를 고정 판매하지 않고, A5 한 시트 안에 사진 비율과 선택 사이즈에 맞춰 들어가는 다이컷 면적을 판매한다.
+주력 상품은 **A5 custom photo die-cut sticker sheet** 다. 스티커 개수를 고정 판매하지 않고, A5 한 시트 안에 사진 비율과 선택 사이즈에 맞춰 들어가는 다이컷 면적을 판매한다. 상세 SKU, Package upload/pick 규칙, 사진 QC 기준은 [`products.md`](products.md) 를 기준으로 한다.
 
 **MVP mode**
 
@@ -33,19 +33,14 @@ Everstory Studio 는 Toronto GTA + Korean diaspora 를 위한 A5 custom photo di
 | Name Included | 사진 중심 구성 + 상단 production header 에 고객 이름/주문 정보 표기 | MVP |
 | Mini Decor | 사진 보조용 미니 데코 추가 | Later |
 
-**SKU**
+**Launch SKU**
 
-| SKU | Customer promise | Shopify price |
-|-----|------------------|---------------|
-| Solo | 1 design, A5 sheet | $15.99 CAD |
-| Duo | 2 designs, A5 sheet | $18.99 CAD |
-| Trio | 3 designs, A5 sheet | $21.99 CAD |
-| Memory Pack | 4+ designs, 2 sheets | $28.99 CAD |
+런칭 SKU는 Face Sticker / Full Body Sticker / Circle Sticker / Package Mini / Package Full 5종이다. 각 SKU의 customer promise, photos selected, sheets, Shopify price 상세는 [`products.md`](products.md) 를 단일 기준으로 한다.
 
 **Customer-facing options**
 
-- Size: XS 0.75" / S 1" / M 1.25" / L 1.5" / XL 1.75" / XXL 2.5" / Mixed
-- Material: White / Pearl Grey / Silver / Gold
+- 비-Package 상품: Size / Material 옵션 값은 [`products.md`](products.md) 를 단일 기준으로 한다. 사진 개수 variant label은 `Photos to include`를 권장한다.
+- Package 상품: Big / Medium / Small print tier 별 photo upload. 최종 사진 선택과 layout은 Studio가 결정한다.
 - Internal production cut margin is not a customer option.
 
 ## Production Assets
@@ -69,16 +64,9 @@ Everstory Studio 는 Toronto GTA + Korean diaspora 를 위한 A5 custom photo di
 
 ## Pricing And Cost
 
-**Channel price**
+**Launch Shopify price**
 
-| Channel | Solo | Duo | Trio | Memory Pack |
-|---------|------|-----|------|-------------|
-| Net target | $12.99 | $15.99 | $18.99 | $24.99 |
-| Shopify | $15.99 | $18.99 | $21.99 | $28.99 |
-| Etsy later | $18.99 | $21.99 | $24.99 | $32.99 |
-| Local pickup | $13.99 | $16.99 | $19.99 | $25.99 |
-
-Launch price 는 첫 50건 동안 유지한다. 후기, UGC, 반복 주문 데이터가 생기면 +$3-5 인상 여지를 검토한다.
+SKU별 Shopify 가격은 [`products.md`](products.md) 를 단일 기준으로 한다. Launch price 는 첫 50건 동안 유지한다. 후기, UGC, 반복 주문 데이터가 생기면 +$3-5 인상 여지를 검토한다.
 
 **Variable cost baseline**
 
@@ -93,11 +81,13 @@ Launch price 는 첫 50건 동안 유지한다. 후기, UGC, 반복 주문 데�
 
 **Margin frame**
 
-| Scenario | Ad cost | Contribution per Solo order |
-|----------|---------|-----------------------------|
-| Organic / community | $0 | +$6.59 |
-| Meta ads average | $5 | +$1.59 |
-| High CAC | $8 | -$1.41 |
+| Scenario | Ad cost | Contribution per $15.99 entry order |
+|----------|---------|--------------------------------------|
+| Organic / community | $0 | +$9.59 |
+| Meta ads average | $5 | +$4.59 |
+| High CAC | $8 | +$1.59 |
+
+여기서 $15.99 는 [`products.md`](products.md) 의 entry SKU 가격 기준이다 — products.md 가격이 바뀌면 contribution 값도 함께 갱신한다.
 
 인건비는 MVP 검증 단계에서 0 으로 둔다. 이 가정은 장기 수익성 판단이 아니라 첫 50건의 workflow, review, UGC, repeat-order 가능성을 검증하기 위한 출발점이다.
 
@@ -141,5 +131,5 @@ Customer-facing fulfillment 기준은 **Ontario free shipping + Toronto Studio p
 ## Operating Principles
 
 - Shopify 앱, admin setting, policy input detail 은 `docs/shopify/` 에 둔다.
-- Brand, typography, color, photography, component 기준은 `docs/design/` 에 둔다.
+- Brand 보이스·표기 기준은 이 문서에 둔다. 색상·타이포·컴포넌트는 Horizon 테마 설정에서 관리하며 MVP 는 테마 기본값을 유지한다.
 - Business 문서는 사업 판단에 필요한 현재 기준만 남긴다.

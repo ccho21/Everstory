@@ -16,7 +16,7 @@ Shopify 문서는 다음 질문에 답해야 한다.
 
 - admin에서 어떤 순서로 무엇을 설정하는가
 - 결제, 세금, 배송, 픽업, 마켓, 계정 설정은 어떤 값인가
-- 어떤 상품 4종을 만들고 어떤 variant/options를 붙이는가
+- 어떤 상품 5종을 만들고 어떤 variant/options를 붙이는가
 - Easify로 사진 업로드와 주문 노트를 어떻게 받는가
 - 정책/페이지/상품 카피는 어디에서 복사해 붙이는가
 - 테스트 주문은 어떻게 통과시키는가
@@ -34,12 +34,17 @@ Shopify 문서에서 제외한다.
 |------|------|--------|------|
 | `plan.md` | Shopify 문서 범위와 남은 작업 우선순위. | P0 | 유지 |
 | `settings_checklist.md` | Shopify admin 실행 SOT. Settings 1A-1J 입력값과 통합 smoke test. | P0 | 유지 |
-| `product_descriptions.md` | 상품 4종 description copy, variant 기준, Easify 최소 option set SOT. | P0 | 유지 |
+| `product_descriptions.md` | 상품 5종 description copy, variant 기준, Easify option set SOT. | P0 | 유지 |
 | `policies.md` | Refund, Shipping, Privacy, Terms policy SOT. | P0 | 유지 |
 | `pages_copy.md` | About, FAQ, Sizing, Materials page copy SOT. | P1 | 유지 |
 | `footer_copy.md` | 한국어 footer copy SOT. | P1 | 유지 |
 | `preview.html` | 디자인 토큰 / 컴포넌트 라이브러리 시안. admin 실행에 직접 필요 없음. | P2 | 디자인 정리 후 삭제 또는 갱신 판단 |
-| `wireframes/` | Horizon 테마 기반 13페이지 분리 HTML 와이어프레임. Shopify customizer 작업 시 section/block 어휘 매칭 청사진. | P1 | 유지 |
+| `wireframes/` | Horizon 테마 기반 11페이지 분리 HTML 와이어프레임. Shopify customizer 작업 시 section/block 어휘 매칭 청사진. | P1 | 유지 |
+| `instructions/` | Batch 1–9 admin·theme 실행 walkthrough (+ `_PROMPT_TEMPLATE.md` 생성 메타). 입력값은 settings_checklist / product_descriptions / policies / pages_copy / footer_copy SOT 참조. | P0 | 유지 |
+| `everstory_product_detail_*.html` | 상품 상세 PDP HTML 시안 (full KO / full EN / pdp_block), 브랜드 토큰 기반. | P1 | 유지 |
+| `horizon_wireframe_application_plan.md` | Shopify 문서·wireframe → Horizon 테마 적용 매핑 플랜 (5-product). | P1 | 유지 |
+
+> instructions/ 의 "Batch N" 은 위 SOT 문서를 admin/theme 에서 실행하는 walkthrough 단위다. settings_checklist.md 의 "Stage 1 (1A–1J)" 값을 §단위로 참조하며 (`01:§1A–1D`, `02:§1E–1J`), 값/절차를 분리해 SOT 단일화를 유지한다.
 
 ## Remaining Work
 

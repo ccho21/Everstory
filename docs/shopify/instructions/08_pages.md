@@ -75,22 +75,22 @@ main (main-page section)
 #### About
 - URL = `/pages/about`
 - Title = `About Everstory Studio`
-- 본문: English ("We make sticker sheets you do not throw away…") → ─ → "한국어로 한 마디" → KR 본문
+- 본문: English ("Everstory Studio is a small photo sticker studio in Toronto…") → ─ → "한국어로 한 마디" (footer_copy.md) → KR 본문
 
 #### FAQ
 - URL = `/pages/faq`
 - Title = `Frequently Asked Questions`
-- 본문: English Q&A 카테고리별 (ORDERING / PHOTOS / SIZES & MATERIALS / SHIPPING / QUALITY & RETURNS / OTHER) → ─ → "한국어 자주 묻는 질문" → KR Q&A
+- 본문: English Q&A 카테고리별 (Ordering / Photos / Sizes and Materials / Shipping) → ─ → "한국어 자주 묻는 질문" (footer_copy.md) → KR Q&A
 
 #### Sizing Guide
 - URL = `/pages/sizing-guide`
 - Title = `Sticker Size Guide`
-- 본문: 7 size cards + use case + proportion note (영문 only)
+- 본문: 6 size cards + use case + proportion note (영문 only)
 
 #### Materials Guide
 - URL = `/pages/materials-guide`
 - Title = `Material Guide`
-- 본문: 4 material 별 설명 + Care + Removal + Which one (영문 only)
+- 본문: 4 material 표 (Best for 컬럼) + waterproof·fade resistant 노트 (영문 only)
 
 [Checkpoint 8.3] ✅ 4 페이지 모두 admin 본문 자동 노출, 한국어 footer 포함된 페이지 (About / FAQ) 는 horizontal rule 다음 KR 섹션 정상.
 

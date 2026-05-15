@@ -360,6 +360,6 @@ placeholder 모두 실제 값으로 교체 (HST 번호 없으면 그 줄 삭제)
 
 ## 다음 batch
 
-→ **`03_admin_data.md`** (상품 4종 + Collection + Pages + Navigation)
+→ **`03_admin_data.md`** (상품 5종 + Collection + Pages + Navigation)
 
 이게 끝나면 1.4.3 / 1.5.6 / 1.6.3 의 **결제·배송·세금 검증** 을 실제 test order 로 다시 돌릴 수 있다 (smoke test).

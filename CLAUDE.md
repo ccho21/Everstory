@@ -23,8 +23,6 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 │   └── 03_output/                 # Phase B 산출 (.ai 시트)
 └── docs/
     ├── business/                  # 사업·전략
-    ├── design/                    # 인쇄·웹 디자인 정의
-    ├── implementation/            # 운영 코드 자산 (sheet_tokens.json)
     └── shopify/                   # 웹 스토어 — 어드민·카피·정책·시안
 ```
 
@@ -58,32 +56,26 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 ## 문서 인덱스
 
-각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **design**: 디자인 정의 (인쇄+웹) / **implementation**: 운영 코드 자산 / **shopify**: 웹 스토어 (어드민·카피·정책·시안).
+각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **shopify**: 웹 스토어 (어드민·카피·정책·시안). 브랜드 보이스·표기는 business.md, 색상·타이포는 Horizon 테마 설정에서 관리한다.
 
 - [**비즈니스**](docs/business/) — 사업·전략
+  - [business.md](docs/business/business.md) — 사업 정의·장비·원가·마진·채널·배송·런칭 목표 (사업 본체 SOT)
+  - [products.md](docs/business/products.md) — Launch SKU·Package 규칙·사이즈·가격·사진 QC (상품 상세 SOT)
   - [plan.md](docs/business/plan.md) — 비즈니스 문서 목적·중요도·정리 계획
-  - [business.md](docs/business/business.md) — 사업 정의·상품·장비·가격·채널·배송·런칭 목표
-- [**디자인**](docs/design/) — 인쇄·웹 디자인 정의
-  - [plan.md](docs/design/plan.md) — 디자인 문서 목적·중요도·정리 계획
-  - [brand.md](docs/design/brand.md) — voice·워드마크·typography·color·layout·사진 큐레이션 (인쇄+웹 통합)
-  - [pages.md](docs/design/pages.md) — Shopify MVP 11 페이지 spec (H1·CTA·SEO)
-  - [components.md](docs/design/components.md) — UI 컴포넌트 rationale
-  - [voice.md](docs/design/voice.md) — 카피 톤 운영 규칙
-  - [photography.md](docs/design/photography.md) — 우리 측 촬영 디렉션
-  - [tokens.json](docs/design/tokens.json) — 인쇄 + 웹 디자인 토큰
-- [**구현**](docs/implementation/) — 운영 코드 자산
-  - [sheet_tokens.json](docs/implementation/sheet_tokens.json) — 시트 packing 토큰
-  - [plugins/everstory_save/README.md](plugins/everstory_save/README.md) — Phase A UXP 패널 플러그인 설치/사용
+- [plugins/everstory_save/README.md](plugins/everstory_save/README.md) — Phase A UXP 패널 플러그인 설치/사용
 - [**Shopify**](docs/shopify/) — 웹 스토어
   - [plan.md](docs/shopify/plan.md) — Shopify 문서 목적·중요도·정리 계획
   - **셋업·어드민**
     - [settings_checklist.md](docs/shopify/settings_checklist.md) — 1A–1J 설정 체크리스트와 통합 smoke test
+    - [instructions/](docs/shopify/instructions/) — Batch 1–9 admin·theme 실행 walkthrough (값은 SOT 문서 참조)
   - **카피·콘텐츠**
     - [pages_copy.md](docs/shopify/pages_copy.md) — About/FAQ/가이드 페이지 카피
-    - [product_descriptions.md](docs/shopify/product_descriptions.md) — 4 SKU 상품 설명
+    - [product_descriptions.md](docs/shopify/product_descriptions.md) — 5 SKU 상품 설명
     - [footer_copy.md](docs/shopify/footer_copy.md) — 한국어 footer 카피
   - **정책**
     - [policies.md](docs/shopify/policies.md) — 환불/배송 정책 본문
   - **시안**
-    - [wireframes/index.html](docs/shopify/wireframes/index.html) — Horizon 테마 기반 13페이지 와이어프레임 (페이지별 분리 HTML)
+    - [wireframes/index.html](docs/shopify/wireframes/index.html) — Horizon 테마 기반 11페이지 와이어프레임 (페이지별 분리 HTML)
     - [preview.html](docs/shopify/preview.html) — 스토어프론트 프리뷰 시안
+    - [everstory_product_detail_full_template.html](docs/shopify/everstory_product_detail_full_template.html) — 상품 상세 PDP HTML 시안 (full KO / full EN / pdp_block)
+    - [horizon_wireframe_application_plan.md](docs/shopify/horizon_wireframe_application_plan.md) — 문서·wireframe → Horizon 테마 적용 매핑 플랜

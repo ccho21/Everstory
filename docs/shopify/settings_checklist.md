@@ -2,7 +2,7 @@
 
 Shopify admin Stage 1 (1A–1J) 입력값. 어드민 → Settings 경로 따라가면서 한 칸씩 채우면 됨. 검증 칸은 입력 후 즉시 확인.
 
-브랜드 표기는 `docs/design/brand.md` 와 `docs/business/business.md` 기준으로 **Everstory Studio** 단일.
+브랜드 표기는 `docs/business/business.md` 기준으로 **Everstory Studio** 단일.
 
 ---
 
@@ -225,7 +225,7 @@ Shopify admin Stage 1 (1A–1J) 입력값. 어드민 → Settings 경로 따라�
 
 1. 어드민 → Storefront password 활성 (테마 작업 전 노출 차단)
 2. Test order 1건:
-   - 상품: Stage 2 등록 상품 1개 (`Solo` / `S` / `White Matte`)
+   - 상품: Stage 2 등록 상품 1개 (`Face Sticker` / `1" / 25mm` / `White Matte`)
    - Easify option: photo upload, customer/pet name, special instructions 입력
    - postal code: M5V 3A8 (Toronto) 또는 K1A 0B1 (Ontario)
    - 결제: 4242 카드
@@ -236,6 +236,6 @@ Shopify admin Stage 1 (1A–1J) 입력값. 어드민 → Settings 경로 따라�
 
 ## 다음 단계
 
-- **Stage 2 상품 등록**: [`product_descriptions.md`](product_descriptions.md) 기준으로 4 SKU 를 Draft 로 만든다.
-- **Easify Product Options Free plan**: 동일 option set 을 4 SKU 에 붙인다.
+- **Stage 2 상품 등록**: [`product_descriptions.md`](product_descriptions.md) 기준으로 5 products 를 Draft 로 만든다.
+- **Easify Product Options Advanced / Unlimited plan**: 비-Package upload, Package tier upload option set 을 각 product 에 붙인다.
 - **Stage 2 종료 후**: 위 smoke test 를 다시 통과한 뒤 상품 Active 전환을 검토한다.
