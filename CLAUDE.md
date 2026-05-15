@@ -23,6 +23,8 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 │   └── 03_output/                 # Phase B 산출 (.ai 시트)
 └── docs/
     ├── business/                  # 사업·전략
+    ├── design/                    # 디자인 정의 (색·타이포·voice·brand·photography·components)
+    ├── implementation/            # 운영 코드 자산 (sheet_tokens.json)
     └── shopify/                   # 웹 스토어 — 어드민·카피·정책·시안
 ```
 
@@ -56,13 +58,21 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 ## 문서 인덱스
 
-각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **shopify**: 웹 스토어 (어드민·카피·정책·시안). 브랜드 보이스·표기는 business.md, 색상·타이포는 Horizon 테마 설정에서 관리한다.
+각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **design**: 디자인 정의 (색·타이포·voice·brand·photography·components, product-agnostic SOT) / **implementation**: 운영 코드 자산 / **shopify**: 웹 스토어 (어드민·카피·정책·시안).
 
 - [**비즈니스**](docs/business/) — 사업·전략
   - [business.md](docs/business/business.md) — 사업 정의·장비·원가·마진·채널·배송·런칭 목표 (사업 본체 SOT)
   - [products.md](docs/business/products.md) — Launch SKU·Package 규칙·사이즈·가격·사진 QC (상품 상세 SOT)
   - [plan.md](docs/business/plan.md) — 비즈니스 문서 목적·중요도·정리 계획
-- [plugins/everstory_save/README.md](plugins/everstory_save/README.md) — Phase A UXP 패널 플러그인 설치/사용
+- [**디자인**](docs/design/) — 디자인 정의 (product-agnostic SOT)
+  - [tokens.json](docs/design/tokens.json) — 색상·타이포 디자인 토큰
+  - [brand.md](docs/design/brand.md) — 브랜드 voice·워드마크
+  - [voice.md](docs/design/voice.md) — 카피 톤 운영 규칙
+  - [components.md](docs/design/components.md) — UI 컴포넌트 rationale
+  - [photography.md](docs/design/photography.md) — 촬영 디렉션
+- [**구현**](docs/implementation/) — 운영 코드 자산
+  - [sheet_tokens.json](docs/implementation/sheet_tokens.json) — 시트 packing 토큰
+  - [plugins/everstory_save/README.md](plugins/everstory_save/README.md) — Phase A UXP 패널 플러그인 설치/사용
 - [**Shopify**](docs/shopify/) — 웹 스토어
   - [plan.md](docs/shopify/plan.md) — Shopify 문서 목적·중요도·정리 계획
   - **셋업·어드민**
