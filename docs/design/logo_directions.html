@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Everstory Studio — Logo Direction Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700;900&family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#000; --canvas:#FEFDFE; --muted-bg:#F8F5F2; --warm:#E0D3CB;
+    --coral:#FBAAA8; --txt2:#4A4A4A; --txt-muted:#8A8580; --border:#ECE6E0;
+    --serif:'Playfair Display', Georgia, 'Times New Roman', serif;
+    --sans:'Archivo','Avenir Next LT Pro','Helvetica Neue',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--canvas);color:var(--black);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 0 128px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px}
+
+  /* ---- masthead ---- */
+  header{border-bottom:1px solid var(--black);padding:64px 0 24px;margin-bottom:8px}
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--txt-muted);font-weight:700}
+  header h1{font-family:var(--serif);font-weight:900;font-size:clamp(34px,6vw,64px);
+    line-height:1.05;margin:14px 0 18px;letter-spacing:.01em}
+  header h1 .light{font-weight:400;font-style:italic}
+  header p{max-width:680px;color:var(--txt2);font-size:15px}
+  .disclaimer{margin-top:22px;border:1px solid var(--border);padding:14px 18px;
+    font-size:12.5px;color:var(--txt2);background:var(--muted-bg)}
+  .disclaimer b{color:var(--black)}
+
+  /* ---- section ---- */
+  section{padding:72px 0 0}
+  .sec-head{display:flex;align-items:baseline;gap:18px;border-bottom:1px solid var(--border);
+    padding-bottom:14px;margin-bottom:40px}
+  .sec-num{font-family:var(--serif);font-weight:900;font-size:22px}
+  .sec-title{font-size:14px;letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+  .sec-desc{margin-left:auto;font-size:12.5px;color:var(--txt-muted);max-width:420px;text-align:right}
+
+  /* ---- grid of specimens ---- */
+  .grid{display:grid;gap:1px;background:var(--border);border:1px solid var(--border)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:860px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .cell{background:var(--canvas);padding:38px 28px;display:flex;flex-direction:column;
+    align-items:center;justify-content:space-between;gap:26px;min-height:230px}
+  .cell.dark{background:var(--black)}
+  .cell.warm{background:var(--warm)}
+  .cell.muted{background:var(--muted-bg)}
+  .stage{flex:1;display:flex;align-items:center;justify-content:center;width:100%}
+  .meta{text-align:center;border-top:1px solid var(--border);padding-top:14px;width:100%}
+  .cell.dark .meta{border-color:#2a2a2a}
+  .tag{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700}
+  .cell.dark .tag{color:#fff}
+  .note{font-size:12px;color:var(--txt-muted);margin-top:5px;line-height:1.45}
+  .cell.dark .note{color:#9a9a9a}
+
+  /* ---- wordmark type rendering ---- */
+  .wm{font-family:var(--serif);font-weight:900;color:var(--black);
+    letter-spacing:.005em;line-height:.9;white-space:nowrap}
+  .cell.dark .wm{color:#fff}
+  .wm .ev{margin-right:-0.04em}            /* echo the E/V interlock of the source mark */
+  .studio{font-family:var(--sans);font-weight:700;letter-spacing:.34em;
+    text-transform:uppercase;color:var(--black);font-size:.20em}
+  .cell.dark .studio{color:#fff}
+  .ulrule{height:2px;background:var(--black);border:0}
+  .cell.dark .ulrule{background:#fff}
+  .coral-rule{background:var(--coral)!important}
+
+  /* lockup A primary */
+  .lk-primary{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  .lk-primary .row{display:flex;align-items:flex-end;gap:14px}
+  .lk-primary .wm{font-size:46px}
+  .lk-primary .ulrule{width:100%}
+
+  /* lockup B stacked */
+  .lk-stack{display:flex;flex-direction:column;align-items:center;gap:9px}
+  .lk-stack .wm{font-size:40px}
+  .lk-stack .midrule{display:flex;align-items:center;gap:12px;width:100%}
+  .lk-stack .midrule hr{flex:1;height:1px;background:var(--black);border:0}
+  .lk-stack .studio{font-size:11px}
+
+  /* lockup C compact */
+  .lk-compact .wm{font-size:44px}
+
+  /* monogram */
+  .mono{font-family:var(--serif);font-weight:900;color:var(--black)}
+  .cell.dark .mono{color:#fff}
+  .mono-es{font-size:96px;letter-spacing:-0.08em}
+  .mono-e{font-size:120px}
+
+  svg{display:block;overflow:visible}
+  .ink{fill:none;stroke:var(--black);stroke-width:1.5}
+  .cell.dark .ink{stroke:#fff}
+  .ink-fill{fill:var(--black)}
+  .cell.dark .ink-fill{fill:#fff}
+  .accent{fill:var(--coral)}
+  .accent-stroke{stroke:var(--coral);fill:none}
+  .seal-txt{font-family:var(--sans);font-weight:700;font-size:9.4px;
+    letter-spacing:.26em;fill:var(--black);text-transform:uppercase}
+  .cell.dark .seal-txt{fill:#fff}
+
+  /* reference row */
+  .ref{display:flex;gap:32px;align-items:center;flex-wrap:wrap;
+    border:1px solid var(--border);padding:28px 32px;background:var(--muted-bg)}
+  .ref img{height:62px;width:auto;display:block}
+  .ref .rt{font-size:12.5px;color:var(--txt2);max-width:520px}
+  .ref .rt b{color:var(--black)}
+
+  /* guardrails */
+  .rails{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);
+    border:1px solid var(--border)}
+  @media(max-width:680px){.rails{grid-template-columns:1fr}}
+  .rail{background:var(--canvas);padding:26px 28px}
+  .rail h4{font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    margin-bottom:14px;font-weight:700}
+  .rail.do h4::before{content:"○ ";color:#2E7D5B}
+  .rail.dont h4::before{content:"× ";color:#B23A3A}
+  .rail ul{list-style:none;font-size:13px;color:var(--txt2)}
+  .rail li{padding:7px 0;border-bottom:1px solid var(--border)}
+  .rail li:last-child{border:0}
+  .swatches{display:flex;gap:0;border:1px solid var(--border);margin-top:14px}
+  .sw{flex:1;height:62px;display:flex;align-items:flex-end;font-size:9.5px;
+    padding:6px;letter-spacing:.06em}
+  .footer{margin-top:96px;border-top:1px solid var(--black);padding-top:20px;
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Everstory Studio · Brand · Logo System</div>
+    <h1>Logo <span class="light">direction board</span></h1>
+    <p>현행 워드마크를 자산으로 두고, ① 맥락별 <b>Lockup 시스템</b>과 ② <b>심볼/마크 탐색</b>을
+       한 화면에서 비교하기 위한 방향 보드. 모든 컴포지션은 3폰트·5색 lock, shadow 없음,
+       sharp corner, coral 1점 규율을 따른다.</p>
+    <div class="disclaimer">
+      <b>폰트 고지 —</b> 운영 워드마크는 <b>Amandine Bold</b>(Didone) + <b>Titular Bold</b>.
+      Adobe 라이선스 폰트라 이 보드에서는 가장 근접한 무료 Didone <b>Playfair Display 900</b>으로
+      방향만 표현했다. 비율·E/V 인터록·STUDIO tracking 은 근사치이며, 확정 렌더는
+      Illustrator 에서 라이선스 폰트로 진행한다(CLAUDE.md: AI 자동화 = ExtendScript).
+    </div>
+  </header>
+
+  <!-- 0 — reference -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">00</span>
+      <span class="sec-title">Current asset — equity to protect</span>
+      <span class="sec-desc">바꾸면 안 되는 것: Didone 하이콘트라스트 · all-caps black · EVERSTORY+STUDIO lockup · 언더라인 rule</span>
+    </div>
+    <div class="ref">
+      <img src="../../assets/online_logo.png" alt="현행 Everstory Studio 로고">
+      <div class="rt">순수 <b>로고타입</b>(심볼 없음). <b>E/V 인터록</b>이 generic Didot 와
+        구별되는 시그니처. STUDIO 는 우하단 baseline 정렬 + Y 꼬리에서 이어지는 얇은 언더라인.
+        톤은 에디토리얼·부티크·향수광고 — 펫/베이비 카테고리의 둥근 산세리프+파스텔과
+        의도적으로 반대.</div>
+    </div>
+  </section>
+
+  <!-- 1 — lockup system (priority) -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <span class="sec-title">Lockup system · priority</span>
+      <span class="sec-desc">하나의 로고가 모든 맥락(웹 헤더 · 파비콘 · IG 아바타 · 패키징 · 시트)에서 살아남게 하는 반응형 세트</span>
+    </div>
+    <div class="grid g2">
+      <div class="cell">
+        <div class="stage">
+          <div class="lk-primary">
+            <div class="row">
+              <span class="wm"><span class="ev">EV</span>ERSTORY</span>
+              <span class="studio" style="padding-bottom:8px">Studio</span>
+            </div>
+            <hr class="ulrule">
+          </div>
+        </div>
+        <div class="meta"><div class="tag">1A · Primary horizontal</div>
+          <div class="note">기본형. 웹 헤더 · 시트 마스트헤드 · 명함. 최소 폭 180px.</div></div>
+      </div>
+
+      <div class="cell">
+        <div class="stage">
+          <div class="lk-stack">
+            <span class="wm">EVERSTORY</span>
+            <div class="midrule"><hr><span class="studio">Studio</span><hr></div>
+          </div>
+        </div>
+        <div class="meta"><div class="tag">1B · Stacked / centered</div>
+          <div class="note">정사각·세로 비율 공간(패키징 라벨, SNS 포스트, 박스 top).</div></div>
+      </div>
+
+      <div class="cell">
+        <div class="stage">
+          <div class="lk-compact"><span class="wm"><span class="ev">EV</span>ERSTORY</span></div>
+        </div>
+        <div class="meta"><div class="tag">1C · Compact (wordmark only)</div>
+          <div class="note">STUDIO 생략. 좁은 띠·워터마크·footer. 한 줄 최소 폭일 때.</div></div>
+      </div>
+
+      <div class="cell">
+        <div class="stage">
+          <span class="mono mono-es">E<span style="font-style:italic;font-weight:500">S</span></span>
+        </div>
+        <div class="meta"><div class="tag">1D · Monogram ES</div>
+          <div class="note">워드마크가 안 읽히는 작은 컨텍스트 — IG 아바타, 앱 아이콘 48–256px.</div></div>
+      </div>
+
+      <div class="cell muted">
+        <div class="stage">
+          <svg width="120" height="120" viewBox="0 0 120 120" aria-label="E favicon mark">
+            <rect x="6" y="6" width="108" height="108" class="ink" stroke-width="1.5"/>
+            <text x="60" y="60" text-anchor="middle" dominant-baseline="central"
+              font-family="Playfair Display, Georgia, serif" font-weight="900"
+              font-size="78" class="ink-fill">E</text>
+          </svg>
+        </div>
+        <div class="meta"><div class="tag">1E · Favicon / single E</div>
+          <div class="note">16–32px 극소 사이즈. 얇은 rule box + 단일 글자만 인식됨.</div></div>
+      </div>
+
+      <div class="cell">
+        <div class="stage" style="flex-direction:column;gap:18px">
+          <span class="wm" style="font-size:30px"><span class="ev">EV</span>ERSTORY</span>
+          <div style="display:flex;gap:24px;align-items:center;color:var(--txt-muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase">
+            <span style="border:1px dashed var(--txt-muted);padding:14px 18px">clear&nbsp;space&nbsp;=&nbsp;cap-height ×1</span>
+          </div>
+        </div>
+        <div class="meta"><div class="tag">1F · Clear space &amp; min size</div>
+          <div class="note">여백 = E 의 cap-height 1배. Primary 최소 180px / Monogram 48px / Favicon 16px.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 — symbol / mark exploration -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <span class="sec-title">Symbol / mark exploration</span>
+      <span class="sec-desc">Anti-cute 가드레일: 헤어라인 · 기하학 · 추상. 마스코트·일러스트·둥근 blob 금지. 워드마크의 hairline 언어 계승.</span>
+    </div>
+    <div class="grid g3">
+
+      <!-- S1 seal/stamp -->
+      <div class="cell">
+        <div class="stage">
+          <svg width="190" height="190" viewBox="0 0 190 190" aria-label="Seal mark">
+            <defs>
+              <path id="sealArcTop" d="M 95,18 A 77,77 0 1 1 94.9,18" fill="none"/>
+            </defs>
+            <circle cx="95" cy="95" r="84" class="ink" stroke-width="1"/>
+            <circle cx="95" cy="95" r="77" class="ink" stroke-width="1.5"/>
+            <text class="seal-txt">
+              <textPath href="#sealArcTop" startOffset="0%">
+                EVERSTORY STUDIO · MADE TO KEEP · TORONTO ·&nbsp;
+              </textPath>
+            </text>
+            <text x="95" y="96" text-anchor="middle" dominant-baseline="central"
+              font-family="Playfair Display, Georgia, serif" font-weight="900"
+              font-size="52" class="ink-fill">ES</text>
+            <rect x="91" y="132" width="8" height="8" class="accent" transform="rotate(45 95 136)"/>
+          </svg>
+        </div>
+        <div class="meta"><div class="tag">S1 · Editorial seal</div>
+          <div class="note">상품이 스티커 → wax-seal/스탬프가 도메인-네이티브. 패키징·시트 sign-off. coral 다이아 1점.</div></div>
+      </div>
+
+      <!-- S2 ring monogram -->
+      <div class="cell">
+        <div class="stage">
+          <svg width="170" height="170" viewBox="0 0 170 170" aria-label="Ring monogram">
+            <circle cx="85" cy="85" r="72" class="ink" stroke-width="1.5"/>
+            <line x1="85" y1="20" x2="85" y2="36" class="ink" stroke-width="1.5"/>
+            <line x1="85" y1="134" x2="85" y2="150" class="ink" stroke-width="1.5"/>
+            <text x="85" y="88" text-anchor="middle" dominant-baseline="central"
+              font-family="Playfair Display, Georgia, serif" font-weight="900"
+              font-size="62" class="ink-fill">E<tspan font-style="italic" font-weight="500">s</tspan></text>
+          </svg>
+        </div>
+        <div class="meta"><div class="tag">S2 · Hairline ring monogram</div>
+          <div class="note">얇은 원 + tick break(masthead rule 의 원형 변주). 가장 안전한 추상 — 아바타 호환.</div></div>
+      </div>
+
+      <!-- S3 continuous loop "ever" -->
+      <div class="cell">
+        <div class="stage">
+          <svg width="180" height="150" viewBox="0 0 180 150" aria-label="Continuous loop mark">
+            <path d="M40,75 C40,40 75,30 90,55 C100,72 80,95 62,88 C40,80 50,45 90,45
+                     C130,45 140,75 140,75 C140,110 105,120 90,95"
+                  class="ink" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="140" cy="75" r="3.5" class="accent"/>
+          </svg>
+        </div>
+        <div class="meta"><div class="tag">S3 · Continuous line — “ever”</div>
+          <div class="note">끊기지 않는 한 획 = “ever / 계속되는 이야기” 은유. 모노라인이지만 fine-weight 라 에디토리얼 유지.</div></div>
+      </div>
+
+      <!-- S4 aperture / photography -->
+      <div class="cell">
+        <div class="stage">
+          <svg width="170" height="170" viewBox="0 0 170 170" aria-label="Aperture mark">
+            <g transform="translate(85,85)">
+              <circle r="64" class="ink" stroke-width="1.5"/>
+              <g class="ink" stroke-width="1.5">
+                <line x1="0" y1="-64" x2="34" y2="-10"/>
+                <line x1="55" y1="-32" x2="-8" y2="-26"/>
+                <line x1="64" y1="20" x2="22" y2="-18"/>
+                <line x1="20" y1="61" x2="26" y2="-2"/>
+                <line x1="-34" y1="54" x2="2" y2="2"/>
+                <line x1="-62" y1="16" x2="-18" y2="22"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div class="meta"><div class="tag">S4 · Abstract aperture</div>
+          <div class="note">사진 헤리티지 암시. 기하 hairline blade — 카메라 아이콘 클리셰는 회피. 리스크 中.</div></div>
+      </div>
+
+      <!-- S5 keepsake tab -->
+      <div class="cell">
+        <div class="stage">
+          <svg width="130" height="170" viewBox="0 0 130 170" aria-label="Keepsake tab mark">
+            <path d="M25,18 H105 V152 L65,124 L25,152 Z" class="ink" stroke-width="1.5"/>
+            <line x1="25" y1="60" x2="105" y2="60" class="ink" stroke-width="1"/>
+            <text x="65" y="42" text-anchor="middle"
+              font-family="Playfair Display, Georgia, serif" font-weight="900"
+              font-size="30" class="ink-fill">ES</text>
+            <rect x="61" y="78" width="8" height="8" class="accent" transform="rotate(45 65 82)"/>
+          </svg>
+        </div>
+        <div class="meta"><div class="tag">S5 · Keepsake bookmark</div>
+          <div class="note">“MADE TO KEEP” 직역 — 책갈피/소장 탭. 패키징 행택에 강함. 리스크 中(상징성 강함).</div></div>
+      </div>
+
+      <!-- S6 E/V interlock standalone -->
+      <div class="cell">
+        <div class="stage">
+          <span class="mono" style="font-size:128px;letter-spacing:-0.16em">EV</span>
+        </div>
+        <div class="meta"><div class="tag">S6 · E/V interlock — signature lift</div>
+          <div class="note">현행 워드마크의 시그니처 인터록을 그대로 떼낸 모노그램. 자산 연속성 最강 · 리스크 最저.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 — treatment strip (bonus) -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <span class="sec-title">Treatment — same lockup, different finish</span>
+      <span class="sec-desc">조판·rule weight·case·coral 1점만으로 변주. 새 폰트/색 도입 금지가 곧 에디토리얼 규율</span>
+    </div>
+    <div class="grid g4">
+      <div class="cell">
+        <div class="stage"><span class="wm" style="font-size:34px">EVERSTORY</span></div>
+        <div class="meta"><div class="tag">Mono black · primary</div></div>
+      </div>
+      <div class="cell dark">
+        <div class="stage"><span class="wm" style="font-size:34px">EVERSTORY</span></div>
+        <div class="meta"><div class="tag">Reversed</div></div>
+      </div>
+      <div class="cell">
+        <div class="stage" style="flex-direction:column;gap:8px">
+          <span class="wm" style="font-size:34px">EVERSTORY</span>
+          <hr class="ulrule coral-rule" style="width:100%;height:2px;border:0">
+        </div>
+        <div class="meta"><div class="tag">Coral rule · 1 accent</div></div>
+      </div>
+      <div class="cell warm">
+        <div class="stage"><span class="wm" style="font-size:34px">EVERSTORY</span></div>
+        <div class="meta"><div class="tag">On pearl grey</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 — guardrails -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <span class="sec-title">Guardrails</span>
+      <span class="sec-desc">변형은 자유가 아니라 규율 — 아래를 벗어나면 브랜드 자산이 희석됨</span>
+    </div>
+    <div class="rails">
+      <div class="rail do">
+        <h4>Do</h4>
+        <ul>
+          <li>Didone 하이콘트라스트 + all-caps 유지</li>
+          <li>E/V 인터록 시그니처 보존(S6 가 안전망)</li>
+          <li>coral 은 한 컴포지션에 정확히 1점</li>
+          <li>rule 는 hairline~2px, sharp corner</li>
+          <li>심볼은 기하·추상·fine-weight 로만</li>
+        </ul>
+      </div>
+      <div class="rail dont">
+        <h4>Don't</h4>
+        <ul>
+          <li>둥근 산세리프·파스텔·일러스트(=anti-cute 위반)</li>
+          <li>마스코트/캐릭터/하트·별 blob</li>
+          <li>drop shadow · gradient · 8px+ radius</li>
+          <li>새 폰트/새 색 도입(3폰트·5색 lock)</li>
+          <li>워드마크 가로축 기울임/곡선 왜곡</li>
+        </ul>
+      </div>
+    </div>
+    <div class="swatches">
+      <div class="sw" style="background:#000;color:#fff">#000</div>
+      <div class="sw" style="background:#FEFDFE;color:#000;border-right:1px solid var(--border)">#FEFDFE</div>
+      <div class="sw" style="background:#E0D3CB;color:#000">#E0D3CB</div>
+      <div class="sw" style="background:#FFFFFF;color:#000;border-right:1px solid var(--border)">#FFFFFF</div>
+      <div class="sw" style="background:#FBAAA8;color:#000">#FBAAA8 · accent</div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <span>Everstory Studio · Logo Direction Board</span>
+    <span>3-font · 5-color lock · no shadow</span>
+    <span>Render: Illustrator + licensed fonts</span>
+  </div>
+
+</div>
+</body>
+</html>
