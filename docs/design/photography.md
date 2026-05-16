@@ -9,9 +9,9 @@
 | 1 | Cream linen 천 위 시트 평면샷 | Home hero, Product hero | 자연광 11AM 동향 창. 섀도우는 부드럽게 spillover, harsh edge 금지. |
 | 2 | 손이 시트 모서리 잡고 살짝 들어올림 | Product hero alt, About | 손은 화면 1/4 비율. 손톱 깔끔, 액세서리 없음. |
 | 3 | 스티커 1장 backing 에서 떼낸 tactile 컷 | Product detail, "How it works" 2단계 | macro. backing 종이 결이 보일 정도. |
-| 4 | 노트북에 붙인 lifestyle | Size Guide (S, 1") | 실내 자연광. 노트북은 silver / space grey. |
-| 5 | 저널/다이어리 표지에 붙인 lifestyle | Size Guide (M, 1.25") | 크림/베이지 저널 권장. 펜 옆에 같이. |
-| 6 | 폰케이스에 붙인 lifestyle | Size Guide (XS, 0.75") | 무광 단색 케이스. |
+| 4 | 노트북에 붙인 lifestyle | Size Guide (1") | 실내 자연광. 노트북은 silver / space grey. |
+| 5 | 저널/다이어리 표지에 붙인 lifestyle | Size Guide (1.25") | 크림/베이지 저널 권장. 펜 옆에 같이. |
+| 6 | 폰케이스에 붙인 lifestyle | Size Guide (0.75") | 무광 단색 케이스. |
 | 7 | 칼선 + 라미네이션 macro detail | About process strip | 사이드 라이팅으로 lamination 광택 표현. |
 | 8 | 작업대 wide shot (PSD 화면 + 시트 + 손) | About hero | studio 분위기. 모니터에 PSD 가 보이되 고객 얼굴 인식 안 되게. |
 

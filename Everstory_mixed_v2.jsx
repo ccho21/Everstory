@@ -92,23 +92,25 @@
     63.5:  1     // 2.5"
   };
 
-  // 인치 6단계 + Mixed sentinel. 다이얼로그 라벨은 "Letter  inch"  (mm/cm)" 형식.
+  // 인치 6단계 + Mixed sentinel. 라벨은 products.md size option 표기 (letter code 없이 inch / 반올림 mm).
   var SIZE_OPTIONS = [
-    "XS  0.75\"  (19.05mm / 1.91cm)",
-    "S  1\"  (25.4mm / 2.54cm)",
-    "M  1.25\"  (31.75mm / 3.18cm)",
-    "L  1.5\"  (38.1mm / 3.81cm)",
-    "XL  1.75\"  (44.45mm / 4.45cm)",
-    "XXL  2.5\"  (63.5mm / 6.35cm)",
+    "0.75\" / 19mm",
+    "1\" / 25mm",
+    "1.25\" / 32mm",
+    "1.5\" / 38mm",
+    "1.75\" / 45mm",
+    "2.5\" / 64mm",
     "Mixed 2.5/1.75 + 1.25/1in"
   ];
   var SIZE_VALUES = [19.05, 25.4, 31.75, 38.1, 44.45, 63.5, MIXED_SIZE_VALUE];
   var SIZE_LETTERS = ["XS", "S", "M", "L", "XL", "XXL", "MIX"];
+  // products.md size option 의 반올림 mm. 44.45→45 는 Math.round(=44) 로 재현 불가 → 명시 매핑.
+  var SIZE_MM_LABEL = { 19.05: 19, 25.4: 25, 31.75: 32, 38.1: 38, 44.45: 45, 63.5: 64 };
   var SIZE_DEFAULT_INDEX = 1;  // S = 1" — 다이어리 표준 사이즈
   var CUT_MARGIN_OPTIONS = ["0mm", "0.5mm", "1mm", "2mm"];
   var CUT_MARGIN_VALUES = [0, 0.5, 1, 2];
   var CUT_MARGIN_DEFAULT_INDEX = 2; // 기본 1mm 유지 — 0/0.5mm 는 운영자가 의도적으로 선택
-  var MATERIAL_OPTIONS = ["White", "Pearl Grey", "Silver", "Gold"];
+  var MATERIAL_OPTIONS = ["White Matte", "Pearl Grey", "Silver", "Gold"];
 
   var testConfig = $.global.__EVERSTORY_NAME_INCLUDED_TEST__;
 
@@ -640,11 +642,12 @@
     // 템플릿의 info > header > header_right TextFrame 에 폰트·사이즈·정렬이 미리 잡혀 있다.
     // 값만 contents 로 교체. 새 TextFrame 만들지 않음.
     var sizeToken = options.isMixed
-      ? "MIX"
-      : _sizeLetter(options.sizeMm) + " / " + _inchStr(options.sizeMm);
+      ? "Mixed"
+      : _inchStr(options.sizeMm) + " / " + (SIZE_MM_LABEL[options.sizeMm] || Math.round(options.sizeMm)) + "mm";
 
-    var line1 = photoCount + " photos • " + sizeToken + " / " + options.cutMarginMm + "mm  • " + options.material;
-    var line2 = _nfcHangul(options.nameText) + " • Order date " + options.orderDate;
+    var orderNum = options.orderNumber ? options.orderNumber : "—";
+    var line1 = _nfcHangul(options.nameText) + " • " + sizeToken + " • " + options.material;
+    var line2 = "order: " + orderNum + " | date: " + options.orderDate;
 
     headerRightText.contents = line1 + "\r" + line2;
     _applyHangulFontOverride(headerRightText, _resolveHangulFont());
