@@ -14,8 +14,9 @@
 | 6 | 폰케이스에 붙인 lifestyle | Size Guide (0.75") | 무광 단색 케이스. |
 | 7 | 칼선 + 라미네이션 macro detail | About process strip | 사이드 라이팅으로 lamination 광택 표현. |
 | 8 | 작업대 wide shot (PSD 화면 + 시트 + 손) | About hero | studio 분위기. 모니터에 PSD 가 보이되 고객 얼굴 인식 안 되게. |
+| 9 | Before→After (원본 사진 → 완성 시트) | Product carousel 상단(2번 슬롯) + Product description | #1 의 SKU 시트 결과 컷 + 이미 소싱한 샘플 피사체 원본 1장을 split frame. 신규 펫 촬영 아님 (원본은 화면/출력물 형태). 커스텀 제품 핵심 설득 컷. |
 
-**총 8 컷, 1 일 촬영 가능.** 자연광 의존이라 맑은 날 11AM-2PM 박스 잡기.
+**총 9 컷, 1 일 촬영 가능.** (#9 는 #1 결과물 + 기소싱 원본 합성이라 추가 촬영 시간 거의 없음.) 자연광 의존이라 맑은 날 11AM-2PM 박스 잡기.
 
 ## 컬러 그레이딩
 
@@ -50,6 +51,7 @@ iPhone 기본 사진 앱의 "Mellow" 또는 Lightroom 의 "Modern 04" 가 출발
 |------|------|-----------|------|------|
 | Home hero | 16:9 | 2400×1350 | JPG | 90% |
 | Product hero | 1:1 | 2000×2000 | JPG | 90% |
+| Before→After | 1:1 | 2000×2000 | JPG | 90% |
 | Product gallery | 4:5 | 1600×2000 | JPG | 90% |
 | Lifestyle / detail | 3:4 | 1500×2000 | JPG | 90% |
 | About hero (wide) | 21:9 | 2520×1080 | JPG | 90% |

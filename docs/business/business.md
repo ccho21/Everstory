@@ -68,28 +68,65 @@ Everstory Studio 는 Toronto GTA + Korean diaspora 를 위한 A5 custom photo di
 
 SKU별 Shopify 가격은 [`products.md`](products.md) 를 단일 기준으로 한다. Launch price 는 첫 50건 동안 유지한다. 후기, UGC, 반복 주문 데이터가 생기면 +$3-5 인상 여지를 검토한다.
 
-**Variable cost baseline**
+**Cost Model**
 
-| Item | Cost |
-|------|------|
-| Material, lamination, ink, import allocation | $1.45 |
-| Packaging | $0.75 |
-| Domestic lettermail shipping | $2.00 |
-| Equipment depreciation | $1.20 |
-| Lost/reprint buffer | $1.00 |
-| Total variable cost | $6.40 |
+원가는 성격이 다른 비용을 분리해 본다. **단위경제(주문·장당 변동비)** 와 **월 고정비(손익분기 물량으로 회수)** 는 다른 축이다. 인건비는 이 모델 밖 — MVP 검증 단계 $0 가정, 실제 cutout time 은 first-50 실측 ([`pending.md`](pending.md) 누끼 항목). 미확정·측정 대기 값은 본 표에 넣지 않고 [`pending.md`](pending.md) 에 둔다. 가격·SKU 는 [`products.md`](products.md) 단일 기준.
 
-**Margin frame**
+_기준 가정_
 
-| Scenario | Ad cost | Contribution per $15.99 entry order |
-|----------|---------|--------------------------------------|
-| Organic / community | $0 | +$9.59 |
-| Meta ads average | $5 | +$4.59 |
-| High CAC | $8 | +$1.59 |
+- 환율: 1 CAD = 1,095.47 KRW (조회 기준 working basis, 변동).
+- 수율: A4 미디어 1장 → A5 완성품 1장 (커터 여백·레지스트레이션·kiss-cut 클리어런스 = 불가피한 폐기).
+- 라미네이션: 전 SKU 필수. 인쇄 라벨 위 한국 프리미엄 라미 1겹 적층 (옵션 아님).
+- 수입: 라벨·라미 모두 한국 수입, 합산 중량 묶음 배송 (≥300매, 가능 시 ≥600매).
 
-여기서 $15.99 는 [`products.md`](products.md) 의 entry SKU 가격 기준이다 — products.md 가격이 바뀌면 contribution 값도 함께 갱신한다.
+_1. 소모품 — 주문·장당 변동 (인건비 제외)_
 
-인건비는 MVP 검증 단계에서 0 으로 둔다. 이 가정은 장기 수익성 판단이 아니라 첫 50건의 workflow, review, UGC, repeat-order 가능성을 검증하기 위한 출발점이다.
+| 항목 | 단가 | 상태 |
+|------|------|------|
+| 인쇄 라벨 시치미 RV611LU (흰색 광택 방수, A4) | ₩171,600/300매 = ₩572/매 ≈ C$0.52 | 확정 (인보이스) |
+| 인쇄 라벨 CJ611SH (은색 홀로그램 방수, A4) | ₩151,200/300매 = ₩504/매 ≈ C$0.46 | 확정 (인보이스) |
+| 라미 무광엠보손코팅지 (필수 적층, A4) | ₩20,000/100매 = ₩200/매 ≈ C$0.18 | 확정 (인보이스) |
+| 잉크 Epson 552 5-pack | C$145.29/pack — 장당 측정 전 | 추정 → `pending.md` |
+| 포장재 | C$0.50–0.75 (잠정) | 사양 미정 → `pending.md` |
+| 분실/재인쇄 충당 | C$1.00 / 주문 (lost-mail 버퍼와 단일 정의) | 운영 가정 |
+
+_2. 변동 부대비 — 항상 들지만 고정 아님_
+
+| 항목 | 기준 | 상태 |
+|------|------|------|
+| 해외배송 EMS 배부 | 우체국 비서류·물품요금 + 캐나다 항공추가운임 6,100원/kg, 과금중량 올림. 300매 ≈ C$0.35–0.37/매, 100매 ≈ C$0.55–0.61/매 | 방법론 확정, ≥600매 합산 실측 → `pending.md` |
+| 캐나다 내 출고배송 | Canada Post lettermail, Ontario 무료배송분 자체 부담 ≈ C$2.00/주문 | 확정 기준 |
+| 결제·플랫폼 수수료 | 판매가의 약 3–5% | 정확 요율 → `pending.md` |
+| 관세·HST 반입분 + Canada Post handling | 300매 기준 장당 ≈ C$0.10–0.15 버퍼 추정 | 미실측 → `pending.md` |
+
+자재 landed (300매·RV611LU + 필수 라미): 라벨 ≈ C$0.89 + 라미 ≈ C$0.77 ≈ **C$1.6–1.7/완성장** (합산수입 시 ~C$1.4–1.6).
+직접원가 1장 주문 (RV611LU, 인건비 제외) = 자재 landed + 잉크 + 포장 + 재인쇄 ≈ **C$3.3–3.8** (잉크 실측 시 확정).
+
+_3. 월 고정 운영비 (OPEX) — 손익분기 물량으로 회수_
+
+판매와 무관하게 매월 발생. 건당이 아니라 **월 총액 ÷ 월 예상 물량** 으로 배부. 단위-운영(주문·제작 필수)과 사업고정비(전사·개발 도구) 구분.
+
+| 항목 | 성격 | 배부 |
+|------|------|------|
+| Shopify 기본 + Easify Premium | 단위-운영 (주문 수령 필수) | 월 주문 수 |
+| Adobe CC (PS+AI) | 단위-운영 (Phase 0/B 제작) | 월 제작 장수 |
+| Claude Max 5x | 사업고정비 / 제작·기획·CS 도구 | 월 물량, Everstory 전용 비중만 |
+| Codex (ChatGPT) Plus | 사업고정비 / 개발·자동화 도구 | 월 물량, Everstory 전용 비중만 |
+| 도메인 | 연 고정비 | ÷12 월환산 |
+| 기타 (이메일·회계·폰트·스토리지 등) | 운영비 | 월 합산 |
+
+실청구액(CAD)·플랜·전용 비중·"기타" 실항목 → [`pending.md`](pending.md). 배부는 월 합 ÷ 월 물량 — 100/300/600장 시나리오로 본다 (물량 적을수록 장당 폭증, 22건/월이면 소프트 고정비만으로 장당 부담 큼).
+
+_4. 장비 — CapEx → 감가 배부_
+
+| 장비 | 역할 | 취득가·내용연수 |
+|------|------|------------------|
+| Epson ET-8550 | 인쇄 | → `pending.md` |
+| Summa D75 | kiss-cut | → `pending.md` |
+
+확정 후 월 감가 → 건당 배부 산출. 기존 "$1.20" 가정은 근거 미정 — 재도출 대상.
+
+> 가격 결정(엔트리가·번들 구성·목표 마진)은 본 문서에 박지 않는다. 확정 시 [`products.md`](products.md)(가격)·본 절(마진)에 결과만 기록 — 미확정 결정을 SOT 에 누적하지 않는다.
 
 ## Channels
 

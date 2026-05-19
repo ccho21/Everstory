@@ -149,6 +149,30 @@ Package Mini $24.99 CAD, Package Full $32.99 CAD는 launch-friendly 가격이다
 
 Package Full은 8 selected photos / 3 sheets인데 $32.99 CAD이므로, 비-Package 다중 사진 상품보다 저렴하게 느껴질 수 있다. 따라서 고객-facing 메시지는 "정교한 개별 지정"이 아니라 "Everstory가 고르는 curated package"로 명확히 분리한다.
 
+## Promotional / loss-leader guardrails
+
+저가·미끼(loss-leader) 상품은 가능하나, **노동이 들어가는 1장 커스텀 완제품을 손실 미끼로 두지 않는다.** 재료 손실(C$1–2)은 마케팅비로 흡수 가능하지만, 건당 누끼·제작 노동 손실은 판매가 늘수록 악화된다 (원가 구조는 [`business.md`](business.md) Cost Model).
+
+loss-leader 는 건당 작업시간이 거의 안 드는 형태로만 둔다 — 재질 샘플팩 / 스타터팩 / 첫 주문 번들 / 디지털 프루프 / 배치 생산 프리메이드 등. 커스텀 1장 할인은 아니다.
+
+법적 가드레일 (Canada Competition Bureau — bait-and-switch 금지). 저가로 광고하는 상품은 다음을 모두 만족해야 한다.
+
+1. 실제로 합리적 수량 구매 가능
+2. 수량 제한 명시
+3. 숨은 필수비용 없음 — 라미네이션은 전 SKU 필수이므로 광고가에 포함·명시한다 (별도 부가 금지)
+4. 손실 한도 정의
+5. 건당 노동 거의 0
+6. 다음 구매로 이어지는 업셀 경로
+
+**런칭 프로모 (결정): 첫 주문 20% 할인.** loss-leader SKU 가 아니라 정상 상품의 한정 전환 할인이다 (별도 미끼 상품 미도입). 가드레일 정합 조건:
+
+- 첫 주문 1회·1인 1회 한정 (수량 제한 명시, 손실 한도 = 정가의 20%)
+- 정가(라미 포함)에서 할인 — 숨은 필수비용 없음
+- 할인가에서도 현금 기여는 (+) 이나 인건비·월 고정비는 못 덮음 → **오가닉·커뮤니티 채널 전용, 유료광고와 병행 금지** (CAC + 할인 동시 부담 불가)
+- 정가 재주문이 실제 마진 엔진. 첫 주문 할인분(정가 $15.99 기준 ≈ −$3.20, 정가 변경 시 갱신)은 한도형 CAC 대체로 본다
+
+Sample Pack / Starter Pack 등 별도 loss-leader SKU 는 런칭 필수 아님 — 후속 선택지로 [`pending.md`](pending.md) 에 둔다.
+
 ## Assumptions
 
 - Material은 현재 4종 유지: White Matte / Translucent / Silver / Gold.
