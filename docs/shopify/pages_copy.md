@@ -11,7 +11,7 @@ Everstory Studio is a small photo sticker studio in Toronto. We make A5 custom p
 
 We are not a bulk sticker factory. We clean the subject edge by hand, check the crop, and choose the layout that gives the photo the best chance to feel kept, not disposable.
 
-Our materials are Korean premium inkjet substrates finished with lamination. White Matte, Pearl Grey, Silver, and Gold are selected for photographic print quality, durability, and a soft keepsake feel.
+Our materials are Korean premium inkjet substrates finished with lamination. White Matte, Translucent, Silver, and Gold are selected for photographic print quality, durability, and a soft keepsake feel.
 
 When you order, you upload your photo and add the details that matter. Face Sticker, Full Body Sticker, and Circle Sticker let you choose the exact print size and number of photos. Package Mini and Package Full let you upload options by print size, then Studio chooses the strongest final set.
 
@@ -58,7 +58,7 @@ A. If a required photo or tier does not have enough usable options, we email bef
 A. 1" / 25mm is the safest everyday size. 1.25" / 32mm and 1.5" / 38mm work well for tumblers and laptops. 1.75" / 45mm and 2.5" / 64mm are stronger statement sizes.
 
 **Q. What materials can I choose?**
-A. White Matte, Pearl Grey, Silver, and Gold.
+A. White Matte, Translucent, Silver, and Gold.
 
 **Q. Are the stickers waterproof?**
 A. Yes. All materials are laminated and waterproof. Hand wash is recommended for longest lifespan.
@@ -109,7 +109,7 @@ We use four Korean premium substrates, all finished with lamination.
 | Material | Best for |
 |----------|----------|
 | White Matte | diaries, journals, indoor packaging |
-| Pearl Grey | tumblers, phone cases, outdoor surfaces |
+| Translucent | glass, windows, layered looks on light surfaces |
 | Silver | reflective waterproof accent |
 | Gold | warm reflective waterproof accent |
 
@@ -118,4 +118,4 @@ All four are waterproof, fade resistant, and suitable for everyday use.
 **SEO**
 
 - Title: `Material Guide | Everstory Studio`
-- Description: `White Matte, Pearl Grey, Silver, and Gold photo sticker materials from Everstory Studio.`
+- Description: `White Matte, Translucent, Silver, and Gold photo sticker materials from Everstory Studio.`

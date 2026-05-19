@@ -23,7 +23,7 @@ Shopify 상품 등록과 PDP description copy의 기준 문서다. 현재 launch
 | Option | Values |
 |--------|--------|
 | Size | `0.75" / 19mm`, `1" / 25mm`, `1.25" / 32mm`, `1.5" / 38mm`, `1.75" / 45mm`, `2.5" / 64mm` |
-| Material | `White Matte`, `Pearl Grey`, `Silver`, `Gold` |
+| Material | `White Matte`, `Translucent`, `Silver`, `Gold` |
 | Photos to include | `1` through `13` |
 
 Price formula: `$15.99 + (Photos to include - 1) × $3 CAD`.
@@ -188,7 +188,7 @@ Families, multi-pet households, larger keepsake sets, and gifts where variety ma
 ### Materials
 
 - **White Matte** — soft, paper-like finish. Best for diaries, journals, and indoor packaging.
-- **Pearl Grey** — warm grey tone with a subtle pearl sheen. Works well for tumblers, phone cases, and outdoor surfaces.
+- **Translucent** — semi-clear finish that lets the surface show through. Best for glass, windows, and layered looks on light surfaces.
 - **Silver** — metallic silver finish. Reflective accent for waterproof use.
 - **Gold** — metallic gold finish. Reflective accent for waterproof use.
 
@@ -220,7 +220,7 @@ If no special request is provided, Studio chooses the crop from the photo:
 - Indoor: 5+ years without fade.
 - Outdoor: 2-3 years depending on UV exposure.
 - Waterproof: yes.
-- Dishwasher: top rack only, occasional. Hand wash recommended.
+- Dishwasher: not recommended. Hand wash only.
 
 ### Made in Toronto
 

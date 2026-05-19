@@ -25,7 +25,7 @@ Variant options:
 | Option | Values |
 |--------|--------|
 | Size | `0.75" / 19mm`, `1" / 25mm`, `1.25" / 32mm`, `1.5" / 38mm`, `1.75" / 45mm`, `2.5" / 64mm` |
-| Material | `White Matte`, `Pearl Grey`, `Silver`, `Gold` |
+| Material | `White Matte`, `Translucent`, `Silver`, `Gold` |
 | Photos to include | `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `10`, `11`, `12`, `13` |
 
 Checkpoint: each non-Package product has **312 variants**.
@@ -63,7 +63,7 @@ Variant option:
 
 | Option | Values |
 |--------|--------|
-| Material | `White Matte`, `Pearl Grey`, `Silver`, `Gold` |
+| Material | `White Matte`, `Translucent`, `Silver`, `Gold` |
 
 Checkpoint: each Package product has **4 variants**, all at the product's fixed price.
 

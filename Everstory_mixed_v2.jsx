@@ -110,7 +110,7 @@
   var CUT_MARGIN_OPTIONS = ["0mm", "0.5mm", "1mm", "2mm"];
   var CUT_MARGIN_VALUES = [0, 0.5, 1, 2];
   var CUT_MARGIN_DEFAULT_INDEX = 2; // 기본 1mm 유지 — 0/0.5mm 는 운영자가 의도적으로 선택
-  var MATERIAL_OPTIONS = ["White Matte", "Pearl Grey", "Silver", "Gold"];
+  var MATERIAL_OPTIONS = ["White Matte", "Translucent", "Silver", "Gold"];
 
   var testConfig = $.global.__EVERSTORY_NAME_INCLUDED_TEST__;
 

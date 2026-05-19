@@ -151,7 +151,7 @@ Package Full은 8 selected photos / 3 sheets인데 $32.99 CAD이므로, 비-Pack
 
 ## Assumptions
 
-- Material은 현재 4종 유지: White Matte / Pearl Grey / Silver / Gold.
+- Material은 현재 4종 유지: White Matte / Translucent / Silver / Gold.
 - White Waterproof 추가 여부는 후속 결정한다.
 - Full Body Sticker는 1.25" / 32mm 이상 권장 문구로 관리하되, 선택 차단은 하지 않는다.
 - Package는 최종 사진 선택, crop, format, size, layout을 고객이 직접 지정하는 상품이 아니다.
