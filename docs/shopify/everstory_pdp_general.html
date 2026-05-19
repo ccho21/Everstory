@@ -1,0 +1,1039 @@
+<!--
+  Everstory PDP — GENERAL block (KO). Horizon Custom Liquid, product info 블록 *밖*.
+  everstory_pdp_general_en.html 의 KO 미러. 구조·CSS 동일, 카피만 KO.
+  모든 상품 페이지에 1벌만 둔다. .es-pdp <style> 를 페이지에 까는 단일 SOT.
+  product-specific(intro)는 everstory_pdp_product_intro.html — product info 블록 안 metafield.
+
+  버킷:
+  - 전 상품 공용: Options>재질, 주문 전 안내, 사진 화질, 색상
+  - 비-Package 공용: Options>사이즈, 사이즈(한 시트 한 사이즈 + grid + 긴 변 기준)
+    → is_package 판별자로 조건부. Package 는 사이즈 선택 개념 없음(tier 큐레이션).
+
+  운영 규칙: product-specific 블록을 넣는 상품 페이지엔 이 블록도 반드시 같이 둔다.
+
+  KO/EN 정합 메모:
+  - 사이즈: 1.75" 폐기 → 2"/51mm (products.md SOT, 메모리). 본 파일 반영 완료.
+  - 재질: KO 원본의 "한국 프리미엄 substrate" 는 voice.md 자가라벨링 금지 위반 →
+    EN 준수형과 동일 의미로 교체. 되돌리지 말 것.
+  구조 변경 시 EN 분리본 + full_template 동기화 필요(후속).
+
+  Shopify Files 의존: cat_w.svg, cat_h.svg, {face,full_body,circle}_{0.75,1.00,1.25,1.50,2.00,2.50}in.png
+  (시트 목업 — prefix = product.metafields.custom.sheet_prefix), package_mini.png, package_full.png
+  (Package 비교 — file_url, 이 블록에서만 작동), teo_focused.png, teo_outfocused.png
+-->
+<style>
+    .es-pdp {
+      /* Brand tokens — docs/design/tokens.json (colors.web) */
+      --text-primary:   #000000;
+      --text-secondary: #4A4A4A;
+      --text-muted:     #8A8580;
+      --text-inverse:   #FFFFFF;
+      --accent-coral:   #FBAAA8;
+
+      --bg-canvas:  #FEFDFE;
+      --bg-muted:   #F8F5F2;
+      --bg-warm:    #E0D3CB;
+
+      --line:        #ECE6E0;
+      --line-strong: #1A1A1A;
+
+      /* Editorial / luxury: no drop shadows, no panel borders, sharp corners.
+         Depth comes from spacing + bg.warm callouts. */
+      --max: 1120px;
+
+      /* Inherit 차단 — Horizon body 의 font/color/letter-spacing 가 들어오지 않게 */
+      font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR',
+                   -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background: var(--bg-canvas);
+      word-break: keep-all;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Scoped box-sizing — .es-pdp 안쪽만, 글로벌 누수 없음 */
+    .es-pdp,
+    .es-pdp *,
+    .es-pdp *::before,
+    .es-pdp *::after {
+      box-sizing: border-box;
+    }
+
+    /* English brand wordmark — sheet mockup tiny-mark, RGB/CMYK headings */
+    .es-pdp .wordmark {
+      font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+      font-weight: 600;
+      font-style: italic;
+      letter-spacing: 0;
+    }
+
+    .es-pdp .es-page {
+      width: min(var(--max), calc(100% - 36px));
+      margin: 0 auto;
+      padding: 56px 0 88px;
+    }
+
+    .es-pdp .es-section {
+      margin: 0 0 112px;
+    }
+
+    .es-pdp .es-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .es-pdp .es-section-shell {
+      padding: clamp(28px, 4vw, 56px) clamp(20px, 4vw, 56px);
+    }
+
+    /* notice 섹션만 pearl-grey callout block 유지 */
+    .es-pdp .es-notice-section .es-section-shell {
+      background: var(--bg-warm);
+      padding: clamp(48px, 6vw, 88px) clamp(28px, 5vw, 72px);
+    }
+
+    /* Eyebrow — 작은 uppercase coral 라벨 */
+    .es-pdp .es-eyebrow {
+      display: block;
+      margin: 0 0 18px;
+      color: var(--accent-coral);
+      font-size: clamp(10px, 1vw, 12px);
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    /* 통일된 섹션 헤딩: eyebrow + h2 + (optional) sub */
+    .es-pdp .heading-block {
+      text-align: center;
+      margin: 0 0 56px;
+    }
+
+    .es-pdp .heading-block h2 {
+      margin: 0;
+      font-weight: 700;
+      font-size: clamp(26px, 3.4vw, 42px);
+      line-height: 1.25;
+      letter-spacing: -0.035em;
+      color: var(--text-primary);
+    }
+
+    .es-pdp .heading-block .sub {
+      margin: 18px auto 0;
+      max-width: 620px;
+      color: var(--text-secondary);
+      font-size: clamp(14px, 1.4vw, 17px);
+      line-height: 1.85;
+    }
+
+    .es-pdp .copy {
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: clamp(15px, 1.5vw, 18px);
+      line-height: 1.85;
+    }
+
+    .es-pdp .image-placeholder {
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      line-height: 1.6;
+      padding: 24px;
+      background: var(--bg-muted);
+    }
+
+    /* Generic img — .es-pdp scope 안에서만 적용. 글로벌 누수 없음.
+       .sheet-image (object-fit:contain) 가 specificity 로 이 룰을 덮어씀. */
+    .es-pdp img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* 1. 제품 소개 */
+    .es-pdp .photo-pair {
+      display: grid;
+      grid-template-columns: 1fr 0.9fr;
+      gap: 18px;
+      margin-bottom: 44px;
+    }
+
+    .es-pdp .photo-frame {
+      min-height: 460px;
+      background: var(--bg-muted);
+      overflow: hidden;
+    }
+
+    .es-pdp .single-photo {
+      max-width: 760px;
+      margin: 0 auto 36px;
+      background: var(--bg-muted);
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+    }
+
+    /* 3. 옵션 */
+    .es-pdp .option-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+    }
+
+    /* Choose your options — Size·Material 각각 풀폭 1행. 가로 비교 사진용 1컬럼 스택 */
+    .es-pdp .option-stack {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: clamp(48px, 6vw, 80px);
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .es-pdp .option-block { display: grid; gap: 16px; }
+
+    .es-pdp .option-title {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .es-pdp .status-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .es-pdp .status-icon--ok { color: #4A7C59; }
+    .es-pdp .status-icon--no { color: #C04545; }
+
+    .es-pdp .option-image {
+      aspect-ratio: 4 / 5;
+      background: var(--bg-muted);
+      overflow: hidden;
+    }
+
+    /* 가로 비교 사진 — Size 6종 / Material 4종 한 줄. contain 으로 양끝 안 잘리게 */
+    .es-pdp .option-image--wide {
+      aspect-ratio: 16 / 9;
+    }
+
+    .es-pdp .option-image--wide img {
+      object-fit: contain;
+    }
+
+    .es-pdp .option-detail {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .es-pdp .option-detail strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    /* 4. 시트 구성 */
+    .es-pdp .size-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 56px 42px;
+    }
+
+    .es-pdp .size-card { min-width: 0; text-align: center; }
+
+    .es-pdp .size-title {
+      margin: 0 0 16px;
+      font-weight: 700;
+      font-size: clamp(17px, 1.9vw, 22px);
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .es-pdp .size-title small {
+      margin-left: 8px;
+      font-weight: 500;
+      font-size: 12px;
+      letter-spacing: 0;
+      color: var(--text-muted);
+      vertical-align: middle;
+    }
+
+    .es-pdp .mockup-wrap {
+      position: relative;
+      background: var(--bg-canvas);
+    }
+
+    .es-pdp .measure-top {
+      position: absolute;
+      top: 0;
+      left: 5%;
+      right: 5%;
+      height: 1px;
+      background: var(--accent-coral);
+    }
+
+    .es-pdp .measure-top::before,
+    .es-pdp .measure-top::after {
+      content: "";
+      position: absolute;
+      top: -4px;
+      width: 1px;
+      height: 8px;
+      background: var(--accent-coral);
+    }
+
+    .es-pdp .measure-top::before { left: 0; }
+    .es-pdp .measure-top::after { right: 0; }
+
+    .es-pdp .measure-label-top {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--accent-coral);
+      font-size: 10px;
+      letter-spacing: 0.04em;
+    }
+
+    .es-pdp .measure-left {
+      position: absolute;
+      top: 5%;
+      bottom: 5%;
+      left: -1%;
+      width: 1px;
+      background: var(--accent-coral);
+    }
+
+    .es-pdp .measure-left::before,
+    .es-pdp .measure-left::after {
+      content: "";
+      position: absolute;
+      left: -4px;
+      width: 8px;
+      height: 1px;
+      background: var(--accent-coral);
+    }
+
+    .es-pdp .measure-left::before { top: 0; }
+    .es-pdp .measure-left::after { bottom: 0; }
+
+    .es-pdp .measure-label-left {
+      position: absolute;
+      left: -22px;
+      top: 50%;
+      transform: translateY(-50%) rotate(-90deg);
+      color: var(--accent-coral);
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    /* A5 시트 mockup — Shopify Files 의 {prefix}_{size}in.png 직접 표시 (prefix=product.metafields.custom.sheet_prefix) */
+    .es-pdp .sheet-image {
+      display: block;
+      width: 100%;
+      aspect-ratio: 148 / 210;
+      object-fit: contain;
+      background: var(--bg-canvas);
+    }
+
+    /* Mixed 카드는 hero 배치 — 한 시트 안의 여러 사이즈 큐레이션 강조 */
+    .es-pdp .size-card.mixed { grid-column: 1 / -1; }
+    .es-pdp .size-card.mixed .mockup-wrap { max-width: 50%; margin: 0 auto; }
+
+    .es-pdp .caption {
+      margin: 16px 0 0;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    /* 5. 사이즈 가이드 */
+    .es-pdp .measure-group {
+      margin-top: 56px;
+    }
+
+    .es-pdp .measure-group:first-of-type { margin-top: 0; }
+
+    .es-pdp .group-label {
+      width: fit-content;
+      margin: 0 auto 40px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--text-primary);
+      color: var(--text-primary);
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      font-weight: 700;
+    }
+
+    .es-pdp .size-rule {
+      max-width: 520px;
+      margin: clamp(72px, 8vw, 112px) auto 0;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: clamp(13px, 1.3vw, 15px);
+      line-height: 1.7;
+    }
+
+    .es-pdp .size-rule strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .es-pdp .examples {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      justify-items: center;
+      gap: clamp(48px, 6vw, 96px);
+    }
+
+    .es-pdp .example {
+      text-align: center;
+      display: grid;
+      justify-items: center;
+      gap: 14px;
+    }
+
+    .es-pdp .measure-box {
+      --size: 180px;
+      --short-ratio: 1;
+      width: calc(var(--size) * var(--short-ratio));
+      height: var(--size);
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Orientation — 긴 변 동일 (--size), 짧은 변 = --size × --short-ratio */
+    .es-pdp .measure-box.orientation-h,
+    .es-pdp .measure-box.orientation-v {
+      --size: 240px;
+      --short-ratio: 0.75;
+    }
+    .es-pdp .measure-box.orientation-h {
+      width: var(--size);
+      height: calc(var(--size) * var(--short-ratio));
+    }
+    .es-pdp .measure-box.orientation-v {
+      width: calc(var(--size) * var(--short-ratio));
+      height: var(--size);
+    }
+
+    .es-pdp .guide-square {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* 측정선 — 세로 (왼쪽) */
+    .es-pdp .vertical-measure {
+      position: absolute;
+      left: -36px;
+      top: 0px;
+      bottom: 0px;
+      width: 1px;
+      background: var(--accent-coral);
+    }
+
+    .es-pdp .vertical-measure::before,
+    .es-pdp .vertical-measure::after {
+      content: "";
+      position: absolute;
+      left: -4px;
+      width: 8px;
+      height: 1px;
+      background: var(--accent-coral);
+    }
+
+    .es-pdp .vertical-measure::before { top: 0; }
+    .es-pdp .vertical-measure::after { bottom: 0; }
+
+    /* 측정선 — 가로 (위쪽) */
+    .es-pdp .horizontal-measure {
+      position: absolute;
+      top: -36px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--accent-coral);
+    }
+
+    .es-pdp .horizontal-measure::before,
+    .es-pdp .horizontal-measure::after {
+      content: "";
+      position: absolute;
+      top: -4px;
+      width: 1px;
+      height: 8px;
+      background: var(--accent-coral);
+    }
+
+    .es-pdp .horizontal-measure::before { left: 0; }
+    .es-pdp .horizontal-measure::after { right: 0; }
+
+    .es-pdp .measure-text {
+      position: absolute;
+      color: var(--accent-coral);
+      font-size: clamp(13px, 1.3vw, 16px);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .es-pdp .measure-text--side {
+      left: -45%;
+      top: 50%;
+      transform: translateY(-50%) rotate(-90deg);
+    }
+
+    .es-pdp .measure-text--top {
+      top: -56px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .es-pdp .cutout {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #fefdfe center / contain no-repeat;
+      border-radius: 10%;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .es-pdp .cutout--landscape {
+      background-image: url('{{ "cat_w.svg" | file_url }}');
+    }
+
+    .es-pdp .cutout--portrait {
+      background-image: url('{{ "cat_h.svg" | file_url }}');
+    }
+
+    .es-pdp .size-name {
+      margin: 0;
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: clamp(16px, 1.7vw, 22px);
+      letter-spacing: -0.02em;
+    }
+
+    .es-pdp .size-name small {
+      display: block;
+      margin-top: 4px;
+      font-weight: 500;
+      font-size: 11px;
+      letter-spacing: 0;
+      color: var(--text-muted);
+    }
+
+    /* 6. 주문 안내 (callout) */
+    .es-pdp .notice-rule {
+      height: 1px;
+      background: var(--line-strong);
+      opacity: 0.5;
+      width: 100%;
+      margin: 0 0 36px;
+    }
+
+    .es-pdp .notice-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: clamp(14px, 1.5vw, 20px);
+    }
+
+    .es-pdp .notice-list li {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      column-gap: 16px;
+      align-items: start;
+      color: var(--text-primary);
+      font-size: clamp(14px, 1.4vw, 17px);
+      line-height: 1.7;
+    }
+
+    .es-pdp .notice-list li::before {
+      content: "★";
+      color: var(--accent-coral);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .es-pdp .notice-list em {
+      font-style: normal;
+      font-weight: 700;
+      text-decoration: underline;
+      text-decoration-color: var(--accent-coral);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 4px;
+    }
+
+    /* 7. 색상 (RGB / CMYK) */
+    .es-pdp .color-diagrams {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(32px, 5vw, 64px);
+      max-width: 720px;
+      margin: 0 auto;
+      justify-items: center;
+    }
+
+    .es-pdp .color-model {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .es-pdp .color-pill {
+      background: var(--text-primary);
+      color: var(--text-inverse);
+      padding: 8px 22px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+    }
+
+    .es-pdp .color-venn {
+      width: clamp(180px, 22vw, 240px);
+      height: auto;
+      display: block;
+      overflow: visible;
+      isolation: isolate;
+    }
+
+    .es-pdp .color-venn--rgb circle {
+      mix-blend-mode: screen;
+    }
+
+    .es-pdp .color-venn--cmyk circle {
+      mix-blend-mode: multiply;
+    }
+
+    .es-pdp .heading-block .sub strong {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    @media (max-width: 860px) {
+      .es-pdp .es-page {
+        width: min(100% - 28px, var(--max));
+        padding: 36px 0 60px;
+      }
+
+      .es-pdp .es-section { margin-bottom: 72px; }
+
+      .es-pdp .es-section-shell { padding: 24px 4px; }
+
+      .es-pdp .es-notice-section .es-section-shell { padding: 40px 22px; }
+
+      .es-pdp .photo-pair,
+      .es-pdp .option-compare,
+      .es-pdp .size-grid,
+      .es-pdp .examples,
+      .es-pdp .color-diagrams {
+        grid-template-columns: 1fr;
+      }
+
+      .es-pdp .photo-frame { min-height: 320px; }
+      .es-pdp .single-photo { max-width: 100%; }
+
+      .es-pdp .option-image {
+        max-width: 340px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      .es-pdp .option-image--wide { max-width: 100%; }
+
+      .es-pdp .mockup-wrap {
+        max-width: 320px;
+        margin: 0 auto;
+      }
+
+      .es-pdp .examples {
+        justify-items: center;
+        gap: 38px;
+      }
+
+      .es-pdp .measure-box.orientation-h,
+      .es-pdp .measure-box.orientation-v { --size: 200px; }
+    }
+  </style>
+
+  {%- comment -%}
+    비-Package 판별자 — 확정: custom.is_package (Boolean) product metafield.
+    Package Mini/Full 상품에 true. 정의: Settings → Custom data → Products → custom.is_package (True/false).
+  {%- endcomment -%}
+  {%- assign is_package = false -%}
+  {%- if product.metafields.custom.is_package.value -%}{%- assign is_package = true -%}{%- endif -%}
+
+  {%- comment -%}
+    시트 목업 prefix — 비-Package 상품 *필수*. Shopify Files 의 {prefix}_{size}in.png 매칭.
+    값 예: Face='face', Full Body='full_body', Circle='circle'.
+    미설정 시 해당 상품 시트 이미지 안 뜸(의도적 — 설정 누락 가시 신호).
+  {%- endcomment -%}
+  {%- assign sheet_prefix = product.metafields.custom.sheet_prefix.value -%}
+
+  <div class="es-pdp">
+    <div class="es-page">
+
+      <!-- 옵션 — 재질은 전 상품 공용, 사이즈는 비-Package 만.
+           option-stack: 사이즈·재질 각각 풀폭 1행 (가로 비교 이미지).
+           is_package → 재질만, 동일하게 풀폭 가운데. -->
+      <section class="es-section" aria-label="옵션 안내">
+        <div class="es-section-shell">
+          <div class="heading-block">
+            <span class="es-eyebrow">Options</span>
+            <h2>옵션 선택.</h2>
+          </div>
+
+          <div class="option-stack">
+            {%- unless is_package -%}
+            <article class="option-block">
+              <h3 class="option-title">사이즈</h3>
+              <div class="option-image option-image--wide">
+                <div class="image-placeholder">사이즈 비교<br>0.75" · 1" · 1.25" · 1.5" · 2" · 2.5"</div>
+              </div>
+              <p class="option-detail">
+                <strong>0.75" · 1" · 1.25" · 1.5" · 2" · 2.5"</strong>
+                가장 긴 변을 기준으로 사이즈를 정해요.
+                0.75"(19 mm) 부터 2.5"(64 mm) 까지 6종.
+              </p>
+            </article>
+            {%- endunless -%}
+
+            <article class="option-block">
+              <h3 class="option-title">재질</h3>
+              <div class="option-image option-image--wide">
+                <div class="image-placeholder">재질 샘플<br>White Matte · Pearl Grey · Silver · Gold</div>
+              </div>
+              <p class="option-detail">
+                <strong>White Matte · Pearl Grey · Silver · Gold</strong>
+                LAMat-AF / Oraguard 라미네이팅 잉크젯 원단.
+                4종 모두 방수입니다.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      {%- unless is_package -%}
+      <!-- 사이즈 — 비-Package 전용. Package 는 사이즈 선택 없음(tier 큐레이션),
+           해당 카피는 product-specific intro metafield 가 담당. -->
+      <section class="es-section" aria-label="사이즈 안내">
+        <div class="es-section-shell">
+          <div class="heading-block">
+            <span class="es-eyebrow">Sizes</span>
+            <h2>한 시트, 한 사이즈.</h2>
+            <p class="sub">
+              A5 시트 (148 × 210 mm) 한 장에 선택하신 사이즈로 들어가요.
+              시트 크기는 그대로, 스티커 개수만 사이즈에 따라 달라져요.
+            </p>
+          </div>
+
+          <section class="size-grid">
+            <article class="size-card">
+              <h3 class="size-title">0.75" <small>19 mm</small></h3>
+              <div class="mockup-wrap">
+                <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
+                <div class="measure-left"><span class="measure-label-left">210 mm</span></div>
+                <img class="sheet-image"
+                     src="{{ sheet_prefix | append: '_0.75in.png' | file_url }}"
+                     alt="0.75인치 사이즈 시트 미리보기 — 19mm 스티커">
+              </div>
+              <p class="caption">한 시트 약 [개수 확인]장. 노트 한구석, 작은 라벨, 손톱만한 디테일에.</p>
+            </article>
+
+            <article class="size-card">
+              <h3 class="size-title">1" <small>25 mm · 기본</small></h3>
+              <div class="mockup-wrap">
+                <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
+                <div class="measure-left"><span class="measure-label-left">210 mm</span></div>
+                <img class="sheet-image"
+                     src="{{ sheet_prefix | append: '_1.00in.png' | file_url }}"
+                     alt="1인치 사이즈 시트 미리보기 — 25mm 스티커 36장">
+              </div>
+              <p class="caption">한 시트 약 36장. 다이어리, 폰케이스, 물병에 적합.</p>
+            </article>
+
+            <article class="size-card">
+              <h3 class="size-title">1.25" <small>32 mm</small></h3>
+              <div class="mockup-wrap">
+                <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
+                <div class="measure-left"><span class="measure-label-left">210 mm</span></div>
+                <img class="sheet-image"
+                     src="{{ sheet_prefix | append: '_1.25in.png' | file_url }}"
+                     alt="1.25인치 사이즈 시트 미리보기 — 32mm 스티커 20장">
+              </div>
+              <p class="caption">한 시트 약 20장. 텀블러, 노트북 커버에 적합.</p>
+            </article>
+
+            <article class="size-card">
+              <h3 class="size-title">1.5" <small>38 mm</small></h3>
+              <div class="mockup-wrap">
+                <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
+                <div class="measure-left"><span class="measure-label-left">210 mm</span></div>
+                <img class="sheet-image"
+                     src="{{ sheet_prefix | append: '_1.50in.png' | file_url }}"
+                     alt="1.5인치 사이즈 시트 미리보기 — 38mm 스티커 16장">
+              </div>
+              <p class="caption">한 시트 약 16장. 노트북, 대형 텀블러, 임팩트 있는 단독 배치.</p>
+            </article>
+
+            <article class="size-card">
+              <h3 class="size-title">2" <small>51 mm</small></h3>
+              <div class="mockup-wrap">
+                <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
+                <div class="measure-left"><span class="measure-label-left">210 mm</span></div>
+                <img class="sheet-image"
+                     src="{{ sheet_prefix | append: '_2.00in.png' | file_url }}"
+                     alt="2인치 사이즈 시트 미리보기 — 51mm 스티커">
+              </div>
+              <p class="caption">한 시트 약 [개수 확인]장. 노트북, 백팩, 아이패드 케이스에 적합.</p>
+            </article>
+
+            <article class="size-card">
+              <h3 class="size-title">2.5" <small>64 mm</small></h3>
+              <div class="mockup-wrap">
+                <div class="measure-top"><span class="measure-label-top">148 mm</span></div>
+                <div class="measure-left"><span class="measure-label-left">210 mm</span></div>
+                <img class="sheet-image"
+                     src="{{ sheet_prefix | append: '_2.50in.png' | file_url }}"
+                     alt="2.5인치 사이즈 시트 미리보기 — 64mm 스티커">
+              </div>
+              <p class="caption">한 시트 약 [개수 확인]장. 자동차, 큰 백팩, 데스크탑 한 면에 적합.</p>
+            </article>
+          </section>
+
+          <div class="size-rule">
+            <strong>가장 긴 변 기준</strong>
+            가로·세로 사진 모두 긴 변 길이가 같고, 짧은 변만 사진 비율에 따라 달라져요.
+          </div>
+
+          <section class="measure-group">
+            <div class="examples">
+              <article class="example">
+                <div class="measure-box orientation-h">
+                  <div class="guide-square"></div>
+                  <div class="horizontal-measure"></div>
+                  <div class="measure-text measure-text--top">긴 변 — 사이즈 기준</div>
+                  <div class="cutout cutout--landscape"></div>
+                </div>
+                <p class="size-name">가로 사진<small>너비가 사이즈 기준</small></p>
+              </article>
+              <article class="example">
+                <div class="measure-box orientation-v">
+                  <div class="guide-square"></div>
+                  <div class="vertical-measure"></div>
+                  <div class="measure-text measure-text--side">긴 변 — 사이즈 기준</div>
+                  <div class="cutout cutout--portrait"></div>
+                </div>
+                <p class="size-name">세로 사진<small>높이가 사이즈 기준</small></p>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+      {%- endunless -%}
+
+      {%- if is_package -%}
+      <!-- Package 비교 — Mini↔Full. Package 전용(Sizes 섹션 대체).
+           file_url 은 진짜 Custom Liquid(이 블록)에서만 작동 — metafield 아님. -->
+      <section class="es-section" aria-label="Package 옵션">
+        <div class="es-section-shell">
+          <div class="heading-block">
+            <span class="es-eyebrow">Packages</span>
+            <h2>Mini 또는 Full.</h2>
+          </div>
+
+          <section class="size-grid">
+            <article class="size-card">
+              <h3 class="size-title">Package Mini <small>4장 · A5 2장</small></h3>
+              <div class="mockup-wrap">
+                <img class="sheet-image" src="{{ 'package_mini.png' | file_url }}"
+                     alt="Package Mini — 큐레이션 4장, A5 2장">
+              </div>
+              <p class="caption">업로드 중 스튜디오가 4장 선정.</p>
+            </article>
+            <article class="size-card">
+              <h3 class="size-title">Package Full <small>8장 · A5 3장</small></h3>
+              <div class="mockup-wrap">
+                <img class="sheet-image" src="{{ 'package_full.png' | file_url }}"
+                     alt="Package Full — 큐레이션 8장, A5 3장">
+              </div>
+              <p class="caption">업로드 중 스튜디오가 8장 선정.</p>
+            </article>
+          </section>
+        </div>
+      </section>
+      {%- endif -%}
+
+      <!-- 주문 전 안내 (pearl-grey callout) — 전 상품 공용 -->
+      <section class="es-section es-notice-section" aria-label="주문 및 제작 안내">
+        <div class="es-section-shell">
+          <div class="heading-block">
+            <span class="es-eyebrow">Before you order</span>
+            <h2>주문 전 안내.</h2>
+          </div>
+          <div class="notice-rule"></div>
+
+          <ul class="notice-list">
+            <li>
+              <span>
+                모든 시트는 주문 후 제작되는 맞춤 상품이에요.
+                제작 시작 후 단순 변심에 의한 <em>환불은 어렵습니다.</em>
+              </span>
+            </li>
+            <li>
+              <span>
+                결제 시 업로드한 사진과 주문 노트가 작업의 기준이 됩니다.
+                별도의 시안 단계 없이 노트 기준으로 작업을 진행해요.
+              </span>
+            </li>
+            <li>
+              <span>
+                선명하고 해상도가 높은 사진을 보내주세요.
+                <em>너무 흐릿하거나 화질이 낮은 사진은 작업 전 교체 요청을 드릴 수 있습니다.</em>
+              </span>
+            </li>
+            <li>
+              <span>
+                인쇄·컷팅은 <em>1–3 영업일</em> 소요되며, 출고는 당일 또는 익일에 진행됩니다.
+              </span>
+            </li>
+            <li>
+              <span>
+                주문일 기준 출고까지 보통 <em>2–5 영업일</em> 정도 소요될 수 있습니다.
+              </span>
+            </li>
+            <li>
+              <span>
+                인쇄·컷팅 특성상 0.2–2 mm 정도의 오차나 밀림이 발생할 수 있습니다.
+              </span>
+            </li>
+            <li>
+              <span>
+                <em>화면 색상과 실제 인쇄물의 색상에는 차이가 있을 수 있습니다.</em>
+                아래 색상 안내 참고.
+              </span>
+            </li>
+            <li>
+              <span>사진 비율에 따라 스티커 개수가 달라질 수 있습니다.</span>
+            </li>
+            <li>
+              <span>
+                <em>온타리오 전역 무료 배송</em> (Canada Post lettermail).
+                <em>토론토 스튜디오 픽업</em>도 가능합니다.
+              </span>
+            </li>
+            <li>
+              <span>
+                문의는 <em>orders@everstory-domain.com</em> 으로 보내주세요. 한국어 응대 가능합니다.
+              </span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 사진 화질 안내 — 전 상품 공용 -->
+      <section class="es-section" aria-label="사진 화질 안내">
+        <div class="es-section-shell">
+          <div class="heading-block">
+            <span class="es-eyebrow">Photo quality</span>
+            <h2>선명한 사진이 필요해요.</h2>
+          </div>
+
+          <div class="option-compare">
+            <article class="option-block">
+              <h3 class="option-title">
+                <svg class="status-icon status-icon--ok" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="4"/>
+                </svg>
+                사용 가능
+              </h3>
+              <div class="option-image">
+                <img src="{{ 'teo_focused.png' | file_url }}" alt="초점이 또렷한 사진 예시">
+              </div>
+              <p class="option-detail">초점이 또렷한 사진</p>
+            </article>
+
+            <article class="option-block">
+              <h3 class="option-title">
+                <svg class="status-icon status-icon--no" viewBox="0 0 24 24" aria-hidden="true">
+                  <line x1="7" y1="7" x2="17" y2="17" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                  <line x1="7" y1="17" x2="17" y2="7" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+                사용 어려움
+              </h3>
+              <div class="option-image">
+                <img src="{{ 'teo_outfocused.png' | file_url }}" alt="흐릿한 사진 예시 — 작업 전 교체 요청">
+              </div>
+              <p class="option-detail">흐릿하거나 흔들린 사진 · 작업 전 교체 요청</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- 색상 안내 — 전 상품 공용 -->
+      <section class="es-section" aria-label="색상 유의사항">
+        <div class="es-section-shell">
+          <div class="heading-block">
+            <span class="es-eyebrow">Color</span>
+            <h2>화면 색상과 인쇄 색상.</h2>
+            <p class="sub">
+              <strong>모니터</strong>는 <strong>RGB</strong>, <strong>인쇄물</strong>은 <strong>CMYK</strong> 영역에서 색을 구현하기 때문에
+              톤·밝기·채도에 약간의 차이가 생길 수 있습니다.
+            </p>
+          </div>
+
+          <div class="color-diagrams">
+            <article class="color-model">
+              <span class="color-pill">RGB</span>
+              <svg class="color-venn color-venn--rgb" viewBox="0 0 200 200" role="img" aria-label="RGB additive color model">
+                <circle cx="100" cy="74" r="50" fill="#1A2BFF" />
+                <circle cx="72" cy="125" r="50" fill="#1FCC1F" />
+                <circle cx="128" cy="125" r="50" fill="#FF1A1A" />
+              </svg>
+            </article>
+
+            <article class="color-model">
+              <span class="color-pill">CMYK</span>
+              <svg class="color-venn color-venn--cmyk" viewBox="0 0 200 200" role="img" aria-label="CMYK subtractive color model">
+                <circle cx="100" cy="74" r="50" fill="#DF1F8A" />
+                <circle cx="72" cy="125" r="50" fill="#FFE500" />
+                <circle cx="128" cy="125" r="50" fill="#00B5DC" />
+              </svg>
+            </article>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>

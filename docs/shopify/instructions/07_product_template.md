@@ -62,7 +62,25 @@ Crop decisions accordion copy:
 
 ## Product Recommendations
 
-Use `Photo Sheets` collection for recommendations. Max products: 4.
+Horizon's product recommendations block only supports `Related` (Shopify auto algorithm) or `Complementary` (manual) — there is no collection-source option. `Related` is order/behavior driven, so on a low-order store it returns sparse, asymmetric results and Packages never surface on sticker PDPs. Use `Complementary` with products curated in the Shopify Search & Discovery app.
+
+Setup (order matters — configure the app first, or the block renders empty):
+
+1. Install **Shopify Search & Discovery** (free, first-party) from the Shopify App Store.
+2. Search & Discovery -> **Product recommendations** -> for each of the 5 products, add the 4 Complementary products below.
+3. Theme Editor -> Product template -> "You may also like" block -> change the source dropdown from `Related` to `Complementary`. Keep Max products: 4.
+
+Complementary mapping (4 per product, order = SOT product order, self excluded):
+
+| Product page | Complementary products (in order) |
+|--------------|-----------------------------------|
+| Face Sticker | Full Body Sticker, Circle Sticker, Package Mini, Package Full |
+| Full Body Sticker | Face Sticker, Circle Sticker, Package Mini, Package Full |
+| Circle Sticker | Face Sticker, Full Body Sticker, Package Mini, Package Full |
+| Package Mini | Face Sticker, Full Body Sticker, Circle Sticker, Package Full |
+| Package Full | Face Sticker, Full Body Sticker, Circle Sticker, Package Mini |
+
+The `Photo Sheets` collection is still required for the collection page, home featured collection, and nav — it is just no longer the recommendation source.
 
 ## Batch 7 Checkpoint
 
@@ -70,4 +88,5 @@ Use `Photo Sheets` collection for recommendations. Max products: 4.
 - [ ] Non-Package PDP shows Size / Material / Photos to include.
 - [ ] Package PDP shows Material and tier upload blocks.
 - [ ] Easify block appears before buy buttons.
+- [ ] You may also like shows 4 Complementary products both ways (sticker PDP -> Packages, Package PDP -> stickers).
 - [ ] No old product names, letter size labels, or internal photo-count labels remain.

@@ -1,0 +1,1100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Everstory — Logo System Board (Round 3)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&family=Outfit:wght@300;500;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Syne:wght@700;800&family=Unbounded:wght@600;800&family=Caveat:wght@600;700&family=Instrument+Serif&family=Bricolage+Grotesque:wght@600;800&family=Familjen+Grotesk:wght@500;700&family=Jost:wght@300;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Everstory brand tokens (locked) ───────────────────────── */
+  :root{
+    --ink:#000000;            /* text.primary           */
+    --paper:#FEFDFE;          /* bg.matte_white         */
+    --pearl:#E0D3CB;          /* bg.warm / pearl_grey   */
+    --white:#FFFFFF;          /* sticker padding        */
+    --coral:#FBAAA8;          /* the only accent        */
+    --board:#EDEAE3;          /* showcase canvas (warm neutral, echoes wireframe #f4f4f0) */
+    --line:#cfc9bf;
+    --muted:#8A8580;
+    --coral-ink:#B45E5C;      /* accessible coral for tiny text */
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    /* stage-swappable: */
+    --fg:var(--ink);
+    --bg:var(--paper);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--board);
+    color:var(--ink);
+    font-family:'Familjen Grotesk','Helvetica Neue',system-ui,sans-serif;
+    font-size:15px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:48px 32px 96px;}
+  @media (max-width:720px){.wrap{padding:32px 18px 72px;}}
+
+  /* ── masthead ──────────────────────────────────────────────── */
+  .eyebrow{font:600 11px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--muted);}
+  .masthead h1{font:700 34px/1.1 'Space Grotesk',sans-serif;letter-spacing:-.02em;margin:14px 0 10px;}
+  .masthead p{max-width:68ch;color:#3a3a3a;margin:0 0 10px;}
+  .masthead .lede{font-size:16px;}
+
+  .brief{
+    display:grid;grid-template-columns:1fr 1fr;gap:0;
+    border:1px solid var(--line);background:var(--white);margin:28px 0 8px;
+  }
+  .brief>div{padding:18px 22px;}
+  .brief>div+div{border-left:1px solid var(--line);}
+  .brief h4{font:600 10px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;}
+  .brief .away{font:600 30px/1 'Fraunces',Georgia,serif;letter-spacing:.02em;}
+  .brief .away b{font-weight:600;}
+  .brief .away .st{font:400 11px/1 var(--mono);letter-spacing:.34em;vertical-align:8px;text-transform:uppercase;}
+  .brief s{color:#b9b3a9;text-decoration-thickness:1px;}
+  .brief .note{font-size:13px;color:#555;margin:10px 0 0;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;
+    border:1px solid var(--line);border-top:0;background:var(--white);padding:16px 22px;margin:0 0 6px;}
+  .legend section{font-size:12px;}
+  .legend h4{font:600 10px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;}
+  .sw{display:flex;gap:8px;}
+  .sw i{width:30px;height:30px;display:block;border:1px solid rgba(0,0,0,.12);}
+  .sw span{display:block;font:400 9px/1.3 var(--mono);color:var(--muted);margin-top:4px;text-align:center;}
+  .sw figure{margin:0;}
+  .fam{color:#444;}
+  .fam b{color:var(--ink);font-weight:600;}
+
+  /* ── group nav (sticky) ────────────────────────────────────── */
+  .gnav{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:6px;
+    background:var(--board);padding:14px 0;margin:26px 0 8px;border-bottom:1px solid var(--line);}
+  .gnav a{font:600 11px/1 var(--mono);letter-spacing:.06em;text-decoration:none;color:#555;
+    border:1px solid var(--line);background:var(--white);padding:8px 12px;}
+  .gnav a:hover{color:#000;border-color:#000;}
+  .group,.r2,.r3{scroll-margin-top:118px;}
+  @media (min-width:900px){.group,.r2,.r3{scroll-margin-top:76px;}}
+
+  /* ── group heading ─────────────────────────────────────────── */
+  .group{margin:46px 0 18px;}
+  .group .gtag{font:700 11px/1 var(--mono);letter-spacing:.2em;color:var(--coral);}
+  .group h2{font:700 22px/1.15 'Space Grotesk',sans-serif;letter-spacing:-.01em;margin:8px 0 4px;}
+  .group p{margin:0;color:#5a554e;font-size:13.5px;max-width:70ch;}
+
+  /* ── concept board ─────────────────────────────────────────── */
+  .board{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
+  @media (max-width:880px){.board{grid-template-columns:1fr;}.brief{grid-template-columns:1fr;}.brief>div+div{border-left:0;border-top:1px solid var(--line);}}
+
+  .concept{border:1px solid var(--line);background:var(--white);display:flex;flex-direction:column;}
+  .concept__head{display:flex;align-items:flex-start;gap:12px;padding:16px 18px 14px;border-bottom:1px solid var(--line);}
+  .concept__head .tag{font:700 12px/1 var(--mono);color:#c44;background:#fff;border:1px solid var(--line);padding:6px 8px;letter-spacing:.04em;}
+  .concept__head h3{font:700 17px/1.2 'Space Grotesk',sans-serif;margin:1px 0 2px;letter-spacing:-.01em;}
+  .concept__head .idea{margin:0;font-size:12.5px;color:#6a655d;}
+  .concept__head .grp{margin-left:auto;font:600 9px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:right;white-space:nowrap;}
+
+  .stages{display:grid;grid-template-columns:1fr;gap:0;}
+  .stage{display:flex;align-items:center;justify-content:center;padding:54px 28px;min-height:190px;position:relative;}
+  .stage--paper{--fg:var(--ink);--bg:var(--paper);background:
+      linear-gradient(0deg,rgba(0,0,0,0) 0,rgba(0,0,0,0) 100%),var(--paper);}
+  .stage--pearl{--fg:var(--ink);--bg:var(--pearl);background:var(--pearl);}
+  .stage--ink{--fg:var(--paper);--bg:var(--ink);background:var(--ink);}
+  .stage::after{content:attr(data-bg);position:absolute;top:8px;right:10px;
+    font:600 8px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--fg);opacity:.32;}
+  .stage--small{min-height:0;padding:18px;gap:26px;border-top:1px solid var(--line);}
+  .stage--small .lk{transform:scale(.46);transform-origin:center;}
+  .mini-wrap{display:flex;gap:24px;align-items:center;justify-content:center;border-top:1px solid var(--line);padding:16px;background:#faf8f4;}
+  .mini{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .mini .cap{font:600 8px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  .avatar{width:56px;height:56px;display:flex;align-items:center;justify-content:center;background:var(--ink);color:var(--paper);overflow:hidden;}
+  .avatar.lt{background:var(--paper);color:var(--ink);border:1px solid var(--line);}
+
+  .spec{margin:0;border-top:1px solid var(--line);background:#fbfaf6;}
+  .spec>div{display:grid;grid-template-columns:84px 1fr;gap:10px;padding:9px 18px;border-bottom:1px solid #efece4;}
+  .spec>div:last-child{border-bottom:0;}
+  .spec dt{font:600 9px/1.5 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0;}
+  .spec dd{margin:0;font-size:12.5px;color:#3f3b34;}
+  .spec code{font:400 11px/1 var(--mono);background:#efece4;padding:2px 5px;}
+
+  /* ════════════════════════════════════════════════════════════
+     LOGO LOCKUPS — each .lkNN renders a real comp.
+     All type uses var(--fg); coral is constant; bg-dependent
+     parts use var(--bg) so stages can invert.
+     ════════════════════════════════════════════════════════════ */
+
+  .lk{color:var(--fg);text-align:center;}
+
+  /* 01 Studio Grotesk */
+  .lk01 .w{font:700 40px/1 'Space Grotesk',sans-serif;letter-spacing:-.025em;}
+  .lk01 .sub{display:flex;align-items:center;gap:14px;margin-top:12px;}
+  .lk01 .sub .r{height:1px;flex:1;background:currentColor;opacity:.45;}
+  .lk01 .sub span:last-child{font:700 11px/1 'Space Mono',monospace;letter-spacing:.42em;}
+
+  /* 02 Soft Round */
+  .lk02 .w{font:700 44px/1 'Outfit',sans-serif;letter-spacing:.005em;}
+  .lk02 .w .o{color:var(--coral);font-style:normal;}
+  .lk02 .cap{font:500 11px/1 'Outfit',sans-serif;letter-spacing:.34em;text-transform:uppercase;color:var(--fg);opacity:.55;margin-top:14px;}
+
+  /* 03 Kiss-Cut sticker — physically a light sticker, stays light on any bg */
+  .lk03 .sticker{position:relative;background:var(--white);color:var(--ink);
+    border-radius:18px;padding:30px 40px 26px;box-shadow:0 14px 28px -16px rgba(0,0,0,.45);}
+  .lk03 .sticker::before{content:"";position:absolute;inset:7px;border:1.5px dashed rgba(0,0,0,.32);border-radius:13px;pointer-events:none;}
+  .lk03 .sticker .w{font:800 34px/1 'Archivo',sans-serif;letter-spacing:-.02em;}
+  .lk03 .sticker small{display:block;font:700 9px/1 'Space Mono',monospace;letter-spacing:.32em;color:#a8a29a;margin-top:9px;}
+
+  /* 04 By Hand */
+  .lk04 .row{display:flex;align-items:baseline;justify-content:center;gap:4px;}
+  .lk04 .ever{font:700 56px/1 'Caveat',cursive;}
+  .lk04 .story{font:500 30px/1 'Space Grotesk',sans-serif;letter-spacing:-.01em;}
+  .lk04 .ul{display:block;margin:2px auto 0;width:230px;height:14px;}
+  .lk04 .ul path{fill:none;stroke:var(--coral);stroke-width:3;stroke-linecap:round;}
+  .lk04 .cap{font:400 10px/1 'Space Mono',monospace;letter-spacing:.22em;text-transform:uppercase;color:var(--fg);opacity:.5;margin-top:12px;}
+
+  /* 05 Aperture */
+  .lk05{display:flex;align-items:center;gap:20px;}
+  .lk05 .ap{width:58px;height:58px;flex:none;}
+  .lk05 .ap .ring{fill:none;stroke:currentColor;stroke-width:3;}
+  .lk05 .ap .blade{fill:currentColor;}
+  .lk05 .ap .dot{fill:var(--coral);}
+  .lk05 .w{font:700 34px/1 'Space Grotesk',sans-serif;letter-spacing:-.02em;text-align:left;}
+  .lk05 .w small{display:block;font:700 9px/1 'Space Mono',monospace;letter-spacing:.4em;opacity:.55;margin-top:7px;}
+
+  /* 06 Display Heavy */
+  .lk06 .stack{font:400 56px/.82 'Archivo Black',sans-serif;letter-spacing:-.035em;text-align:left;}
+  .lk06 .stack span{display:block;}
+  .lk06 .barwrap{display:flex;align-items:flex-end;gap:14px;}
+  .lk06 .bar{width:64px;height:14px;background:var(--coral);margin-top:14px;}
+  .lk06 .cap{font:700 10px/1 'Space Mono',monospace;letter-spacing:.26em;color:var(--fg);opacity:.6;padding-bottom:2px;}
+
+  /* 07 Quiet Lowercase */
+  .lk07 .w{font:300 38px/1 'Jost',sans-serif;letter-spacing:.42em;text-indent:.42em;}
+  .lk07 .sub{font:400 15px/1 'Jost',sans-serif;letter-spacing:.18em;text-indent:.18em;color:var(--fg);opacity:.78;margin-top:11px;}
+  /* 07 NAV lockup — wireframe site header (everstory solo, no studio, Light kept) */
+  .lk07nav{display:inline-flex;align-items:baseline;gap:.62em;color:var(--fg);white-space:nowrap;}
+  .lk07nav .t{font:300 20px/1 'Jost',sans-serif;letter-spacing:.14em;text-indent:.14em;}
+  .lk07nav .s{font:400 10px/1 'Jost',sans-serif;letter-spacing:.3em;text-indent:.3em;opacity:.7;}
+  .navmock{width:100%;max-width:540px;}
+  .navmock .bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;padding:16px 20px;}
+  .navmock .rule{height:1px;background:currentColor;opacity:.2;}
+  .navmock nav,.navmock .ut{display:flex;gap:18px;font:400 13px/1 'Jost',sans-serif;color:var(--fg);opacity:.6;}
+  .navmock nav{justify-content:center;}
+  .navmock .ut{justify-self:end;}
+
+  /* 08 Monogram ES */
+  .lk08{display:flex;align-items:center;gap:18px;}
+  .lk08 .mono{width:66px;height:66px;flex:none;background:var(--fg);color:var(--bg);
+    display:flex;align-items:center;justify-content:center;border-radius:4px;position:relative;font:800 30px/1 'Unbounded',sans-serif;letter-spacing:-.02em;}
+  .lk08 .mono i{position:absolute;top:9px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--coral);}
+  .lk08 .w{text-align:left;font:800 25px/1 'Unbounded',sans-serif;letter-spacing:-.02em;}
+  .lk08 .w small{display:block;font:600 9px/1 'Space Mono',monospace;letter-spacing:.4em;opacity:.55;margin-top:8px;font-family:'Space Mono',monospace;}
+
+  /* 09 Stacked Sheets */
+  .lk09{display:flex;align-items:center;gap:20px;}
+  .lk09 .sh{width:54px;height:62px;flex:none;}
+  .lk09 .sh rect{fill:var(--bg);stroke:currentColor;stroke-width:2.4;}
+  .lk09 .sh .hrt{fill:var(--coral);stroke:none;}
+  .lk09 .w{text-align:left;font:700 32px/1 'Familjen Grotesk',sans-serif;letter-spacing:-.015em;}
+  .lk09 .w small{display:block;font:500 10px/1 'Space Mono',monospace;letter-spacing:.16em;opacity:.55;margin-top:8px;}
+
+  /* 10 Ever Loop */
+  .lk10 .row{display:flex;align-items:center;justify-content:center;gap:6px;}
+  .lk10 .t{font:800 40px/1 'Syne',sans-serif;letter-spacing:-.02em;}
+  .lk10 .inf{width:74px;height:42px;}
+  .lk10 .inf path{fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;}
+  .lk10 .inf path.c{stroke:var(--coral);}
+  .lk10 .cap{font:700 10px/1 'Space Mono',monospace;letter-spacing:.24em;text-transform:uppercase;opacity:.55;margin-top:14px;}
+
+  /* 11 Toronto Stamp */
+  .lk11 .badge{width:178px;height:178px;}
+  .lk11 .badge .o{fill:none;stroke:currentColor;}
+  .lk11 .badge .o.thin{stroke-width:1.5;}
+  .lk11 .badge .o.med{stroke-width:3;}
+  .lk11 .badge text{fill:currentColor;}
+  .lk11 .badge .arc{font:700 13px/1 'Space Grotesk',sans-serif;letter-spacing:.18em;}
+  .lk11 .badge .ctr{font:800 26px/1 'Space Grotesk',sans-serif;letter-spacing:-.02em;text-anchor:middle;}
+  .lk11 .badge .est{font:700 9px/1 'Space Mono',monospace;letter-spacing:.32em;text-anchor:middle;}
+  .lk11 .badge .star{fill:var(--coral);}
+
+  /* 12 Photo Strip */
+  .lk12 .strip{width:230px;height:62px;display:block;margin:0 auto;}
+  .lk12 .strip .body{fill:var(--fg);}
+  .lk12 .strip .hole{fill:var(--bg);}
+  .lk12 .strip .cell{fill:var(--bg);}
+  .lk12 .strip .cell.c{fill:var(--coral);}
+  .lk12 .w{font:700 26px/1 'Space Grotesk',sans-serif;letter-spacing:.04em;margin-top:16px;}
+
+  /* 13 Notch Cut */
+  .lk13 .box{position:relative;display:inline-block;padding:26px 40px;}
+  .lk13 .box .ol{position:absolute;inset:0;width:100%;height:100%;}
+  .lk13 .box .ol path{fill:none;stroke:currentColor;stroke-width:1.6;stroke-dasharray:5 5;opacity:.6;}
+  .lk13 .box .w{font:700 32px/1 'Archivo',sans-serif;letter-spacing:-.015em;}
+  .lk13 .box small{display:block;font:700 9px/1 'Space Mono',monospace;letter-spacing:.3em;opacity:.55;margin-top:8px;}
+
+  /* 14 Coral Heart (soft serif — deliberately low-contrast, NOT Didone) */
+  .lk14 .w{font:600 46px/1 'Fraunces',Georgia,serif;letter-spacing:-.005em;position:relative;display:inline-block;}
+  .lk14 .w .hrt{width:18px;height:18px;position:absolute;top:-2px;right:-22px;fill:var(--coral);}
+  .lk14 .cap{font:500 12px/1 'Fraunces',Georgia,serif;font-style:italic;letter-spacing:.04em;color:var(--fg);opacity:.6;margin-top:16px;}
+
+  /* ── footer / extend note ──────────────────────────────────── */
+  .ext{margin:54px 0 0;border:1px dashed var(--line);background:var(--white);padding:20px 24px;}
+  .ext h4{font:600 10px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;}
+  .ext p{margin:0 0 8px;font-size:13px;color:#4a4641;}
+  .ext pre{margin:10px 0 0;font:400 11px/1.6 var(--mono);background:#f3f1ea;border:1px solid var(--line);padding:14px 16px;overflow:auto;color:#444;}
+  footer.pg{margin-top:40px;font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+
+  /* ════════════════════════════════════════════════════════════
+     ROUND 2 — DEVELOPMENT  (voice locked → cut-device axis → SYS A + SYS B)
+     ════════════════════════════════════════════════════════════ */
+  .r2{margin:64px 0 0;border-top:3px solid var(--ink);padding-top:30px;}
+  .r2 .gtag{font:700 11px/1 var(--mono);letter-spacing:.2em;color:var(--coral);}
+  .r2 h2{font:700 26px/1.12 'Space Grotesk',sans-serif;letter-spacing:-.015em;margin:8px 0 6px;}
+  .r2>p{margin:0 0 4px;color:#4a463f;max-width:74ch;font-size:14px;}
+
+  /* axis rail */
+  .axes{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:26px 0 6px;}
+  @media (max-width:880px){.axes{grid-template-columns:1fr;}}
+  .axis{border:1px solid var(--line);background:var(--white);}
+  .axis h4{font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0;padding:13px 16px;border-bottom:1px solid var(--line);}
+  .duo{display:grid;grid-template-columns:1fr 1fr;}
+  .duo .sp{padding:26px 14px;display:flex;flex-direction:column;align-items:center;gap:14px;min-height:128px;justify-content:center;}
+  .duo .sp+.sp{border-left:1px dashed var(--line);}
+  .duo .lab{font:600 9px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#9a948b;}
+
+  /* system grid */
+  .sysgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:22px 0 0;}
+  @media (max-width:880px){.sysgrid{grid-template-columns:1fr;}}
+  .sys{border:1px solid var(--line);background:var(--white);display:flex;flex-direction:column;}
+  .sys.lead{border:2px solid var(--ink);}
+  .sys__h{display:flex;align-items:flex-start;gap:12px;padding:15px 18px 13px;border-bottom:1px solid var(--line);}
+  .sys__h .code{font:700 11px/1 var(--mono);color:#fff;background:var(--ink);padding:6px 8px;letter-spacing:.08em;}
+  .sys.lead .sys__h .code{background:var(--coral);color:#000;}
+  .sys__h h3{font:700 16px/1.2 'Space Grotesk',sans-serif;margin:1px 0 2px;letter-spacing:-.01em;}
+  .sys__h .idea{margin:0;font-size:12px;color:#6a655d;}
+  .sys__h .grp{margin-left:auto;font:600 9px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:right;white-space:nowrap;}
+
+  .sysext{display:flex;gap:0;border-top:1px solid var(--line);background:#faf8f4;}
+  .sysext .m{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 10px;}
+  .sysext .m+.m{border-left:1px solid var(--line);}
+  .sysext .cap{font:600 8px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+
+  /* in-context header mock */
+  .hdrmock{border-top:1px solid var(--line);}
+  .hdrmock .ann{background:var(--ink);color:#fff;font:600 8px/1 var(--mono);letter-spacing:.16em;text-align:center;padding:7px;text-transform:uppercase;}
+  .hdrmock .bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 18px;background:var(--paper);}
+  .hdrmock .bar nav{display:flex;gap:16px;justify-content:center;font:600 9px/1 var(--mono);letter-spacing:.12em;color:#7a756c;}
+  .hdrmock .bar .ut{display:flex;gap:9px;justify-self:end;color:#a8a29a;font-size:12px;}
+  .hdrmock .bar .lg{justify-self:start;}
+
+  .sysreco{margin:22px 0 0;border:1px solid var(--line);border-left:3px solid var(--coral);background:#fffdfb;padding:16px 20px;}
+  .sysreco h4{font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;}
+  .sysreco p{margin:0 0 7px;font-size:13px;color:#403c35;}
+  .sysreco b{color:var(--ink);}
+  .sysreco .k{font:700 11px/1 var(--mono);background:#000;color:#fff;padding:2px 6px;letter-spacing:.06em;}
+  .sysreco .k.c{background:var(--coral);color:#000;}
+
+  /* ── shared wordmark voices (parametric --wm) ───────────────── */
+  .wm{color:var(--fg);display:inline-flex;flex-direction:column;align-items:center;line-height:1;white-space:nowrap;}
+  .wm.caps .t{font:700 var(--wm,40px)/1 'Space Grotesk',sans-serif;letter-spacing:-.025em;}
+  .wm.caps .s{display:flex;align-items:center;gap:.32em;margin-top:.34em;width:100%;}
+  .wm.caps .s i{height:1px;flex:1;background:currentColor;opacity:.42;}
+  .wm.caps .s b{font:700 calc(var(--wm,40px)*.24)/1 'Space Mono',monospace;letter-spacing:.36em;}
+  .wm.low .t{font:300 var(--wm,32px)/1 'Jost',sans-serif;letter-spacing:.46em;text-indent:.46em;}
+  .wm.low .s{font:300 calc(var(--wm,32px)*.30)/1 'Jost',sans-serif;letter-spacing:.34em;text-transform:none;opacity:.5;margin-top:.62em;text-indent:.34em;}
+
+  /* ── shared die-cut devices ─────────────────────────────────── */
+  .dev{position:relative;display:inline-flex;align-items:center;justify-content:center;}
+  .dev.notch{padding:.7em 1.25em;}
+  .dev.notch .ol{position:absolute;inset:0;width:100%;height:100%;}
+  .dev.notch .ol path{fill:none;stroke:currentColor;stroke-width:1.5;stroke-dasharray:5 5;opacity:.6;}
+  .dev.sticker{--fg:#111;background:var(--white);border-radius:16px;padding:.72em 1.15em .64em;
+    box-shadow:0 14px 26px -16px rgba(0,0,0,.42);}
+  .dev.sticker::before{content:"";position:absolute;inset:5px;border:1.4px dashed rgba(0,0,0,.30);border-radius:11px;pointer-events:none;}
+
+  /* ── system icons / favicons (fixed 54px) ───────────────────── */
+  .ic{position:relative;width:54px;height:54px;flex:none;}
+  .ic svg{position:absolute;inset:0;width:100%;height:100%;}
+  .ic .gl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font:700 22px/1 'Space Grotesk',sans-serif;color:var(--fg);}
+  .ic.low .gl{font:300 22px/1 'Jost',sans-serif;}
+  .ic.stick{background:var(--white);border-radius:11px;box-shadow:0 8px 16px -10px rgba(0,0,0,.4);}
+  .ic.stick .gl{color:#111;}
+  .ic.stick .edge{position:absolute;inset:4px;border:1.3px dashed rgba(0,0,0,.3);border-radius:8px;}
+  .ic.notchic path{fill:none;stroke:var(--fg);stroke-width:2;stroke-dasharray:4 4;}
+
+  /* cut-signature element */
+  .cutsig{width:120px;height:26px;}
+  .cutsig line{stroke:currentColor;stroke-width:1.6;stroke-dasharray:5 5;opacity:.6;}
+  .cutsig .tk{stroke:var(--coral);stroke-width:2.4;stroke-dasharray:none;opacity:1;}
+
+  /* ════════════════════════════════════════════════════════════
+     ROUND 3 — DEVELOPED FROM REVIEW
+     design-review feedback + locked-token compliance
+     ════════════════════════════════════════════════════════════ */
+  .r3{margin:56px 0 0;border-top:3px solid var(--ink);padding-top:30px;}
+  .r3 .gtag{font:700 11px/1 var(--mono);letter-spacing:.2em;color:var(--coral);}
+  .r3 h2{font:700 26px/1.12 'Space Grotesk',sans-serif;letter-spacing:-.015em;margin:8px 0 6px;}
+  .r3>p{margin:0 0 4px;color:#4a463f;max-width:76ch;font-size:14px;}
+  .r3>p .tok{font:600 11px/1 var(--mono);background:#fff;border:1px solid var(--line);padding:1px 5px;}
+
+  .devblock{border:1px solid var(--line);background:var(--white);margin:22px 0 0;}
+  .devblock.lead{border:2px solid var(--ink);}
+  .devblock .dh{display:flex;align-items:flex-start;gap:12px;padding:15px 18px 13px;border-bottom:1px solid var(--line);}
+  .devblock .dh .code{font:700 11px/1 var(--mono);color:#fff;background:var(--ink);padding:6px 8px;letter-spacing:.06em;}
+  .devblock.lead .dh .code{background:var(--coral);color:#000;}
+  .devblock .dh h3{font:700 16px/1.2 'Space Grotesk',sans-serif;margin:1px 0 3px;letter-spacing:-.01em;}
+  .devblock .dh .sub{margin:0;font-size:12px;color:#6a655d;}
+  .devblock .dh .score{margin-left:auto;font:700 12px/1.4 var(--mono);color:#7a756c;text-align:right;white-space:nowrap;}
+  .devblock .dh .score b{color:var(--coral-ink);}
+
+  .step{border-top:1px solid var(--line);}
+  .step .lbl{display:flex;gap:8px;align-items:baseline;font:600 9px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:13px 18px 0;}
+  .step .lbl em{font-style:normal;color:#b6b0a6;letter-spacing:.06em;text-transform:none;font-size:11px;}
+  .vrow{display:flex;flex-wrap:wrap;}
+  .v{flex:1;min-width:220px;display:flex;flex-direction:column;align-items:center;gap:12px;padding:30px 18px;border-left:1px dashed var(--line);}
+  .v:first-child{border-left:0;}
+  .v .t2{font:600 9px/1.45 var(--mono);letter-spacing:.075em;text-transform:uppercase;color:#8f8981;text-align:center;max-width:32ch;}
+  .v.pick{background:#fffdfb;}
+  .v.pick .t2{color:var(--coral-ink);}
+  .v.rej{opacity:.66;}
+  .v.dark{background:var(--ink);--fg:var(--paper);--bg:var(--ink);}
+  .v.pearl{background:var(--pearl);}
+  .note3{font-size:12.5px;color:#4f4a43;padding:13px 18px;border-top:1px solid #efece4;background:#fbfaf6;}
+  .note3 b{color:var(--ink);}
+  .note3 .x{color:#b23a3a;font-weight:700;}
+  .note3 .ok{color:#2e7d5b;font-weight:700;}
+  @media (max-width:720px){
+    .devblock .dh{flex-wrap:wrap;align-items:center;}
+    .devblock .dh .score{margin-left:0;width:100%;text-align:left;}
+    .step .lbl{flex-wrap:wrap;gap:6px 8px;line-height:1.4;padding-bottom:10px;}
+    .step .lbl em{flex-basis:100%;line-height:1.45;letter-spacing:.03em;}
+    .v{min-width:260px;border-left:0;border-top:1px dashed var(--line);}
+    .v:first-child{border-top:0;}
+    .cutline-demo{max-width:100%;}
+  }
+
+  /* cutline rhythm: web-default vs designed kiss-cut */
+  .dev.notch .ol.cut-css path{stroke-dasharray:5 5;stroke-width:1.5;opacity:.55;}
+  .dev.notch .ol.cut-fin path{stroke-dasharray:9 3.5;stroke-width:1.25;opacity:.92;stroke-linecap:butt;}
+  .cutline-demo{width:260px;height:30px;max-width:100%;}
+  .cutline-demo line{stroke:currentColor;}
+  .cutline-demo .a{stroke-dasharray:5 5;stroke-width:1.5;opacity:.55;}
+  .cutline-demo .b{stroke-dasharray:9 3.5;stroke-width:1.25;opacity:.95;}
+  .cutline-demo .reg{stroke:var(--coral);stroke-width:2;stroke-dasharray:none;}
+
+  /* SYS A compressed wordmark stand-in (for custom-drawn) */
+  .wm.caps.cmp .t{display:inline-block;transform:scaleX(.93);transform-origin:center;letter-spacing:-.045em;}
+
+  /* SYS A notch-DNA favicon */
+  .icbig{width:64px;height:64px;position:relative;flex:none;}
+  .icbig svg{position:absolute;inset:0;width:100%;height:100%;}
+  .icbig svg path{fill:none;stroke:var(--fg);stroke-width:2.4;stroke-dasharray:7 3;}
+  .icbig .gl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font:700 30px/1 'Space Grotesk',sans-serif;color:var(--fg);padding-right:6px;}
+  .icbig.solid svg path{fill:var(--fg);stroke:none;}
+  .icbig.solid .gl{color:var(--bg);}
+
+  /* SYS B — token-compliant sticker (no shadow, sharp radius) */
+  .dev.sticker.flat{box-shadow:none;border-radius:3px;background:var(--white);}
+  .dev.sticker.flat::before{inset:7px;border:1.1px solid rgba(0,0,0,.55);border-radius:0;border-style:dashed;}
+  .dev.sticker.before{box-shadow:0 12px 24px -16px rgba(0,0,0,.4);}
+  .dev.sticker.campaign{transform:rotate(-1deg);}
+
+  /* ════════════════════════════════════════════════════════════
+     ROUND 4 — SYS A · LOGO SPEC (decision locked: scalable commerce)
+     ════════════════════════════════════════════════════════════ */
+  .r4{margin:56px 0 0;border-top:3px solid var(--ink);padding-top:30px;}
+  .r4 .gtag{font:700 11px/1 var(--mono);letter-spacing:.2em;color:var(--coral-ink);}
+  .r4 h2{font:700 26px/1.12 'Space Grotesk',sans-serif;letter-spacing:-.015em;margin:8px 0 6px;}
+  .r4>p{margin:0 0 4px;color:#4a463f;max-width:80ch;font-size:14px;}
+  .r4 .lock{display:inline-block;font:700 9px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#fff;background:var(--ink);padding:3px 7px;}
+  .specrow{border:1px solid var(--line);background:var(--white);margin:20px 0 0;}
+  .specrow.lead{border:2px solid var(--ink);}
+  .specrow .sh{display:flex;gap:10px;align-items:baseline;padding:13px 17px;border-bottom:1px solid var(--line);}
+  .specrow .sh .n{font:700 11px/1 var(--mono);color:#fff;background:var(--ink);padding:5px 7px;letter-spacing:.04em;}
+  .specrow .sh h3{font:700 15px/1.2 'Space Grotesk',sans-serif;margin:0;letter-spacing:-.01em;}
+  .specrow .sh .tag{margin-left:auto;font:600 9px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:right;}
+  .specvis{display:flex;align-items:center;justify-content:center;gap:36px;flex-wrap:wrap;padding:38px 20px;background:var(--paper);border-bottom:1px solid var(--line);}
+  .specvis.ink{background:var(--ink);--fg:var(--paper);--bg:var(--ink);}
+  .specvis.pearl{background:var(--pearl);}
+  .specvis .cap{font:600 8px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:12px;text-align:center;}
+  .specvis .unit{display:flex;flex-direction:column;align-items:center;}
+  .gridtbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .gridtbl th,.gridtbl td{text-align:left;padding:10px 17px;border-bottom:1px solid #efece4;vertical-align:top;}
+  .gridtbl th{font:600 9px/1.5 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);width:26%;}
+  .gridtbl td{color:#3f3b34;}
+  .gridtbl td b{color:var(--ink);}
+  .gridtbl tr:last-child th,.gridtbl tr:last-child td{border-bottom:0;}
+  .gridtbl code{font:600 11px/1.5 var(--mono);background:#efece4;padding:2px 5px;}
+  .drawmark{font:800 clamp(38px,7vw,60px)/1 'Archivo',sans-serif;letter-spacing:-.02em;color:var(--fg);transform:scaleX(.93);transform-origin:center;display:inline-block;}
+  .drawmark .hot{color:var(--coral-ink);}
+  .dontlist{display:flex;flex-wrap:wrap;gap:8px;padding:15px 17px;}
+  .dontlist span{font:600 11px/1.35 var(--mono);color:#b23a3a;border:1px solid #e3c9c6;background:#fdf6f5;padding:6px 10px;}
+  .nextbox{margin:22px 0 0;border:1px solid var(--line);border-left:3px solid var(--coral-ink);background:#fffdfb;padding:16px 20px;}
+  .nextbox h4{font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 9px;}
+  .nextbox p{margin:0 0 7px;font-size:13px;color:#403c35;}
+  .nextbox b{color:var(--ink);}
+  .nextbox code{font:600 11px/1 var(--mono);background:#efece4;padding:2px 5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ═══════════════ MASTHEAD / BRIEF ═══════════════ -->
+  <header class="masthead">
+    <div class="eyebrow">Everstory · Brand Exploration · Logo Concepts</div>
+    <h1>Primary system pushed beyond the luxury wordmark</h1>
+    <p class="lede">A working board of logo comps for <b>Everstory</b> — the Toronto studio that hand-traces photographs into A5 die-cut sticker sheets. The current identity leans editorial-luxury (a Didone wordmark). This set deliberately leaves that lane and explores friendlier, more modern, and more product-true territory while keeping the locked name, palette, and tagline.</p>
+
+    <div class="brief">
+      <div>
+        <h4>What we're moving away from</h4>
+        <div class="away"><b>EVERSTORY</b> <span class="st">STUDIO</span></div>
+        <p class="note"><s>High-contrast Didone serif · fashion-magazine luxury · thin stem / thick bowl.</s> Beautiful but generic in the "premium serif" lane, and cold for a pet/kid/family memory product.</p>
+      </div>
+      <div>
+        <h4>What stays locked</h4>
+        <p class="note" style="margin-top:0;">
+          <b>Name</b> EVERSTORY (+ STUDIO subscript)<br>
+          <b>Palette</b> ink / matte-white / pearl / coral accent only<br>
+          <b>Tagline</b> MADE TO KEEP · MOMENTS THAT MATTER<br>
+          <b>Truth</b> hand-traced · die-cut · made in Toronto
+        </p>
+      </div>
+    </div>
+
+    <div class="legend">
+      <section>
+        <h4>Palette — locked 5 (+1 derived)</h4>
+        <div class="sw">
+          <figure><i style="background:#000"></i><span>ink</span></figure>
+          <figure><i style="background:#FEFDFE"></i><span>matte</span></figure>
+          <figure><i style="background:#E0D3CB"></i><span>pearl</span></figure>
+          <figure><i style="background:#FFFFFF"></i><span>white</span></figure>
+          <figure><i style="background:#FBAAA8"></i><span>coral</span></figure>
+          <figure><i style="background:#B45E5C;outline:1px dashed #b6b0a6;outline-offset:2px"></i><span>coral·ink</span></figure>
+        </div>
+        <p style="margin:9px 0 0;font:400 10px/1.45 var(--mono);color:var(--muted);max-width:34ch;"><b>coral·ink</b> #B45E5C — derived from coral for tiny-text a11y only. Not a brand surface; the print 5-lock is unchanged.</p>
+      </section>
+      <section>
+        <h4>Type used in comps</h4>
+        <p class="fam" style="margin:0;max-width:46ch;">
+          <b>Space Grotesk</b> · <b>Archivo / Black</b> · <b>Outfit</b> · <b>Fraunces</b> · <b>Syne</b> · <b>Unbounded</b> · <b>Caveat</b> · <b>Familjen Grotesk</b> · <b>Jost</b> · <b>Space Mono</b><br>
+          <span style="color:var(--muted);font-size:11px;">Web stand-ins for exploration — final wordmark would be drawn/outlined, not font-dependent.</span>
+        </p>
+      </section>
+    </div>
+  </header>
+
+  <!-- ═══════════════ GROUP NAV ═══════════════ -->
+  <nav class="gnav">
+    <a href="#gA">A · Modern &amp; Utilitarian</a>
+    <a href="#gC">C · Product-True</a>
+    <a href="#round2">Round 2 · Systems</a>
+    <a href="#round3">Round 3 · Development</a>
+    <a href="#round4">Round 4 · SYS A Spec</a>
+  </nav>
+
+  <!-- ═══════════════ GROUP A ═══════════════ -->
+  <section class="group" id="gA">
+    <div class="gtag">GROUP A</div>
+    <h2>Modern &amp; Utilitarian</h2>
+    <p>Confident, contemporary, type-led. Reads as a design studio rather than a luxury house — clean grotesks and display weights, no serif nostalgia.</p>
+  </section>
+  <div class="board">
+
+    <!-- 01 -->
+    <article class="concept" id="c01">
+      <div class="concept__head">
+        <span class="tag">01</span>
+        <div><h3>Studio Grotesk</h3><p class="idea">Tight grotesk wordmark, mono "STUDIO" on a hairline.</p></div>
+        <span class="grp">Modern</span>
+      </div>
+      <div class="stages">
+        <div class="stage stage--paper" data-bg="matte">
+          <div class="lk lk01"><div class="w">EVERSTORY</div><div class="sub"><span class="r"></span><span>STUDIO</span></div></div>
+        </div>
+        <div class="stage stage--ink" data-bg="ink">
+          <div class="lk lk01"><div class="w">EVERSTORY</div><div class="sub"><span class="r"></span><span>STUDIO</span></div></div>
+        </div>
+      </div>
+      <dl class="spec">
+        <div><dt>Type</dt><dd>Space Grotesk 700 + Space Mono 700</dd></div>
+        <div><dt>Why</dt><dd>Swiss/utilitarian — the safest modern replacement; keeps the studio descriptor without serif baggage.</dd></div>
+        <div><dt>Use</dt><dd>Header lockup, invoices, anywhere the old wordmark sat. Strong default.</dd></div>
+      </dl>
+    </article>
+
+    <!-- 07 -->
+    <article class="concept" id="c07">
+      <div class="concept__head">
+        <span class="tag">07</span>
+        <div><h3>Quiet Lowercase</h3><p class="idea">Quiet lowercase wordmark + whisper "studio" — no tagline.</p></div>
+        <span class="grp">Modern</span>
+      </div>
+      <div class="stages">
+        <div class="stage stage--paper" data-bg="matte">
+          <div class="lk lk07"><div class="w">everstory</div><div class="sub">studio</div></div>
+        </div>
+        <div class="stage stage--ink" data-bg="ink">
+          <div class="lk lk07"><div class="w">everstory</div><div class="sub">studio</div></div>
+        </div>
+      </div>
+      <dl class="spec">
+        <div><dt>Type</dt><dd>Jost 300, letter-spacing 0.5em</dd></div>
+        <div><dt>Why</dt><dd>Boutique-calm without luxury serif. The restraint reads premium but warmer/quieter.</dd></div>
+        <div><dt>Use</dt><dd>Minimal header, packaging seal. Fails at very small sizes (tracking collapses).</dd></div>
+        <div><dt>Conflict</dt><dd>Structure fixed — <b>everstory + quiet studio</b>, tagline removed (a tagline isn't part of a logo; full business name recovered). Voice is still <b>Jost 300 (Light)</b>, which breaks the locked <b>"Bold only · no Light"</b> rule, so this is <b>not</b> a CI candidate vs SYS A — it survives only as the nav wordmark (<a href="#nav07" style="color:var(--coral-ink);text-decoration:underline">07 · Nav Lockup</a>).</dd></div>
+      </dl>
+    </article>
+
+  </div>
+
+  <!-- ═══════════════ GROUP C ═══════════════ -->
+  <section class="group" id="gC">
+    <div class="gtag">GROUP C</div>
+    <h2>Product-True</h2>
+    <p>The logo carries a cue from the actual product: a kiss-cut sticker, stacked A5 sheets, a photo strip, a lens. Most ownable; risk is being too literal.</p>
+  </section>
+  <div class="board">
+
+    <!-- 03 -->
+    <article class="concept" id="c03">
+      <div class="concept__head">
+        <span class="tag">03</span>
+        <div><h3>Kiss-Cut</h3><p class="idea">The wordmark <em>is</em> a die-cut sticker, peeling.</p></div>
+        <span class="grp">Product</span>
+      </div>
+      <div class="stages">
+        <div class="stage stage--ink" data-bg="ink">
+          <div class="lk lk03"><div class="sticker"><span class="w">EVERSTORY</span><small>STUDIO · BY HAND</small></div></div>
+        </div>
+        <div class="stage stage--pearl" data-bg="pearl">
+          <div class="lk lk03"><div class="sticker"><span class="w">EVERSTORY</span><small>STUDIO · BY HAND</small></div></div>
+        </div>
+      </div>
+      <dl class="spec">
+        <div><dt>Type</dt><dd>Archivo 800 on a real sticker shape</dd></div>
+        <div><dt>Why</dt><dd>Most on-brand idea in the set — the logo demonstrates the product. Stays a light sticker on any bg (true to life).</dd></div>
+        <div><dt>Use</dt><dd>Hero, packaging, the physical sticker itself. Use the flat (peel-off) variant for tiny header.</dd></div>
+      </dl>
+    </article>
+
+    <!-- 13 -->
+    <article class="concept" id="c13">
+      <div class="concept__head">
+        <span class="tag">13</span>
+        <div><h3>Notch Cut</h3><p class="idea">Type-only die-cut: dashed cutline, clipped corner.</p></div>
+        <span class="grp">Product</span>
+      </div>
+      <div class="stages">
+        <div class="stage stage--paper" data-bg="matte">
+          <div class="lk lk13"><div class="box"><svg class="ol" viewBox="0 0 260 110" preserveAspectRatio="none" aria-hidden="true"><path d="M6 6 H226 L254 34 V104 H6 Z"/></svg><div class="w">EVERSTORY</div><small>STUDIO · BY HAND</small></div></div>
+        </div>
+        <div class="stage stage--ink" data-bg="ink">
+          <div class="lk lk13"><div class="box"><svg class="ol" viewBox="0 0 260 110" preserveAspectRatio="none" aria-hidden="true"><path d="M6 6 H226 L254 34 V104 H6 Z"/></svg><div class="w">EVERSTORY</div><small>STUDIO · BY HAND</small></div></div>
+        </div>
+      </div>
+      <dl class="spec">
+        <div><dt>Type</dt><dd>Archivo 700 in a notched dashed frame</dd></div>
+        <div><dt>Why</dt><dd>Same die-cut idea as 03 but minimal and scalable — the dashed cutline is the brand signature.</dd></div>
+        <div><dt>Use</dt><dd>Header, stamp, watermark. Scales down better than the peeling sticker.</dd></div>
+      </dl>
+    </article>
+
+  </div>
+
+  <!-- ═══════════════ ROUND 2 · DEVELOPMENT ═══════════════ -->
+  <section class="r2" id="round2">
+    <div class="gtag">ROUND 2 · DEVELOPMENT</div>
+    <h2>Wordmark voice locked → cut-device axis → SYS A + SYS B</h2>
+    <p>The <b>wordmark voice</b> is locked to <b>01 · structured caps</b> for the CI; the quiet lowercase <b>07</b> is retained only as the nav wordmark (<a href="#nav07" style="color:var(--coral-ink);text-decoration:underline">07 · Nav Lockup</a>). That leaves a single open decision — the <b>die-cut signature</b>: <b>03</b> (expressive peel sticker) vs <b>13</b> (minimal dashed kiss-cut). On the locked caps wordmark these give two working systems — <b>SYS A</b> (01×13) and <b>SYS B</b> (01×03) — judged below as real mini-systems: wordmark + cut device + favicon + in-context header + inverse.</p>
+
+    <div class="axes">
+      <div class="axis">
+        <h4>Axis 1 — Wordmark voice <span style="font:600 9px/1 var(--mono);color:var(--coral);letter-spacing:.1em">→ 01 LOCKED</span></h4>
+        <div class="duo">
+          <div class="sp"><span class="lab">01 · structured caps</span><div class="wm caps" style="--wm:30px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div></div>
+          <div class="sp"><span class="lab">07 · quiet lowercase</span><div class="wm low"><span class="t">everstory</span><span class="s">studio</span></div></div>
+        </div>
+      </div>
+      <div class="axis">
+        <h4>Axis 2 — Die-cut signature</h4>
+        <div class="duo">
+          <div class="sp"><span class="lab">03 · peel sticker</span><div class="dev sticker"><span style="font:800 22px/1 'Archivo',sans-serif">EVERSTORY</span></div></div>
+          <div class="sp"><span class="lab">13 · notch + cutline</span><div class="dev notch"><svg class="ol" viewBox="0 0 220 80" preserveAspectRatio="none" aria-hidden="true"><path d="M6 6 H188 L214 30 V74 H6 Z"/></svg><span style="font:700 20px/1 'Archivo',sans-serif">EVERSTORY</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sysgrid">
+
+      <!-- SYS A : 01 × 13 -->
+      <article class="sys lead" id="sysA">
+        <div class="sys__h">
+          <span class="code">SYS A</span>
+          <div><h3>Structured × Notch <span style="font:600 9px/1 var(--mono);color:var(--coral);letter-spacing:.1em">01×13</span></h3><p class="idea">Caps grotesk inside the dashed kiss-cut frame.</p></div>
+          <span class="grp">scales best</span>
+        </div>
+        <div class="stage stage--paper" data-bg="primary">
+          <div class="dev notch"><svg class="ol" viewBox="0 0 320 110" preserveAspectRatio="none" aria-hidden="true"><path d="M7 7 H280 L313 38 V103 H7 Z"/></svg><div class="wm caps" style="--wm:30px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO · BY HAND</b></span></div></div>
+        </div>
+        <div class="stage stage--ink" data-bg="inverse">
+          <div class="dev notch"><svg class="ol" viewBox="0 0 320 110" preserveAspectRatio="none" aria-hidden="true"><path d="M7 7 H280 L313 38 V103 H7 Z"/></svg><div class="wm caps" style="--wm:30px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO · BY HAND</b></span></div></div>
+        </div>
+        <div class="sysext">
+          <div class="m"><div class="ic notchic"><svg viewBox="0 0 54 54" aria-hidden="true"><path d="M3 3 H39 L51 15 V51 H3 Z"/></svg><span class="gl">E</span></div><span class="cap">favicon</span></div>
+          <div class="m"><div class="dev notch"><svg class="ol" viewBox="0 0 220 70" preserveAspectRatio="none" aria-hidden="true"><path d="M5 5 H190 L215 26 V65 H5 Z"/></svg><div class="wm caps" style="--wm:16px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div></div><span class="cap">header size</span></div>
+          <div class="m"><svg class="cutsig" viewBox="0 0 120 26" aria-hidden="true"><line x1="4" y1="13" x2="116" y2="13"/><line class="tk" x1="92" y1="6" x2="108" y2="20"/></svg><span class="cap">cut mark</span></div>
+        </div>
+        <div class="hdrmock">
+          <div class="ann">MADE TO KEEP · FREE ONTARIO SHIPPING</div>
+          <div class="bar">
+            <div class="lg"><div class="dev notch"><svg class="ol" viewBox="0 0 200 64" preserveAspectRatio="none" aria-hidden="true"><path d="M4 4 H172 L196 24 V60 H4 Z"/></svg><div class="wm caps" style="--wm:15px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div></div></div>
+            <nav><span>SHOP</span><span>ABOUT</span><span>FAQ</span></nav>
+            <div class="ut">⌕ ☺ ⌂</div>
+          </div>
+        </div>
+        <dl class="spec">
+          <div><dt>Strength</dt><dd>The dashed cutline is an ownable signature that survives at favicon size and in one colour. Modern, not luxury.</dd></div>
+          <div><dt>Watch</dt><dd>Notch can read "ticket/coupon" if the corner cut is too deep — keep it shallow.</dd></div>
+          <div><dt>Lead use</dt><dd>Primary identity everywhere: header, invoice, sheet footer, favicon.</dd></div>
+        </dl>
+      </article>
+
+      <!-- SYS B : 01 × 03 -->
+      <article class="sys" id="sysB">
+        <div class="sys__h">
+          <span class="code">SYS B</span>
+          <div><h3>Structured × Sticker <span style="font:600 9px/1 var(--mono);color:var(--coral);letter-spacing:.1em">01×03</span></h3><p class="idea">Caps grotesk on the real peel-off sticker.</p></div>
+          <span class="grp">retail hero</span>
+        </div>
+        <div class="stage stage--ink" data-bg="on dark">
+          <div class="dev sticker"><div class="wm caps" style="--wm:28px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO · BY HAND</b></span></div></div>
+        </div>
+        <div class="stage stage--pearl" data-bg="on pearl">
+          <div class="dev sticker"><div class="wm caps" style="--wm:28px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO · BY HAND</b></span></div></div>
+        </div>
+        <div class="sysext">
+          <div class="m"><div class="ic stick"><span class="edge"></span><span class="gl">E</span></div><span class="cap">favicon</span></div>
+          <div class="m"><div class="dev sticker"><div class="wm caps" style="--wm:15px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div></div><span class="cap">header size</span></div>
+          <div class="m"><div class="wm caps" style="--wm:18px;color:var(--ink)"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div><span class="cap">flat fallback</span></div>
+        </div>
+        <div class="hdrmock">
+          <div class="ann">MADE TO KEEP · FREE ONTARIO SHIPPING</div>
+          <div class="bar">
+            <div class="lg"><div class="dev sticker" style="padding:.5em .8em .42em"><div class="wm caps" style="--wm:13px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div></div></div>
+            <nav><span>SHOP</span><span>ABOUT</span><span>FAQ</span></nav>
+            <div class="ut">⌕ ☺ ⌂</div>
+          </div>
+        </div>
+        <dl class="spec">
+          <div><dt>Strength</dt><dd>The logo demonstrates the product — strongest on packaging, hero, the physical sticker backing.</dd></div>
+          <div><dt>Watch</dt><dd>Shadow + peel don't survive small/mono; needs the flat fallback for header & favicon. Two-asset system.</dd></div>
+          <div><dt>Lead use</dt><dd>Packaging, hero, unboxing. Pair with SYS A flat mark for UI.</dd></div>
+        </dl>
+      </article>
+
+    </div>
+
+    <div class="sysreco">
+      <h4>Designer read — how to narrow from here</h4>
+      <p><span class="k c">SYS A</span> <b>Lead.</b> 01×13 is the only one that holds up everywhere — favicon, one-colour, header, sheet footer. The dashed cutline becomes the brand's signature device, modern and unmistakably non-luxury. Take this to finals.</p>
+      <p><span class="k">SYS B</span> <b>Keep as partner.</b> 01×03 is the packaging/hero hero, but it's a two-asset system (needs SYS A's flat mark for small UI). Develop alongside A, not instead of it.</p>
+      <p><b>→ Recommended next step: develop SYS&nbsp;A to finals (logo grid, clear-space, sizes, one-colour, KissCut spot version), with SYS&nbsp;B as the packaging variant.</b></p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ ROUND 3 · DEVELOPED FROM REVIEW ═══════════════ -->
+  <section class="r3" id="round3">
+    <div class="gtag">ROUND 3 · DEVELOPED FROM REVIEW</div>
+    <h2>Pushed toward target — feedback applied, tokens enforced</h2>
+    <p>The design review is applied here. Where earlier feedback framed something as taste, the locked tokens make it mandatory: <span class="tok">shadow: none</span> and <span class="tok">radius ≤ 4px</span> (SYS B). Each block shows the <b>move</b>, not just a prettier result — the goal is one repeatable, memorable device, not decoration.</p>
+
+    <!-- ═══ SYS A ═══ -->
+    <div class="devblock lead">
+      <div class="dh">
+        <span class="code">SYS A</span>
+        <div><h3>Structured × Notch — developed</h3><p class="sub">Lock the notch + dashed cutline as the brand's own cut, not "a nice frame".</p></div>
+        <div class="score">8.3 → <b>9.0</b></div>
+      </div>
+
+      <div class="step">
+        <div class="lbl">1 · Notch depth <em>— test shallow / current / deeper; recommend ~12% shallower</em></div>
+        <div class="vrow">
+          <div class="v rej">
+            <div class="dev notch" style="padding:.85em 1.4em"><svg class="ol" viewBox="0 0 320 110" preserveAspectRatio="none" aria-hidden="true"><path d="M7 7 H250 L313 62 V103 H7 Z"/></svg><div class="wm caps" style="--wm:24px"><span class="t">EVERSTORY</span></div></div>
+            <div class="t2">deeper — reads coupon / ticket ✗</div>
+          </div>
+          <div class="v">
+            <div class="dev notch" style="padding:.85em 1.4em"><svg class="ol" viewBox="0 0 320 110" preserveAspectRatio="none" aria-hidden="true"><path d="M7 7 H280 L313 38 V103 H7 Z"/></svg><div class="wm caps" style="--wm:24px"><span class="t">EVERSTORY</span></div></div>
+            <div class="t2">current (8.3)</div>
+          </div>
+          <div class="v pick">
+            <div class="dev notch" style="padding:.85em 1.4em"><svg class="ol" viewBox="0 0 320 110" preserveAspectRatio="none" aria-hidden="true"><path d="M7 7 H291 L313 29 V103 H7 Z"/></svg><div class="wm caps" style="--wm:24px"><span class="t">EVERSTORY</span></div></div>
+            <div class="t2">recommended −12% — confident, not coupon ✓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="lbl">2 · Cutline rhythm <em>— stop the CSS-default dash; design the kiss-cut</em></div>
+        <div class="vrow">
+          <div class="v">
+            <svg class="cutline-demo" viewBox="0 0 260 30" aria-hidden="true"><line class="a" x1="6" y1="15" x2="254" y2="15"/></svg>
+            <div class="dev notch" style="padding:.7em 1.2em"><svg class="ol cut-css" viewBox="0 0 300 96" preserveAspectRatio="none" aria-hidden="true"><path d="M6 6 H264 L294 32 V90 H6 Z"/></svg><div class="wm caps" style="--wm:17px"><span class="t">EVERSTORY</span></div></div>
+            <div class="t2">web default · dash 5·5 — feels like CSS ✗</div>
+          </div>
+          <div class="v pick">
+            <svg class="cutline-demo" viewBox="0 0 260 30" aria-hidden="true"><line class="b" x1="6" y1="15" x2="254" y2="15"/><line class="reg" x1="210" y1="8" x2="210" y2="22"/></svg>
+            <div class="dev notch" style="padding:.7em 1.2em"><svg class="ol cut-fin" viewBox="0 0 300 96" preserveAspectRatio="none" aria-hidden="true"><path d="M6 6 H264 L294 32 V90 H6 Z"/></svg><div class="wm caps" style="--wm:17px"><span class="t">EVERSTORY</span></div></div>
+            <div class="t2">designed dash 9·3.5 + coral registration tick — reads as a real cut ✓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="lbl">3 · Primary vs Small lockup <em>— STUDIO · BY HAND breaks first; split it</em></div>
+        <div class="vrow">
+          <div class="v">
+            <div class="dev notch" style="padding:.9em 1.5em"><svg class="ol cut-fin" viewBox="0 0 320 110" preserveAspectRatio="none" aria-hidden="true"><path d="M7 7 H291 L313 29 V103 H7 Z"/></svg><div class="wm caps" style="--wm:26px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO · BY HAND</b></span></div></div>
+            <div class="t2">PRIMARY — full descriptor, ≥ 220px wide</div>
+          </div>
+          <div class="v">
+            <div class="dev notch" style="padding:.5em .8em"><svg class="ol cut-fin" viewBox="0 0 220 60" preserveAspectRatio="none" aria-hidden="true"><path d="M4 4 H198 L216 20 V56 H4 Z"/></svg><div class="wm caps" style="--wm:13px"><span class="t">EVERSTORY</span></div></div>
+            <div class="t2">SMALL — wordmark only, descriptor dropped &lt; 22px</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="lbl">4 · Favicon <em>— the cut shape is the memory, not the letter</em></div>
+        <div class="vrow">
+          <div class="v rej">
+            <div class="ic notchic"><svg viewBox="0 0 54 54" aria-hidden="true"><path d="M3 3 H39 L51 15 V51 H3 Z"/></svg><span class="gl">E</span></div>
+            <div class="t2">before — mild notch, E carries it ✗</div>
+          </div>
+          <div class="v pick">
+            <div class="icbig"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M4 4 H40 L60 24 V60 H4 Z"/></svg><span class="gl">E</span></div>
+            <div class="t2">developed — aggressive cut, shape is recognised ✓</div>
+          </div>
+          <div class="v dark pick">
+            <div class="icbig solid"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M4 4 H40 L60 24 V60 H4 Z"/></svg><span class="gl">E</span></div>
+            <div class="t2">solid / inverse</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="lbl">5 · Refined lockup <em>— recommended notch + designed cutline + compressed wordmark</em></div>
+        <div class="vrow">
+          <div class="v">
+            <div class="dev notch" style="padding:1em 1.6em"><svg class="ol cut-fin" viewBox="0 0 340 116" preserveAspectRatio="none" aria-hidden="true"><path d="M8 8 H308 L332 30 V108 H8 Z"/></svg><div class="wm caps cmp" style="--wm:30px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO · BY HAND</b></span></div></div>
+            <div class="t2">paper</div>
+          </div>
+          <div class="v dark">
+            <div class="dev notch" style="padding:1em 1.6em"><svg class="ol cut-fin" viewBox="0 0 340 116" preserveAspectRatio="none" aria-hidden="true"><path d="M8 8 H308 L332 30 V108 H8 Z"/></svg><div class="wm caps cmp" style="--wm:30px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO · BY HAND</b></span></div></div>
+            <div class="t2">ink</div>
+          </div>
+        </div>
+        <div class="note3"><b class="ok">Lands ~9.0</b> if the cut device is frozen (notch geometry + dash rhythm as a spec) and the wordmark is custom-drawn, not font. Compression here is a <b>stand-in</b> for drawn glyphs — late step, after the device is locked. Residual risk (coupon read) is resolved by the −12% depth.</div>
+      </div>
+    </div>
+
+    <!-- ═══ SYS B ═══ -->
+    <div class="devblock">
+      <div class="dh">
+        <span class="code">SYS B</span>
+        <div><h3>Structured × Sticker — developed</h3><p class="sub">Token compliance first, then demote the peel to a campaign device.</p></div>
+        <div class="score">7.6 → <b>8.4</b></div>
+      </div>
+
+      <div class="step">
+        <div class="lbl">1 · Shadow + radius <em>— not taste: tokens.json forbids both</em></div>
+        <div class="vrow">
+          <div class="v pearl rej">
+            <div class="dev sticker before" style="--wm:24px"><div class="wm caps" style="--wm:22px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div></div>
+            <div class="t2">before — drop-shadow, radius 16, peel <span style="color:#b23a3a">✗ violates shadow:none + radius≤4</span></div>
+          </div>
+          <div class="v pick">
+            <div class="dev sticker flat"><div class="wm caps" style="--wm:22px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div></div>
+            <div class="t2">after — no shadow, radius 3, crisp white margin + dashed cutline ✓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="lbl">2 · Role split <em>— share SYS A's wordmark; peel becomes packaging-only</em></div>
+        <div class="vrow">
+          <div class="v">
+            <div class="dev sticker flat"><div class="wm caps cmp" style="--wm:22px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO · BY HAND</b></span></div></div>
+            <div class="t2">MAIN — flat, same wordmark rule as SYS A</div>
+          </div>
+          <div class="v pearl">
+            <div class="dev sticker flat campaign"><div class="wm caps cmp" style="--wm:22px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div></div>
+            <div class="t2">CAMPAIGN VARIANT — peel kept, packaging &amp; unboxing only</div>
+          </div>
+        </div>
+        <div class="note3"><b class="ok">Lands 8.4</b> as SYS A's hero / packaging partner. Now one system: shared wordmark, token-clean main, peel scoped to emotional touchpoints. Not a standalone main logo — and that's the point.</div>
+      </div>
+    </div>
+
+    <div class="sysreco">
+      <h4>Where each landed — recommendation unchanged, now evidenced</h4>
+      <p><span class="k c">SYS A</span> <b>Main CI.</b> Token-clean, cut device defined as a spec (depth −12%, dash 9·3.5 + coral reg), primary/small split, notch-DNA favicon. <b>~9.0 reachable</b> once glyphs are drawn.</p>
+      <p><span class="k">SYS B</span> <b>Packaging partner.</b> Shadow/radius fixed (token compliance), shares A's wordmark, peel demoted to campaign. <b>8.4</b> — hero &amp; unboxing only.</p>
+      <p><b>→ Decision: SYS A (main) + SYS B (packaging) is the system.</b></p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ ROUND 4 · SYS A LOGO SPEC ═══════════════ -->
+  <section class="r4" id="round4">
+    <div class="gtag">ROUND 4 · SYS A — LOGO SPEC</div>
+    <h2>SYS A locked — the device as a manual, not a vibe</h2>
+    <p>Positioning decided: Everstory is a <b>scalable commerce brand</b> (store · app · favicon · sheet footer · packaging), so <b>SYS A · Structured × Notch</b> is the main CI. SYS B = packaging partner. This round freezes the ownable device as <b>numbers</b> and briefs the one task that actually moves it past ~8.8 — drawing the wordmark. <span class="lock">Decision locked</span></p>
+
+    <!-- SPEC 1 -->
+    <div class="specrow lead">
+      <div class="sh"><span class="n">SPEC 1</span><h3>The locked device</h3><span class="tag">notch + kiss-cut + coral tick</span></div>
+      <div class="specvis">
+        <div class="unit">
+          <div class="dev notch" style="padding:1em 1.6em"><svg class="ol cut-fin" viewBox="0 0 340 116" preserveAspectRatio="none" aria-hidden="true"><path d="M8 8 H308 L332 30 V108 H8 Z"/></svg><div class="wm caps cmp" style="--wm:30px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO · BY HAND</b></span></div></div>
+          <div class="cap">canonical primary lockup — this SVG path IS the spec</div>
+        </div>
+      </div>
+      <table class="gridtbl">
+        <tr><th>Notch geometry</th><td>Corner cut begins at <b>~92% of width</b> along the top edge, diagonal down to <b>~22% of height</b> on the right edge. Sharp — <b>corner radius 0</b>. (The −12% "recommended" depth from ROUND 3; deeper reads coupon/ticket.) Canonical source = the path <code>M8 8 H308 L332 30 V108 H8 Z</code> on a <code>340×116</code> box.</td></tr>
+        <tr><th>Kiss-cut line</th><td><code>stroke-dasharray: 9 3.5</code> · <code>stroke-width: 1.25</code> · <code>linecap: butt</code> · opacity .92. Designed rhythm — not a CSS default. Stroke uses the lockup ink (adapts on inverse).</td></tr>
+        <tr><th>Coral tick</th><td>One short registration tick at the inner notch corner, <b>coral #FBAAA8</b> — the <b>only</b> colour break in the mark. Optional; drops cleanly in 1-colour.</td></tr>
+        <tr><th>Production tie</th><td>The dashed line maps to the real <b>CutContour</b> spot (M100 · SPOT, Summa D75). The logo's signature = the actual kiss-cut, so it must reproduce as a single spot path — no gradient, no raster.</td></tr>
+      </table>
+    </div>
+
+    <!-- SPEC 2 -->
+    <div class="specrow">
+      <div class="sh"><span class="n">SPEC 2</span><h3>Lockup set &amp; minimum sizes</h3><span class="tag">primary / small / favicon</span></div>
+      <div class="specvis">
+        <div class="unit">
+          <div class="dev notch" style="padding:.9em 1.5em"><svg class="ol cut-fin" viewBox="0 0 320 110" preserveAspectRatio="none" aria-hidden="true"><path d="M7 7 H291 L313 29 V103 H7 Z"/></svg><div class="wm caps cmp" style="--wm:24px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO · BY HAND</b></span></div></div>
+          <div class="cap">PRIMARY · ≥ 220px wide</div>
+        </div>
+        <div class="unit">
+          <div class="dev notch" style="padding:.55em .9em"><svg class="ol cut-fin" viewBox="0 0 220 60" preserveAspectRatio="none" aria-hidden="true"><path d="M4 4 H198 L216 20 V56 H4 Z"/></svg><div class="wm caps cmp" style="--wm:14px"><span class="t">EVERSTORY</span></div></div>
+          <div class="cap">SMALL · 90–220px · descriptor dropped</div>
+        </div>
+        <div class="unit">
+          <div class="icbig"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M4 4 H40 L60 24 V60 H4 Z"/></svg><span class="gl">E</span></div>
+          <div class="cap">FAVICON · 16–64px · notch-DNA</div>
+        </div>
+      </div>
+      <table class="gridtbl">
+        <tr><th>Primary</th><td><b>EVERSTORY + STUDIO · BY HAND</b> in the notch. Use ≥ 220px wide / descriptor ≥ ~9px rendered.</td></tr>
+        <tr><th>Small</th><td><b>EVERSTORY only</b>, descriptor removed. Rule: drop STUDIO · BY HAND whenever it would render below ~9px (≈ lockup under 220px). Never let the descriptor go illegible "to keep it".</td></tr>
+        <tr><th>Favicon / avatar</th><td>The <b>notch shape carries it</b>, not the letter — exaggerated corner cut + E. Works to 16px. This is the asset the old wordmark never had.</td></tr>
+      </table>
+    </div>
+
+    <!-- SPEC 3 -->
+    <div class="specrow">
+      <div class="sh"><span class="n">SPEC 3</span><h3>Colour &amp; clear-space</h3><span class="tag">locked 5 · 1-colour spot</span></div>
+      <div class="specvis"><div class="unit"><div class="dev notch" style="padding:.8em 1.3em"><svg class="ol cut-fin" viewBox="0 0 300 96" preserveAspectRatio="none" aria-hidden="true"><path d="M6 6 H264 L294 30 V90 H6 Z"/></svg><div class="wm caps cmp" style="--wm:20px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div></div><div class="cap">ink on matte</div></div></div>
+      <div class="specvis ink"><div class="unit"><div class="dev notch" style="padding:.8em 1.3em"><svg class="ol cut-fin" viewBox="0 0 300 96" preserveAspectRatio="none" aria-hidden="true"><path d="M6 6 H264 L294 30 V90 H6 Z"/></svg><div class="wm caps cmp" style="--wm:20px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div></div><div class="cap" style="color:#9a948b">paper on ink</div></div></div>
+      <div class="specvis pearl"><div class="unit"><div class="dev notch" style="padding:.8em 1.3em"><svg class="ol cut-fin" viewBox="0 0 300 96" preserveAspectRatio="none" aria-hidden="true"><path d="M6 6 H264 L294 30 V90 H6 Z"/></svg><div class="wm caps cmp" style="--wm:20px"><span class="t">EVERSTORY</span><span class="s"><i></i><b>STUDIO</b></span></div></div><div class="cap">on pearl (story / About)</div></div></div>
+      <table class="gridtbl">
+        <tr><th>Colour</th><td>Ink <code>#000</code> on matte / paper <code>#FEFDFE</code> on ink / on pearl <code>#E0D3CB</code>. No new colours — coral tick is the single accent and is the first thing to drop in 1-colour.</td></tr>
+        <tr><th>1-colour spot</th><td>Must hold as pure ink OR pure paper with the dashed cut intact (production parity with CutContour). Test this before the wordmark is drawn.</td></tr>
+        <tr><th>Clear-space</th><td>Minimum clear-space on all four sides = <b>the notch cut size</b> (the diagonal's bounding square). Relational, scales with the mark.</td></tr>
+      </table>
+    </div>
+
+    <!-- SPEC 4 -->
+    <div class="specrow lead">
+      <div class="sh"><span class="n">SPEC 4</span><h3>Wordmark drawing brief — the one open task</h3><span class="tag">font → drawn</span></div>
+      <div class="specvis">
+        <div class="unit">
+          <div class="drawmark"><span class="hot">E</span>V<span>E</span><span class="hot">R</span><span class="hot">S</span>TO<span class="hot">R</span><span class="hot">Y</span></div>
+          <div class="cap">Space Grotesk = STAND-IN · coral = letters needing correction</div>
+        </div>
+      </div>
+      <table class="gridtbl">
+        <tr><th>Why</th><td>Everything above (SPEC 1–3) is <b>frozen</b>. The only thing capping SYS A at ~8.8 is that the wordmark is still a font. Six independent reviews said the same: <b>draw it</b>.</td></tr>
+        <tr><th>Corrections</th><td><b>E / R / S / Y</b> — even optical widths (the font's R and S are slightly narrow vs E). Flat / cut terminals to rhyme with the die-cut device. Lock the <b>−7% horizontal compression</b> as drawn outlines (not CSS <code>scaleX</code>). Optical kerning on <code>ER · ST · RY</code>.</td></tr>
+        <tr><th>Output</th><td>Illustrator → outline → <code>assets/wordmark.svg</code> (font-independent, per <code>brand.md</code>). Two locked artboards: primary lockup + small (wordmark-only). Notch + cut = a separate locked SVG component.</td></tr>
+        <tr><th>Then</th><td>Re-spec the favicon from the <i>drawn</i> E (not the font E). After that SYS A is a finished CI — ~9.0+, and the board's job is done.</td></tr>
+      </table>
+    </div>
+
+    <!-- DON'TS -->
+    <div class="specrow">
+      <div class="sh"><span class="n">DON'T</span><h3>Guardrails (locked)</h3><span class="tag">misuse = regression</span></div>
+      <div class="dontlist">
+        <span>✗ no hairline flourish (luxury/cosmetic regression)</span>
+        <span>✗ no Light/Regular weight (tokens: Bold only)</span>
+        <span>✗ no deeper notch (reads coupon/ticket)</span>
+        <span>✗ no recolouring the cut line off-palette</span>
+        <span>✗ no horizontal stretch / condense in CSS</span>
+        <span>✗ no drop-shadow on the mark (tokens: shadow none)</span>
+        <span>✗ never let STUDIO · BY HAND go illegible "to keep it"</span>
+      </div>
+    </div>
+
+    <div class="nextbox">
+      <h4>Next action — board work is complete for the decision</h4>
+      <p><b>1 ·</b> Hand SPEC 1 + SPEC 4 to type drawing: outline EVERSTORY with the listed corrections → <code>assets/wordmark.svg</code>; build the notch+cut as a separate locked SVG.</p>
+      <p><b>2 ·</b> Validate the kiss-cut against one real <b>CutContour</b> sample on the Summa D75 before signing off (screen ≠ cut).</p>
+      <p><b>3 ·</b> Drop the drawn wordmark back into this board's SYS A blocks to replace the Space-Grotesk stand-in, then re-rank — that is the only remaining score lever.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ EXTEND ═══════════════ -->
+  <!-- ═══════════════ 07 · NAV LOCKUP ═══════════════ -->
+  <section class="r4" id="nav07">
+    <div class="gtag">07 · NAV LOCKUP — WIREFRAME SITE HEADER</div>
+    <h2>07 quiet lowercase, nav-scaled — full name kept, geometry changed</h2>
+    <p>The A-tuned 07 in <code>logo_concepts.html:172–173</code> is the <b>display lockup</b> (hero / footer / packaging): <code>everstory</code> 38px over a stacked <code>studio</code>. The site nav is a single-row, height-/width-constrained slot — a <i>stacked</i> descriptor there collapses to ~7–8px. The fix is <b>not</b> to drop <code>studio</code>: the business name is <b>everstory studio</b> and per <code>brand.md</code> STUDIO is a permanent wordmark subscript (<code>display.subscript</code>), not a tagline. Nav keeps the full name — only the <b>geometry</b> changes: display = stacked, <b>nav = inline</b>. Same name, two lockups. <span class="lock">07 = nav wordmark</span></p>
+    <p style="color:#8a6d3b">Honest note: ROUND 4 locked <b>SYS A</b> as the main CI. Using 07 in the site nav is a deployment decision recorded here for the nav slot specifically — it does <b>not</b> re-open the main-CI question.</p>
+
+    <div class="specrow lead">
+      <div class="sh"><span class="n">NAV</span><h3>The nav lockup</h3><span class="tag">everstory studio · inline</span></div>
+      <div class="specvis">
+        <div class="unit">
+          <div class="navmock"><div class="bar"><div class="lk07nav"><span class="t">everstory</span><span class="s">studio</span></div><nav><span>Shop</span><span>About</span><span>FAQ</span></nav><div class="ut"><span>⌕</span><span>☺</span><span>🛒</span></div></div><div class="rule"></div></div>
+          <div class="cap">in context — mirrors wireframes/_shared.css .header-bar</div>
+        </div>
+      </div>
+      <div class="specvis ink">
+        <div class="unit">
+          <div class="navmock"><div class="bar"><div class="lk07nav"><span class="t">everstory</span><span class="s">studio</span></div><nav><span>Shop</span><span>About</span><span>FAQ</span></nav><div class="ut"><span>⌕</span><span>☺</span><span>🛒</span></div></div><div class="rule"></div></div>
+          <div class="cap" style="color:#9a948b">inverse — paper on ink</div>
+        </div>
+      </div>
+      <table class="gridtbl">
+        <tr><th>Wordmark</th><td><b>everstory studio</b> — the full business name, <b>always present</b>. Per <code>brand.md</code> STUDIO is a defined wordmark element (Titular Bold · <code>display.subscript</code>), <b>not</b> a droppable tagline (tagline is a separate slot). 07's own brief also says "full business name recovered". Nav keeps it; only geometry changes vs display (stacked → inline).</td></tr>
+        <tr><th>Correction</th><td>An earlier nav draft dropped <code>studio</code> — that wrongly applied a favicon-grade "drop the descriptor" rule to a slot that is <b>not</b> favicon-tiny. Descriptor-drop is reserved for genuinely small marks (favicon / lockup &lt; ~120px), mirroring SYS&nbsp;A's "drop below ~9px" rule — never the site header.</td></tr>
+        <tr><th>Type</th><td><code>everstory</code> Jost <b>300</b> (Light) — 07 identity, <b>not</b> bolded (bolding it just rebuilds the rejected bold-quiet variant). <code>studio</code> Jost <b>400</b> small — the same hairline-survival bump used for the display lockup's studio, still not Bold.</td></tr>
+        <tr><th>Size</th><td><code>everstory</code> ≈ <b>20px</b>; <code>studio</code> ≈ <b>10px</b> (≈ 0.5×). brand.md's display ratio (~0.2 — 7–9pt vs 36–42pt) would render <code>studio</code> ~4px illegible at nav scale, so the constrained context legitimately raises the subscript ratio. Studio floor ~9px; below that → drawn SVG, never shrink the live font.</td></tr>
+        <tr><th>Tracking</th><td><code>everstory</code> <b>.14em</b> (tight — at nav scale wide tracking destroys word-shape). <code>studio</code> <b>.30em</b> — deliberately wider, mirroring brand.md's <code>display.subscript</code> +200; inline, a wide-tracked small label reads as an intentional subscript, not shrunk text.</td></tr>
+        <tr><th>Ink</th><td><code>everstory</code> full <code>var(--fg)</code>. <code>studio</code> opacity <b>.70</b> — secondary in hierarchy but present. Small/secondary is the brand's design intent; <b>absent</b> was the bug. No fade on the primary word.</td></tr>
+        <tr><th>Wireframe map</th><td>Replaces the placeholder <code>&lt;div class="ph ph--logo"&gt;EVERSTORY&lt;/div&gt;</code> in <code>wireframes/_shared.css</code> <code>.header-bar</code> (grid <code>1fr auto 1fr</code>). Port these exact values to <code>.ph--logo</code> when wiring — spec only here.</td></tr>
+      </table>
+    </div>
+
+    <div class="nextbox">
+      <h4>Next action — spec only; wiring is separate</h4>
+      <p><b>1 ·</b> This block defines the nav lockup. The live wireframe header still shows the <code>ph--logo</code> placeholder — not yet replaced.</p>
+      <p><b>2 ·</b> To wire: port <code>.lk07nav</code> (<code>.t</code> + <code>.s</code>) into <code>wireframes/_shared.css</code> <code>.ph--logo</code> and swap the placeholder for <code>everstory studio</code> markup.</p>
+      <p><b>3 ·</b> When SYS&nbsp;A's wordmark is drawn (SPEC&nbsp;4), the nav lockup consumes the drawn <code>assets/wordmark.svg</code> at this scale — the font here carries the same stand-in caveat.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 07 × CUT TREATMENTS · EXPLORATION ═══════════════ -->
+  <section class="r4" id="cut07">
+    <style>
+      .dev.diecut{--fg:#111;background:var(--white);border-radius:999px;padding:.9em 1.9em;}
+      .dev.diecut .ol{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
+      .dev.diecut .ol rect{fill:none;stroke:currentColor;stroke-width:1.25;stroke-dasharray:9 3.5;stroke-linecap:butt;opacity:.92;}
+      .dev.diecut .ol .reg{stroke:var(--coral);stroke-width:2.4;stroke-dasharray:none;opacity:1;}
+      /* kiss-cut, image-matched: rounded + soft shadow, no dashed cutline, balanced padding (scoped to #cut07 — Round 2/3 sticker comps untouched) */
+      #cut07 .dev.sticker.ks{border-radius:18px;padding:1.5em 2em;}
+      #cut07 .dev.sticker.ks::before{display:none;}
+      #cut07 .wm.low .s{font-size:calc(var(--wm,32px)*.44);margin-top:.58em;letter-spacing:.32em;opacity:.55;}
+    </style>
+    <div class="gtag">07 × CUT TREATMENTS — EXPLORATION</div>
+    <h2>07 quiet lowercase as the product — kiss-cut card vs die-cut contour</h2>
+    <p>Requested: see <b>07 &ldquo;Quiet Lowercase&rdquo;</b> in the <b>kiss-cut</b> sticker — rendered to the supplied reference: a soft <b>rounded card</b> (radius&nbsp;18) + gentle drop-shadow + crisp white margin, no dashed cutline. <span class="x">Note:</span> that softer treatment is deliberately <b>off the locked tokens</b> (<code>shadow:none · radius&nbsp;≤4</code>) — see step&nbsp;1. Also shown as a <b>die-cut</b> (contour cut to the wordmark) using the locked cutline rhythm (<code>dash 9 3.5 · 1.25 · butt</code>) + <b>CutContour</b> production tie.</p>
+    <p style="color:#8a6d3b">Honest note: 07 is <code>Jost 300 (Light)</code> + wide tracking — it breaks the locked <b>Bold-only</b> rule, which is exactly why 07 is the <b>nav wordmark, not the CI</b>. This is a product/packaging <i>what-if</i> for the quiet voice; it does <b>not</b> re-open the SYS&nbsp;A main-CI decision (still locked).</p>
+
+    <div class="devblock">
+      <div class="dh">
+        <span class="code">07×CUT</span>
+        <div><h3>The quiet name, physically cut</h3><p class="sub">kiss-cut = rectangular card · die-cut = contour hugs the name</p></div>
+        <div class="score">explore</div>
+      </div>
+
+      <div class="step">
+        <div class="lbl">1 · Kiss-cut <em>— 07 in the rounded soft-shadow card (image-matched · off-token)</em></div>
+        <div class="vrow">
+          <div class="v">
+            <div class="dev sticker ks"><div class="wm low" style="--wm:26px"><span class="t">everstory</span><span class="s">studio</span></div></div>
+            <div class="t2">matte — rounded 18 · soft shadow · crisp white margin (image-matched)</div>
+          </div>
+          <div class="v dark">
+            <div class="dev sticker ks"><div class="wm low" style="--wm:26px"><span class="t">everstory</span><span class="s">studio</span></div></div>
+            <div class="t2">on ink — sticker stays physically light (true to life)</div>
+          </div>
+          <div class="v pearl">
+            <div class="dev sticker ks"><div class="wm low" style="--wm:26px"><span class="t">everstory</span><span class="s">studio</span></div></div>
+            <div class="t2">on pearl — story / packaging context</div>
+          </div>
+        </div>
+        <div class="note3">Rendered to the supplied reference: soft rounded card + gentle shadow, no dashed cutline — the airy 07 line now breathes inside it (reads calm, premium-soft). <span class="x">⚠ Off the locked tokens:</span> <code>border-radius 18 + drop-shadow</code> is exactly what ROUND&nbsp;3 &ldquo;before&rdquo; was <b>rejected</b> for (<code>tokens.json: shadow:none · radius ≤4</code>). Kept here as an explicit <b>expressive option</b> pending a call — resolve as either (a) an <b>off-token packaging/campaign</b> variant (scoped, like SYS&nbsp;B&rsquo;s campaign peel) or (b) pulled to <b>token-safe</b> (radius ≤4, shadow none). Not &ldquo;token-clean&rdquo; as-is.</div>
+      </div>
+
+      <div class="step">
+        <div class="lbl">2 · Die-cut <em>— contour cut to the wordmark + crisp white margin</em></div>
+        <div class="vrow">
+          <div class="v">
+            <div class="dev diecut"><svg class="ol" viewBox="0 0 360 104" preserveAspectRatio="none" aria-hidden="true"><rect x="3" y="3" width="354" height="98" rx="49"/><line class="reg" x1="312" y1="14" x2="312" y2="34"/></svg><div class="wm low" style="--wm:26px"><span class="t">everstory</span><span class="s">studio</span></div></div>
+            <div class="t2">matte — stadium contour · coral registration tick</div>
+          </div>
+          <div class="v dark">
+            <div class="dev diecut"><svg class="ol" viewBox="0 0 360 104" preserveAspectRatio="none" aria-hidden="true"><rect x="3" y="3" width="354" height="98" rx="49"/><line class="reg" x1="312" y1="14" x2="312" y2="34"/></svg><div class="wm low" style="--wm:26px"><span class="t">everstory</span><span class="s">studio</span></div></div>
+            <div class="t2">on ink — peel-able name object, light on any bg</div>
+          </div>
+          <div class="v pearl">
+            <div class="dev diecut"><svg class="ol" viewBox="0 0 360 104" preserveAspectRatio="none" aria-hidden="true"><rect x="3" y="3" width="354" height="98" rx="49"/><line class="reg" x1="312" y1="14" x2="312" y2="34"/></svg><div class="wm low" style="--wm:26px"><span class="t">everstory</span><span class="s">studio</span></div></div>
+            <div class="t2">on pearl — hero / unboxing</div>
+          </div>
+        </div>
+        <div class="note3"><b class="ok">Stronger fit for 07.</b> The stadium contour <b>echoes the wordmark&rsquo;s own horizontal flow</b> instead of fighting it — calmer, object-like, literally the product (a peel-able name). Crisp white margin = the real sticker padding (<code>#FFFFFF</code>). <span class="x">Constraints:</span> needs a min size (hairlines + contour go fragile small); contour must reproduce as a <b>single CutContour spot</b> (M100 · Summa D75), same rule as SYS A; the Bold-only caveat above still stands.</div>
+      </div>
+
+      <div class="step">
+        <div class="lbl">3 · Small-size survival <em>— due diligence: render the fragile case, don&rsquo;t hide it</em></div>
+        <div class="vrow">
+          <div class="v rej">
+            <div class="dev sticker ks"><div class="wm low" style="--wm:13px"><span class="t">everstory</span><span class="s">studio</span></div></div>
+            <div class="t2">kiss-cut @ ~13px — Jost 300 hairlines thin, studio near-illegible</div>
+          </div>
+          <div class="v rej">
+            <div class="dev diecut" style="padding:.7em 1.3em"><svg class="ol" viewBox="0 0 240 64" preserveAspectRatio="none" aria-hidden="true"><rect x="2" y="2" width="236" height="60" rx="30"/></svg><div class="wm low" style="--wm:13px"><span class="t">everstory</span><span class="s">studio</span></div></div>
+            <div class="t2">die-cut @ ~13px — contour holds shape better, type still fragile</div>
+          </div>
+        </div>
+        <div class="note3">Both want a size floor. Die-cut keeps a readable <b>silhouette</b> longer (the contour carries identity even when the type softens); the kiss-cut card has no contour, so once the Jost 300 type softens nothing else carries it. Neither replaces the drawn SYS&nbsp;A mark for tiny/favicon — consistent with the locked &ldquo;drop descriptor &lt; ~9px&rdquo; rule.</div>
+      </div>
+    </div>
+
+    <div class="sysreco">
+      <h4>Read — exploration, not a re-decision</h4>
+      <p><span class="k c">Die-cut</span> <b>Stronger for 07&rsquo;s voice.</b> Contour echoes the wordmark, reads as a physical peel-able name — the product, told quietly. Use: hero / unboxing / packaging in the 07 (quiet) register.</p>
+      <p><span class="k">Kiss-cut</span> <b>Soft &amp; premium — but off-token.</b> The rounded soft-shadow card (image-matched) cradles 07&rsquo;s airy line and reads warm/premium, yet <code>radius 18 + shadow</code> breaks the locked tokens. Viable only as a scoped packaging/campaign variant, or dialed back to radius ≤4 / no shadow. Open call (see step 1).</p>
+      <p><b>→ Both sit under locked SYS A.</b> 07 stays the nav/quiet wordmark; this shows how the quiet name behaves if cut. Decision deferred — say which to develop (or both, scoped: die-cut = object, kiss-cut = label).</p>
+    </div>
+  </section>
+
+  <section class="ext">
+    <h4>How to add the next concept</h4>
+    <p>One file, append-only. Drop a new <code>&lt;article class="concept"&gt;</code> into the relevant <code>&lt;div class="board"&gt;</code> (or open a new group), add a matching <code>.lkNN</code> block in the stylesheet, and bump the tag number. Paper + ink stages are duplicated on purpose so each can be tuned independently.</p>
+    <pre>&lt;article class="concept" id="cNN"&gt;
+  &lt;div class="concept__head"&gt;
+    &lt;span class="tag"&gt;NN&lt;/span&gt;
+    &lt;div&gt;&lt;h3&gt;Name&lt;/h3&gt;&lt;p class="idea"&gt;one-line idea&lt;/p&gt;&lt;/div&gt;
+    &lt;span class="grp"&gt;Group&lt;/span&gt;
+  &lt;/div&gt;
+  &lt;div class="stages"&gt;
+    &lt;div class="stage stage--paper" data-bg="matte"&gt;&lt;div class="lk lkNN"&gt;…&lt;/div&gt;&lt;/div&gt;
+    &lt;div class="stage stage--ink"   data-bg="ink"&gt;&lt;div class="lk lkNN"&gt;…&lt;/div&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;dl class="spec"&gt;
+    &lt;div&gt;&lt;dt&gt;Type&lt;/dt&gt;&lt;dd&gt;…&lt;/dd&gt;&lt;/div&gt;
+    &lt;div&gt;&lt;dt&gt;Why&lt;/dt&gt;&lt;dd&gt;…&lt;/dd&gt;&lt;/div&gt;
+    &lt;div&gt;&lt;dt&gt;Use&lt;/dt&gt;&lt;dd&gt;…&lt;/dd&gt;&lt;/div&gt;
+  &lt;/dl&gt;
+&lt;/article&gt;</pre>
+  </section>
+
+  <footer class="pg">Everstory · logo_concepts.html · SYS A locked (main CI) · round 4 spec · v4 · descriptor → STUDIO · BY HAND (was · TORONTO) · peel CSS removed · +07×cut explore · 2026-05-17</footer>
+
+</div>
+</body>
+</html>
