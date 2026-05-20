@@ -13,7 +13,7 @@ Shopify 상품 등록과 PDP description copy의 기준 문서다. 현재 launch
 | Variant option 1 | Size | Material |
 | Variant option 2 | Material | 없음 |
 | Variant option 3 | Photos to include | 없음 |
-| Price | 1 photo = $15.99 CAD, each added photo +$3 CAD | Mini $24.99 CAD, Full $32.99 CAD |
+| Price | 1 photo = $15.99 CAD, each added photo +$3 CAD | Mini $24.99 CAD, Full $34.99 CAD |
 | Upload | Easify multi-file, matched to `Photos to include` | Easify tier upload: Big / Medium / Small |
 | Fulfillment | Made-to-order, auto fulfill off | Made-to-order, auto fulfill off |
 | Sales channels | Online Store only for MVP | Online Store only for MVP |
@@ -150,7 +150,7 @@ Small gift sets, one child or pet with a few moods, and customers who want Evers
 
 **Title**: `Package Full`
 **Tags**: `package-full`, `curated-package`, `a5`, `made-to-order`, `three-sheet`
-**Price**: `$32.99 CAD`
+**Price**: `$34.99 CAD`
 
 ### Description
 

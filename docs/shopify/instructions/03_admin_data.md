@@ -57,7 +57,7 @@ Create these two products with Material as the only Shopify variant option.
 | Product | Handle | Price | Weight | Tags |
 |---------|--------|-------|--------|------|
 | Package Mini | `package-mini` | $24.99 CAD | 100 g | `package-mini`, `curated-package`, `a5`, `made-to-order`, `two-sheet` |
-| Package Full | `package-full` | $32.99 CAD | 150 g | `package-full`, `curated-package`, `a5`, `made-to-order`, `three-sheet` |
+| Package Full | `package-full` | $34.99 CAD | 150 g | `package-full`, `curated-package`, `a5`, `made-to-order`, `three-sheet` |
 
 Variant option:
 

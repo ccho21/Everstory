@@ -11,8 +11,10 @@
 - [ ] EMS ≥600매 합산수입(라벨+라미) 실측 — 현 300매 ≈ C$0.35–0.37/매
 - [ ] 월 예상 물량 확정 — `business.md` 22건 목표 vs Cost Model 100/300/600 시나리오 정합
 - [ ] 기타 OPEX 실항목 정리 — 이메일·회계·폰트·스토리지 등 (→ `business.md` Cost Model §3)
-- [ ] (후속·선택) Sample Pack 개념 정의·리서치 — 런칭 프로모는 first-order 20% 로 결정(`products.md`). 별도 샘플 SKU 는 추후 탐색: 무엇을 파는지 불명확(재질/라미 질감 체험? 커스텀 없음?), 학습 필요
+- [ ] (후속·선택) Sample Pack 개념 정의·리서치 — 별도 샘플 SKU 는 추후 탐색: 무엇을 파는지 불명확(재질/라미 질감 체험? 커스텀 없음?), 학습 필요
 - [ ] (후속·선택) loss-leader SKU 가격 산정 — Sample/Starter/번들 도입 시 `business.md` Cost Model 원가 + `products.md` 가드레일로 확정
+- [ ] (후속·선택) White Waterproof Material 추가 여부 — 현 4종(White Matte / Translucent / Silver / Gold) 외 추가 도입 시 `products.md` Material 운영 기준 갱신
+- [ ] (후속·선택) Extra prints 5+ 묶음 할인 도입 — first-50 conversion 데이터 보고 결정 (현 SOT: 일률 $7/장)
 - [ ] 라미네이션 워크플로우 — 모든 SKU 에 라미네이션 들어감, `CLAUDE.md` 반영 필요
 - [ ] 패키징 사양 확정 (클리어 슬리브 / backing board 포함 여부·구성) — photography.md #9·패키징 컷, PDP "What's included" 이미지의 선행조건
 - [ ] 로고 / 브랜드 비주얼 정체성
@@ -31,6 +33,8 @@
 - [ ] 칼선 default 1mm 유지 vs 0.5mm 변경 검토 — mockup 은 0.5mm 출력
 - [ ] body 142×175 (v2) 결정 근거 정리 — 왜 v1 의 148×195 에서 줄었는지
 - [ ] header_right TextFrame 분리 (v2) 결정 근거 정리
+- [ ] Sheet Bonus 코드 반영 — 사진 5장당 sheet +1 보너스 (`products.md` §Sheet Bonus). 사이즈 통일·Mixed 패킹 검증 완료 후 `Everstory_mixed_v2.jsx` / `no_cap.jsx` 의 cap 산정에 `floor(N/5)` 누적
+- [ ] Package packing 룰 정의 — `no_cap.jsx` 현재 5-Tier fallback (isTiered = Tier || Package). 정확한 룰: 사이즈 매핑·tier 배치 알고리즘·4=2/8=2 강제 조건 (`products.md` §Package Policy 정합)
 
 ## 웹 디자인 (Shopify)
 

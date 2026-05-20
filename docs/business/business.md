@@ -66,7 +66,7 @@ Everstory Studio 는 Toronto GTA + Korean diaspora 를 위한 A5 custom photo di
 
 **Launch Shopify price**
 
-SKU별 Shopify 가격은 [`products.md`](products.md) 를 단일 기준으로 한다. Launch price 는 첫 50건 동안 유지한다. 후기, UGC, 반복 주문 데이터가 생기면 +$3-5 인상 여지를 검토한다.
+SKU별 Shopify 가격은 [`products.md`](products.md) 를 단일 기준으로 한다. Launch price 는 첫 50건 동안 유지한다.
 
 **Cost Model**
 
@@ -124,7 +124,7 @@ _4. 장비 — CapEx → 감가 배부_
 | Epson ET-8550 | 인쇄 | → `pending.md` |
 | Summa D75 | kiss-cut | → `pending.md` |
 
-확정 후 월 감가 → 건당 배부 산출. 기존 "$1.20" 가정은 근거 미정 — 재도출 대상.
+확정 후 월 감가 → 건당 배부 산출.
 
 > 가격 결정(엔트리가·번들 구성·목표 마진)은 본 문서에 박지 않는다. 확정 시 [`products.md`](products.md)(가격)·본 절(마진)에 결과만 기록 — 미확정 결정을 SOT 에 누적하지 않는다.
 

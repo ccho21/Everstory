@@ -15,7 +15,7 @@
 //      사이즈 dropdown (인치 6단계 + Mixed) / 칼선 여백 / gap input + 최적값 자동
 //      - 사이즈 변경 시 cap 갱신 + 선택 자동 trim (auto-cap)
 //   3. templates/template_cutout_v2.ait 열기 (info > body PathItem, info > header > header_right TextFrame 사용)
-//   4. info > header > header_right 영역에 우측 정렬 2줄 (사진수/사이즈/재질, "이름 • Order date") 배치
+//   4. info > header > header_right 영역에 우측 정렬 3줄 (이름/사이즈/재질, 디자인수, Order/date) 배치
 //   5. info > body 영역에 선택한 페어를 packing
 //      - 단일 사이즈: 적응형 직사각 셀 (max cellW × max cellH) 위 cols × rows uniform grid.
 //        모든 행이 같은 디자인 round-robin 순서, 외곽 4면 = 내부 gap 자동 균등 분배
@@ -57,7 +57,9 @@
 
   var MIXED_SIZE_VALUE = -1;     // sentinel for Mixed mode in SIZE_VALUES
   var TIER_SIZE_VALUE = -2;      // sentinel for 5-Tier mode in SIZE_VALUES
+  var PACKAGE_SIZE_VALUE = -3;   // sentinel for Package mode (packing 은 일단 5-Tier fallback — pending: 정확한 룰)
   var MIXED_MAX_DESIGNS = 1;     // Mixed 는 디자인 1개만 사용
+  var PACKAGE_MAX_DESIGNS = 8;   // Package: 8 selected photos cap (Full 기준)
 
   // Mixed baseline. 2.5×1 + 2×3 는 고정 보장, 1.25/1in 은 _packMixedZones 가 남은 공간에 균형 fill.
   // copies 는 header/spec fallback 용 baseline 이며, 운영 배치의 filler copy 수는 고정하지 않는다.
@@ -98,10 +100,11 @@
     "2\" / 51mm",
     "2.5\" / 64mm",
     "Mixed 2.5/2 + 1.25/1in",
-    "5-Tier (파일명 _XS/_S/_M/_L/_FAM)"
+    "5-Tier (파일명 _XS/_S/_M/_L/_FAM)",
+    "Package (4 designs / 2 sheets · 8 designs / 2 sheets)"
   ];
-  var SIZE_VALUES = [19.05, 25.4, 31.75, 38.1, 50.8, 63.5, MIXED_SIZE_VALUE, TIER_SIZE_VALUE];
-  var SIZE_LETTERS = ["XS", "S", "M", "L", "XL", "XXL", "MIX", "T5"];
+  var SIZE_VALUES = [19.05, 25.4, 31.75, 38.1, 50.8, 63.5, MIXED_SIZE_VALUE, TIER_SIZE_VALUE, PACKAGE_SIZE_VALUE];
+  var SIZE_LETTERS = ["XS", "S", "M", "L", "XL", "XXL", "MIX", "T5", "PKG"];
   // products.md size option 의 반올림 mm — 표기를 SOT 에 고정 (Math.round fallback 있음).
   var SIZE_MM_LABEL = { 19.05: 19, 25.4: 25, 31.75: 32, 38.1: 38, 50.8: 51, 63.5: 64 };
   var SIZE_DEFAULT_INDEX = 1;  // S = 1" — 다이어리 표준 사이즈
@@ -311,7 +314,7 @@
   var saveError = "";
   try {
     var outFolder = _resolveOutputFolder(inputFolder);
-    var sizeTag = options.isTiered ? "T5" : (options.isMixed ? "MIX" : _inchStr(options.sizeMm));
+    var sizeTag = options.isPackage ? "PKG" : (options.isTiered ? "T5" : (options.isMixed ? "MIX" : _inchStr(options.sizeMm)));
     var fileName = _timestamp() + "_" + sizeTag + "_sheet01.ai";
     var saveFile = new File(outFolder.fsName + "/" + fileName);
     _saveAi(doc, saveFile);
@@ -492,6 +495,7 @@
     function _capForSize(sizeMm) {
       if (sizeMm === MIXED_SIZE_VALUE) return MIXED_MAX_DESIGNS;
       if (sizeMm === TIER_SIZE_VALUE) return pairsArg.length;  // 5-Tier: 개수 cap 없음 (면적 예산이 처리)
+      if (sizeMm === PACKAGE_SIZE_VALUE) return PACKAGE_MAX_DESIGNS;
       return DESIGN_LIMIT_BY_SIZE_MM[sizeMm] || pairsArg.length;
     }
     var _syncing = false;
@@ -499,7 +503,8 @@
       if (_syncing) return;
       _syncing = true;
       try {
-        var cap = _capForSize(_currentSizeMm());
+        var sz = _currentSizeMm();
+        var cap = _capForSize(sz);
         var sel = pairsListbox.selection;
         var selLen = sel ? sel.length : 0;
         if (sel && selLen > cap) {
@@ -509,6 +514,15 @@
           selLen = cap;
         }
         countLabel.text = "선택: " + selLen + " / " + cap;
+        if (sz === MIXED_SIZE_VALUE) {
+          hintLabel.text = "Mixed: 1 디자인 고정";
+        } else if (sz === TIER_SIZE_VALUE) {
+          hintLabel.text = "5-Tier: 4 디자인 ≈ 2 sheets · 8 디자인 ≈ 2 sheets";
+        } else if (sz === PACKAGE_SIZE_VALUE) {
+          hintLabel.text = "Package: 4 designs → 2 sheets · 8 designs → 2 sheets";
+        } else {
+          hintLabel.text = "사이즈에 따라 cap 자동 적용";
+        }
       } finally {
         _syncing = false;
       }
@@ -533,7 +547,7 @@
     }
     cutRadios[CUT_MARGIN_DEFAULT_INDEX].value = true;
 
-    var hint = dlg.add("statictext", undefined, "info > header > header_right — 우측 정렬 2줄 (사진수/사이즈/재질, 고객명/주문일). 주문번호는 파일명/메타 용도.");
+    var hint = dlg.add("statictext", undefined, "info > header > header_right — 우측 정렬 3줄 (이름·사이즈·재질 / 디자인수 / Order·date). 주문번호는 파일명/메타 용도.");
     try { hint.graphics.foregroundColor = hint.graphics.newPen(hint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHint) {}
 
     var btnGroup = dlg.add("group");
@@ -578,7 +592,8 @@
       orderDate: _trim(dateInput.text) || _todayIso(),
       sizeMm: sizeMm,
       isMixed: (sizeMm === MIXED_SIZE_VALUE),
-      isTiered: (sizeMm === TIER_SIZE_VALUE),
+      isTiered: (sizeMm === TIER_SIZE_VALUE || sizeMm === PACKAGE_SIZE_VALUE),  // Package 는 일단 5-Tier 패킹으로 fallback (pending: 정확한 룰)
+      isPackage: (sizeMm === PACKAGE_SIZE_VALUE),
       cutMarginMm: cutMarginMm,
       selectedPairs: selectedPairs
     };
@@ -687,17 +702,20 @@
   function _drawProductionHeader(options, photoCount, headerRightText) {
     // 템플릿의 info > header > header_right TextFrame 에 폰트·사이즈·정렬이 미리 잡혀 있다.
     // 값만 contents 로 교체. 새 TextFrame 만들지 않음.
-    var sizeToken = options.isTiered
+    var sizeToken = options.isPackage
+      ? "Package"
+      : options.isTiered
       ? "5-Tier"
       : options.isMixed
-      ? "Package"
+      ? "Mixed"
       : _inchStr(options.sizeMm) + " / " + (SIZE_MM_LABEL[options.sizeMm] || Math.round(options.sizeMm)) + "mm";
 
     var orderNum = options.orderNumber ? options.orderNumber : "—";
-    var line1 = _nfcHangul(options.nameText) + " • " + sizeToken + " • " + photoCount + " design(s) • " + options.material;
-    var line2 = "Order: " + orderNum + " | date: " + options.orderDate;
+    var line1 = _nfcHangul(options.nameText) + " • " + sizeToken + " • " + options.material;
+    var line2 = photoCount + " design(s)";
+    var line3 = "Order: " + orderNum + " | date: " + options.orderDate;
 
-    headerRightText.contents = line1 + "\r" + line2;
+    headerRightText.contents = line1 + "\r" + line2 + "\r" + line3;
     _applyHangulFontOverride(headerRightText, _resolveHangulFont());
   }
 

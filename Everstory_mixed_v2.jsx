@@ -15,7 +15,7 @@
 //      사이즈 dropdown (인치 6단계 + Mixed) / 칼선 여백 / gap input + 최적값 자동
 //      - 사이즈 변경 시 cap 갱신 + 선택 자동 trim (auto-cap)
 //   3. templates/template_cutout_v2.ait 열기 (info > body PathItem, info > header > header_right TextFrame 사용)
-//   4. info > header > header_right 영역에 우측 정렬 2줄 (사진수/사이즈/재질, "이름 • Order date") 배치
+//   4. info > header > header_right 영역에 우측 정렬 3줄 (이름/사이즈/재질, 디자인수/출력수량, Order/date) 배치
 //   5. info > body 영역에 선택한 페어를 packing
 //      - 단일 사이즈: 적응형 직사각 셀 (max cellW × max cellH) 위 cols × rows uniform grid.
 //        모든 행이 같은 디자인 round-robin 순서, 외곽 4면 = 내부 gap 자동 균등 분배
@@ -279,7 +279,7 @@
   try {
     var outFolder = _resolveOutputFolder(inputFolder);
     var sizeTag = options.isMixed ? "MIX" : _inchStr(options.sizeMm);
-    var fileName = _timestamp() + "_" + sizeTag + "_sheet01.ai";
+    var fileName = _timestamp() + "_" + sizeTag + (options.printQty > 1 ? "_qty" + options.printQty : "") + "_sheet01.ai";
     var saveFile = new File(outFolder.fsName + "/" + fileName);
     _saveAi(doc, saveFile);
     savedPath = saveFile.fsName;
@@ -407,6 +407,13 @@
     var dateInput = dateGroup.add("edittext", undefined, _todayIso());
     dateInput.preferredSize = [250, 24];
 
+    var qtyGroup = detailPanel.add("group");
+    qtyGroup.orientation = "row";
+    qtyGroup.alignChildren = "center";
+    qtyGroup.add("statictext", undefined, "출력 수량");
+    var qtyInput = qtyGroup.add("edittext", undefined, "1");
+    qtyInput.preferredSize = [250, 24];
+
     var sizePanel = dlg.add("panel", undefined, "사진 스티커 긴 변");
     sizePanel.orientation = "row";
     sizePanel.alignChildren = "center";
@@ -490,7 +497,7 @@
     }
     cutRadios[CUT_MARGIN_DEFAULT_INDEX].value = true;
 
-    var hint = dlg.add("statictext", undefined, "info > header > header_right — 우측 정렬 2줄 (사진수/사이즈/재질, 고객명/주문일). 주문번호는 파일명/메타 용도.");
+    var hint = dlg.add("statictext", undefined, "info > header > header_right — 우측 정렬 3줄 (이름·사이즈·재질 / 디자인수·출력수량 / Order·date). 주문번호는 파일명/메타 용도.");
     try { hint.graphics.foregroundColor = hint.graphics.newPen(hint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHint) {}
 
     var btnGroup = dlg.add("group");
@@ -528,6 +535,9 @@
       return null;
     }
 
+    var printQty = parseInt(qtyInput.text, 10);
+    if (isNaN(printQty) || printQty < 1) printQty = 1;
+
     return {
       nameText: nameText,
       material: materialText,
@@ -536,6 +546,7 @@
       sizeMm: sizeMm,
       isMixed: (sizeMm === MIXED_SIZE_VALUE),
       cutMarginMm: cutMarginMm,
+      printQty: printQty,
       selectedPairs: selectedPairs
     };
   }
@@ -646,10 +657,11 @@
       : _inchStr(options.sizeMm) + " / " + (SIZE_MM_LABEL[options.sizeMm] || Math.round(options.sizeMm)) + "mm";
 
     var orderNum = options.orderNumber ? options.orderNumber : "—";
-    var line1 = _nfcHangul(options.nameText) + " • " + sizeToken + " • " + photoCount + " design(s) • " + options.material;
-    var line2 = "Order: " + orderNum + " | date: " + options.orderDate;
+    var line1 = _nfcHangul(options.nameText) + " • " + sizeToken + " • " + options.material;
+    var line2 = photoCount + " design(s) • " + options.printQty + (options.printQty > 1 ? " sheets" : " sheet");
+    var line3 = "Order: " + orderNum + " | date: " + options.orderDate;
 
-    headerRightText.contents = line1 + "\r" + line2;
+    headerRightText.contents = line1 + "\r" + line2 + "\r" + line3;
     _applyHangulFontOverride(headerRightText, _resolveHangulFont());
   }
 

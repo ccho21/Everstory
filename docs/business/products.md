@@ -20,7 +20,7 @@ Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다
 | Full Body Sticker | 전신/전체 피사체 중심 다이컷 스티커 | 1+ | size/cap 기준 | from $15.99 CAD |
 | Circle Sticker | 원형 크롭 스티커 | 1+ | size/cap 기준 | from $15.99 CAD |
 | Package Mini | 작은 Everstory curated package | 4 selected photos | 2 A5 sheets | $24.99 CAD |
-| Package Full | 큰 Everstory curated package | 8 selected photos | 3 A5 sheets | $32.99 CAD |
+| Package Full | 큰 Everstory curated package | 8 selected photos | 2 A5 sheets | $34.99 CAD |
 
 ## Product Rules
 
@@ -28,21 +28,18 @@ Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다
 
 - 얼굴/상반신 중심의 다이컷 스티커.
 - 기본 1 photo에서 시작한다.
-- 추가 photo는 +$3 CAD를 임시 기준으로 둔다.
 - sheet 수와 sticker count는 선택 size, 사진 비율, 내부 cap에 따라 달라진다.
 
 ### Full Body Sticker
 
 - 전신 또는 전체 피사체 중심의 다이컷 스티커.
 - 기본 1 photo에서 시작한다.
-- 추가 photo는 +$3 CAD를 임시 기준으로 둔다.
 - 1.25" / 32mm 이상을 권장하되, 작은 size 선택을 차단하지 않는다.
 
 ### Circle Sticker
 
 - 원형 크롭 스티커.
 - 기본 1 photo에서 시작한다.
-- 추가 photo는 +$3 CAD를 임시 기준으로 둔다.
 - sheet 수와 sticker count는 선택 size, 사진 비율, 내부 cap에 따라 달라진다.
 
 ### Size Options
@@ -60,6 +57,23 @@ Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다
 
 고객-facing 사진 개수 variant label은 `Photos to include`를 권장한다. 숫자 값은 다른 사진 개수로 해석하며, 스티커 총 개수는 선택 size와 사진 비율에 따라 달라진다.
 
+### Sheet Bonus
+
+비-Package 3 SKU (Face / Full Body / Circle) 공통. 사진 5장 단위로 sheet 1장 보너스 — cap 산출 시트 위에 누적.
+
+| Photos | Bonus sheets |
+|--------|--------------|
+| 1-4 | 0 |
+| 5-9 | +1 |
+| 10-14 | +2 |
+| 15+ | `floor(N/5)` |
+
+Package 상품(Mini / Full)은 미적용 — sheet/photo ratio 가 이미 fix.
+
+고객-facing 카피: "Order 5+ photos → get 1 extra sheet free."
+
+코드 반영은 사이즈 통일·Mixed 패킹 검증 끝난 후 `Everstory_mixed_v2.jsx` / `no_cap.jsx` 의 cap 산정에 누적.
+
 ## Package Policy
 
 Package는 고객이 모든 디테일을 지정하는 상품이 아니다. 고객은 원하는 출력 크기 tier 별로 후보 사진을 업로드하고, Everstory가 각 tier에서 최종 출력 사진, crop, format, size, layout을 결정한다.
@@ -68,7 +82,7 @@ Package는 고객이 모든 디테일을 지정하는 상품이 아니다. 고�
 
 | Tier | Print size |
 |------|------------|
-| Big print | 1.75"+ / 45mm+ |
+| Big print | 2"+ / 51mm+ |
 | Medium print | 1.25-1.5" / 32-38mm |
 | Small print | 0.75-1" / 19-25mm |
 
@@ -94,7 +108,7 @@ Package는 고객이 모든 디테일을 지정하는 상품이 아니다. 고�
 
 - 총 up to 17 uploaded photos.
 - 총 8 selected photos.
-- 최종 출력은 3 A5 sheets.
+- 최종 출력은 2 A5 sheets.
 
 ## Photo Decision Rules
 
@@ -135,19 +149,15 @@ Crop 결정은 기본적으로 사진을 보고 Studio가 판단한다. 고객�
 
 ## Pricing
 
-| Product | Price |
-|---------|-------|
-| Face Sticker | from $15.99 CAD |
-| Full Body Sticker | from $15.99 CAD |
-| Circle Sticker | from $15.99 CAD |
-| Package Mini | $24.99 CAD |
-| Package Full | $32.99 CAD |
+가격은 §Launch SKU 표를 단일 기준으로 한다. 비-Package 상품은 기본 1 photo $15.99 CAD 에서 시작, 추가 photo **+$3 CAD/장**. Shopify 옵션: Easify Premium **Dropdown** (label `Photos to include`, 각 value 마다 `(N − 1) × $3` add-on).
 
-비-Package 상품은 기본 1 photo $15.99 CAD에서 시작하고, 추가 photo는 +$3 CAD를 임시 기준으로 둔다.
+Package Mini $24.99 CAD, Package Full $34.99 CAD는 launch-friendly 가격이다. 이 가격이면 Package는 premium upsell보다는 curated value pack에 가깝다.
 
-Package Mini $24.99 CAD, Package Full $32.99 CAD는 launch-friendly 가격이다. 이 가격이면 Package는 premium upsell보다는 curated value pack에 가깝다.
+Package Full은 8 selected photos / 2 sheets / $34.99 CAD 인데도 비-Package 다중 사진 상품보다 저렴하게 느껴질 수 있다. 따라서 고객-facing 메시지는 "정교한 개별 지정"이 아니라 "Everstory가 고르는 curated package"로 명확히 분리한다.
 
-Package Full은 8 selected photos / 3 sheets인데 $32.99 CAD이므로, 비-Package 다중 사진 상품보다 저렴하게 느껴질 수 있다. 따라서 고객-facing 메시지는 "정교한 개별 지정"이 아니라 "Everstory가 고르는 curated package"로 명확히 분리한다.
+**Reprint add-on** — 같은 디자인 시트 추가 출력 (누끼·디자인 변경 없음, 비-Package / Package 공통). **일률 $7 / 장** (원가 C$2-2.5 / 시트, 재료 + 잉크 + 라미, 디자인 노동 0).
+
+Shopify 옵션: Easify Premium **Number input** (label `Extra prints (same design)`, min 0, max 20, default 0) + `value × $7` add-on. 5+ 묶음 할인은 first-50 conversion 데이터 후 재검토 ([`pending.md`](pending.md)).
 
 ## Promotional / loss-leader guardrails
 
@@ -164,24 +174,12 @@ loss-leader 는 건당 작업시간이 거의 안 드는 형태로만 둔다 —
 5. 건당 노동 거의 0
 6. 다음 구매로 이어지는 업셀 경로
 
-**런칭 프로모 (결정): 첫 주문 20% 할인.** loss-leader SKU 가 아니라 정상 상품의 한정 전환 할인이다 (별도 미끼 상품 미도입). 가드레일 정합 조건:
+**런칭 프로모 (결정): 첫 주문 할인 없음.** Launch 는 정가로 시작한다. 초기 전환은 제품 사진·로컬 신뢰·Ontario 무료배송·Toronto pickup·커뮤니티 소개로 만든다. 첫 주문부터 현금 기여를 보존하고 정가 수용도를 깨끗하게 검증한다.
 
-- 첫 주문 1회·1인 1회 한정 (수량 제한 명시, 손실 한도 = 정가의 20%)
-- 정가(라미 포함)에서 할인 — 숨은 필수비용 없음
-- 할인가에서도 현금 기여는 (+) 이나 인건비·월 고정비는 못 덮음 → **오가닉·커뮤니티 채널 전용, 유료광고와 병행 금지** (CAC + 할인 동시 부담 불가)
-- 정가 재주문이 실제 마진 엔진. 첫 주문 할인분(정가 $15.99 기준 ≈ −$3.20, 정가 변경 시 갱신)은 한도형 CAC 대체로 본다
-
-Sample Pack / Starter Pack 등 별도 loss-leader SKU 는 런칭 필수 아님 — 후속 선택지로 [`pending.md`](pending.md) 에 둔다.
+Sample Pack / Starter Pack 등 별도 loss-leader SKU 도입은 후속 선택지 — [`pending.md`](pending.md) 참조, 도입 시 위 가드레일 재적용.
 
 ## Assumptions
 
-- Material은 현재 4종 유지: White Matte / Translucent / Silver / Gold.
-- White Waterproof 추가 여부는 후속 결정한다.
+- Material은 4종으로 fix: White Matte / Translucent / Silver / Gold.
 - Full Body Sticker는 1.25" / 32mm 이상 권장 문구로 관리하되, 선택 차단은 하지 않는다.
 - Package는 최종 사진 선택, crop, format, size, layout을 고객이 직접 지정하는 상품이 아니다.
-
-## Follow-up
-
-- Shopify product option과 customer-facing copy에 이 구조를 반영한다.
-- 구현 문서와 스크립트 정책은 상품 구조 확정 후 별도 업데이트한다.
-- White Waterproof 추가 여부는 material 운영 기준이 확정되면 다시 판단한다.
