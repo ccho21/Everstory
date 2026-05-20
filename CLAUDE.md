@@ -60,10 +60,12 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **design**: 디자인 정의 (색·타이포·voice·brand·photography·components, product-agnostic SOT) / **implementation**: 운영 코드 자산 / **shopify**: 웹 스토어 (어드민·카피·정책·시안).
 
-- [**비즈니스**](docs/business/) — 사업·전략
-  - [business.md](docs/business/business.md) — 사업 정의·장비·원가·마진·채널·배송·런칭 목표 (사업 본체 SOT)
-  - [products.md](docs/business/products.md) — Launch SKU·Package 규칙·사이즈·가격·사진 QC (상품 상세 SOT)
-  - [plan.md](docs/business/plan.md) — 비즈니스 문서 목적·중요도·정리 계획
+- [**비즈니스**](docs/business/) — 사업·전략 (의존 계층: Fact → Plan → Open)
+  - [products.md](docs/business/products.md) — Layer 1 Fact. Launch SKU·Package 규칙·사이즈·가격·사진 QC (상품 SOT)
+  - [expenses.md](docs/business/expenses.md) — Layer 1 Fact. 영수증·인보이스·운임·구독 raw (비용 SOT)
+  - [business.md](docs/business/business.md) — Layer 2 Plan. 사업 정의·원가/마진 모델·채널·배송·런칭 목표. raw 는 products/expenses 인용
+  - [pending.md](docs/business/pending.md) — Layer 3 Open. 미확정·측정·결정 보류 항목 SOT
+  - [plan.md](docs/business/plan.md) — Layer 0 Meta. 문서 목적·중요도·계층
 - [**디자인**](docs/design/) — 디자인 정의 (product-agnostic SOT)
   - [tokens.json](docs/design/tokens.json) — 색상·타이포 디자인 토큰
   - [brand.md](docs/design/brand.md) — 브랜드 voice·워드마크

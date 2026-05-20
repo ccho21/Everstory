@@ -57,23 +57,6 @@ Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다
 
 고객-facing 사진 개수 variant label은 `Photos to include`를 권장한다. 숫자 값은 다른 사진 개수로 해석하며, 스티커 총 개수는 선택 size와 사진 비율에 따라 달라진다.
 
-### Sheet Bonus
-
-비-Package 3 SKU (Face / Full Body / Circle) 공통. 사진 5장 단위로 sheet 1장 보너스 — cap 산출 시트 위에 누적.
-
-| Photos | Bonus sheets |
-|--------|--------------|
-| 1-4 | 0 |
-| 5-9 | +1 |
-| 10-14 | +2 |
-| 15+ | `floor(N/5)` |
-
-Package 상품(Mini / Full)은 미적용 — sheet/photo ratio 가 이미 fix.
-
-고객-facing 카피: "Order 5+ photos → get 1 extra sheet free."
-
-코드 반영은 사이즈 통일·Mixed 패킹 검증 끝난 후 `Everstory_mixed_v2.jsx` / `no_cap.jsx` 의 cap 산정에 누적.
-
 ## Package Policy
 
 Package는 고객이 모든 디테일을 지정하는 상품이 아니다. 고객은 원하는 출력 크기 tier 별로 후보 사진을 업로드하고, Everstory가 각 tier에서 최종 출력 사진, crop, format, size, layout을 결정한다.
@@ -155,15 +138,9 @@ Package Mini $24.99 CAD, Package Full $34.99 CAD는 launch-friendly 가격이다
 
 Package Full은 8 selected photos / 2 sheets / $34.99 CAD 인데도 비-Package 다중 사진 상품보다 저렴하게 느껴질 수 있다. 따라서 고객-facing 메시지는 "정교한 개별 지정"이 아니라 "Everstory가 고르는 curated package"로 명확히 분리한다.
 
-**Reprint add-on** — 같은 디자인 시트 추가 출력 (누끼·디자인 변경 없음, 비-Package / Package 공통). **일률 $7 / 장** (원가 C$2-2.5 / 시트, 재료 + 잉크 + 라미, 디자인 노동 0).
-
-Shopify 옵션: Easify Premium **Number input** (label `Extra prints (same design)`, min 0, max 20, default 0) + `value × $7` add-on. 5+ 묶음 할인은 first-50 conversion 데이터 후 재검토 ([`pending.md`](pending.md)).
-
 ## Promotional / loss-leader guardrails
 
 저가·미끼(loss-leader) 상품은 가능하나, **노동이 들어가는 1장 커스텀 완제품을 손실 미끼로 두지 않는다.** 재료 손실(C$1–2)은 마케팅비로 흡수 가능하지만, 건당 누끼·제작 노동 손실은 판매가 늘수록 악화된다 (원가 구조는 [`business.md`](business.md) Cost Model).
-
-loss-leader 는 건당 작업시간이 거의 안 드는 형태로만 둔다 — 재질 샘플팩 / 스타터팩 / 첫 주문 번들 / 디지털 프루프 / 배치 생산 프리메이드 등. 커스텀 1장 할인은 아니다.
 
 법적 가드레일 (Canada Competition Bureau — bait-and-switch 금지). 저가로 광고하는 상품은 다음을 모두 만족해야 한다.
 
@@ -173,10 +150,6 @@ loss-leader 는 건당 작업시간이 거의 안 드는 형태로만 둔다 —
 4. 손실 한도 정의
 5. 건당 노동 거의 0
 6. 다음 구매로 이어지는 업셀 경로
-
-**런칭 프로모 (결정): 첫 주문 할인 없음.** Launch 는 정가로 시작한다. 초기 전환은 제품 사진·로컬 신뢰·Ontario 무료배송·Toronto pickup·커뮤니티 소개로 만든다. 첫 주문부터 현금 기여를 보존하고 정가 수용도를 깨끗하게 검증한다.
-
-Sample Pack / Starter Pack 등 별도 loss-leader SKU 도입은 후속 선택지 — [`pending.md`](pending.md) 참조, 도입 시 위 가드레일 재적용.
 
 ## Assumptions
 

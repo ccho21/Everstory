@@ -28,16 +28,30 @@
 - 페이지별 카피, footer copy, design token, UI 컴포넌트 기준
 - 과거 변경 이력, ADR, 오래된 계획 문구
 
+## Document Layers
+
+비즈니스 문서는 다음 의존 계층을 따른다. 의존 방향은 **위→아래로 input 만** — 아래 layer 가 위를 참조한다. raw 값은 절대 두 곳에 중복 박지 않는다.
+
+| Layer | 문서 | 역할 |
+|-------|------|------|
+| 1 · Fact | `products.md` | 상품 fact (SKU·옵션·가격·QC·운영 정책) |
+| 1 · Fact | `expenses.md` | 비용 fact (영수증·인보이스·환율·청구액) |
+| 2 · Plan | `business.md` | Layer 1 input → 사업 정의·원가/마진 모델·채널·런칭 |
+| 3 · Open | `pending.md` | Layer 1/2 가 → pending 으로 위임한 미확정·측정·결정 보류 SOT. 닫히면 원래 SOT 로 이동 |
+| 0 · Meta | `plan.md` | 문서 목적·중요도·계층 (본 문서) |
+
 ## Document Purpose Table
 
 | 문서 | 역할 | 중요도 | 처리 |
 |------|------|--------|------|
-| `business.md` | 사업 본체 SOT. 사업 정의, 장비, 원가, 마진, 채널, 배송, 런칭 목표를 둔다. 상품 상세·가격은 `products.md` 참조. | P0 | 유지 |
 | `products.md` | 상품 상세 SOT. Launch SKU, Package 구조, upload/pick 규칙, 사진 QC, 가격 가정을 둔다. | P0 | 유지 |
+| `expenses.md` | 영수증·인보이스·구독 raw SOT. CapEx 취득가, 자재 인보이스, 변동 부대비 운임, OPEX 청구액. 원가·마진 계산의 input. | P0 | 유지 |
+| `business.md` | 사업 본체 SOT. 사업 정의, 장비, 원가·마진 도출, 채널, 배송, 런칭 목표. raw 단가는 박지 않고 `products.md` · `expenses.md` 인용. | P0 | 유지 |
+| `pending.md` | Layer 1/2 가 → pending 으로 위임한 미확정·측정·결정 보류 항목 SOT. 닫히면 원래 문서로 이동. | P0 | 유지 |
 
 ## Remaining Work
 
-현재 open P0/P1 없음 — `business.md` ↔ `products.md` 정합성 점검 완료 기준.
+현재 open P0/P1 없음 — 4 문서(`products.md` · `expenses.md` · `business.md` · `pending.md`) 의존 계층 정합성 점검 완료 기준.
 
 ## P2 Later
 

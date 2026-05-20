@@ -1,43 +1,21 @@
 # Pending — Business
 
-`docs/business/` 영역의 미해결·미구현·결정 대기 항목. 해결되면 한 줄씩 지운다. 확정 결정은 `strategy.md` 본문 또는 `docs/design/brand.md` 에 lock.
+본 문서는 [`business.md`](business.md) · [`products.md`](products.md) · [`expenses.md`](expenses.md) 가 → `pending.md` 로 위임한 **미확정·측정 대기·결정 보류** 항목의 단일 출처다. 항목이 닫히면 raw 는 원래 SOT 로 이동하고 본 문서에서 삭제한다.
 
-## 사업
+## 원가·실측 (→ expenses.md / business.md 보강)
 
-- [ ] 잉크 장당 단가 실측 — Epson 552 5-pack C$145.29, 20장 풀컬러 출력 후 병 무게 전/후 차이로 보정 (first-50). 임시 C$0.20–0.40/매
-- [ ] 구독 실청구액(CAD)·플랜·Everstory 전용 비중 — Claude Max 5x · Codex Plus · Shopify 기본+Easify Premium · Adobe(PS+AI)
-- [ ] 관세 / HST 반입분 + Canada Post handling fee — 300매 기준 장당 C$0.10–0.15 버퍼 추정, 실측 필요
-- [ ] 장비 취득가·내용연수 — Epson ET-8550 · Summa D75 → `business.md` Cost Model 건당 감가 도출
-- [ ] EMS ≥600매 합산수입(라벨+라미) 실측 — 현 300매 ≈ C$0.35–0.37/매
-- [ ] 월 예상 물량 확정 — `business.md` 22건 목표 vs Cost Model 100/300/600 시나리오 정합
-- [ ] 기타 OPEX 실항목 정리 — 이메일·회계·폰트·스토리지 등 (→ `business.md` Cost Model §3)
-- [ ] (후속·선택) Sample Pack 개념 정의·리서치 — 별도 샘플 SKU 는 추후 탐색: 무엇을 파는지 불명확(재질/라미 질감 체험? 커스텀 없음?), 학습 필요
-- [ ] (후속·선택) loss-leader SKU 가격 산정 — Sample/Starter/번들 도입 시 `business.md` Cost Model 원가 + `products.md` 가드레일로 확정
-- [ ] (후속·선택) White Waterproof Material 추가 여부 — 현 4종(White Matte / Translucent / Silver / Gold) 외 추가 도입 시 `products.md` Material 운영 기준 갱신
-- [ ] (후속·선택) Extra prints 5+ 묶음 할인 도입 — first-50 conversion 데이터 보고 결정 (현 SOT: 일률 $7/장)
-- [ ] 라미네이션 워크플로우 — 모든 SKU 에 라미네이션 들어감, `CLAUDE.md` 반영 필요
-- [ ] 패키징 사양 확정 (클리어 슬리브 / backing board 포함 여부·구성) — photography.md #9·패키징 컷, PDP "What's included" 이미지의 선행조건
-- [ ] 로고 / 브랜드 비주얼 정체성
-- [ ] 상품 사진 촬영 컨셉
-- [ ] 상품 카피 / About 페이지
-- [ ] HST/GST 등록 — 연 매출 $30k 도달 시점 대비 추적
-- [ ] 누끼 워크플로우 단축 — 인건비 30분/건 목표 (PSD 액션·키보드 매크로·재구매 시 PSD 캐시)
-- [ ] 일러스트 외주 본격화 — Mini Decor 자체 디자인 자산 ($150–400/건)
-- [ ] MVP 외 카테고리 — 문구 스티커, 다중 시트 자동 분할
+| 항목 | 출처 | 닫는 조건 |
+|------|------|-----------|
+| 잉크 장당 잉크비 (Epson 552 5-pack ÷ 인쇄 매수) | [`expenses.md`](expenses.md) §2.2 | 실인쇄 매당 잉크 사용량 측정 |
+| 포장재 사양·단가 | [`expenses.md`](expenses.md) §2.3 | 사양(봉투·완충재·라벨) 확정 → 단가 박힘 |
+| EMS 해외배송 ≥600매 합산 실측 | [`expenses.md`](expenses.md) §3 | 합산 발주 1회 실측 (방법론은 §3) |
+| 결제·플랫폼 수수료 정확 요율 | [`expenses.md`](expenses.md) §3 | Shopify Payments + (필요시 PayPal/Apple Pay) 청구 명세 |
+| 관세·HST + Canada Post handling 실측 | [`expenses.md`](expenses.md) §3 | 반입 batch 1회 측정 |
+| OPEX 실청구액 (Shopify / Adobe / Claude Max / Codex Plus / 도메인 Monthly) | [`expenses.md`](expenses.md) §4 | 청구서 수령 후 Monthly 칸 채움 |
+| "기타" OPEX 항목 발굴 (이메일·회계·폰트·스토리지 등) | [`expenses.md`](expenses.md) §4 | Everstory 실제 사용 도구 목록화 |
+| CapEx 내용연수·감가 정책 | [`expenses.md`](expenses.md) §1 | 정책 결정 → 월 감가 → 건당 배부 산출 |
+| 인건비 (cutout time) | [`business.md`](business.md) *Pricing And Cost* | first-50 주문 실측 → 모델 안으로 편입 여부 결정 |
 
 ## 인쇄 디자인
 
-- [ ] 푸터 chip 2 카피 교체 — `.ait` 의 `PRINTED IN THE USA WITH CARE` → `MADE IN TORONTO WITH CARE` (`.ait` 직접 수정 필요)
-- [ ] Divider hairline stroke 진짜 색 측정 — 현재 PNG anti-alias artifact 만 잡힘 (`.ait` swatch 또는 Eyedropper 확인)
-- [ ] mockup 헤더 "White matte · Finish Matte" 중복 노출 정리
-- [ ] 칼선 default 1mm 유지 vs 0.5mm 변경 검토 — mockup 은 0.5mm 출력
-- [ ] body 142×175 (v2) 결정 근거 정리 — 왜 v1 의 148×195 에서 줄었는지
-- [ ] header_right TextFrame 분리 (v2) 결정 근거 정리
-- [ ] Sheet Bonus 코드 반영 — 사진 5장당 sheet +1 보너스 (`products.md` §Sheet Bonus). 사이즈 통일·Mixed 패킹 검증 완료 후 `Everstory_mixed_v2.jsx` / `no_cap.jsx` 의 cap 산정에 `floor(N/5)` 누적
-- [ ] Package packing 룰 정의 — `no_cap.jsx` 현재 5-Tier fallback (isTiered = Tier || Package). 정확한 룰: 사이즈 매핑·tier 배치 알고리즘·4=2/8=2 강제 조건 (`products.md` §Package Policy 정합)
-
-## 웹 디자인 (Shopify)
-
-- [ ] Editorial display 폰트 lock — Cormorant Garamond 600 vs Playfair Display 700 시안 비교 (Phase A 끝)
-- [ ] Shopify 테마 lock — Sense vs Dawn 30분 비교 (Phase B Day 1)
-- [ ] `assets/wordmark.svg` 생성 — Illustrator 에서 outline → SVG export. MVP 는 PNG 사용, 출시 후 교체
+(현재 항목 없음. Phase A/B 자동화 관련 미확정 발생 시 여기에.)
