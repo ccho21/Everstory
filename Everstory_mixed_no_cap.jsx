@@ -56,8 +56,7 @@
   var MIN_REPEAT_OVERRIDE = {};
 
   var MIXED_SIZE_VALUE = -1;     // sentinel for Mixed mode in SIZE_VALUES
-  var TIER_SIZE_VALUE = -2;      // sentinel for 5-Tier mode in SIZE_VALUES
-  var PACKAGE_SIZE_VALUE = -3;   // sentinel for Package mode (packing 은 일단 5-Tier fallback — pending: 정확한 룰)
+  var PACKAGE_SIZE_VALUE = -2;   // sentinel for Package mode (파일명 토큰 기반 packing)
   var MIXED_MAX_DESIGNS = 1;     // Mixed 는 디자인 1개만 사용
   var PACKAGE_MAX_DESIGNS = 8;   // Package: 8 selected photos cap (Full 기준)
 
@@ -100,11 +99,10 @@
     "2\" / 51mm",
     "2.5\" / 64mm",
     "Mixed 2.5/2 + 1.25/1in",
-    "5-Tier (파일명 _XS/_S/_M/_L/_FAM)",
-    "Package (4 designs / 2 sheets · 8 designs / 2 sheets)"
+    "Package (4 designs / 2 sheets · 8 designs / 2 sheets · 파일명 _XS/_S/_M/_L/_FAM)"
   ];
-  var SIZE_VALUES = [19.05, 25.4, 31.75, 38.1, 50.8, 63.5, MIXED_SIZE_VALUE, TIER_SIZE_VALUE, PACKAGE_SIZE_VALUE];
-  var SIZE_LETTERS = ["XS", "S", "M", "L", "XL", "XXL", "MIX", "T5", "PKG"];
+  var SIZE_VALUES = [19.05, 25.4, 31.75, 38.1, 50.8, 63.5, MIXED_SIZE_VALUE, PACKAGE_SIZE_VALUE];
+  var SIZE_LETTERS = ["XS", "S", "M", "L", "XL", "XXL", "MIX", "PKG"];
   // products.md size option 의 반올림 mm — 표기를 SOT 에 고정 (Math.round fallback 있음).
   var SIZE_MM_LABEL = { 19.05: 19, 25.4: 25, 31.75: 32, 38.1: 38, 50.8: 51, 63.5: 64 };
   var SIZE_DEFAULT_INDEX = 1;  // S = 1" — 다이어리 표준 사이즈
@@ -113,7 +111,7 @@
   var CUT_MARGIN_DEFAULT_INDEX = 2; // 기본 1mm 유지 — 0/0.5mm 는 운영자가 의도적으로 선택
   var MATERIAL_OPTIONS = ["White Matte", "Translucent", "Silver", "Gold"];
 
-  // ── 5-Tier 모드 (no_cap 변형, 파일명 토큰 입력) ───────────────────
+  // ── Package 모드 (no_cap 변형, 파일명 토큰 입력) ───────────────────
   // 고객이 사진마다 사이즈를 임의 지정. Phase A 파일명 = {folder}_{NN}_{TIER}:
   // 끝에 _XS/_S/_M/_L/_FAM (대소문자 무시). 토큰 없으면 S(=1") 기본.
   // 접미사(_sil/_clean) strip 후 끝에 anchored — 레거시 _{NN}(숫자) 는 tier 글자와 안 겹침.
@@ -190,8 +188,8 @@
   var totalIgnoredCount = 0;
   var tierTrim = null;
 
-  if (options.isTiered) {
-    // 5-Tier: 개수 cap 없음. aspect 측정 → 면적 예산 사전 trim (Phase 3, Option 1).
+  if (options.isPackage) {
+    // Package: 개수 cap 없음. aspect 측정 → 면적 예산 사전 trim (Phase 3, Option 1).
     for (var ta = 0; ta < layoutPairs.length; ta++) {
       try { _measurePairAspect(layoutPairs[ta]); }
       catch (eTa) { layoutPairs[ta].aspect = 1; }
@@ -248,8 +246,8 @@
   }
 
   var packResult;
-  if (options.isTiered) {
-    packResult = _packTiered(layoutPairs, binW, binH, gapPt);
+  if (options.isPackage) {
+    packResult = _packPackage(layoutPairs, binW, binH, gapPt);
   } else if (options.isMixed) {
     // Mixed: 2.5×1 + 2×3 를 보장하고, 가능한 경우 같은 row 에 먼저 배치.
     var pair = layoutPairs[0];
@@ -314,7 +312,7 @@
   var saveError = "";
   try {
     var outFolder = _resolveOutputFolder(inputFolder);
-    var sizeTag = options.isPackage ? "PKG" : (options.isTiered ? "T5" : (options.isMixed ? "MIX" : _inchStr(options.sizeMm)));
+    var sizeTag = options.isPackage ? "PKG" : (options.isMixed ? "MIX" : _inchStr(options.sizeMm));
     var fileName = _timestamp() + "_" + sizeTag + "_sheet01.ai";
     var saveFile = new File(outFolder.fsName + "/" + fileName);
     _saveAi(doc, saveFile);
@@ -324,8 +322,8 @@
   }
 
   var sizeLineText;
-  if (options.isTiered) {
-    sizeLineText = "5-Tier (파일명): " + _tierDistStr(layoutPairs) +
+  if (options.isPackage) {
+    sizeLineText = "Package (파일명): " + _packageDistStr(layoutPairs) +
       (tierTrim && tierTrim.trimmed.length > 0
         ? " / 예산 trim XS" + tierTrim.trimmedByTier.XS + " S" + tierTrim.trimmedByTier.S +
           " M" + tierTrim.trimmedByTier.M + " L" + tierTrim.trimmedByTier.L
@@ -362,9 +360,9 @@
     inputLine +
     (packResult.repeatedCount > 0 ? " (반복 채움 " + packResult.repeatedCount + "개 포함)" : "") + "\n" +
     "행: " + packResult.rows.length + "개" +
-    (options.isTiered ? " (5-Tier: FFDH base + tier 단위 균일 반복 + 기회주의 회전)\n" : options.isMixed ? " (2.5/2 고정 + 1.25/1 half fill)\n" : " (uniform grid — 외곽 4면 = 내부 gap 균등 자동 분배)\n") +
-    (options.isTiered
-      ? "5-Tier 배치: " + packResult.placed.length + "개 (미배치 " + packResult.leftover.length + ") / 입력 디자인 " + layoutPairs.length + "개\n"
+    (options.isPackage ? " (Package: FFDH base + tier 단위 균일 반복 + 기회주의 회전)\n" : options.isMixed ? " (2.5/2 고정 + 1.25/1 half fill)\n" : " (uniform grid — 외곽 4면 = 내부 gap 균등 자동 분배)\n") +
+    (options.isPackage
+      ? "Package 배치: " + packResult.placed.length + "개 (미배치 " + packResult.leftover.length + ") / 입력 디자인 " + layoutPairs.length + "개\n"
       : options.isMixed
       ? "Mixed 슬롯: " + (packResult.mixedSummary ? packResult.mixedSummary.human : _mixedHumanString()) +
         " = " + (packResult.mixedSummary ? packResult.mixedSummary.total : _mixedTotalSlots()) +
@@ -494,7 +492,6 @@
     }
     function _capForSize(sizeMm) {
       if (sizeMm === MIXED_SIZE_VALUE) return MIXED_MAX_DESIGNS;
-      if (sizeMm === TIER_SIZE_VALUE) return pairsArg.length;  // 5-Tier: 개수 cap 없음 (면적 예산이 처리)
       if (sizeMm === PACKAGE_SIZE_VALUE) return PACKAGE_MAX_DESIGNS;
       return DESIGN_LIMIT_BY_SIZE_MM[sizeMm] || pairsArg.length;
     }
@@ -516,8 +513,6 @@
         countLabel.text = "선택: " + selLen + " / " + cap;
         if (sz === MIXED_SIZE_VALUE) {
           hintLabel.text = "Mixed: 1 디자인 고정";
-        } else if (sz === TIER_SIZE_VALUE) {
-          hintLabel.text = "5-Tier: 4 디자인 ≈ 2 sheets · 8 디자인 ≈ 2 sheets";
         } else if (sz === PACKAGE_SIZE_VALUE) {
           hintLabel.text = "Package: 4 designs → 2 sheets · 8 designs → 2 sheets";
         } else {
@@ -592,7 +587,6 @@
       orderDate: _trim(dateInput.text) || _todayIso(),
       sizeMm: sizeMm,
       isMixed: (sizeMm === MIXED_SIZE_VALUE),
-      isTiered: (sizeMm === TIER_SIZE_VALUE || sizeMm === PACKAGE_SIZE_VALUE),  // Package 는 일단 5-Tier 패킹으로 fallback (pending: 정확한 룰)
       isPackage: (sizeMm === PACKAGE_SIZE_VALUE),
       cutMarginMm: cutMarginMm,
       selectedPairs: selectedPairs
@@ -601,8 +595,8 @@
 
   function _buildOrderDetail(options, photoCount, packResult) {
     var spec;
-    if (options.isTiered) {
-      spec = "5-Tier/" + options.cutMarginMm + "mm";
+    if (options.isPackage) {
+      spec = "Package/" + options.cutMarginMm + "mm";
     } else if (options.isMixed) {
       var mixedSpec = (packResult && packResult.mixedSummary && packResult.mixedSummary.spec) ?
         packResult.mixedSummary.spec : _mixedSpecString();
@@ -704,8 +698,6 @@
     // 값만 contents 로 교체. 새 TextFrame 만들지 않음.
     var sizeToken = options.isPackage
       ? "Package"
-      : options.isTiered
-      ? "5-Tier"
       : options.isMixed
       ? "Mixed"
       : _inchStr(options.sizeMm) + " / " + (SIZE_MM_LABEL[options.sizeMm] || Math.round(options.sizeMm)) + "mm";
@@ -1778,7 +1770,7 @@
   }
 
   // 티어 분포 문자열 (FAM→XS 순, 0 인 tier 생략). 완료 메시지/사이즈 라인 표시용.
-  function _tierDistStr(arr) {
+  function _packageDistStr(arr) {
     var c = { XS: 0, S: 0, M: 0, L: 0, FAM: 0 };
     for (var i = 0; i < arr.length; i++) {
       var t = arr[i].tier;
@@ -1803,7 +1795,7 @@
     return pair;
   }
 
-  // _packTiered — 5-Tier 모드 packer (no_cap 변형). 목적함수 = 면적 충전 최대화 ("좀 못생겨도 OK").
+  // _packPackage — Package 모드 packer (no_cap 변형). 목적함수 = 면적 충전 최대화 ("좀 못생겨도 OK").
   //   알고리즘: 높이 내림차순 FFDH shelf + 행 마감 전 더 작은 미배치 아이템으로 빈 폭 backfill
   //   (ragged 우측 dead space 감소).
   //   Phase A — 각 사진 1회 배치(base). Phase B (Model B — tier 단위 균일 반복):
@@ -1824,7 +1816,7 @@
     return false;
   }
 
-  function _packTiered(pairs, binW, binH, gap) {
+  function _packPackage(pairs, binW, binH, gap) {
     if (!pairs || pairs.length === 0) {
       return { placed: [], leftover: [], rows: [], repeatedCount: 0, cols: 0, gridRows: 0, slots: 0 };
     }
