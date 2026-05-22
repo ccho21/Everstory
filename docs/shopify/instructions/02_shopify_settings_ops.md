@@ -350,7 +350,7 @@ placeholder 모두 실제 값으로 교체 (HST 번호 없으면 그 줄 삭제)
 - [ ] **1F Taxes**: Tax-exclusive pricing, HST 13% 자동 계산 (또는 HST 미등록 상태 명시)
 - [ ] **1G Checkout**: Account = Optional, Cart = Drawer, Tipping = off, Auto-fulfill = off
 - [ ] **1H Notifications**: Sender = `Everstory Studio`, Pickup ready 본문 보강, 13개 template 활성
-- [ ] **1I Policies**: Refund / Shipping / Privacy / Terms / Contact 5개 모두 publish, placeholder 0개
+- [ ] **1I Policies**: Refund / Shipping / Privacy / Terms / Contact information 5개 모두 publish, placeholder 0개 (별도 페이지 `/pages/contact` 는 Batch 3 에서 등록)
 - [ ] **1J Customer accounts**: New (passwordless), Optional at checkout
 
 > Settings 1A–1J 가 끝나면 Stage 1 종료. 다음 batch 부터는 admin 데이터 (상품, 컬렉션, 페이지) 와 테마 작업.

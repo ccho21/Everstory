@@ -35,6 +35,10 @@ PHOTO QUALITY & PERSONAL PREFERENCE
 
 We use the photograph you upload, with our standard background removal and color correction, and we apply the details you share at checkout. We cannot refund or reprint based on personal preference about how the photo turned out — the order notes at checkout are your moment to be specific.
 
+AGE & SAFETY
+
+Everstory sticker sheets are decorative photo products, not a toy and not a children's product. They are not suitable for children under 3 (choking hazard from small peelable die-cut parts) and require adult supervision for any child under 14. Even when the photograph features a child, the finished sheet is intended for adult handling. Damage or injury caused by use outside this guidance is not eligible for refund or reprint.
+
 LOST IN TRANSIT
 
 Canada Post lettermail does not include tracking. If your sheet has not arrived 14 business days after shipping confirmation, email us. We will reprint and reship one replacement at no cost. Lost replacements are evaluated case by case.
@@ -142,3 +146,5 @@ footer 자동 노출. 추가 작업 없음.
 ## 한국어 Footer 적용
 
 정책 페이지에 한국어 안내를 붙일 때는 [`footer_copy.md`](footer_copy.md) 의 Refund / Shipping / Privacy / Terms 섹션을 같은 Shopify policy body 마지막에 추가한다. 영어 정책 본문이 기준이고, 한국어 footer 는 고객 이해를 돕는 요약이다.
+
+별도 페이지인 [`pages_copy.md`](pages_copy.md) 의 Contact 페이지 (`/pages/contact`) 에는 [`footer_copy.md`](footer_copy.md) 의 Contact 섹션을 같은 방식으로 admin body 마지막에 추가한다.

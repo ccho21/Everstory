@@ -1,8 +1,8 @@
-# Batch 8 — About / FAQ / Sizing Guide / Materials Guide 페이지
+# Batch 8 — About / FAQ / Sizing Guide / Materials Guide / Contact 페이지
 
-이 문서로 4개 정보 페이지를 storefront 에 정상 노출시킨다. **MVP 는 default `page.json` template 그대로 사용** — admin 에 등록된 본문 (Batch 3 에서 입력) 이 자동 노출되므로 추가 작업이 적다.
+이 문서로 5개 정보 페이지를 storefront 에 정상 노출시킨다. **About / FAQ / Sizing Guide / Materials Guide 는 default `page.json` template 그대로 사용** — admin 에 등록된 본문 (Batch 3 에서 입력) 이 자동 노출되므로 추가 작업이 적다. **Contact 는 Horizon 의 `page.contact.json` template 사용** — `contact-form` 섹션이 포함된다.
 
-- **소요 시간**: 약 30–45분 (검증 위주)
+- **소요 시간**: 약 40–60분 (검증 위주)
 - **이전 batch**: `07_product_template.md`
 - **다음 batch**: `09_qa_launch.md`
 - **본문 SOT**: [`../pages_copy.md`](../pages_copy.md), [`../footer_copy.md`](../footer_copy.md)
@@ -11,7 +11,7 @@
 
 ## 시작 전 점검
 
-- [ ] Batch 3 종료 — 4 페이지 (About / FAQ / Sizing Guide / Materials Guide) 가 admin Pages 에 본문 + 한국어 footer 포함해 등록됨
+- [ ] Batch 3 종료 — 5 페이지 (About / FAQ / Sizing Guide / Materials Guide / Contact) 가 admin Pages 에 본문 + 한국어 footer 포함해 등록됨. Contact 페이지의 Theme template 은 `page.contact` 로 설정됨
 - [ ] Batch 5 종료 — Theme 업로드, Header / Footer 셋업
 
 ---
@@ -68,9 +68,9 @@ main (main-page section)
 
 ---
 
-## Step 8.3 — 4 페이지 미리보기 검증
+## Step 8.3 — 5 페이지 미리보기 검증
 
-[Action 8.3.a] 좌측 페이지 selector → 다음 4 페이지 차례로 미리보기:
+[Action 8.3.a] 좌측 페이지 selector → 다음 5 페이지 차례로 미리보기:
 
 #### About
 - URL = `/pages/about`
@@ -92,11 +92,49 @@ main (main-page section)
 - Title = `Material Guide`
 - 본문: 4 material 표 (Best for 컬럼) + waterproof·fade resistant 노트 (영문 only)
 
-[Checkpoint 8.3] ✅ 4 페이지 모두 admin 본문 자동 노출, 한국어 footer 포함된 페이지 (About / FAQ) 는 horizontal rule 다음 KR 섹션 정상.
+#### Contact
+- URL = `/pages/contact`
+- Title = `Contact Everstory Studio`
+- Template = `page.contact` (Horizon 기본 — `contact-form` 섹션 포함)
+- 본문: English Contact 본문 ([`../pages_copy.md`](../pages_copy.md) Contact 섹션) → ─ → "한국어 안내" (footer_copy.md Contact section) → contact-form 섹션 (Theme template 이 자동 렌더링)
+
+[Checkpoint 8.3] ✅ 5 페이지 모두 admin 본문 자동 노출, 한국어 footer 포함된 페이지 (About / FAQ / Contact) 는 horizontal rule 다음 KR 섹션 정상. Contact 페이지는 본문 아래 contact-form 폼 자동 노출.
 
 ---
 
-## Step 8.4 — (옵션) FAQ 를 accordion 으로 강화
+## Step 8.4 — Contact 페이지 `page.contact` template 검증
+
+Contact 페이지는 Default `page.json` 으로는 contact-form 이 렌더링되지 않는다. Horizon 의 `page.contact.json` template 을 사용해야 form 이 자동 노출.
+
+[Action 8.4.a] admin → Pages → `Contact Everstory Studio` → 우측 Theme template selector → `page.contact` 선택 후 Save (Batch 3 에서 이미 설정했다면 재확인)
+
+[Action 8.4.b] Theme Editor 좌측 페이지 selector → `Pages` → `Contact Everstory Studio` → 좌측 트리에서 다음 구조 확인:
+- `main-page` section
+  - `Title` (text block) — `{{ closest.page.title }}`
+  - `Page content` block — admin description 자동 렌더링 (English 본문 + 한국어 footer)
+- `contact-form` section — form 자동 렌더링
+
+[Action 8.4.c] `contact-form` section settings:
+
+| 항목 | 값 |
+|------|------|
+| Heading | (비움 — 본문에 "Send us a message" 가 이미 있으면 중복 방지) 또는 `Send us a message` |
+| Color scheme | 본문과 동일 |
+| Padding block-start / block-end | `40` / `64` |
+| Success message | `Thanks — we will reply within one business day.` (Horizon default 도 OK) |
+
+[Action 8.4.d] storefront 미리보기 → 다음 모두 확인:
+- 본문 (Email / Studio / Order questions / Press·Wholesale 안내) 자동 노출
+- 한국어 안내 horizontal rule 아래 노출
+- contact-form 폼 노출 (Name / Email / Phone / Subject / Message + Send 버튼)
+- 폼 제출 후 success message 표시
+- 어드민 → Customers · Inbox · 또는 store contact email 로 메시지 도착 확인
+
+[Checkpoint 8.4] ✅ Contact 페이지 본문 + KR 섹션 + contact-form 모두 정상. test 메시지 1건 store contact email 수신.
+
+---
+
+## Step 8.5 — (옵션) FAQ 를 accordion 으로 강화
 
 > MVP 는 description plain text 로 충분. 다만 FAQ 가 길어 accordion 으로 분해하면 UX 향상.
 
@@ -120,7 +158,7 @@ main (main-page section)
 
 ---
 
-## Step 8.5 — Footer policy / Help 메뉴 링크 검증
+## Step 8.6 — Footer policy / Help 메뉴 링크 검증
 
 > Footer · Help 메뉴는 Batch 3 에서 Shipping / Refund 정책에 직접 URL 로 연결됨. 실제 작동 확인.
 
@@ -129,7 +167,7 @@ main (main-page section)
 - `Shipping & Pickup` → `/policies/shipping-policy` 정상 진입
 - `Refund Policy` → `/policies/refund-policy` 정상 진입
 - `FAQ` → `/pages/faq` 정상 진입
-- `Contact` → `mailto:` 메일 클라이언트 열림 (또는 Contact page 링크 시 정상 진입)
+- `Contact` → `/pages/contact` 정상 진입 (contact-form 노출 확인)
 
 [Action 8.5.b] Footer · Brand 그룹:
 - `About` → `/pages/about`
@@ -137,7 +175,7 @@ main (main-page section)
 - `Terms` → `/policies/terms-of-service`
 - `Sizing guide` → `/pages/sizing-guide`
 
-[Checkpoint 8.5] ✅ Footer 의 모든 링크가 정상 진입. 깨지는 링크 없음.
+[Checkpoint 8.6] ✅ Footer 의 모든 링크가 정상 진입. 깨지는 링크 없음.
 
 ---
 
@@ -145,10 +183,11 @@ main (main-page section)
 
 다음 모두 ✅ 면 Batch 8 완료:
 
-- [ ] **Step 8.1**: 4 페이지 default page.json 사용, 본문 자동 노출
+- [ ] **Step 8.1**: 4 페이지 (About / FAQ / Sizing / Materials) default page.json 사용, 본문 자동 노출
 - [ ] **Step 8.2**: main-page section settings 조정 (padding, alignment, title style)
-- [ ] **Step 8.3**: 4 페이지 미리보기 정상 (About / FAQ / Sizing / Materials)
-- [ ] **Step 8.5**: Footer 모든 링크 정상
+- [ ] **Step 8.3**: 5 페이지 미리보기 정상 (About / FAQ / Sizing / Materials / Contact)
+- [ ] **Step 8.4**: Contact 페이지 page.contact template, 본문 + KR + contact-form 정상, test 메시지 수신
+- [ ] **Step 8.6**: Footer 모든 링크 정상 (Contact → /pages/contact)
 
 ---
 

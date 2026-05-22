@@ -81,7 +81,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
     - [settings_checklist.md](docs/shopify/settings_checklist.md) — 1A–1J 설정 체크리스트와 통합 smoke test
     - [instructions/](docs/shopify/instructions/) — Batch 1–9 admin·theme 실행 walkthrough (값은 SOT 문서 참조)
   - **카피·콘텐츠**
-    - [pages_copy.md](docs/shopify/pages_copy.md) — About/FAQ/가이드 페이지 카피
+    - [pages_copy.md](docs/shopify/pages_copy.md) — About/FAQ/가이드/Contact 페이지 카피
     - [product_descriptions.md](docs/shopify/product_descriptions.md) — 5 SKU 상품 설명
     - [footer_copy.md](docs/shopify/footer_copy.md) — 한국어 footer 카피
   - **정책**

@@ -71,10 +71,21 @@ A. Ontario only for MVP launch. Free shipping by Canada Post lettermail.
 **Q. Can I pick up locally?**
 A. Yes. Choose Toronto Studio Pickup at checkout.
 
+### Safety and age guidance
+
+**Q. Are these stickers safe for children?**
+A. Everstory stickers are decorative photo products — not a toy and not designed for children's use. The sheet contains small peelable die-cut parts. They are not suitable for children under 3 (choking hazard) and require adult supervision for any child under 14. Even when the photograph features a child, the finished sheet is intended for adult handling.
+
+**Q. The photo is of my child. Why the strict guidance?**
+A. The subject of the photograph and the user of the product are different. The sheet itself is an adult-handled keepsake — for diaries, journals, tumblers, packaging, gifts. We label conservatively so families know to keep the sheet away from infants and to supervise placement for older children.
+
+**Q. How should I store the sheet around small children?**
+A. Keep the sheet and any loose cut pieces out of reach of infants and toddlers. Treat the sheet like any small decorative paper item.
+
 **SEO**
 
 - Title: `FAQ | Everstory Studio`
-- Description: `Common questions about Everstory photo sticker orders, photos, sizes, packages, shipping, and pickup.`
+- Description: `Common questions about Everstory photo sticker orders, photos, sizes, packages, shipping, pickup, and product safety guidance.`
 
 ## Sizing Guide (`/pages/sizing-guide`)
 
@@ -119,3 +130,27 @@ All four are waterproof, fade resistant, and suitable for everyday use.
 
 - Title: `Material Guide | Everstory Studio`
 - Description: `White Matte, Translucent, Silver, and Gold photo sticker materials from Everstory Studio.`
+
+## Contact (`/pages/contact`)
+
+**Page title**: `Contact Everstory Studio`
+**Handle**: `contact`
+
+Everstory Studio is a small Toronto studio doing print, cut, and pack by hand. Email is the most reliable channel — we reply within one business day. Korean and English both welcome.
+
+**Email** — `studio.everstory@gmail.com`
+
+**Order questions** — include your order number in the subject line.
+
+**Toronto Studio Pickup** — choose pickup at checkout. We email the address and an available pickup window once your sheet is ready. Pickup window is 30 days from the ready-for-pickup email.
+
+**Press, wholesale, collaboration** — email with `[Wholesale]` or `[Press]` in the subject. We review case by case.
+
+A short contact form is included below for quick messages. It sends to the same studio inbox.
+
+**Shopify section to use**: `contact-form`.
+
+**SEO**
+
+- Title: `Contact | Everstory Studio`
+- Description: `Email Everstory Studio in Toronto. We reply within one business day. Korean and English welcome.`

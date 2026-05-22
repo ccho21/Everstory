@@ -239,6 +239,16 @@ Printed on Epson ET-8550 and cut on Summa D75 in Toronto.
 
 Upload a few extra photos when the product asks for them. We choose the best ones for the final sheets. The clearer the photo, the better the cutline.
 
+### Safety and age guidance
+
+Everstory sticker sheets are decorative photo products, not a toy and not a children's product.
+
+- Not suitable for children under 3 — small peelable die-cut parts pose a choking hazard.
+- Not intended for unsupervised use by children under 14. Adults should place the stickers or supervise placement.
+- Keep sheets and any loose cut pieces out of reach of infants and toddlers.
+- Even when the photograph features a child, the finished sheet is intended for adult handling and care.
+- Damage or injury caused by use outside this guidance is not covered by reprint or refund.
+
 ---
 
 ## Shopify Admin Notes

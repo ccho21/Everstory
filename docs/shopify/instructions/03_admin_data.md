@@ -95,12 +95,15 @@ Create manual collection:
 
 Create pages from [`../pages_copy.md`](../pages_copy.md):
 
-| Page | Handle |
-|------|--------|
-| About Everstory Studio | `about` |
-| Frequently Asked Questions | `faq` |
-| Sticker Size Guide | `sizing-guide` |
-| Material Guide | `materials-guide` |
+| Page | Handle | Theme template |
+|------|--------|----------------|
+| About Everstory Studio | `about` | `page` (default) |
+| Frequently Asked Questions | `faq` | `page` (default) |
+| Sticker Size Guide | `sizing-guide` | `page` (default) |
+| Material Guide | `materials-guide` | `page` (default) |
+| Contact Everstory Studio | `contact` | `page.contact` (Horizon default — includes `contact-form` section) |
+
+For the Contact page, set the body to the Contact section from [`../pages_copy.md`](../pages_copy.md) and append the Contact Korean footer from [`../footer_copy.md`](../footer_copy.md). The `contact-form` section is rendered by the `page.contact` template, so the body text appears above the form.
 
 Policy pages continue to use [`../policies.md`](../policies.md).
 
@@ -133,7 +136,7 @@ Footer · Help:
 | Shipping & Pickup | `/policies/shipping-policy` |
 | Refund Policy | `/policies/refund-policy` |
 | FAQ | `/pages/faq` |
-| Contact | `mailto:studio.everstory@gmail.com` |
+| Contact | `/pages/contact` |
 
 Footer · Brand:
 
