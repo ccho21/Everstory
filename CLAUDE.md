@@ -89,5 +89,6 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
   - **시안**
     - [wireframes/index.html](docs/shopify/wireframes/index.html) — Horizon 테마 기반 11페이지 와이어프레임 (페이지별 분리 HTML)
     - [preview.html](docs/shopify/preview.html) — 스토어프론트 프리뷰 시안
-    - [everstory_product_detail_full_template.html](docs/shopify/everstory_product_detail_full_template.html) — 상품 상세 PDP HTML 시안 (full KO / full EN / pdp_block)
+    - [everstory_pdp_general.html](docs/shopify/everstory_pdp_general.html) (+ `_en.html`) — PDP 공용 블록 시안 (product info *밖*, Options/Sizes/공용 섹션, KR/EN)
+    - [everstory_pdp_product_intro.html](docs/shopify/everstory_pdp_product_intro.html) (+ `_en.html`) — SKU 별 intro metafield 시안 (product info *안*, KR/EN)
     - [horizon_wireframe_application_plan.md](docs/shopify/horizon_wireframe_application_plan.md) — 문서·wireframe → Horizon 테마 적용 매핑 플랜

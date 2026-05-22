@@ -55,7 +55,7 @@ A. If a required photo or tier does not have enough usable options, we email bef
 ### Sizes and Materials
 
 **Q. What size should I pick?**
-A. 1" / 25mm is the safest everyday size. 1.25" / 32mm and 1.5" / 38mm work well for tumblers and laptops. 1.75" / 45mm and 2.5" / 64mm are stronger statement sizes.
+A. 1" / 25mm is the safest everyday size. 1.25" / 32mm and 1.5" / 38mm work well for tumblers and laptops. 2" / 51mm and 2.5" / 64mm are stronger statement sizes.
 
 **Q. What materials can I choose?**
 A. White Matte, Translucent, Silver, and Gold.
@@ -89,7 +89,7 @@ Sticker size is measured by the longest edge. Sheet size is A5.
 | 1" / 25mm | everyday stickers, journals, water bottles |
 | 1.25" / 32mm | tumblers, notebooks, phone cases |
 | 1.5" / 38mm | laptops, larger tumblers |
-| 1.75" / 45mm | bold placements |
+| 2" / 51mm | bold placements |
 | 2.5" / 64mm | one large statement sticker |
 
 For Full Body Sticker, 1.25" / 32mm or larger is recommended. Smaller sizes remain available.

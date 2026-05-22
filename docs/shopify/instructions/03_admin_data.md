@@ -24,7 +24,7 @@ Variant options:
 
 | Option | Values |
 |--------|--------|
-| Size | `0.75" / 19mm`, `1" / 25mm`, `1.25" / 32mm`, `1.5" / 38mm`, `1.75" / 45mm`, `2.5" / 64mm` |
+| Size | `0.75" / 19mm`, `1" / 25mm`, `1.25" / 32mm`, `1.5" / 38mm`, `2" / 51mm`, `2.5" / 64mm` |
 | Material | `White Matte`, `Translucent`, `Silver`, `Gold` |
 | Photos to include | `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `10`, `11`, `12`, `13` |
 
@@ -57,7 +57,7 @@ Create these two products with Material as the only Shopify variant option.
 | Product | Handle | Price | Weight | Tags |
 |---------|--------|-------|--------|------|
 | Package Mini | `package-mini` | $24.99 CAD | 100 g | `package-mini`, `curated-package`, `a5`, `made-to-order`, `two-sheet` |
-| Package Full | `package-full` | $34.99 CAD | 150 g | `package-full`, `curated-package`, `a5`, `made-to-order`, `three-sheet` |
+| Package Full | `package-full` | $34.99 CAD | 100 g | `package-full`, `curated-package`, `a5`, `made-to-order`, `two-sheet` |
 
 Variant option:
 
@@ -133,7 +133,7 @@ Footer · Help:
 | Shipping & Pickup | `/policies/shipping-policy` |
 | Refund Policy | `/policies/refund-policy` |
 | FAQ | `/pages/faq` |
-| Contact | `mailto:[orders@everstory-domain.com]` |
+| Contact | `mailto:studio.everstory@gmail.com` |
 
 Footer · Brand:
 

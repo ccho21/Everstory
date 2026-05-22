@@ -17,7 +17,7 @@ Every Everstory Studio order is made to order. Each sticker sheet is custom desi
 
 CANCELLATION
 
-You can cancel for a full refund any time before we begin printing — typically within one business day of your order. Email [orders@everstory-domain.com] as soon as possible.
+You can cancel for a full refund any time before we begin printing — typically within one business day of your order. Email studio.everstory@gmail.com as soon as possible.
 
 Once printing starts, the order cannot be refunded. The work is yours.
 
@@ -29,7 +29,7 @@ If your photograph genuinely cannot be used (too low resolution, too blurry to c
 
 PRINT DEFECTS
 
-If your sheet arrives with a print or cutting defect — visible color shift, lamination flaws, misaligned cuts, or visible damage — we will reprint and reship at no cost. Email us within 7 days of delivery with a photo of the issue at [orders@everstory-domain.com].
+If your sheet arrives with a print or cutting defect — visible color shift, lamination flaws, misaligned cuts, or visible damage — we will reprint and reship at no cost. Email us within 7 days of delivery with a photo of the issue at studio.everstory@gmail.com.
 
 PHOTO QUALITY & PERSONAL PREFERENCE
 
@@ -45,7 +45,7 @@ If you selected Toronto Studio Pickup, your order is held for 30 days from the "
 
 CONTACT
 
-[orders@everstory-domain.com]
+studio.everstory@gmail.com
 Everstory Studio
 [Toronto address]
 ```
@@ -79,15 +79,15 @@ We begin production within one business day of your order. If your photograph ne
 
 LOST OR DELAYED PACKAGES
 
-Lettermail does not include tracking. If 14 business days have passed since your shipping confirmation and your order has not arrived, email [orders@everstory-domain.com]. We will reprint and reship one replacement at no cost.
+Lettermail does not include tracking. If 14 business days have passed since your shipping confirmation and your order has not arrived, email studio.everstory@gmail.com. We will reprint and reship one replacement at no cost.
 
 ORDERS OUTSIDE ONTARIO
 
-Our checkout will not accept addresses outside Ontario at this time. If you are outside Ontario and want to order, message us at [orders@everstory-domain.com] — we evaluate exceptions case by case.
+Our checkout will not accept addresses outside Ontario at this time. If you are outside Ontario and want to order, message us at studio.everstory@gmail.com — we evaluate exceptions case by case.
 
 CONTACT
 
-[orders@everstory-domain.com]
+studio.everstory@gmail.com
 Everstory Studio
 [Toronto address]
 ```
@@ -99,7 +99,7 @@ Everstory Studio
 Shopify 어드민 → Settings → Policies → Privacy → **"Generate from template"** 클릭. 자동 생성된 본문은 PIPEDA 호환. 다음 항목만 교체:
 
 - `[STORE NAME]` → `Everstory Studio`
-- `[STORE EMAIL]` → `[orders@everstory-domain.com]`
+- `[STORE EMAIL]` → `studio.everstory@gmail.com`
 - `[STORE ADDRESS]` → 토론토 사업장 주소
 - `[BUSINESS NUMBER]` → HST/GST 번호
 - `[JURISDICTION]` → `Ontario, Canada`
@@ -131,7 +131,7 @@ Shopify 어드민 → Settings → Policies → Contact information:
 ```
 Everstory Studio
 [Toronto address]
-[orders@everstory-domain.com]
+studio.everstory@gmail.com
 HST/GST: [번호]
 ```
 

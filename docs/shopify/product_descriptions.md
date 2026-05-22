@@ -22,7 +22,7 @@ Shopify 상품 등록과 PDP description copy의 기준 문서다. 현재 launch
 
 | Option | Values |
 |--------|--------|
-| Size | `0.75" / 19mm`, `1" / 25mm`, `1.25" / 32mm`, `1.5" / 38mm`, `1.75" / 45mm`, `2.5" / 64mm` |
+| Size | `0.75" / 19mm`, `1" / 25mm`, `1.25" / 32mm`, `1.5" / 38mm`, `2" / 51mm`, `2.5" / 64mm` |
 | Material | `White Matte`, `Translucent`, `Silver`, `Gold` |
 | Photos to include | `1` through `13` |
 
@@ -149,18 +149,18 @@ Small gift sets, one child or pet with a few moods, and customers who want Evers
 ## SKU 5 — Package Full
 
 **Title**: `Package Full`
-**Tags**: `package-full`, `curated-package`, `a5`, `made-to-order`, `three-sheet`
+**Tags**: `package-full`, `curated-package`, `a5`, `made-to-order`, `two-sheet`
 **Price**: `$34.99 CAD`
 
 ### Description
 
 > A larger curated photo sticker package.
 
-Package Full is the fuller set: more upload room, more selected photos, and three A5 sheets. Upload options by size tier, and Everstory chooses the strongest final set.
+Package Full is the fuller set: more upload room, more selected photos, on two A5 sheets. Upload options by size tier, and Everstory chooses the strongest final set.
 
 **What you get**
 
-- Three A5 sticker sheets
+- Two A5 sticker sheets
 - Big print: upload up to 5 photos, Studio picks 2
 - Medium print: upload up to 5 photos, Studio picks 2
 - Small print: upload up to 7 photos, Studio picks 4
@@ -204,7 +204,7 @@ Sized by the longest edge. Sticker count varies with photo proportion and select
 | 1" / 25mm | most common everyday size |
 | 1.25" / 32mm | tumblers, notebooks, phone cases |
 | 1.5" / 38mm | larger tumblers, laptops |
-| 1.75" / 45mm | bold placement |
+| 2" / 51mm | bold placement |
 | 2.5" / 64mm | statement sticker |
 
 ### Crop decisions

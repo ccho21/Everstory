@@ -231,7 +231,6 @@ Your order is ready at Toronto Studio. Please reply with a pickup time.
 
 [Action 1.9.1.c] 본문 안 placeholder 교체:
 - `[YYYY-MM-DD]` → 오늘 날짜 (예: `2026-05-09`)
-- `[orders@everstory-domain.com]` → 실제 운영 이메일 (도메인 미연결이면 일단 placeholder 유지, launch 전 일괄 교체)
 - `[Toronto address]` → 1A 사업장 주소
 
 [Action 1.9.1.d] (옵션) 본문 끝에 한국어 안내 추가:
@@ -303,7 +302,7 @@ Your order is ready at Toronto Studio. Please reply with a pickup time.
 ```
 Everstory Studio
 [Toronto address]
-[orders@everstory-domain.com]
+studio.everstory@gmail.com
 HST/GST: [번호]
 ```
 
