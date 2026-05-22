@@ -41,12 +41,8 @@
          Depth comes from spacing + bg.warm callouts. */
       --max: 1120px;
 
-      /* Inherit 차단 — Horizon body 의 font/color/letter-spacing 가 들어오지 않게 */
-      font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR',
-                   -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      font-weight: 500;
-      letter-spacing: -0.02em;
-      line-height: 1.5;
+      /* Theme typography 상속 — font-family / weight / letter-spacing / line-height 는
+         Horizon body 에서 cascade. color/background 는 브랜드 토큰, word-break 는 KO 정책. */
       color: var(--text-primary);
       background: var(--bg-canvas);
       word-break: keep-all;
@@ -116,7 +112,7 @@
       font-weight: 700;
       font-size: clamp(26px, 3.4vw, 42px);
       line-height: 1.25;
-      letter-spacing: -0.035em;
+      letter-spacing: 0.03em;
       color: var(--text-primary);
     }
 
@@ -210,7 +206,7 @@
       color: var(--text-primary);
       font-size: 15px;
       font-weight: 700;
-      letter-spacing: -0.01em;
+      letter-spacing: 0.03em;
     }
 
     .es-pdp .status-icon {
@@ -264,7 +260,7 @@
       margin: 0 0 16px;
       font-weight: 700;
       font-size: clamp(17px, 1.9vw, 22px);
-      letter-spacing: -0.02em;
+      letter-spacing: 0.03em;
       color: var(--text-primary);
     }
 
@@ -272,7 +268,6 @@
       margin-left: 8px;
       font-weight: 500;
       font-size: 12px;
-      letter-spacing: 0;
       color: var(--text-muted);
       vertical-align: middle;
     }
@@ -386,23 +381,6 @@
       font-weight: 700;
     }
 
-    .es-pdp .size-rule {
-      max-width: 520px;
-      margin: clamp(72px, 8vw, 112px) auto 0;
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: clamp(13px, 1.3vw, 15px);
-      line-height: 1.7;
-    }
-
-    .es-pdp .size-rule strong {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--text-primary);
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
-
     .es-pdp .examples {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -428,10 +406,12 @@
       place-items: center;
     }
 
-    /* Orientation — 긴 변 동일 (--size), 짧은 변 = --size × --short-ratio */
+    /* Orientation — 긴 변 동일 (--size), 짧은 변 = --size × --short-ratio.
+       --size 는 Sizes 섹션 sheet-image 와 비슷한 시각 비중을 위해 responsive clamp.
+       측정선 라벨 (`left: -45%`) 이 컬럼 gap 안에 머무는 안전 범위 */
     .es-pdp .measure-box.orientation-h,
     .es-pdp .measure-box.orientation-v {
-      --size: 240px;
+      --size: clamp(300px, 34vw, 420px);
       --short-ratio: 0.75;
     }
     .es-pdp .measure-box.orientation-h {
@@ -539,7 +519,7 @@
       color: var(--text-primary);
       font-weight: 700;
       font-size: clamp(16px, 1.7vw, 22px);
-      letter-spacing: -0.02em;
+      letter-spacing: 0.03em;
     }
 
     .es-pdp .size-name small {
@@ -547,7 +527,6 @@
       margin-top: 4px;
       font-weight: 500;
       font-size: 11px;
-      letter-spacing: 0;
       color: var(--text-muted);
     }
 
@@ -674,9 +653,11 @@
       .es-pdp .option-image--wide { max-width: 100%; }
 
       .es-pdp .mockup-wrap {
-        max-width: 320px;
+        max-width: 480px;
         margin: 0 auto;
       }
+
+      .es-pdp .size-card.mixed .mockup-wrap { max-width: 480px; }
 
       .es-pdp .examples {
         justify-items: center;
@@ -684,7 +665,7 @@
       }
 
       .es-pdp .measure-box.orientation-h,
-      .es-pdp .measure-box.orientation-v { --size: 200px; }
+      .es-pdp .measure-box.orientation-v { --size: clamp(240px, 70vw, 320px); }
     }
   </style>
 
@@ -832,10 +813,18 @@
               <p class="caption">한 시트 약 [개수 확인]장. 자동차, 큰 백팩, 데스크탑 한 면에 적합.</p>
             </article>
           </section>
+        </div>
+      </section>
 
-          <div class="size-rule">
-            <strong>가장 긴 변 기준</strong>
-            가로·세로 사진 모두 긴 변 길이가 같고, 짧은 변만 사진 비율에 따라 달라져요.
+      <!-- 긴 변 기준 — Sizes 설명의 운영 규칙. 사이즈 그리드와 시각적으로 분리해 별도 섹션. -->
+      <section class="es-section" aria-label="긴 변 기준">
+        <div class="es-section-shell">
+          <div class="heading-block">
+            <span class="es-eyebrow">긴 변</span>
+            <h2>가장 긴 변 기준.</h2>
+            <p class="sub">
+              가로·세로 사진 모두 긴 변 길이가 같고, 짧은 변만 사진 비율에 따라 달라져요.
+            </p>
           </div>
 
           <section class="measure-group">

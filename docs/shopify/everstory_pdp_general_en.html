@@ -38,12 +38,8 @@
          Depth comes from spacing + bg.warm callouts. */
       --max: 1120px;
 
-      /* Inherit 차단 — Horizon body 의 font/color/letter-spacing 가 들어오지 않게 */
-      font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR',
-                   -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      font-weight: 500;
-      letter-spacing: -0.02em;
-      line-height: 1.5;
+      /* Theme typography 상속 — font-family / weight / letter-spacing / line-height 는
+         Horizon body 에서 cascade. color/background 는 브랜드 토큰, word-break 는 KO 정책. */
       color: var(--text-primary);
       background: var(--bg-canvas);
       word-break: keep-all;
@@ -61,7 +57,7 @@
     /* English brand wordmark — sheet mockup tiny-mark, RGB/CMYK headings */
     .es-pdp .wordmark {
       font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
-      font-weight: 600;
+      font-weight: 400;
       font-style: italic;
       letter-spacing: 0;
     }
@@ -96,7 +92,7 @@
       margin: 0 0 18px;
       color: var(--accent-coral);
       font-size: clamp(10px, 1vw, 12px);
-      font-weight: 700;
+      font-weight: 400;
       letter-spacing: 0.22em;
       text-transform: uppercase;
       text-align: center;
@@ -110,10 +106,10 @@
 
     .es-pdp .heading-block h2 {
       margin: 0;
-      font-weight: 700;
+      font-weight: 400;
       font-size: clamp(26px, 3.4vw, 42px);
       line-height: 1.25;
-      letter-spacing: -0.035em;
+      letter-spacing: 0.03em;
       color: var(--text-primary);
     }
 
@@ -206,8 +202,8 @@
       gap: 8px;
       color: var(--text-primary);
       font-size: 15px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
+      font-weight: 400;
+      letter-spacing: 0.03em;
     }
 
     .es-pdp .status-icon {
@@ -245,7 +241,7 @@
       display: block;
       margin-bottom: 4px;
       color: var(--text-primary);
-      font-weight: 700;
+      font-weight: 400;
     }
 
     /* 4. 시트 구성 */
@@ -259,9 +255,9 @@
 
     .es-pdp .size-title {
       margin: 0 0 16px;
-      font-weight: 700;
+      font-weight: 400;
       font-size: clamp(17px, 1.9vw, 22px);
-      letter-spacing: -0.02em;
+      letter-spacing: 0.03em;
       color: var(--text-primary);
     }
 
@@ -269,7 +265,6 @@
       margin-left: 8px;
       font-weight: 500;
       font-size: 12px;
-      letter-spacing: 0;
       color: var(--text-muted);
       vertical-align: middle;
     }
@@ -380,24 +375,7 @@
       text-align: center;
       font-size: 13px;
       letter-spacing: 0.02em;
-      font-weight: 700;
-    }
-
-    .es-pdp .size-rule {
-      max-width: 520px;
-      margin: clamp(72px, 8vw, 112px) auto 0;
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: clamp(13px, 1.3vw, 15px);
-      line-height: 1.7;
-    }
-
-    .es-pdp .size-rule strong {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--text-primary);
-      font-weight: 700;
-      letter-spacing: -0.01em;
+      font-weight: 400;
     }
 
     .es-pdp .examples {
@@ -425,10 +403,12 @@
       place-items: center;
     }
 
-    /* Orientation — 긴 변 동일 (--size), 짧은 변 = --size × --short-ratio */
+    /* Orientation — 긴 변 동일 (--size), 짧은 변 = --size × --short-ratio.
+       --size 는 Sizes 섹션 sheet-image 와 비슷한 시각 비중을 위해 responsive clamp.
+       측정선 라벨 (`left: -45%`) 이 컬럼 gap 안에 머무는 안전 범위 */
     .es-pdp .measure-box.orientation-h,
     .es-pdp .measure-box.orientation-v {
-      --size: 240px;
+      --size: clamp(300px, 34vw, 420px);
       --short-ratio: 0.75;
     }
     .es-pdp .measure-box.orientation-h {
@@ -498,13 +478,7 @@
       letter-spacing: 0.04em;
       line-height: 1;
       white-space: nowrap;
-      font-weight: 700;
-    }
-
-    .es-pdp .measure-text--side {
-      left: -45%;
-      top: 50%;
-      transform: translateY(-50%) rotate(-90deg);
+      font-weight: 400;
     }
 
     .es-pdp .measure-text--top {
@@ -534,9 +508,9 @@
     .es-pdp .size-name {
       margin: 0;
       color: var(--text-primary);
-      font-weight: 700;
+      font-weight: 400;
       font-size: clamp(16px, 1.7vw, 22px);
-      letter-spacing: -0.02em;
+      letter-spacing: 0.03em;
     }
 
     .es-pdp .size-name small {
@@ -544,7 +518,6 @@
       margin-top: 4px;
       font-weight: 500;
       font-size: 11px;
-      letter-spacing: 0;
       color: var(--text-muted);
     }
 
@@ -584,7 +557,7 @@
 
     .es-pdp .notice-list em {
       font-style: normal;
-      font-weight: 700;
+      font-weight: 400;
       text-decoration: underline;
       text-decoration-color: var(--accent-coral);
       text-decoration-thickness: 1px;
@@ -614,7 +587,7 @@
       padding: 8px 22px;
       border-radius: 999px;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 400;
       letter-spacing: 0.18em;
     }
 
@@ -636,7 +609,7 @@
 
     .es-pdp .heading-block .sub strong {
       color: var(--text-primary);
-      font-weight: 700;
+      font-weight: 400;
     }
 
     @media (max-width: 860px) {
@@ -671,9 +644,11 @@
       .es-pdp .option-image--wide { max-width: 100%; }
 
       .es-pdp .mockup-wrap {
-        max-width: 320px;
+        max-width: 480px;
         margin: 0 auto;
       }
+
+      .es-pdp .size-card.mixed .mockup-wrap { max-width: 480px; }
 
       .es-pdp .examples {
         justify-items: center;
@@ -681,7 +656,7 @@
       }
 
       .es-pdp .measure-box.orientation-h,
-      .es-pdp .measure-box.orientation-v { --size: 200px; }
+      .es-pdp .measure-box.orientation-v { --size: clamp(240px, 70vw, 320px); }
     }
   </style>
 
@@ -829,10 +804,18 @@
               <p class="caption">About [count] per sheet. For a car, a large backpack, one face of a desktop.</p>
             </article>
           </section>
+        </div>
+      </section>
 
-          <div class="size-rule">
-            <strong>By the longest edge</strong>
-            Landscape and portrait photos share the same long-edge length; only the short edge changes with the photo's ratio.
+      <!-- 긴 변 기준 — Sizes 설명의 운영 규칙. 사이즈 그리드와 시각적으로 분리해 별도 섹션. -->
+      <section class="es-section" aria-label="By the longest edge">
+        <div class="es-section-shell">
+          <div class="heading-block">
+            <span class="es-eyebrow">Long edge</span>
+            <h2>By the longest edge.</h2>
+            <p class="sub">
+              Landscape and portrait photos share the same long-edge length; only the short edge changes with the photo's ratio.
+            </p>
           </div>
 
           <section class="measure-group">
@@ -841,7 +824,6 @@
                 <div class="measure-box orientation-h">
                   <div class="guide-square"></div>
                   <div class="horizontal-measure"></div>
-                  <div class="measure-text measure-text--top">Long edge — sets the size</div>
                   <div class="cutout cutout--landscape"></div>
                 </div>
                 <p class="size-name">Landscape photo<small>width sets the size</small></p>
@@ -850,7 +832,6 @@
                 <div class="measure-box orientation-v">
                   <div class="guide-square"></div>
                   <div class="vertical-measure"></div>
-                  <div class="measure-text measure-text--side">Long edge — sets the size</div>
                   <div class="cutout cutout--portrait"></div>
                 </div>
                 <p class="size-name">Portrait photo<small>height sets the size</small></p>
