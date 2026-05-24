@@ -92,23 +92,92 @@ A. Keep the sheet and any loose cut pieces out of reach of infants and toddlers.
 **Page title**: `Sticker Size Guide`
 **Handle**: `sizing-guide`
 
-Sticker size is measured by the longest edge. Sheet size is A5.
+Sticker size is measured by the longest edge. Sheet size is fixed at ISO A5 (148 × 210 mm). Sticker count per sheet adjusts to your photo's proportion — vertical photos pack differently from horizontal ones at the same size.
 
-| Size | Best for |
-|------|----------|
-| 0.75" / 19mm | tiny marks, planners, calendars |
-| 1" / 25mm | everyday stickers, journals, water bottles |
-| 1.25" / 32mm | tumblers, notebooks, phone cases |
-| 1.5" / 38mm | laptops, larger tumblers |
-| 2" / 51mm | bold placements |
-| 2.5" / 64mm | one large statement sticker |
+### Sizes
 
-For Full Body Sticker, 1.25" / 32mm or larger is recommended. Smaller sizes remain available.
+**0.75" / 19 mm** — up to 13 stickers per sheet
+Tiny marks for planners, calendars, day-by-day diaries. Fine photo details may be hard to read at this size.
+
+**1" / 25 mm — Most popular** — up to 7 stickers per sheet
+The most common everyday size. Works on planners, water bottles, phone cases, and laptops without overwhelming the surface. We ship more 1" stickers than every other size combined.
+
+**1.25" / 32 mm** — up to 5 stickers per sheet
+Tumblers, notebooks, larger phone cases. A good balance between presence and quantity per sheet.
+
+**1.5" / 38 mm** — up to 3 stickers per sheet
+Larger tumblers, laptops. Recognizable from across a room.
+
+**2" / 51 mm** — up to 3 stickers per sheet
+Bold placement. Best as a single hero element on a surface.
+
+**2.5" / 64 mm** — 1 sticker per sheet
+Statement sticker. Car decals, large tumblers, gift packaging accents.
+
+### Size by use case
+
+| Surface | Recommended size |
+|---------|------------------|
+| Phone case | 1" / 1.25" |
+| Water bottle | 1" – 1.5" |
+| Laptop | 1.25" / 1.5" |
+| Tumbler (16–30 oz) | 1.25" / 1.5" |
+| Journal / planner | 0.75" / 1" |
+| Car decal | 2" / 2.5" |
+| Gift packaging | 1" / 1.25" |
+| Calendar | 0.75" |
+
+### A note on proportion
+
+The "longest edge" measurement means a horizontal photo and a vertical photo at the same size will share the same width — but the vertical photo will be taller. Sticker count per sheet adjusts automatically to fit your photo's shape.
+
+**If you're unsure, pick 1" / 25 mm.** It's the most-ordered size for a reason.
+
+### Full Body Sticker recommendation
+
+For Full Body Sticker, **1.25" / 32 mm or larger** is recommended because the subject is shown full-body in the frame and detail is lost at smaller sizes. Smaller sizes remain available if you prefer.
+
+### Ready to choose?
+
+Every Face Sticker, Full Body Sticker, and Circle Sticker lets you pick from six sizes — 0.75" to 2.5". Package Mini and Package Full bundle multiple sizes into one curated sheet.
+
+→ [Shop the collection](/collections/all)
+
+---
+
+### 한국어 안내
+
+**사이즈 측정**
+스티커 사이즈는 가장 긴 변 기준입니다. 시트 사이즈는 ISO A5 (148 × 210 mm) 고정. 사진 비율에 따라 시트당 스티커 개수가 자동 조정됩니다.
+
+**가장 무난한 사이즈는 1 inch / 25 mm**
+다이어리, 물병, 폰 케이스, 노트북에 가장 잘 어울립니다. 모든 사이즈를 합친 것보다 1" 주문이 더 많을 정도로 표준 선택입니다. 고민되시면 1 inch 추천드립니다.
+
+**상황별 추천 사이즈**
+
+| 부착 면 | 추천 사이즈 |
+|--------|-----------|
+| 폰 케이스 | 1" / 1.25" |
+| 물병 | 1" – 1.5" |
+| 노트북 | 1.25" / 1.5" |
+| 텀블러 (16–30 oz) | 1.25" / 1.5" |
+| 다이어리·플래너 | 0.75" / 1" |
+| 차량 데칼 | 2" / 2.5" |
+| 선물 포장 | 1" / 1.25" |
+| 캘린더 | 0.75" |
+
+**Full Body 스티커는 1.25" 이상 권장**
+Full Body Sticker 는 인물·반려동물의 전신을 담기 때문에 작은 사이즈에서는 디테일이 사라집니다. 1.25" / 32 mm 이상을 권장하지만, 작은 사이즈도 선택 가능합니다.
+
+**비율 안내**
+가로 사진과 세로 사진이 같은 사이즈이면 같은 width 로 인쇄됩니다 (세로 사진이 더 키가 큼). 시트당 스티커 개수는 사진 비율에 맞춰 자동 조정됩니다.
+
+문의: studio.everstory@gmail.com (한국어 답변 가능)
 
 **SEO**
 
 - Title: `Sticker Size Guide | Everstory Studio`
-- Description: `Photo sticker sizes in inches and millimeters, from 0.75 inch to 2.5 inch.`
+- Description: `Photo sticker sizes in inches and millimeters from 0.75 inch to 2.5 inch, with use case recommendations for phone cases, water bottles, tumblers, laptops, and more.`
 
 ## Materials Guide (`/pages/materials-guide`)
 

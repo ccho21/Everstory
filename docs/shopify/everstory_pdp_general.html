@@ -71,6 +71,17 @@
       padding: 56px 0 88px;
     }
 
+    /* product-intro 전용 — SKU 블록 시안 간격 축소(top heavy, bottom 0). 값은 general .es-section margin 과 매치. */
+    .es-pdp .es-page--intro {
+      padding: 30px 0 0;
+    }
+
+    @media (max-width: 860px) {
+      .es-pdp .es-page--intro {
+        padding: 72px 0 0;
+      }
+    }
+
     .es-pdp .es-section {
       margin: 0 0 112px;
     }
@@ -683,6 +694,11 @@
   {%- endcomment -%}
   {%- assign sheet_prefix = product.metafields.custom.sheet_prefix.value -%}
 
+  {%- comment -%}
+    Material 이미지 prefix — Material 은 전 상품 공용 표시. Package 는 sheet_prefix 없으니 full_body fallback.
+  {%- endcomment -%}
+  {%- if is_package -%}{%- assign material_prefix = 'full_body' -%}{%- else -%}{%- assign material_prefix = sheet_prefix -%}{%- endif -%}
+
   <div class="es-pdp">
     <div class="es-page">
 
@@ -701,7 +717,7 @@
             <article class="option-block">
               <h3 class="option-title">사이즈</h3>
               <div class="option-image option-image--wide">
-                <img src="{{ 'face_sizes.jpg' | file_url }}" alt="사이즈 비교 — 0.75인치부터 2.5인치까지 6종">
+                <img src="{{ sheet_prefix | append: '_sizes.jpg' | file_url }}" alt="사이즈 비교 — 0.75인치부터 2.5인치까지 6종">
               </div>
               <p class="option-detail">
                 <strong>0.75" · 1" · 1.25" · 1.5" · 2" · 2.5"</strong>
@@ -714,7 +730,7 @@
             <article class="option-block">
               <h3 class="option-title">재질</h3>
               <div class="option-image option-image--wide">
-                <img src="{{ 'face_materials.jpg' | file_url }}" alt="재질 샘플 — White Matte · Translucent · Silver · Gold">
+                <img src="{{ material_prefix | append: '_materials.jpg' | file_url }}" alt="재질 샘플 — White Matte · Translucent · Silver · Gold">
               </div>
               <p class="option-detail">
                 <strong>White Matte · Translucent · Silver · Gold</strong>
