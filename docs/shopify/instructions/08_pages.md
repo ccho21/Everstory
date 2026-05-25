@@ -75,7 +75,7 @@ main (main-page section)
 #### About
 - URL = `/pages/about`
 - Title = `About Everstory Studio`
-- 본문: English ("Everstory Studio is a small photo sticker studio in Toronto…") → ─ → "한국어로 한 마디" (footer_copy.md) → KR 본문
+- 본문: English ("Everstory Studio is a small photo sticker brand based in Toronto…") → ─ → "한국어로 한 마디" (footer_copy.md) → KR 본문
 
 #### FAQ
 - URL = `/pages/faq`

@@ -1129,16 +1129,15 @@
       var psdName = pngName.replace(/_sil\.png$/i, "_clean.psd");
       var psdFile = new File(folder.fsName + "/" + psdName);
       if (psdFile.exists) {
-        // 접미사 제거 후 끝의 _TIER 토큰 파싱 → pair.tier, base 에서는 strip.
+        // 접미사 제거 후 끝의 _TIER 토큰 파싱 → pair.tier. base 는 tier 포함 (운영자가 listbox 에서 사이즈 확인).
         // psdName 은 raw pngName 치환이라 토큰이 양쪽에 대칭 보존 → 페어링 무영향.
         var nameNoSuffix = pngName.replace(/_sil\.png$/i, "");
         var tierMatch = nameNoSuffix.match(TIER_TOKEN_RE);
         var tier = tierMatch ? tierMatch[1].toUpperCase() : TIER_DEFAULT;
-        var cleanName = tierMatch ? nameNoSuffix.substring(0, tierMatch.index) : nameNoSuffix;
         pairs.push({
           psd: psdFile,
           sil: pngFiles[i],
-          base: _decodeName(cleanName),
+          base: _decodeName(nameNoSuffix),
           tier: tier
         });
       }

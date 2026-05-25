@@ -1,6 +1,6 @@
 # Everstory Studio Business
 
-Everstory Studio 는 토론토 기반 A5 커스텀 사진 다이컷 스티커 브랜드다. 고객 사진을 손으로 정리하고, 한국 프리미엄 substrate 와 자체 제작 파이프라인으로 빠르게 제작해 Ontario 고객에게 배송하거나 Toronto Studio pickup 으로 전달한다.
+Everstory Studio 는 토론토 기반 A5 커스텀 사진 다이컷 스티커 브랜드다. 고객 사진을 손으로 정리하고, 한국 프리미엄 substrate 와 자체 제작 파이프라인으로 빠르게 제작해 캐나다 전역으로 배송하거나 local pickup (by arrangement) 으로 전달한다.
 
 ## Business Definition
 
@@ -10,7 +10,7 @@ Everstory Studio 는 Toronto GTA + Korean diaspora 를 위한 A5 custom photo di
 
 **Target**
 
-- Toronto GTA 와 Ontario 내 커스텀 굿즈 수요
+- Toronto GTA 와 캐나다 내 커스텀 굿즈 수요
 - Korean diaspora
 - pet owner, family keepsake, planner/journal 사용자
 - 작은 선물, 재주문, 로컬 픽업을 선호하는 고객
@@ -19,7 +19,7 @@ Everstory Studio 는 Toronto GTA + Korean diaspora 를 위한 A5 custom photo di
 
 - 자동 마스킹/대량 생산이 아니라 사람이 사진 외곽을 정리한다.
 - 한국 inkjet label + lamination 조합으로 사진 품질과 내구성을 강조한다.
-- 주문 후 빠르게 제작을 시작하고 Ontario 내 무료 배송 또는 Toronto pickup 으로 전달한다.
+- 주문 후 빠르게 제작을 시작하고 캐나다 전역 무료 배송 또는 local pickup (by arrangement) 으로 전달한다.
 - 자체 Photoshop/Illustrator workflow 로 소량 주문을 운영 가능한 단가로 만든다.
 
 ## Product
@@ -145,13 +145,13 @@ Shopify 는 결제와 브랜드 신뢰의 중심이다. Instagram 과 커뮤니�
 
 ## Shipping And Pickup
 
-Customer-facing fulfillment 기준은 **Ontario free shipping + Toronto Studio pickup** 이다.
+Customer-facing fulfillment 기준은 **Canada-wide free shipping + local pickup (by arrangement)** 이다.
 
-- Ontario shipping: Canada Post lettermail, free shipping, no tracking
-- Toronto Studio pickup: local pickup option, ready notification after production
-- Outside Ontario: MVP launch scope 밖. 예외 주문은 별도 검토
+- Canada-wide shipping: Canada Post lettermail, free shipping, no tracking. Lettermail 단가는 거리 무관 동일 (province 별 차이 없음).
+- Local pickup (by arrangement): 결제 후 이메일로 픽업 장소·시간 협의. 가정집 주소 자동 공유 안 함. 실질 운영은 토론토 인근 지인 위주.
+- International (US, Korea 등): MVP launch scope 밖. 예외 주문은 이메일로 별도 검토.
 
-마케팅 언어에서는 Toronto local craft 를 강조한다. 배송 정책에서는 Ontario 범위를 명확히 말한다.
+마케팅 언어에서는 Toronto local craft 를 강조한다. 배송 정책에서는 Canada 범위를 명확히 말한다.
 
 ## Launch Goals
 

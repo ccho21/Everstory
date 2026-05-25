@@ -147,7 +147,9 @@
 
 [Action 1.2.a] Locations 페이지 진입 → 기존 location 클릭 (보통 스토어 이름과 동일하게 자동 생성됨)
 
-[Action 1.2.b] Location 이름을 `Toronto Studio` 로 변경
+[Action 1.2.b] Location 이름을 `Toronto` 로 변경
+
+> ⚠ Location 주소는 Shopify Pickup confirmation email 에 자동 포함됨. 가정집 운영이면 주소는 도시·우편번호 단위 (예: `Toronto, ON M5V`) 까지만 입력하고 정확한 번지는 비움. 정확한 픽업 장소는 주문 후 별도 이메일로 협의 (가정집 주소 자동 공유 방지).
 
 [Action 1.2.c] 다음 옵션 모두 ✅ 체크:
 - Fulfill online orders from this location
@@ -157,7 +159,7 @@
 
 [Action 1.2.e] `Save`
 
-[Checkpoint 1.2] ✅ Locations 화면에 `Toronto Studio` **단 1개** 만 표시. Default 라벨 옆에 붙어 있음.
+[Checkpoint 1.2] ✅ Locations 화면에 `Toronto` **단 1개** 만 표시. Default 라벨 옆에 붙어 있음.
 
 > ⚠️ 픽업은 별도 location 이 아니라 1E Shipping (Batch 2) 의 "Local pickup" 으로 처리. 여기서 location 추가하지 않음.
 
@@ -268,7 +270,7 @@
 다음 모두 ✅ 면 Batch 1 완료:
 
 - [ ] **1A General**: Store name = Everstory Studio, Currency = CAD, Time zone = Eastern Time, Address = Toronto Ontario, Sender email verified
-- [ ] **1B Locations**: Toronto Studio 1개, Default 표시
+- [ ] **1B Locations**: Toronto 1개, Default 표시, 주소는 도시·우편번호 단위까지만
 - [ ] **1C Markets**: Canada (Active) 만 존재, 다른 market 없음
 - [ ] **1D Payments**:
   - [ ] Shopify Payments 활성화 (캐나다 은행 계좌 있는 경우) — 또는 명시적으로 미활성화 (계좌 미보유)

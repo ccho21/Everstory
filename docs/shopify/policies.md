@@ -45,7 +45,7 @@ Canada Post lettermail does not include tracking. If your sheet has not arrived 
 
 LOCAL PICKUP
 
-If you selected Toronto Studio Pickup, your order is held for 30 days from the "ready for pickup" email. Orders not picked up within 30 days are not refunded but can still be claimed.
+If you selected Local Pickup, we email you to arrange a pickup location and time once your order is ready. Pickup is held for 30 days from that email. Orders not picked up within 30 days are not refunded but can still be claimed.
 
 CONTACT
 
@@ -63,15 +63,15 @@ Last updated: [YYYY-MM-DD]
 
 WHERE WE SHIP
 
-Everstory Studio currently ships within Ontario, Canada, and offers local pickup at our Toronto studio. We do not ship outside Ontario at this time. Future regions will be announced as we grow.
+Everstory Studio currently ships across Canada and offers local pickup by arrangement for nearby customers in the Toronto area. International orders (US, Korea, etc.) are not supported at this time but can be evaluated case by case.
 
 DELIVERY OPTIONS
 
-1. Free shipping across Ontario
-   Canada Post lettermail. No tracking number. Delivery typically arrives 3–7 business days after shipping confirmation, but lettermail timing varies.
+1. Free shipping across Canada
+   Canada Post lettermail. No tracking number. Delivery typically arrives 3–7 business days after shipping confirmation (longer for remote areas), but lettermail timing varies.
 
-2. Local pickup at Toronto Studio
-   Free. Address shared in your "ready for pickup" email. Pickup window is 30 days from the ready-for-pickup notification.
+2. Local pickup (by arrangement)
+   Free, for nearby customers. We email you after production to arrange a pickup location and time. Pickup window is 30 days from that email.
 
 LEAD TIME
 
@@ -85,9 +85,9 @@ LOST OR DELAYED PACKAGES
 
 Lettermail does not include tracking. If 14 business days have passed since your shipping confirmation and your order has not arrived, email studio.everstory@gmail.com. We will reprint and reship one replacement at no cost.
 
-ORDERS OUTSIDE ONTARIO
+INTERNATIONAL ORDERS
 
-Our checkout will not accept addresses outside Ontario at this time. If you are outside Ontario and want to order, message us at studio.everstory@gmail.com — we evaluate exceptions case by case.
+Our checkout currently accepts Canadian addresses only. For international orders (US, Korea, etc.), message us at studio.everstory@gmail.com — we evaluate exceptions case by case.
 
 CONTACT
 

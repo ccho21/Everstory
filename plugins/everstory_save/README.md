@@ -15,18 +15,18 @@ layers[1..N]          = 누끼 레이어 + 보정 레이어 (Brightness/Contrast
 플러그인은 **layers[0]을 실루엣으로**, **그 아래 모든 레이어를 누끼**로 처리합니다.
 보정 레이어(Adjustment Layer)를 누끼 위에 추가해도 자동으로 누끼 출력에 포함됩니다.
 
-파일명은 사이즈 접미사 컨벤션: `pet1_60mm.psd` (60mm 출력 크기).
+파일명은 자동 생성: `{folderName}_{NN}_{TIER}` 패턴. tier 는 패널 버튼에서 선택 (XS/S/M/L/FAM, no_cap 의 `TIER_TOKEN_RE` 와 호환).
 
 ## 산출물
 
-원본이 `projects/{이름}/01_original/pet1_60mm.psd`이면:
+원본이 `projects/로운/01_original/cute_pet.psd`이고 S 버튼 클릭 시:
 
 ```
-projects/{이름}/02_cutout/pet1_60mm_clean.psd   (누끼 레이어, 1800px)
-projects/{이름}/02_cutout/pet1_60mm_sil.png     (실루엣, 1800px)
+projects/로운/02_cutout/로운_01_S_clean.psd   (누끼 레이어, 1800px)
+projects/로운/02_cutout/로운_01_S_sil.png     (실루엣, 1800px)
 ```
 
-원본 PSD는 변경되지 않음 (Duplicate Document로 작업).
+NN 은 tier 무관하게 폴더 내 공유 카운트 (S → 01, 그 다음 M → 02 → ...). 원본 PSD는 변경되지 않음 (Duplicate Document로 작업).
 
 ## 로드 방법
 
@@ -39,7 +39,7 @@ projects/{이름}/02_cutout/pet1_60mm_sil.png     (실루엣, 1800px)
 ## 사용법
 
 1. PS에서 누끼+실루엣 두 레이어가 있는 PSD 열기 (저장된 파일이어야 함)
-2. 패널의 `현재 PSD 처리` 버튼 클릭
+2. 패널의 사이즈 버튼 클릭 (`XS` / `S` / `M` / `L` / `FAM` — S 가 기본 강조)
 3. 상태 영역에 `완료` + 출력 경로 표시
 
 ## 핫 리로드 (개발용)

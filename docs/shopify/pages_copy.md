@@ -7,7 +7,7 @@ Shopify pages copy SOT. Product-specific setup lives in [`product_descriptions.m
 **Page title**: `About Everstory Studio`
 **Handle**: `about`
 
-Everstory Studio is a small photo sticker studio in Toronto. We make A5 custom photo sticker sheets from customer photos, finished one by one.
+Everstory Studio is a small photo sticker brand based in Toronto. We make A5 custom photo sticker sheets from customer photos, finished one by one.
 
 We are not a bulk sticker factory. We clean the subject edge by hand, check the crop, and choose the layout that gives the photo the best chance to feel kept, not disposable.
 
@@ -15,7 +15,7 @@ Our materials are Korean premium inkjet substrates finished with lamination. Whi
 
 When you order, you upload your photo and add the details that matter. Face Sticker, Full Body Sticker, and Circle Sticker let you choose the exact print size and number of photos. Package Mini and Package Full let you upload options by print size, then Studio chooses the strongest final set.
 
-Made in Toronto. Free Ontario shipping. Toronto Studio pickup available.
+Made in Toronto. Free Canada-wide shipping. Local pickup by arrangement.
 
 **SEO**
 
@@ -66,10 +66,10 @@ A. Yes. All materials are laminated and waterproof. Hand wash is recommended for
 ### Shipping
 
 **Q. Where do you ship?**
-A. Ontario only for MVP launch. Free shipping by Canada Post lettermail.
+A. Canada-wide. Free shipping by Canada Post lettermail. International (US, Korea, etc.) is case-by-case — email us.
 
 **Q. Can I pick up locally?**
-A. Yes. Choose Toronto Studio Pickup at checkout.
+A. Yes — for nearby customers by arrangement. Choose Local Pickup at checkout, and we'll email to coordinate a location and time.
 
 ### Safety and age guidance
 
@@ -205,13 +205,13 @@ All four are waterproof, fade resistant, and suitable for everyday use.
 **Page title**: `Contact Everstory Studio`
 **Handle**: `contact`
 
-Everstory Studio is a small Toronto studio doing print, cut, and pack by hand. Email is the most reliable channel — we reply within one business day. Korean and English both welcome.
+Everstory Studio is a small Toronto brand doing print, cut, and pack by hand. Email is the most reliable channel — we reply within one business day. Korean and English both welcome.
 
 **Email** — `studio.everstory@gmail.com`
 
 **Order questions** — include your order number in the subject line.
 
-**Toronto Studio Pickup** — choose pickup at checkout. We email the address and an available pickup window once your sheet is ready. Pickup window is 30 days from the ready-for-pickup email.
+**Local Pickup** — for nearby customers by arrangement. Choose pickup at checkout, and we email you to coordinate a location and time once your sheet is ready. Pickup window is 30 days from that email.
 
 **Press, wholesale, collaboration** — email with `[Wholesale]` or `[Press]` in the subject. We review case by case.
 

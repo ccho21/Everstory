@@ -145,7 +145,7 @@ shopify theme push --unpublished
 [Action 5.4.1.a] 좌측 트리에서 `Announcement bar` 클릭 → 펼치면 `Announcement` block 1개
 
 [Action 5.4.1.b] `Announcement` block 클릭 → 우측 settings:
-- Text → `MADE TO KEEP · Free Ontario shipping · Toronto pickup available`
+- Text → `MADE TO KEEP · Free Ontario shipping`
 - Link → 비움 (또는 `/collections/photo-sheets`)
 - Font → default 또는 `Subheading`
 - Font size → `0.75rem`

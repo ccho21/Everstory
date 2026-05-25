@@ -11,7 +11,7 @@
 
 ## 시작 전 점검
 
-- [ ] Batch 1 종료 체크리스트 모두 ✅ — 특히 1A 통화/주소, 1B Toronto Studio location, 1D 결제 1개 이상 활성화
+- [ ] Batch 1 종료 체크리스트 모두 ✅ — 특히 1A 통화/주소, 1B Toronto location (도시·우편번호 단위), 1D 결제 1개 이상 활성화
 - [ ] HST/GST 번호 손에 있음 (CRA 등록 9자리 + RT0001) — **없으면**: 1F 일부 skip 가능, launch 전에 다시 진입
 - [ ] 도메인 연결 상태 알고 있음 — `xxx.myshopify.com` 만 있어도 진행 가능, 커스텀 도메인은 launch 전에 연결
 
@@ -21,7 +21,7 @@
 
 **경로**: `Settings → Shipping and delivery`
 
-> 캐나다 신규 스토어는 default 로 General shipping profile 1개와 Domestic zone (Canada 전체) 이 자동 셋업됨. 이 단계에서 그걸 **Ontario only Free shipping + Toronto Studio pickup** 으로 재구성한다.
+> 캐나다 신규 스토어는 default 로 General shipping profile 1개와 Domestic zone (Canada 전체) 이 자동 셋업됨. 이 단계에서 그걸 **Canada-wide Free shipping + Local Pickup (by arrangement)** 으로 재구성한다 (default zone 유지하되 rate $0 추가).
 
 ### 1.5.1 General shipping profile 진입
 
@@ -41,13 +41,13 @@
 
 ---
 
-### 1.5.3 Zone 1: Ontario Free Shipping 만들기
+### 1.5.3 Zone 1: Canada-wide Free Shipping 만들기
 
 [Action 1.5.3.a] Shipping profile 페이지에서 `Create shipping zone` 또는 `+ Create zone` 클릭
 
 [Action 1.5.3.b] Zone 입력:
-- Zone name → `Ontario Free Shipping`
-- Country/region → `Canada` 선택 → 펼쳐서 **Ontario 만 체크**, 다른 province 모두 해제
+- Zone name → `Canada-wide Free Shipping`
+- Country/region → `Canada` 선택 → 모든 provinces / territories 체크 유지 (기본값)
 - `Done` 클릭
 
 [Action 1.5.3.c] Zone 안에서 `Add rate` 클릭
@@ -60,7 +60,7 @@
 
 [Action 1.5.3.e] `Save`
 
-[Checkpoint 1.5.3] ✅ Shipping profile 에 `Ontario Free Shipping` zone 이 생기고, 그 안에 `Free shipping (lettermail) — $0.00` rate 표시.
+[Checkpoint 1.5.3] ✅ Shipping profile 에 `Canada-wide Free Shipping` zone 이 생기고, 그 안에 `Free shipping (lettermail) — $0.00` rate 표시.
 
 ---
 
@@ -68,25 +68,25 @@
 
 [Action 1.5.4.a] 새 zone 만들고 검증된 후 → 기존 default zone (Canada 전체 / Domestic / International 등) → `…` → `Delete zone`
 
-[Checkpoint 1.5.4] ✅ Shipping profile 에 `Ontario Free Shipping` 1개만 남음. 다른 zone 없음.
+[Checkpoint 1.5.4] ✅ Shipping profile 에 `Canada-wide Free Shipping` 1개만 남음. 다른 zone 없음.
 
-> 의도: Ontario 외 주소는 zone 매칭 실패 → checkout 에서 "We don't ship to your address" 자동 차단.
+> 의도: 캐나다 외 주소 (US, international 등) 는 zone 매칭 실패 → checkout 에서 "We don't ship to your address" 자동 차단.
 
 ---
 
 ### 1.5.5 Local pickup 추가
 
-[Action 1.5.5.a] Shipping and delivery 메인 페이지로 돌아가 → **Local pickup** 섹션 (또는 **Pickup and local delivery**) → `Toronto Studio` location 옆 **Edit** 또는 클릭
+[Action 1.5.5.a] Shipping and delivery 메인 페이지로 돌아가 → **Local pickup** 섹션 (또는 **Pickup and local delivery**) → `Toronto` location 옆 **Edit** 또는 클릭
 
 [Action 1.5.5.b] Local pickup 폼:
 - This location offers local pickup → ✅ **on**
 - Pickup time → `Ready in 3–5 business days`
-- Order processing instructions → `You will receive an email when your order is ready for pickup.`
-- (옵션) Pickup location address → Toronto 주소 자동 (1B 에서 셋업됨)
+- Order processing instructions → `You will receive an email after production to arrange a pickup location and time.`
+- (옵션) Pickup location address → 1B 에서 도시·우편번호 단위만 입력했는지 확인. 정확한 가정집 번지 입력 X — Shopify 가 confirmation email 에 자동 포함하므로 노출됨. 정확한 픽업 장소는 별도 이메일 협의.
 
 [Action 1.5.5.c] `Save`
 
-[Checkpoint 1.5.5] ✅ Local pickup 화면에 `Toronto Studio — Pickup available` 노출.
+[Checkpoint 1.5.5] ✅ Local pickup 화면에 `Toronto — Pickup available` 노출.
 
 ---
 
@@ -96,7 +96,7 @@
 
 - [ ] 토론토 우편번호 (`M5V 3A8`) 로 test 결제 시도 → "Free shipping (lettermail) — $0.00" 노출
 - [ ] 밴쿠버 우편번호 (`V6B 1A1`) 로 test 결제 시도 → "We don't ship to your address" 차단
-- [ ] Pickup 옵션 선택 시 "Toronto Studio Pickup — Free" 노출
+- [ ] Pickup 옵션 선택 시 "Toronto — Pickup — Free" 노출 (Shopify가 location 이름 자동 사용)
 
 ---
 
@@ -208,8 +208,10 @@
 [Action 1.8.2.b] **Pickup ready** 템플릿 → `Edit`/`Customize` → 본문에 다음 한 줄 추가 (또는 default 메시지에 보강):
 
 ```
-Your order is ready at Toronto Studio. Please reply with a pickup time.
+Your order is ready. Please reply and we'll arrange a pickup location and time.
 ```
+
+> ⚠ Shopify 가 자동 포함하는 location address block 은 가능하면 템플릿에서 제거 또는 도시 단위만 노출. 정확한 픽업 장소는 reply 에서 별도 안내.
 
 > 다른 템플릿은 default 본문 그대로 OK. Stage 5 (디자인 단계) 에서 일괄 다듬음.
 
@@ -346,7 +348,7 @@ placeholder 모두 실제 값으로 교체 (HST 번호 없으면 그 줄 삭제)
 
 다음 모두 ✅ 면 Batch 2 완료:
 
-- [ ] **1E Shipping**: `Ontario Free Shipping` zone 1개 + Toronto Studio pickup 셋업
+- [ ] **1E Shipping**: `Canada-wide Free Shipping` zone 1개 + Local Pickup (by arrangement) 셋업
 - [ ] **1F Taxes**: Tax-exclusive pricing, HST 13% 자동 계산 (또는 HST 미등록 상태 명시)
 - [ ] **1G Checkout**: Account = Optional, Cart = Drawer, Tipping = off, Auto-fulfill = off
 - [ ] **1H Notifications**: Sender = `Everstory Studio`, Pickup ready 본문 보강, 13개 template 활성

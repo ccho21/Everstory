@@ -105,15 +105,15 @@ Shopify admin Stage 1 (1A–1J) 입력값. 어드민 → Settings 경로 따라�
 
 ## 1E. Shipping & Delivery — `Settings → Shipping and delivery`
 
-현재 launch 기준은 **Ontario free shipping + Toronto Studio pickup**. Shopify Basic 에서는 Ontario zone 1개와 local pickup 으로 처리한다.
+현재 launch 기준은 **Canada-wide free shipping + Local Pickup (by arrangement)**. Shopify Basic 에서는 Canada zone 1개와 local pickup 으로 처리한다.
 
 ### Shipping profile: General
 
-**Zone 1: Ontario Free Shipping**
+**Zone 1: Canada-wide Free Shipping**
 | 필드 | 값 |
 |------|------|
-| Zone name | `Ontario Free Shipping` |
-| Countries / regions | Canada → **Ontario only** |
+| Zone name | `Canada-wide Free Shipping` |
+| Countries / regions | Canada → **모든 provinces / territories** |
 | Rate name | `Free shipping (lettermail)` |
 | Price | `$0.00` |
 | Conditions | None (모든 주문 free) |
@@ -121,10 +121,10 @@ Shopify admin Stage 1 (1A–1J) 입력값. 어드민 → Settings 경로 따라�
 **Zone 2: Local Pickup**
 | 필드 | 값 |
 |------|------|
-| Pickup name | `Toronto Studio Pickup` |
-| Location | Toronto Studio (1B) |
+| Pickup name | `Local Pickup` |
+| Location | Toronto (1B, 도시·우편번호 단위) |
 | Estimated pickup time | `Ready in 3-5 business days` |
-| Order processing instructions | `You will receive an email when your order is ready for pickup` |
+| Order processing instructions | `You will receive an email after production to arrange a pickup location and time` |
 
 **Zone 3: Rest of World** — 만들지 않음. zone 매칭 실패 → checkout 에서 "We do not ship to your address" 자동 표시.
 
@@ -180,7 +180,7 @@ Shopify admin Stage 1 (1A–1J) 입력값. 어드민 → Settings 경로 따라�
 | Order fulfilled | ✅ | 기본 |
 | Out for delivery | ✅ | 기본 |
 | Delivered | ✅ | 기본 |
-| Pickup ready | ✅ | "Your order is ready at Toronto Studio. Please reply with a pickup time." |
+| Pickup ready | ✅ | "Your order is ready. Please reply and we'll arrange a pickup location and time." |
 | Pickup confirmation | ✅ | 기본 |
 | Customer account invite | ✅ | 기본 |
 | Customer account welcome | ✅ | 기본 |
@@ -198,7 +198,7 @@ Shopify admin Stage 1 (1A–1J) 입력값. 어드민 → Settings 경로 따라�
 | Page | 액션 | 검증 |
 |------|------|------|
 | Refund policy | [`policies.md`](policies.md) §1 붙여넣기 | made-to-order, no mockup approval, print defect reprint 기준 포함 |
-| Shipping policy | [`policies.md`](policies.md) §2 붙여넣기 | Ontario free shipping, Toronto Studio pickup, 2-5 business days to shipped 포함 |
+| Shipping policy | [`policies.md`](policies.md) §2 붙여넣기 | Canada-wide free shipping, Local Pickup (by arrangement), 2-5 business days to shipped 포함 |
 | Privacy policy | Shopify template 생성 → 5개 placeholder 교체 | PIPEDA, photo use, business info placeholder 없음 |
 | Terms of service | Shopify template 생성 → 5개 placeholder 교체 → made-to-order 조항 삽입 | customer-supplied image license, Ontario jurisdiction 포함 |
 | Contact information | 사업자 이메일·주소·HST/GST 입력 | footer 자동 링크 노출 |
@@ -227,10 +227,10 @@ Shopify admin Stage 1 (1A–1J) 입력값. 어드민 → Settings 경로 따라�
 2. Test order 1건:
    - 상품: Stage 2 등록 상품 1개 (`Face Sticker` / `1" / 25mm` / `White Matte`)
    - Easify option: photo upload, customer/pet name, special instructions 입력
-   - postal code: M5V 3A8 (Toronto) 또는 K1A 0B1 (Ontario)
+   - postal code: M5V 3A8 (Toronto, ON) — 또는 V6B 1A1 (Vancouver, BC) / T2P 0A1 (Calgary, AB) 로 province 별 검증
    - 결제: 4242 카드
-   - 결과: HST 13% 라인 + Free shipping + confirmation 이메일 수신 + order detail 에 option data/file URL 표시
-3. 비Ontario postal code (V6B 1A1) → "shipping not available" 차단
+   - 결과: destination province 별 sales tax 라인 (ON 13% HST / BC 5% GST / AB 5% GST 등) + Free shipping + confirmation 이메일 수신 + order detail 에 option data/file URL 표시
+3. 캐나다 외 주소 (US 우편번호 등) → "shipping not available" 차단
 
 ---
 

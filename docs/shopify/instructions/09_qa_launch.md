@@ -42,9 +42,9 @@ Package product path:
 Failure checks:
 
 - Missing required photo upload blocks should block add to cart.
-- Ontario shipping should show free lettermail.
-- Toronto pickup should be available.
-- Outside Ontario should be blocked or clearly unavailable for MVP.
+- Canada-wide shipping should show free lettermail (test with postal codes from multiple provinces).
+- Local Pickup should be available (selecting it triggers an arrangement email, not an automatic address share).
+- International (non-Canada) should be blocked or clearly unavailable for MVP.
 
 ## Content QA
 

@@ -16,12 +16,14 @@ entrypoints.setup({
   }
 });
 
-document.getElementById("run").addEventListener("click", runNukki);
+const tierButtons = document.querySelectorAll(".tier-btn");
+tierButtons.forEach((btn) => {
+  btn.addEventListener("click", () => runNukki(btn.dataset.tier));
+});
 
-async function runNukki() {
-  const runBtn = document.getElementById("run");
-  setStatus("처리 중...", "info");
-  runBtn.disabled = true;
+async function runNukki(tier) {
+  setStatus(`${tier} 처리 중...`, "info");
+  tierButtons.forEach((b) => { b.disabled = true; });
 
   try {
     if (!app.activeDocument) {
@@ -52,17 +54,18 @@ async function runNukki() {
       outEntry = await pathToEntry(parsed.parentDir);
     }
 
-    // 2) 파일명 결정 — {customerFolder}_{NN} 패턴.
+    // 2) 파일명 결정 — {customerFolder}_{NN}_{TIER} 패턴.
     //    01_original 라우팅이거나 02_cutout 직접 저장이면 grandparentName = 고객 폴더.
-    //    그 외 case (Desktop 등) 면 raw 원본 이름 유지 (안전 fallback).
+    //    그 외 case (Desktop 등) 면 raw 원본 이름 + tier (안전 fallback).
     const isProjectRouted = (parsed.parentName === "01_original" || parsed.parentName === "02_cutout");
     let baseName;
     if (isProjectRouted && parsed.grandparentName) {
       const folderName = parsed.grandparentName;
       const nextIdx = await nextSequenceNumber(outEntry, folderName);
-      baseName = `${folderName}_${pad2(nextIdx)}`;
+      baseName = `${folderName}_${pad2(nextIdx)}_${tier}`;
     } else {
-      baseName = origDoc.name.replace(/\.[^.]+$/, "");
+      const raw = origDoc.name.replace(/\.[^.]+$/, "");
+      baseName = `${raw}_${tier}`;
     }
 
     // 3) 파일 entry 미리 생성. 새 번호라 overwrite 는 의미 없지만 안전상 유지.
@@ -93,7 +96,7 @@ async function runNukki() {
     setStatus(`오류: ${e.message || e}`, "err");
     console.error(e);
   } finally {
-    runBtn.disabled = false;
+    tierButtons.forEach((b) => { b.disabled = false; });
   }
 }
 
@@ -118,9 +121,9 @@ function parsePath(absPath) {
 }
 
 async function nextSequenceNumber(folderEntry, prefix) {
-  // folderEntry 안의 `{prefix}_NN_clean.psd` 들 중 최대 번호 + 1 반환.
-  // 같은 PSD 를 다시 저장해도 새 번호가 할당되어 덮어쓰기를 피한다.
-  const re = new RegExp("^" + escapeRegex(prefix) + "_([0-9]+)_clean\\.psd$", "i");
+  // folderEntry 안의 `{prefix}_NN[_TIER]_clean.psd` 들 중 최대 번호 + 1 반환.
+  // tier (XS|S|M|L|FAM) 는 옵션 — tier 무관하게 NN 공유 카운트, 레거시 무-tier 파일과도 호환.
+  const re = new RegExp("^" + escapeRegex(prefix) + "_([0-9]+)(?:_(?:XS|S|M|L|FAM))?_clean\\.psd$", "i");
   let maxN = 0;
   try {
     const entries = await folderEntry.getEntries();
