@@ -13,7 +13,7 @@ We are not a bulk sticker factory. We clean the subject edge by hand, check the 
 
 Our materials are Korean premium inkjet substrates finished with lamination. White Matte, Translucent, Silver, and Gold are selected for photographic print quality, durability, and a soft keepsake feel.
 
-When you order, you upload your photo and add the details that matter. Face Sticker, Full Body Sticker, and Circle Sticker let you choose the exact print size and number of photos. Package Mini and Package Full let you upload options by print size, then Studio chooses the strongest final set.
+When you order, you upload your photo and add the details that matter. Face Sticker, Full Body Sticker, and Shape Sticker let you choose the exact print size and number of photos. Package Mini and Package Full let you upload options by print size, then Studio chooses the strongest final set.
 
 Made in Toronto. Free Canada-wide shipping. Local pickup by arrangement.
 
@@ -30,7 +30,7 @@ Made in Toronto. Free Canada-wide shipping. Local pickup by arrangement.
 ### Ordering
 
 **Q. How does ordering work?**
-A. Choose Face Sticker, Full Body Sticker, Circle Sticker, Package Mini, or Package Full. For non-Package products, choose size, material, and Photos to include. For Package products, upload photos into Big / Medium / Small print sections.
+A. Choose Face Sticker, Full Body Sticker, Shape Sticker, Package Mini, or Package Full. For non-Package products, choose size, material, and Photos to include. For Package products, upload photos into Big / Medium / Small print sections.
 
 **Q. What does Photos to include mean?**
 A. It means how many different photos you want on the sheet. Sticker count is different and depends on size and photo shape.
@@ -39,7 +39,7 @@ A. It means how many different photos you want on the sheet. Sticker count is di
 A. Yes. Add it in order notes. If no request is given, Studio decides from the photo: kids default to face crop, adults default to full body, pets default to full body unless the face has stronger impact.
 
 **Q. Can I send multiple photos?**
-A. Yes. Face / Full Body / Circle allow 1-13 photos through the Photos to include option. Package Mini and Package Full accept candidate photos by print tier and Studio picks the final set.
+A. Yes. Face / Full Body / Shape allow 1-13 photos through the Photos to include option. Package Mini and Package Full accept candidate photos by print tier and Studio picks the final set.
 
 ### Photos
 
@@ -139,7 +139,7 @@ For Full Body Sticker, **1.25" / 32 mm or larger** is recommended because the su
 
 ### Ready to choose?
 
-Every Face Sticker, Full Body Sticker, and Circle Sticker lets you pick from six sizes — 0.75" to 2.5". Package Mini and Package Full bundle multiple sizes into one curated sheet.
+Every Face Sticker, Full Body Sticker, and Shape Sticker lets you pick from six sizes — 0.75" to 2.5". Package Mini and Package Full bundle multiple sizes into one curated sheet.
 
 → [Shop the collection](/collections/all)
 

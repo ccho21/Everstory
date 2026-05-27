@@ -8,7 +8,7 @@ This document maps the Shopify docs and wireframes to Horizon theme setup for th
 |---------|--------|----------|
 | Face Sticker | `/products/face-sticker` | Non-Package |
 | Full Body Sticker | `/products/full-body-sticker` | Non-Package |
-| Circle Sticker | `/products/circle-sticker` | Non-Package |
+| Shape Sticker | `/products/shape-sticker` | Non-Package |
 | Package Mini | `/products/package-mini` | Package |
 | Package Full | `/products/package-full` | Package |
 

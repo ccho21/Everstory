@@ -30,7 +30,7 @@ Create one option set and apply it to:
 
 - Face Sticker
 - Full Body Sticker
-- Circle Sticker
+- Shape Sticker
 
 Option set name: `Everstory Upload — Non-Package`
 
@@ -95,7 +95,7 @@ Use Online Store 2.0 app block mode if available. Place the Easify block directl
 
 ## Batch 4 Checkpoint
 
-- [ ] Non-Package option set is assigned to Face Sticker, Full Body Sticker, Circle Sticker.
+- [ ] Non-Package option set is assigned to Face Sticker, Full Body Sticker, Shape Sticker.
 - [ ] Package Mini has exactly 3 tier upload fields.
 - [ ] Package Full has exactly 3 tier upload fields.
 - [ ] Header name and Order notes appear on all 5 products.

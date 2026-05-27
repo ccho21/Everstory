@@ -28,7 +28,7 @@ How it works:
 
 | Step | Copy |
 |------|------|
-| 1 | Choose Face, Full Body, Circle, or a curated Package. |
+| 1 | Choose Face, Full Body, Shape, or a curated Package. |
 | 2 | Upload photos and add crop notes. |
 | 3 | We hand-cut, print, and ship from Toronto. |
 
@@ -48,7 +48,7 @@ Collection page copy:
 | Field | Value |
 |-------|-------|
 | Eyebrow | `Photo sheets` |
-| Heading | `Face, full body, circle, and curated packages.` |
+| Heading | `Face, full body, shape, and curated packages.` |
 | Body | `Choose exact photo stickers or let Studio curate the strongest package set.` |
 
 Filters:
@@ -61,7 +61,7 @@ The collection should show 5 product cards in this order:
 
 1. Face Sticker
 2. Full Body Sticker
-3. Circle Sticker
+3. Shape Sticker
 4. Package Mini
 5. Package Full
 

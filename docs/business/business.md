@@ -35,7 +35,7 @@ Everstory Studio 는 Toronto GTA + Korean diaspora 를 위한 A5 custom photo di
 
 **Launch SKU**
 
-런칭 SKU는 Face Sticker / Full Body Sticker / Circle Sticker / Package Mini / Package Full 5종이다. 각 SKU의 customer promise, photos selected, sheets, Shopify price 상세는 [`products.md`](products.md) 를 단일 기준으로 한다.
+런칭 SKU는 Face Sticker / Full Body Sticker / Shape Sticker / Package Mini / Package Full 5종이다. 각 SKU의 customer promise, photos selected, sheets, Shopify price 상세는 [`products.md`](products.md) 를 단일 기준으로 한다.
 
 **Customer-facing options**
 

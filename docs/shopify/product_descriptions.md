@@ -1,6 +1,6 @@
 # Stage 2 — Product Descriptions
 
-Shopify 상품 등록과 PDP description copy의 기준 문서다. 현재 launch product는 **Face Sticker / Full Body Sticker / Circle Sticker / Package Mini / Package Full** 5개다.
+Shopify 상품 등록과 PDP description copy의 기준 문서다. 현재 launch product는 **Face Sticker / Full Body Sticker / Shape Sticker / Package Mini / Package Full** 5개다.
 
 영어 단일 정책을 유지한다. 한국어 안내는 각 product description 마지막에 [`footer_copy.md`](footer_copy.md)의 product footer를 붙인다.
 
@@ -8,7 +8,7 @@ Shopify 상품 등록과 PDP description copy의 기준 문서다. 현재 launch
 
 | 항목 | Non-Package products | Package products |
 |------|----------------------|------------------|
-| Products | Face Sticker / Full Body Sticker / Circle Sticker | Package Mini / Package Full |
+| Products | Face Sticker / Full Body Sticker / Shape Sticker | Package Mini / Package Full |
 | Status | Draft until launch | Draft until launch |
 | Variant option 1 | Size | Material |
 | Variant option 2 | Material | 없음 |
@@ -88,22 +88,22 @@ Pets, adults, outfits, dance or sports poses, full-body portraits, and objects w
 
 ---
 
-## SKU 3 — Circle Sticker
+## SKU 3 — Shape Sticker
 
-**Title**: `Circle Sticker`
-**Tags**: `circle-sticker`, `name-included`, `a5`, `made-to-order`
+**Title**: `Shape Sticker`
+**Tags**: `shape-sticker`, `name-included`, `a5`, `made-to-order`
 **Base price**: `$15.99 CAD`
 
 ### Description
 
-> Clean circle-crop photo stickers.
+> Clean shape-crop photo stickers — currently round.
 
-Circle Sticker turns your photo into a neat round sticker sheet. It is the most graphic option: simple, tidy, and easy to use on packaging, planners, envelopes, and gifts.
+Shape Sticker turns your photo into a neat shape-cropped sticker sheet. It is the most graphic option: simple, tidy, and easy to use on packaging, planners, envelopes, and gifts. The current cut shape is a clean round.
 
 **What you get**
 
 - One A5 sticker sheet
-- Round crop format
+- Shape crop format (currently round)
 - Size shown in inch / mm
 - Your selected number of different photos
 - Header printed with your name and order date
@@ -180,7 +180,7 @@ Families, multi-pet households, larger keepsake sets, and gifts where variety ma
 ### How to order
 
 1. Choose your product.
-2. For Face / Full Body / Circle, choose size, material, and Photos to include.
+2. For Face / Full Body / Shape, choose size, material, and Photos to include.
 3. For Package Mini / Full, upload candidate photos into Big / Medium / Small print sections.
 4. Add the header name and any notes that matter.
 5. We begin work within one business day. If a photo is too blurry or too small to print well, we email before production.
@@ -256,7 +256,7 @@ Everstory sticker sheets are decorative photo products, not a toy and not a chil
 - **SEO title** (모든 SKU 동일 template): `{Product name} | Everstory Studio`
   - `Face Sticker | Everstory Studio`
   - `Full Body Sticker | Everstory Studio`
-  - `Circle Sticker | Everstory Studio`
+  - `Shape Sticker | Everstory Studio`
   - `Package Mini | Everstory Studio`
   - `Package Full | Everstory Studio`
 - **SEO description** (per-SKU):
@@ -265,7 +265,7 @@ Everstory sticker sheets are decorative photo products, not a toy and not a chil
   |---|---|
   | Face Sticker | `Face-forward photo stickers, hand cut around the face or upper body in Toronto. A5 sheet, Korean premium substrates. Free Canada-wide shipping.` |
   | Full Body Sticker | `Full-shape custom photo stickers — the whole person, pet, or subject hand cut on an A5 sheet. Korean premium substrates, made in Toronto.` |
-  | Circle Sticker | `Clean circle-crop photo stickers on an A5 sheet, hand cut in Toronto. Korean premium substrates, waterproof and laminated. Free Canada-wide shipping.` |
+  | Shape Sticker | `Clean shape-crop photo stickers on an A5 sheet — currently round, hand cut in Toronto. Korean premium substrates, waterproof and laminated. Free Canada-wide shipping.` |
   | Package Mini | `A curated 2-sheet photo sticker set. Upload candidates by size tier — Everstory selects the 4 strongest photos. Hand cut in Toronto.` |
   | Package Full | `A larger curated photo sticker set — 2 A5 sheets, 8 selected photos across Big / Medium / Small tiers. Hand cut in Toronto. Free Canada-wide shipping.` |
 

@@ -6,7 +6,7 @@ Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다
 
 ## Decision Summary
 
-- 런칭 SKU는 **Face Sticker / Full Body Sticker / Circle Sticker / Package Mini / Package Full** 5종이다.
+- 런칭 SKU는 **Face Sticker / Full Body Sticker / Shape Sticker / Package Mini / Package Full** 5종이다.
 - 비-Package 상품은 고객이 스티커 형태와 출력 크기(inch / mm)를 고르는 기본 상품이다.
 - Package 상품은 고객이 Big / Medium / Small print tier 별로 사진을 업로드하고, Everstory가 각 tier에서 최종 출력 사진을 고르는 curated value pack이다.
 - 숫자 기준의 사진 QC는 두지 않는다. 제작 가능 여부는 시각 기준으로 판단한다.
@@ -18,7 +18,7 @@ Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다
 |---------|------------------|-----------------|--------|---------------|
 | Face Sticker | 얼굴/상반신 중심 다이컷 스티커 | 1+ | size/cap 기준 | from $15.99 CAD |
 | Full Body Sticker | 전신/전체 피사체 중심 다이컷 스티커 | 1+ | size/cap 기준 | from $15.99 CAD |
-| Circle Sticker | 원형 크롭 스티커 | 1+ | size/cap 기준 | from $15.99 CAD |
+| Shape Sticker | shape 크롭 스티커 (현재 원형) | 1+ | size/cap 기준 | from $15.99 CAD |
 | Package Mini | 작은 Everstory curated package | 4 selected photos | 2 A5 sheets | $24.99 CAD |
 | Package Full | 큰 Everstory curated package | 8 selected photos | 2 A5 sheets | $34.99 CAD |
 
@@ -36,9 +36,9 @@ Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다
 - 기본 1 photo에서 시작한다.
 - 1.25" / 32mm 이상을 권장하되, 작은 size 선택을 차단하지 않는다.
 
-### Circle Sticker
+### Shape Sticker
 
-- 원형 크롭 스티커.
+- shape 크롭 스티커. 출시 시점 cut shape 은 원형이며, 향후 다른 shape (heart, star 등) 확장 여지를 둔다.
 - 기본 1 photo에서 시작한다.
 - sheet 수와 sticker count는 선택 size, 사진 비율, 내부 cap에 따라 달라진다.
 

@@ -18,7 +18,7 @@ Create these three products with native Shopify variants.
 |---------|--------|------------|------------|------|
 | Face Sticker | `face-sticker` | $15.99 CAD | `EVS-FACE` | `face-sticker`, `name-included`, `a5`, `made-to-order` |
 | Full Body Sticker | `full-body-sticker` | $15.99 CAD | `EVS-FULLBODY` | `full-body-sticker`, `name-included`, `a5`, `made-to-order` |
-| Circle Sticker | `circle-sticker` | $15.99 CAD | `EVS-CIRCLE` | `circle-sticker`, `name-included`, `a5`, `made-to-order` |
+| Shape Sticker | `shape-sticker` | $15.99 CAD | `EVS-SHAPE` | `shape-sticker`, `name-included`, `a5`, `made-to-order` |
 
 Variant options:
 
@@ -86,10 +86,10 @@ Create manual collection:
 | Title | `Photo Sheets` |
 | Handle | `photo-sheets` |
 | Description | `A5 custom photo sticker sheets, hand cut in Toronto.` |
-| Products | Face Sticker, Full Body Sticker, Circle Sticker, Package Mini, Package Full |
+| Products | Face Sticker, Full Body Sticker, Shape Sticker, Package Mini, Package Full |
 | Sort | Manual, in the product order above |
 | SEO title | `Photo Sheets | Everstory Studio` |
-| SEO description | `Face, full body, circle, and curated package photo sticker sheets made in Toronto.` |
+| SEO description | `Face, full body, shape, and curated package photo sticker sheets made in Toronto.` |
 
 ## Step 3.4 — Pages
 
@@ -125,7 +125,7 @@ Footer · Shop:
 |-------|------|
 | Face Sticker | `/products/face-sticker` |
 | Full Body Sticker | `/products/full-body-sticker` |
-| Circle Sticker | `/products/circle-sticker` |
+| Shape Sticker | `/products/shape-sticker` |
 | Package Mini | `/products/package-mini` |
 | Package Full | `/products/package-full` |
 

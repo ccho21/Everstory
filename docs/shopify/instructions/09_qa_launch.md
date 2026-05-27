@@ -10,7 +10,7 @@ Check:
 - `/collections/photo-sheets`
 - `/products/face-sticker`
 - `/products/full-body-sticker`
-- `/products/circle-sticker`
+- `/products/shape-sticker`
 - `/products/package-mini`
 - `/products/package-full`
 - `/pages/about`

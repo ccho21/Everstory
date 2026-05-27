@@ -12,7 +12,7 @@ GTA 한인 커뮤니티 분들 환영합니다. 결제는 영어로 진행되지
 상품 선택
 - Face Sticker: 얼굴/상반신 중심 스티커
 - Full Body Sticker: 전신/전체 피사체 중심 스티커
-- Circle Sticker: 원형 크롭 스티커
+- Shape Sticker: shape 크롭 스티커 (현재 원형)
 - Package Mini: Big / Medium / Small print 후보 사진을 올리면 Studio가 4장을 골라 2장 시트로 제작
 - Package Full: Big / Medium / Small print 후보 사진을 올리면 Studio가 8장을 골라 2장 시트로 제작
 

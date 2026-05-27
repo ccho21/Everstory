@@ -41,7 +41,7 @@ Expected fields:
 
 | Product group | Upload UI |
 |---------------|-----------|
-| Face / Full Body / Circle | Upload your photos, Header name, Order notes |
+| Face / Full Body / Shape | Upload your photos, Header name, Order notes |
 | Package Mini | Big print photos, Medium print photos, Small print photos, Header name, Order notes |
 | Package Full | Big print photos, Medium print photos, Small print photos, Header name, Order notes |
 
@@ -74,11 +74,11 @@ Complementary mapping (4 per product, order = SOT product order, self excluded):
 
 | Product page | Complementary products (in order) |
 |--------------|-----------------------------------|
-| Face Sticker | Full Body Sticker, Circle Sticker, Package Mini, Package Full |
-| Full Body Sticker | Face Sticker, Circle Sticker, Package Mini, Package Full |
-| Circle Sticker | Face Sticker, Full Body Sticker, Package Mini, Package Full |
-| Package Mini | Face Sticker, Full Body Sticker, Circle Sticker, Package Full |
-| Package Full | Face Sticker, Full Body Sticker, Circle Sticker, Package Mini |
+| Face Sticker | Full Body Sticker, Shape Sticker, Package Mini, Package Full |
+| Full Body Sticker | Face Sticker, Shape Sticker, Package Mini, Package Full |
+| Shape Sticker | Face Sticker, Full Body Sticker, Package Mini, Package Full |
+| Package Mini | Face Sticker, Full Body Sticker, Shape Sticker, Package Full |
+| Package Full | Face Sticker, Full Body Sticker, Shape Sticker, Package Mini |
 
 The `Photo Sheets` collection is still required for the collection page, home featured collection, and nav — it is just no longer the recommendation source.
 
