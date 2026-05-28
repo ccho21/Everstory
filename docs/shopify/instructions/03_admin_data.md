@@ -8,7 +8,7 @@ Shopify admin에 5개 product, `Photo Sheets` collection, page content, navigati
 
 ## Step 3.1 — Products
 
-Create all products as `Draft`. Sales channel = Online Store only. Track quantity = off. Continue selling = on. Product type = `Sticker Sheet`. Vendor = `Everstory Studio`.
+Create all products as `Draft`. Sales channels = Online Store + discovery/funnel channels (see [`../product_descriptions.md`](../product_descriptions.md) Shopify Admin Notes). Track quantity = off. Continue selling = on. Product type = `Sticker Sheet`. Vendor = `Everstory Studio`.
 
 ### Non-Package Products
 

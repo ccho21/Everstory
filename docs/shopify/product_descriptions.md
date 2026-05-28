@@ -16,7 +16,7 @@ Shopify 상품 등록과 PDP description copy의 기준 문서다. 현재 launch
 | Price | 1 photo = $18.99 CAD, each added photo +$3 CAD | Mini $24.99 CAD, Full $34.99 CAD |
 | Upload | Easify multi-file, matched to `Photos to include` | Easify tier upload: Big / Medium / Small |
 | Fulfillment | Made-to-order, auto fulfill off | Made-to-order, auto fulfill off |
-| Sales channels | Online Store only for MVP | Online Store only for MVP |
+| Sales channels | Online Store + discovery/funnel channels (see Shopify Admin Notes) | Online Store + discovery/funnel channels (see Shopify Admin Notes) |
 
 ### Non-Package Variant Values
 
@@ -46,6 +46,8 @@ Price formula: `$18.99 + (Photos to include - 1) × $3 CAD`.
 > Face-forward photo stickers, hand cut in Toronto.
 
 Face Sticker is made for portraits where the expression matters most. We crop around the face or upper body, clean the edge by hand, and pack the A5 sheet according to your chosen print size and photo count.
+
+**Photo tip:** choose a photo where the face is clear and fully visible — front-on or a slight angle, not covered by hair, hands, sunglasses, or shadow.
 
 **What you get**
 
@@ -243,7 +245,13 @@ Printed on Epson ET-8550 and cut on Summa D75 in Toronto.
 
 ### A note on photos
 
-Upload a few extra photos when the product asks for them. We choose the best ones for the final sheets. The clearer the photo, the better the cutline.
+Good source photos make better stickers:
+
+- Clear, bright, and in focus.
+- The subject large in the frame, not tiny or far away.
+- For faces: the face fully visible, not covered by hair, hands, sunglasses, hats, or heavy shadow.
+
+Upload a few extra when the product asks for them — we choose the best ones for the final sheets. The clearer the photo, the better the cutline. We email before production if a photo can't be used.
 
 ### Safety and age guidance
 
@@ -276,4 +284,4 @@ Everstory sticker sheets are decorative photo products, not a toy and not a chil
   | Package Full | `A larger curated photo sticker set — 2 A5 sheets, 8 selected photos across Big / Medium / Small tiers. Hand cut in Toronto. Free Canada-wide shipping.` |
 
 - **Product status**: Draft until launch.
-- **Channel**: Online Store only for MVP.
+- **Channels**: Online Store handles checkout. Products are also published to Shop, Point of Sale, Facebook & Instagram, and Google & YouTube — these act as discovery surfaces that funnel back to the Online Store to check out (channel strategy SOT: [`../business/business.md`](../business/business.md) §Channels).

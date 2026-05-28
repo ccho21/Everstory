@@ -15,7 +15,7 @@ Use these settings for all photo upload fields:
 | File types | `jpg, jpeg, png, heic` |
 | Max file size | `100 MB` |
 | Upload UI | Multi-file upload |
-| Help text | `Bright, clear photos work best. We email before production if a photo cannot be used.` |
+| Help text | `Bright, clear photos work best. Keep the subject large in the frame, and for face stickers make sure the face is fully visible — not covered by hair, hands, sunglasses, a hat, or heavy shadow. We email before production if a photo can't be used.` |
 
 Shared text fields:
 

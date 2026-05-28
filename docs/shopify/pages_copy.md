@@ -44,7 +44,7 @@ A. Yes. Face / Full Body / Shape allow 1-13 photos through the Photos to include
 ### Photos
 
 **Q. What kind of photo should I send?**
-A. Bright lighting, a clear subject, and low blur. The subject should not be too small in the frame.
+A. The clearer, the better. Bright lighting, the subject filling the frame, minimal motion blur. For face stickers, make sure the face is fully visible — not covered by hair, hands, sunglasses, a hat, or heavy shadow. We handle background removal and color correction.
 
 **Q. What file formats do you accept?**
 A. JPG, JPEG, PNG, and HEIC. The Easify Advanced / Unlimited upload plan supports up to 20 files and 100MB.
