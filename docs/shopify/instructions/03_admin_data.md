@@ -16,39 +16,22 @@ Create these three products with native Shopify variants.
 
 | Product | Handle | Base price | SKU prefix | Tags |
 |---------|--------|------------|------------|------|
-| Face Sticker | `face-sticker` | $15.99 CAD | `EVS-FACE` | `face-sticker`, `name-included`, `a5`, `made-to-order` |
-| Full Body Sticker | `full-body-sticker` | $15.99 CAD | `EVS-FULLBODY` | `full-body-sticker`, `name-included`, `a5`, `made-to-order` |
-| Shape Sticker | `shape-sticker` | $15.99 CAD | `EVS-SHAPE` | `shape-sticker`, `name-included`, `a5`, `made-to-order` |
+| Face Sticker | `face-sticker` | $18.99 CAD | `EVS-FACE` | `a5`, `face`, `photo-sticker` |
+| Full Body Sticker | `full-body-sticker` | $18.99 CAD | `EVS-FULLBODY` | `a5`, `full-body`, `photo-sticker` |
+| Shape Sticker | `shape-sticker` | $18.99 CAD | `EVS-SHAPE` | `a5`, `photo-sticker`, `shape` |
 
-Variant options:
+Native Shopify variant options — **Size × Material only**. `Photos to include` is an Easify dropdown add-on, not a native variant (see [`04_easify_options.md`](04_easify_options.md)).
 
 | Option | Values |
 |--------|--------|
-| Size | `0.75" / 19mm`, `1" / 25mm`, `1.25" / 32mm`, `1.5" / 38mm`, `2" / 51mm`, `2.5" / 64mm` |
+| Size | `0.75" / 19mm`, `1" / 25mm`, `1.25" / 32mm`, `1.5" / 38mm`, `2" / 51mm`, `2.5" / 64mm`, `Mixed` |
 | Material | `White Matte`, `Translucent`, `Silver`, `Gold` |
-| Photos to include | `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `10`, `11`, `12`, `13` |
 
-Checkpoint: each non-Package product has **312 variants**.
+Checkpoint: each non-Package product has **28 native variants** (7 sizes × 4 materials).
 
-Variant pricing:
+Pricing: every native variant uses the base price **$18.99 CAD**. The per-photo charge is added by the Easify `Photos to include` dropdown (**+$3 CAD per extra photo**, `$18.99 + (N − 1) × $3`) — configure in [`04_easify_options.md`](04_easify_options.md). Pricing SOT: [`../product_descriptions.md`](../product_descriptions.md).
 
-| Photos to include | Price |
-|-------------------|-------|
-| 1 | $15.99 CAD |
-| 2 | $18.99 CAD |
-| 3 | $21.99 CAD |
-| 4 | $24.99 CAD |
-| 5 | $27.99 CAD |
-| 6 | $30.99 CAD |
-| 7 | $33.99 CAD |
-| 8 | $36.99 CAD |
-| 9 | $39.99 CAD |
-| 10 | $42.99 CAD |
-| 11 | $45.99 CAD |
-| 12 | $48.99 CAD |
-| 13 | $51.99 CAD |
-
-Default first variant: `1" / 25mm` + `White Matte` + `1`.
+Default first variant: `1" / 25mm` + `White Matte`.
 
 ### Package Products
 
@@ -56,8 +39,8 @@ Create these two products with Material as the only Shopify variant option.
 
 | Product | Handle | Price | Weight | Tags |
 |---------|--------|-------|--------|------|
-| Package Mini | `package-mini` | $24.99 CAD | 100 g | `package-mini`, `curated-package`, `a5`, `made-to-order`, `two-sheet` |
-| Package Full | `package-full` | $34.99 CAD | 100 g | `package-full`, `curated-package`, `a5`, `made-to-order`, `two-sheet` |
+| Package Mini | `package-mini` | $24.99 CAD | 100 g | `a5`, `curated-pack`, `package`, `package-mini`, `photo-sticker` |
+| Package Full | `package-full` | $34.99 CAD | 100 g | `a5`, `curated-pack`, `package`, `package-full`, `photo-sticker` |
 
 Variant option:
 
@@ -75,7 +58,7 @@ For each product:
 2. Add the Common Sections from the same file.
 3. Add the Product Description Korean footer from [`../footer_copy.md`](../footer_copy.md).
 4. Set SEO title to `{Product name} | Everstory Studio`.
-5. Set SEO description to `Hand-cut photo sticker sheets, made to order in Toronto. Korean premium substrates, fast turnaround, free Ontario shipping.`
+5. Set SEO description per product from the SEO description table in [`../product_descriptions.md`](../product_descriptions.md) (shipping is Canada-wide, not Ontario).
 
 ## Step 3.3 — Collection
 
@@ -150,7 +133,7 @@ Footer · Brand:
 ## Batch 3 Checkpoint
 
 - [ ] 5 products are Draft.
-- [ ] Non-Package products have 312 variants each.
+- [ ] Non-Package products have 28 native variants each (Size × Material; `Photos to include` is an Easify add-on).
 - [ ] Package products have Material-only variants.
 - [ ] `Photo Sheets` collection contains 5 products.
 - [ ] 4 menus created — Main menu + Footer · Shop / Footer · Help / Footer · Brand — using the new product names and handles.

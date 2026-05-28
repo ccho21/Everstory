@@ -38,16 +38,18 @@ Preferred setup:
 
 | Field | Type | Required | Property name |
 |-------|------|----------|---------------|
+| Photos to include | Dropdown `1`–`13`, add-on `+$3 CAD` per extra photo (`(N − 1) × $3`) | yes | `Photos to include` |
 | Upload your photos | Multi-file upload | yes | `Photos` |
 | Header name | Text input | no | `Header name` |
 | Order notes | Long text | no | `Order notes` |
 
 Behavior:
 
-- The customer's Shopify variant `Photos to include` defines how many different photos they should upload.
-- If Easify conditional logic supports variant-based max/min files, configure the upload field to require exactly the selected `Photos to include` count.
+- `Photos to include` is an Easify dropdown (`1`–`13`), not a Shopify variant. It carries the per-photo add-on price (base `$18.99 CAD` + `(N − 1) × $3`; pricing SOT in [`../../business/products.md`](../../business/products.md)).
+- The selected `Photos to include` value defines how many different photos the customer should upload.
+- If Easify conditional logic supports option-based max/min files, configure the `Photos` upload to require exactly the selected `Photos to include` count.
 - If conditional logic is not available, set max files to 13 and use help text: `Upload the same number of photos you selected in Photos to include.`
-- Order review must confirm that uploaded photo count matches the selected variant before production.
+- Order review must confirm that uploaded photo count matches the selected `Photos to include` before production.
 
 ## Step 4.3 — Package Mini Option Set
 

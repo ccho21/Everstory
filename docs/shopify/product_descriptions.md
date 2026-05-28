@@ -12,8 +12,8 @@ Shopify 상품 등록과 PDP description copy의 기준 문서다. 현재 launch
 | Status | Draft until launch | Draft until launch |
 | Variant option 1 | Size | Material |
 | Variant option 2 | Material | 없음 |
-| Variant option 3 | Photos to include | 없음 |
-| Price | 1 photo = $15.99 CAD, each added photo +$3 CAD | Mini $24.99 CAD, Full $34.99 CAD |
+| Photos to include | Easify 드롭다운 add-on (네이티브 variant 아님, 장당 +$3) | 없음 |
+| Price | 1 photo = $18.99 CAD, each added photo +$3 CAD | Mini $24.99 CAD, Full $34.99 CAD |
 | Upload | Easify multi-file, matched to `Photos to include` | Easify tier upload: Big / Medium / Small |
 | Fulfillment | Made-to-order, auto fulfill off | Made-to-order, auto fulfill off |
 | Sales channels | Online Store only for MVP | Online Store only for MVP |
@@ -22,19 +22,24 @@ Shopify 상품 등록과 PDP description copy의 기준 문서다. 현재 launch
 
 | Option | Values |
 |--------|--------|
-| Size | `0.75" / 19mm`, `1" / 25mm`, `1.25" / 32mm`, `1.5" / 38mm`, `2" / 51mm`, `2.5" / 64mm` |
+| Size | `0.75" / 19mm`, `1" / 25mm`, `1.25" / 32mm`, `1.5" / 38mm`, `2" / 51mm`, `2.5" / 64mm`, `Mixed` |
 | Material | `White Matte`, `Translucent`, `Silver`, `Gold` |
-| Photos to include | `1` through `13` |
 
-Price formula: `$15.99 + (Photos to include - 1) × $3 CAD`.
+Native Shopify variant은 Size × Material뿐이다 (28 combos — 7 sizes × 4 materials). `Photos to include`는 Easify 드롭다운 add-on:
+
+| Easify option | Values |
+|--------|--------|
+| Photos to include | `1` through `13` (장당 +$3) |
+
+Price formula: `$18.99 + (Photos to include - 1) × $3 CAD`.
 
 ## SKU 1 — Face Sticker
 
 **Title**: `Face Sticker`
 **Vendor**: `Everstory Studio`
 **Product type**: `Sticker Sheet`
-**Tags**: `face-sticker`, `name-included`, `a5`, `made-to-order`
-**Base price**: `$15.99 CAD`
+**Tags**: `a5`, `face`, `photo-sticker`
+**Base price**: `$18.99 CAD`
 
 ### Description
 
@@ -62,8 +67,8 @@ Kids, portraits, profile photos, expressive pet faces, and gifts where the face 
 ## SKU 2 — Full Body Sticker
 
 **Title**: `Full Body Sticker`
-**Tags**: `full-body-sticker`, `name-included`, `a5`, `made-to-order`
-**Base price**: `$15.99 CAD`
+**Tags**: `a5`, `full-body`, `photo-sticker`
+**Base price**: `$18.99 CAD`
 
 ### Description
 
@@ -91,8 +96,8 @@ Pets, adults, outfits, dance or sports poses, full-body portraits, and objects w
 ## SKU 3 — Shape Sticker
 
 **Title**: `Shape Sticker`
-**Tags**: `shape-sticker`, `name-included`, `a5`, `made-to-order`
-**Base price**: `$15.99 CAD`
+**Tags**: `a5`, `photo-sticker`, `shape`
+**Base price**: `$18.99 CAD`
 
 ### Description
 
@@ -120,7 +125,7 @@ Clean portraits, names, small gifts, party favors, planner layouts, and packagin
 ## SKU 4 — Package Mini
 
 **Title**: `Package Mini`
-**Tags**: `package-mini`, `curated-package`, `a5`, `made-to-order`, `two-sheet`
+**Tags**: `a5`, `curated-pack`, `package`, `package-mini`, `photo-sticker`
 **Price**: `$24.99 CAD`
 
 ### Description
@@ -149,7 +154,7 @@ Small gift sets, one child or pet with a few moods, and customers who want Evers
 ## SKU 5 — Package Full
 
 **Title**: `Package Full`
-**Tags**: `package-full`, `curated-package`, `a5`, `made-to-order`, `two-sheet`
+**Tags**: `a5`, `curated-pack`, `package`, `package-full`, `photo-sticker`
 **Price**: `$34.99 CAD`
 
 ### Description
@@ -206,6 +211,7 @@ Sized by the longest edge. Sticker count varies with photo proportion and select
 | 1.5" / 38mm | larger tumblers, laptops |
 | 2" / 51mm | bold placement |
 | 2.5" / 64mm | statement sticker |
+| Mixed | one sheet with an assortment of sizes |
 
 ### Crop decisions
 

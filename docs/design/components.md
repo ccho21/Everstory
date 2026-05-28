@@ -49,5 +49,5 @@
 - 시트의 (display.tagline + display.wordmark + display.subscript) 트리오와 구조 동일.
 
 ### 왜 pricing-display 가 단독 컴포넌트인가
-- variant (Photos to include) 변경 시 가격 변동 (variant price update). `From $15.99` 패턴 lock 필요.
-- font-tabular-nums + 통화 기호 위치 (앞: `$15.99`) 통일.
+- variant (Photos to include) 변경 시 가격 변동 (variant price update). `From $18.99` 패턴 lock 필요.
+- font-tabular-nums + 통화 기호 위치 (앞: `$18.99`) 통일.

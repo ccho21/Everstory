@@ -16,9 +16,9 @@ Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다
 
 | Product | Customer promise | Photos selected | Sheets | Shopify price |
 |---------|------------------|-----------------|--------|---------------|
-| Face Sticker | 얼굴/상반신 중심 다이컷 스티커 | 1+ | size/cap 기준 | from $15.99 CAD |
-| Full Body Sticker | 전신/전체 피사체 중심 다이컷 스티커 | 1+ | size/cap 기준 | from $15.99 CAD |
-| Shape Sticker | shape 크롭 스티커 (현재 원형) | 1+ | size/cap 기준 | from $15.99 CAD |
+| Face Sticker | 얼굴/상반신 중심 다이컷 스티커 | 1+ | size/cap 기준 | from $18.99 CAD |
+| Full Body Sticker | 전신/전체 피사체 중심 다이컷 스티커 | 1+ | size/cap 기준 | from $18.99 CAD |
+| Shape Sticker | shape 크롭 스티커 (현재 원형) | 1+ | size/cap 기준 | from $18.99 CAD |
 | Package Mini | 작은 Everstory curated package | 4 selected photos | 2 A5 sheets | $24.99 CAD |
 | Package Full | 큰 Everstory curated package | 8 selected photos | 2 A5 sheets | $34.99 CAD |
 
@@ -44,7 +44,7 @@ Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다
 
 ### Size Options
 
-비-Package 상품의 size option은 letter code 없이 inch / mm 표기로만 노출한다.
+비-Package 상품의 size option은 letter code 없이 inch / mm 표기로 노출하며, 여러 사이즈를 한 시트에 섞는 `Mixed` 옵션을 추가로 둔다.
 
 | Size option |
 |-------------|
@@ -54,6 +54,7 @@ Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다
 | 1.5" / 38mm |
 | 2" / 51mm |
 | 2.5" / 64mm |
+| Mixed |
 
 고객-facing 사진 개수 variant label은 `Photos to include`를 권장한다. 숫자 값은 다른 사진 개수로 해석하며, 스티커 총 개수는 선택 size와 사진 비율에 따라 달라진다.
 
@@ -132,7 +133,7 @@ Crop 결정은 기본적으로 사진을 보고 Studio가 판단한다. 고객�
 
 ## Pricing
 
-가격은 §Launch SKU 표를 단일 기준으로 한다. 비-Package 상품은 기본 1 photo $15.99 CAD 에서 시작, 추가 photo **+$3 CAD/장**. Shopify 옵션: Easify Premium **Dropdown** (label `Photos to include`, 각 value 마다 `(N − 1) × $3` add-on).
+가격은 §Launch SKU 표를 단일 기준으로 한다. 비-Package 상품은 기본 1 photo $18.99 CAD 에서 시작 (무료배송 반영가), 추가 photo **+$3 CAD/장**. Shopify 옵션: Easify Premium **Dropdown** (label `Photos to include`, 각 value 마다 `(N − 1) × $3` add-on).
 
 Package Mini $24.99 CAD, Package Full $34.99 CAD는 launch-friendly 가격이다. 이 가격이면 Package는 premium upsell보다는 curated value pack에 가깝다.
 
