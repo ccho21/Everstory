@@ -33,12 +33,19 @@
   var SCRIPT_VARIANT = "v20 v2 template";
   var SCRIPT_TITLE = "Everstory Mixed Sheet (" + SCRIPT_VARIANT + ")";
   var MM_TO_PT = 2.834645;
-  var BODY_PADDING_MM = 0;  // body 안쪽 상하좌우 여백 (0 = body PathItem 까지 끝까지 사용)
-  // 단일 사이즈 (uniform grid) 는 시각 간격을 자동 균등 분배하므로 gap 입력 불필요.
-  // Mixed 모드 _packMixedZones 만 zone 사이 간격으로 이 default 를 사용.
-  var GAP_DEFAULT_MM = 1.5;
+  // body 안쪽 상하좌우 최소 여백. Package 모드 FFDH+backfill+회전이 빡빡하게 차서
+  // 시트 끝 0mm 으로는 운영자가 손으로 벌리는 일이 많아 2mm 로 강제.
+  var BODY_PADDING_MM = 2;
+  // 셀 박스 사이 최소 간격. main flow 가 모든 모드(단일/Mixed/Package) 의 packer 에 동일 gap 전달.
+  // cutMargin(1mm default) 과 합쳐 silhouette 사이 최소 4.5mm 보장. cutMargin 0mm 선택해도 2.5mm 유지.
+  // 단일 사이즈는 _uniformGridPack 의 cols/rows 결정 floor 에만 영향 (시각 간격은 자동 균등 분배).
+  // Mixed 는 _packMixedZones 의 zone 사이, Package 는 _packPackage 의 _canAddToShelfRow 검사에 사용.
+  var GAP_DEFAULT_MM = 2.5;
 
-  // A5 body 148×195mm, padding 0, gap 1.5mm 기준 사이즈별 셀 수.
+  // A5 body 148×195mm, padding 0, gap 1.5mm 기준 사이즈별 셀 수 (구 baseline).
+  // ⚠ 2026-05-27: BODY_PADDING_MM 0→2, GAP_DEFAULT_MM 1.5→2.5 변경됨 — 실제 슬롯 한두 개 줄 수 있음.
+  // 이 표는 listbox cap 트리밍에만 사용 (cap > 실제슬롯 이면 빈 자리 그대로) → 즉시 운영 영향 없음.
+  // 운영 검수 후 사이즈별 실측 슬롯으로 표 갱신 권장 (별도 작업).
   // 인치 6단계 (XS 0.75 / S 1 / M 1.25 / L 1.5 / XL 2 / XXL 2.5") 기준.
   // minRepeat 동적 계산 baseline (floor(slots / designCount)).
   var SLOTS_BY_SIZE = {
