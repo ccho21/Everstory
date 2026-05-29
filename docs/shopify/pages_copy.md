@@ -193,7 +193,7 @@ We use four Korean premium substrates, all finished with lamination.
 | Silver | reflective waterproof accent |
 | Gold | warm reflective waterproof accent |
 
-All four are waterproof, fade resistant, and suitable for everyday use.
+All four are laminated, waterproof, fade resistant, and suitable for everyday use.
 
 **SEO**
 

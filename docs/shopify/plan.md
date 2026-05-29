@@ -40,7 +40,7 @@ Shopify 문서에서 제외한다.
 | `footer_copy.md` | 한국어 footer copy SOT. | P1 | 유지 |
 | `preview.html` | 디자인 토큰 / 컴포넌트 라이브러리 시안. admin 실행에 직접 필요 없음. | P2 | 디자인 정리 후 삭제 또는 갱신 판단 |
 | `wireframes/` | Horizon 테마 기반 11페이지 분리 HTML 와이어프레임. Shopify customizer 작업 시 section/block 어휘 매칭 청사진. | P1 | 유지 |
-| `instructions/` | Batch 1–9 admin·theme 실행 walkthrough (+ `_PROMPT_TEMPLATE.md` 생성 메타). 입력값은 settings_checklist / product_descriptions / policies / pages_copy / footer_copy SOT 참조. | P0 | 유지 |
+| `instructions/` | Batch 1–10 admin·theme 실행 walkthrough (+ `_PROMPT_TEMPLATE.md` 생성 메타). Batch 10 = Judge.me 리뷰 앱. 입력값은 settings_checklist / product_descriptions / policies / pages_copy / footer_copy SOT 참조. | P0 | 유지 |
 | `everstory_product_detail_*.html` | 상품 상세 PDP HTML 시안 (full KO / full EN / pdp_block), 브랜드 토큰 기반. | P1 | 유지 |
 | `horizon_wireframe_application_plan.md` | Shopify 문서·wireframe → Horizon 테마 적용 매핑 플랜 (5-product). | P1 | 유지 |
 
@@ -58,3 +58,35 @@ Shopify 문서에서 제외한다.
 - Customily 또는 live preview 앱 전환.
 - Meta Pixel, newsletter, review app, Etsy sync.
 - `preview.html` 의 과거 proof approval 흐름은 MVP 실행 문서에서 제외되어 있으므로, 디자인 재사용 가치가 없으면 삭제한다.
+
+### 외부 피드백 반영 (2026-05, 지인 피드백)
+
+외부 사용자 피드백을 트리아지한 항목이다. 전부 P2(MVP 이후)로 두되, "우선"·"빠른 수확" 표시는 MVP 이후 먼저 처리 권장. 확정되면 해당 SOT(product_descriptions / pages_copy 등)나 라이브 실행으로 위임하고 본 표에서 뺀다.
+
+| 묶음 | 항목 | 메모 |
+|------|------|------|
+| 사이즈 직관성 | PDP 미리보기에 아이폰 대비 목업 + mm/in 사이즈 표기. 이미지별 사이즈 게시로 주문 직관성 확보 | 아이폰 비교가 가장 직관적. 목업 에셋 1회 제작 → 다수 SKU 재사용 |
+| 소재 정합성 | 종이재질(소재) 이미지 ↔ 설명 불일치 정리 | **우선** (고객 혼동). product_descriptions.md / pages_copy(Materials) ↔ 라이브 이미지 정합성 점검 |
+| 채널 품질 | 인스타 업로드 시 사진 깨짐 해결 (export 해상도·비율) | **빠른 수확**. 해결책 → [`../design/photography.md`](../design/photography.md) "Instagram 업로드 (화질 깨짐 방지)" |
+| 채널 확장 | FB/IG shop 등 세일즈 채널 업데이트 | 위 "Meta Pixel … Etsy sync" 와 연계 |
+| 리뷰·UGC | 프로덕트별 리뷰 + 고객 실사용 사진 노출 | 위 "review app" 구체화 — UGC 사진 수집·전시 포함 |
+
+#### 리뷰·UGC 앱 후보 (리서치 2026-05)
+
+스티커는 비주얼 상품이라 "고객 실사용 사진(UGC) 캡처"가 피드백의 핵심 목표다. 런칭 단계(저 GMV) 기준 후보:
+
+| 앱 | 요금(시작) | 특징 | 현 단계 적합성 |
+|----|-----------|------|----------------|
+| **Judge.me** | 무료 ~ $15/mo | 사진 리뷰 + UGC 갤러리 + 구조화 스니펫, 가장 저렴 | **런칭 추천** |
+| Loox | $9.99 ~ $34.99/mo | 사진·비디오 리뷰 특화, 캡처율 높음 | Meta 사진광고 본격화 시 재검토 |
+| Okendo / Yotpo | $19 / 엔터프라이즈+ | 통합 깊이(Klaviyo·Meta 카탈로그·로열티) | 고 GMV 단계 — 현재 과함 |
+
+- **결정 (2026-05-29): Judge.me Forever Free** 로 런칭 (사진 리뷰·UGC·rich snippet 충족). 사진 기반 Meta 광고 본격화 시 Loox 재검토. 설치 walkthrough → [`instructions/10_judgeme_reviews.md`](instructions/10_judgeme_reviews.md).
+  - 무료 티어 범위: 무제한 리뷰·리뷰요청 이메일, 사진 리뷰, SEO rich snippet. 제외(=$15 Awesome): 비디오 리뷰, Q&A, 리뷰 캐러셀 위젯, 풀 CSS, "Powered by Judge.me" 배지 제거.
+
+#### FB/IG shop 셋업 순서 (리서치 2026-05)
+
+- **앱**: "Facebook & Instagram by Meta" 세일즈 채널 — 전 Shopify 플랜 무료. 위 "Meta Pixel … Etsy sync" 와 동일 인프라(Pixel) 공유.
+- **선행조건**: Meta Business + Commerce Manager 계정, Meta Pixel/Conversions API, IG 프로페셔널 계정, 비즈니스+도메인 인증, 상품 카탈로그.
+- **순서**: 채널 설치 → Start setup → FB 비즈니스 페이지·IG 비즈니스 연결 → Commerce Manager 카탈로그 자동 생성/동기화 → shop 심사 제출 → 승인 후 게시물 제품 태깅.
+- **비고**: shop 심사 최대 4주 → 일찍 시작. Toronto(캐나다) 지원됨. 2026-03 기준 Instagram 이 정식 세일즈 채널로 전환됨.
