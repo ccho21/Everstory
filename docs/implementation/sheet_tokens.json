@@ -1,7 +1,7 @@
 {
   "_meta": {
     "version": "v1",
-    "source": "Everstory_mixed_v2.jsx + templates/template_cutout_v2.ait",
+    "source": "Everstory_mixed.jsx + templates/template_cutout_v2.ait",
     "extracted": "2026-05-08",
     "note": "시트 packing implementation 토큰 (사이즈·trace 파라미터·CutContour spot·save·rasterize). 운영 .jsx 가 본 파일의 expanded 값을 직접 참조. web 디자인 토큰은 docs/design/tokens.json."
   },
