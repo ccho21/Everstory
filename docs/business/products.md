@@ -19,7 +19,7 @@ Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다
 | Face Sticker | 얼굴/상반신 중심 다이컷 스티커 | 1+ | size/cap 기준 | from $18.99 CAD |
 | Full Body Sticker | 전신/전체 피사체 중심 다이컷 스티커 | 1+ | size/cap 기준 | from $18.99 CAD |
 | Shape Sticker | shape 크롭 스티커 (현재 원형) | 1+ | size/cap 기준 | from $18.99 CAD |
-| Package Mini | 작은 Everstory curated package | 4 selected photos | 2 A5 sheets | $24.99 CAD |
+| Package Mini | 작은 Everstory curated package | 4 selected photos | 1 A5 sheet | $24.99 CAD |
 | Package Full | 큰 Everstory curated package | 8 selected photos | 2 A5 sheets | $34.99 CAD |
 
 ## Product Rules
@@ -80,7 +80,7 @@ Package는 고객이 모든 디테일을 지정하는 상품이 아니다. 고�
 
 - 총 up to 10 uploaded photos.
 - 총 4 selected photos.
-- 최종 출력은 2 A5 sheets.
+- 최종 출력은 1 A5 sheet.
 
 ### Package Full
 

@@ -111,7 +111,7 @@
     "2\" / 51mm",
     "2.5\" / 64mm",
     "Mixed 2.5/2 + 1.25/1in",
-    "Package (4 designs / 2 sheets · 8 designs / 2 sheets · 파일명 _XS/_S/_M/_L/_FAM)",
+    "Package (4 designs / 1 sheet · 8 designs / 2 sheets · 파일명 _XS/_S/_M/_L/_FAM)",
     "All sizes 0.75-2.5in (모든 사이즈 1장 이상)"
   ];
   var SIZE_VALUES = [19.05, 25.4, 31.75, 38.1, 50.8, 63.5, MIXED_SIZE_VALUE, PACKAGE_SIZE_VALUE, ALLSIZES_SIZE_VALUE];
@@ -548,7 +548,7 @@
         if (sz === MIXED_SIZE_VALUE) {
           hintLabel.text = "Mixed: 1 디자인 고정";
         } else if (sz === PACKAGE_SIZE_VALUE) {
-          hintLabel.text = "Package: 4 designs → 2 sheets · 8 designs → 2 sheets";
+          hintLabel.text = "Package: 4 designs → 1 sheet · 8 designs → 2 sheets";
         } else if (sz === ALLSIZES_SIZE_VALUE) {
           hintLabel.text = "전 사이즈: 디자인 순서대로 배정 (0.75-2.5\" 각 1장 이상)";
         } else {

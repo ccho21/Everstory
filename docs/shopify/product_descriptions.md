@@ -134,11 +134,11 @@ Clean portraits, names, small gifts, party favors, planner layouts, and packagin
 
 > A small curated photo sticker package.
 
-Package Mini lets you upload a few options for each print size. Everstory chooses the best photos for the final sheets, then balances the set across two A5 sheets.
+Package Mini lets you upload a few options for each print size. Everstory chooses the best photos for the final sheet, then balances the set on one A5 sheet.
 
 **What you get**
 
-- Two A5 sticker sheets
+- One A5 sticker sheet
 - Big print: upload up to 3 photos, Studio picks 1
 - Medium print: upload up to 3 photos, Studio picks 1
 - Small print: upload up to 4 photos, Studio picks 2
@@ -280,7 +280,7 @@ Everstory sticker sheets are decorative photo products, not a toy and not a chil
   | Face Sticker | `Face-forward photo stickers, hand cut around the face or upper body in Toronto. A5 sheet, Korean premium substrates. Free Canada-wide shipping.` |
   | Full Body Sticker | `Full-shape custom photo stickers — the whole person, pet, or subject hand cut on an A5 sheet. Korean premium substrates, made in Toronto.` |
   | Shape Sticker | `Clean shape-crop photo stickers on an A5 sheet — currently round, hand cut in Toronto. Korean premium substrates, waterproof and laminated. Free Canada-wide shipping.` |
-  | Package Mini | `A curated 2-sheet photo sticker set. Upload candidates by size tier — Everstory selects the 4 strongest photos. Hand cut in Toronto.` |
+  | Package Mini | `A curated one-sheet photo sticker set. Upload candidates by size tier — Everstory selects the 4 strongest photos. Hand cut in Toronto.` |
   | Package Full | `A larger curated photo sticker set — 2 A5 sheets, 8 selected photos across Big / Medium / Small tiers. Hand cut in Toronto. Free Canada-wide shipping.` |
 
 - **Product status**: Draft until launch.

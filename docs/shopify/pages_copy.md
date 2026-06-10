@@ -139,7 +139,7 @@ For Full Body Sticker, **1.25" / 32 mm or larger** is recommended because the su
 
 ### Ready to choose?
 
-Every Face Sticker, Full Body Sticker, and Shape Sticker lets you pick from six sizes — 0.75" to 2.5". Package Mini and Package Full bundle multiple sizes into one curated sheet.
+Every Face Sticker, Full Body Sticker, and Shape Sticker lets you pick from six sizes — 0.75" to 2.5". Package Mini and Package Full bundle multiple sizes into one curated set.
 
 → [Shop the collection](/collections/all)
 
