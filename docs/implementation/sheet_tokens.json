@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "version": "v1",
+    "version": "v2",
     "source": "Everstory_mixed.jsx + templates/template_cutout_v2.ait",
-    "extracted": "2026-05-08",
-    "note": "시트 packing implementation 토큰 (사이즈·trace 파라미터·CutContour spot·save·rasterize). 운영 .jsx 가 본 파일의 expanded 값을 직접 참조. web 디자인 토큰은 docs/design/tokens.json."
+    "extracted": "2026-06-12",
+    "note": "시트 packing implementation 토큰 (사이즈·trace 파라미터·CutContour spot·save·rasterize). SOT 는 운영 .jsx — 본 파일은 doc mirror, .jsx 상수 변경 시 같이 갱신. web 디자인 토큰은 docs/design/tokens.json."
   },
 
   "conversion": {
@@ -11,22 +11,34 @@
   },
 
   "layout": {
-    "_note": "Sheet packing baseline. 운영 .jsx 가 .ait 와 packing_internals.md 의 expanded 값을 직접 사용 — 본 키는 doc reference.",
+    "_note": "Sheet packing baseline. 운영 .jsx 가 .ait 와 expanded 값을 직접 사용 — 본 키는 doc reference.",
     "body_padding_mm": 2,
-    "gap_mm": 2,
+    "gap_mm": 2.5,
     "max_sheet_cap": 1,
-    "repeat_threshold_ratio": 0.6
+    "tier_pack_efficiency": 0.8
   },
 
   "sizes_mm": {
-    "options": [20, 30, 60],
-    "labels": ["2cm", "3cm", "6cm"],
-    "default": 60
+    "_note": "단일 사이즈 6단계, 긴 변 기준. 기본값 = 1in (다이어리 표준).",
+    "options": [19.05, 25.4, 31.75, 38.1, 50.8, 63.5],
+    "labels": ["0.75in", "1in", "1.25in", "1.5in", "2in", "2.5in"],
+    "default": 25.4
+  },
+
+  "slots_by_size": {
+    "_note": "body 142x175mm + padding 2 + gap 2.5, 정사각(aspect 1) 셀 기준 cols x rows. 단일 사이즈 listbox cap = 이 값 (정사각이 최소 슬롯 케이스 → cap <= 실제 슬롯 보장). body/padding/gap 변경 시 재산출.",
+    "19.05": 48,
+    "25.4": 30,
+    "31.75": 20,
+    "38.1": 12,
+    "50.8": 6,
+    "63.5": 4
   },
 
   "cut_margins_mm": {
-    "options": [1, 2],
-    "default": 1
+    "_note": "내부 제작 옵션 (고객 옵션 아님). 기본 0mm.",
+    "options": [0, 0.5, 1, 2],
+    "default": 0
   },
 
   "trace": {
@@ -65,7 +77,8 @@
     "embed_icc_profile": true
   },
 
-  "output_naming": "{ts}_{sizeMm}mm_sheet{NN:02d}.ai",
+  "output_naming": "{ts}_{sizeTag}_sheet01.ai",
+  "output_naming_note": "sizeTag = 인치 표기(예: 1in) | PKG | ALL. 한 시트 정책으로 sheet01 고정 — Full Package 는 동일 시트 2회 인쇄.",
 
   "rasterize": {
     "color_model": "DEFAULTCOLORMODEL",

@@ -7,7 +7,7 @@
 //   (구 Mixed zone 모드는 2026-06-11 삭제 — Shopify 'Mixed' 옵션 주문은 전 사이즈 모드로 제작.)
 //
 // 디자인 cap (단일 사이즈 = 시트 물리 슬롯 수, 디자인당 반복 cap 없음):
-//   XS 0.75" → 63 / S 1" → 35 / M 1.25" → 20 / L 1.5" → 12 / XL 2" → 9 / XXL 2.5" → 6
+//   XS 0.75" → 48 / S 1" → 30 / M 1.25" → 20 / L 1.5" → 12 / XL 2" → 6 / XXL 2.5" → 4
 //
 // 동작:
 //   1. 02_cutout 폴더 선택
@@ -41,18 +41,19 @@
   // Package 는 _packPackage 의 _canAddToShelfRow 검사에 사용.
   var GAP_DEFAULT_MM = 2.5;
 
-  // A5 body 148×195mm, padding 0, gap 1.5mm 기준 사이즈별 셀 수 (구 baseline).
-  // ⚠ 2026-05-27: BODY_PADDING_MM 0→2, GAP_DEFAULT_MM 1.5→2.5 변경됨 — 실제 슬롯 한두 개 줄 수 있음.
-  // 이 표는 listbox cap 트리밍에만 사용 (cap > 실제슬롯 이면 빈 자리 그대로) → 즉시 운영 영향 없음.
-  // 운영 검수 후 사이즈별 실측 슬롯으로 표 갱신 권장 (별도 작업).
+  // body 142×175mm (template_cutout_v2.ait info > body), BODY_PADDING_MM 2, GAP_DEFAULT_MM 2.5 기준
+  // 사이즈별 슬롯 수 — _uniformGridPack 의 cols×rows floor 식을 정사각(aspect 1) 셀로 산출 (2026-06-12 갱신).
+  // 정사각이 최소 슬롯 케이스 (비정사각 cellBox 는 항상 size×size 이하 → 슬롯 ≥ 표값) → cap ≤ 실제 슬롯 보장.
+  // cap > 실제 슬롯이면 초과 디자인이 round-robin 에서 한 번도 안 놓이는 silent drop 발생 (구 148×195
+  // baseline 표의 문제) — body/padding/gap 변경 시 이 표를 같은 식으로 반드시 재산출할 것.
   // 인치 6단계 (XS 0.75 / S 1 / M 1.25 / L 1.5 / XL 2 / XXL 2.5") 기준.
   var SLOTS_BY_SIZE = {
-    19.05: 63,   // 0.75"
-    25.4:  35,   // 1"
-    31.75: 20,   // 1.25"
-    38.1:  12,   // 1.5"
-    50.8:  9,    // 2"   (placeholder, 컷-락 실측 필요)
-    63.5:  6     // 2.5"
+    19.05: 48,   // 0.75"  (6×8)
+    25.4:  30,   // 1"     (5×6)
+    31.75: 20,   // 1.25"  (4×5)
+    38.1:  12,   // 1.5"   (3×4)
+    50.8:  6,    // 2"     (2×3)
+    63.5:  4     // 2.5"   (2×2)
   };
 
   var PACKAGE_SIZE_VALUE = -2;   // sentinel for Package mode (파일명 토큰 기반 packing)
@@ -141,6 +142,11 @@
   try {
     bodyPath = _findInfoPath(doc, "body");
     headerRightText = _findInfoPath(doc, "header_right");
+    // 이름이 같은 PathItem 이 먼저 잡히면 .contents 주입 단계 (try/catch 밖) 에서 터짐 — 여기서 차단.
+    if (headerRightText.typename !== "TextFrame") {
+      throw new Error("info > header > header_right 가 TextFrame 이 아닙니다 (현재: " +
+        headerRightText.typename + "). 템플릿에서 같은 이름의 다른 오브젝트를 제거하세요.");
+    }
   } catch (eBorder) {
     alert(eBorder.message);
     try { doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eClose) {}
@@ -173,8 +179,9 @@
   // 다이얼로그에서 selectedPairs 받음. testConfig (selectedPairs 없음) 면 pairs 전체 사용.
   var layoutPairs = (options.selectedPairs && options.selectedPairs.length > 0) ?
     options.selectedPairs : pairs;
+  // 보고용: 미선택 (운영자가 안 고름) 과 trim (cap/예산이 자름) 을 분리 집계.
+  var pickedCount = layoutPairs.length;
 
-  var totalIgnoredCount = 0;
   var tierTrim = null;
 
   if (options.isPackage) {
@@ -191,7 +198,6 @@
       return;
     }
     layoutPairs = tierTrim.kept;
-    totalIgnoredCount = pairs.length - layoutPairs.length;
   } else {
     // 안전판: testConfig 경로에서도 cap 위반은 잘라낸다 (다이얼로그는 auto-cap 으로 자체 보장).
     var designLimit = options.isAllSizes ? layoutPairs.length
@@ -201,7 +207,6 @@
       for (var ci = 0; ci < designLimit; ci++) capped.push(layoutPairs[ci]);
       layoutPairs = capped;
     }
-    totalIgnoredCount = pairs.length - layoutPairs.length;
 
     var anyTooBig = false;
     for (var pi = 0; pi < layoutPairs.length; pi++) {
@@ -331,8 +336,11 @@
       " / 칼선 여백: " + options.cutMarginMm + "mm";
   }
 
+  var unselectedCount = pairs.length - pickedCount;
+  var trimmedCount = pickedCount - layoutPairs.length;
   var inputLine = "사진 입력: " + pairs.length + "개 / 사용: " + layoutPairs.length + "개";
-  if (totalIgnoredCount > 0) inputLine += " / 제외: " + totalIgnoredCount + "개";
+  if (unselectedCount > 0) inputLine += " / 미선택: " + unselectedCount + "개";
+  if (trimmedCount > 0) inputLine += " / trim: " + trimmedCount + "개";
   var actualPlaced = packResult.placed.length - skippedPlacements;
   inputLine += " / 사진 배치: " + actualPlaced + "개";
   var rotatedCount = 0;
@@ -343,6 +351,14 @@
   var saveLine = savedPath ?
     ("저장: " + savedPath) :
     ("저장 실패: " + (saveError || "unknown") + " — Illustrator 에서 직접 저장하세요.");
+
+  // 전 사이즈 모드: 보장 실패 사이즈 (구제 불가, 시트에 0장) 를 generic 미배치 카운트와 분리해 명시.
+  var missingSizesLine = "";
+  if (packResult.missingSizes && packResult.missingSizes.length > 0) {
+    var msParts = [];
+    for (var msI = 0; msI < packResult.missingSizes.length; msI++) msParts.push(_inchStr(packResult.missingSizes[msI]));
+    missingSizesLine = "⚠ 전 사이즈 보장 실패 (공간 부족, 0장): " + msParts.join(", ") + "\n";
+  }
 
   var msg =
     "완료: Name Included 시트 생성\n\n" +
@@ -364,6 +380,7 @@
         (layoutPairs.length > 0 ? " × " + Math.floor(packResult.slots / layoutPairs.length) + "회" + ((packResult.slots % layoutPairs.length) > 0 ? " (+" + (packResult.slots % layoutPairs.length) + " 보너스)" : "") : "") + "\n")) +
     "Trace 캐시: unique " + uniquePairs.length + "개 (배치 " + packResult.placed.length + "회 → trace " + uniquePairs.length + "회)\n" +
     (packResult.leftover.length > 0 ? "미배치 사진: " + packResult.leftover.length + "개\n" : "") +
+    missingSizesLine +
     saveLine;
 
   if (failedItems.length > 0) {
@@ -535,7 +552,7 @@
     }
     cutRadios[CUT_MARGIN_DEFAULT_INDEX].value = true;
 
-    var hint = dlg.add("statictext", undefined, "info > header > header_right — 우측 정렬 3줄 (이름·사이즈·재질 / 디자인수 / Order·date). 주문번호는 파일명/메타 용도.");
+    var hint = dlg.add("statictext", undefined, "info > header > header_right — 우측 정렬 3줄 (이름·사이즈·재질 / 디자인수 / Order·date). 주문번호는 헤더 표기용 (파일명 미포함).");
     try { hint.graphics.foregroundColor = hint.graphics.newPen(hint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHint) {}
 
     var btnGroup = dlg.add("group");
@@ -545,14 +562,23 @@
     var okBtn = btnGroup.add("button", undefined, "생성", { name: "ok" });
     okBtn.active = true;
 
+    // 검증은 다이얼로그가 닫히기 전에 — 실패 시 입력 유지한 채 계속.
+    // (닫힌 뒤 검증하면 스크립트가 종료돼 폴더 선택부터 전부 재입력해야 했음.)
+    okBtn.onClick = function () {
+      if (!_trim(nameInput.text)) {
+        alert("이름이 비어 있습니다.");
+        return;
+      }
+      if (!pairsListbox.selection || pairsListbox.selection.length === 0) {
+        alert("페어가 선택되지 않았습니다. 최소 1개 선택하세요.");
+        return;
+      }
+      dlg.close(1);
+    };
+
     if (dlg.show() !== 1) return null;
 
     var nameText = _trim(nameInput.text);
-    if (!nameText) {
-      alert("이름이 비어 있습니다.");
-      return null;
-    }
-
     var sizeMm = _currentSizeMm();
 
     var cutMarginMm = CUT_MARGIN_VALUES[CUT_MARGIN_DEFAULT_INDEX];
@@ -568,6 +594,7 @@
         selectedPairs.push(pairsArg[pairsListbox.selection[spi].index]);
       }
     }
+    // okBtn.onClick 이 보장하지만, 비면 main 이 pairs 전체로 폴백하므로 안전판으로 중단 유지.
     if (selectedPairs.length === 0) {
       alert("페어가 선택되지 않았습니다. 최소 1개 선택하세요.");
       return null;
@@ -598,7 +625,7 @@
     var orderNum = options.orderNumber ? options.orderNumber : "—";
     return {
       rows: [
-        { left: "TYPE: Name Add-on",   right: "MATERIAL: " + options.material },
+        { left: "TYPE: Name Included", right: "MATERIAL: " + options.material },
         { left: "SPEC: " + spec,        right: "PHOTOS: " + photoCount },
         { left: "ORDER: " + orderNum,   right: "DATE: " + options.orderDate }
       ]
@@ -1339,7 +1366,7 @@
   // Package 와 동일한 shelf 프리미티브 재사용 → 정렬/회전/좌표 동작 일관.
   function _packAllSizes(pairs, binW, binH, gap) {
     if (!pairs || pairs.length === 0) {
-      return { rows: [], placed: [], leftover: [], repeatedCount: 0, mixedSummary: _buildAllSizesSummary(0, 0) };
+      return { rows: [], placed: [], leftover: [], repeatedCount: 0, missingSizes: [], mixedSummary: _buildAllSizesSummary(0, 0) };
     }
     var N = pairs.length;
 
@@ -1353,7 +1380,7 @@
     }
     primary = _sortShelfItemsDesc(primary);   // 높이 내림차순 (FFDH — 큰 것부터)
 
-    var pack = { rows: [], placed: [], leftover: [], repeatedCount: 0 };
+    var pack = { rows: [], placed: [], leftover: [], repeatedCount: 0, missingSizes: [] };
     pack.leftover = _appendShelfRowsOnce(pack, primary, binW, binH, gap);
 
     // 2단계: 남는 공간을 (작은 사이즈 × 디자인) round-robin 으로 채움.
@@ -1387,7 +1414,10 @@
           }
         }
       }
-      if (!rescued) pack.leftover.push(_itemForSize(pairs[0], gSize));
+      if (!rescued) {
+        pack.leftover.push(_itemForSize(pairs[0], gSize));
+        pack.missingSizes.push(gSize);   // 완료 메시지에 보장 실패 사이즈로 명시
+      }
     }
     if (rescuedAny) pack.placed = _shelfRowsToPlaced(pack.rows, binW, binH, gap);
 
