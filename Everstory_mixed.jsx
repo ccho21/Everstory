@@ -71,6 +71,10 @@
   var ALLSIZES_ORDER_MM = [63.5, 50.8, 38.1, 31.75, 25.4, 19.05];  // 2.5 → 0.75" (큰→작은, 각 1장 보장)
   var ALLSIZES_FILL = true;      // 보장 라운드 후 남는 공간을 작은 사이즈로 채울지
   var ALLSIZES_FILL_MM = [38.1, 31.75, 25.4, 19.05];  // 채움용(1.5/1.25/1/0.75"). 2.5/2" 는 채움 제외
+  // hero 행 정책: 보장 라운드 단일 배치는 hero 사이즈(2.5"/2")만. 1.5" 이하 단일은 hero 옆에
+  //   두지 않고 아래 tier 행(round-robin)이 담당, hero 행 남는 폭은 작은 사이즈 세로 column
+  //   (0.75" 3단 등)으로 채운다. 사이즈별 ≥1장 보장은 _packAllSizes 말미의 검증·구제가 담당.
+  var ALLSIZES_HERO_COUNT = 2;
 
   // Mixed baseline. 2.5×1 + 2×3 는 고정 보장, 1.25/1in 은 _packMixedZones 가 남은 공간에 균형 fill.
   // copies 는 header/spec fallback 용 baseline 이며, 운영 배치의 filler copy 수는 고정하지 않는다.
@@ -1647,9 +1651,10 @@
   }
 
   // ── 전 사이즈 (All Sizes) 모드 packer ──────────────────────────────
-  // 디자인 1개를 0.75"~2.5" 전 사이즈로 출력. ALLSIZES_ORDER_MM 의 모든 사이즈를
-  // 큰 것부터 작은 것 순으로 각 1장씩 무조건 배치(요구사항: 최소 1개씩)하고,
-  // 남는 공간은 ALLSIZES_FILL_MM(작은 쪽)으로 round-robin 채워 시트를 채운다.
+  // 0.75"~2.5" 전 사이즈를 각 1장 이상 출력. 시트 구조 (위→아래):
+  //   hero 행: 2.5"/2" 각 1장 + 남는 폭은 작은 사이즈 세로 column (0.75" 3단, 1" 2단 …)
+  //   tier 행: 1.5"→1.25"→1"→0.75" round-robin, 행마다 한 사이즈 잠금 (높이 남으면 두 바퀴째)
+  //   말미 보장 검증: 빠진 사이즈는 단일 backfill 로 구제, 불가하면 leftover 보고.
   // Mixed/Package 와 동일한 shelf 프리미티브 재사용 → 정렬/회전/좌표 동작 일관.
   function _packAllSizes(pairs, binW, binH, gap) {
     if (!pairs || pairs.length === 0) {
@@ -1657,10 +1662,12 @@
     }
     var N = pairs.length;
 
-    // 1단계: 각 사이즈 정확히 1장씩 (보장 라운드). 디자인은 순서대로 round-robin —
-    //   1개면 그 디자인이 전 사이즈, 여러개면 사이즈마다 다음 디자인. 못 들어간 사이즈는 leftover.
+    // 1단계: 보장 라운드 — hero 사이즈(2.5"/2")만 단일로 첫 행에 배치한다.
+    //   1.5" 이하 단일은 hero 옆에 두지 않는다 (사용자 정책): 아래 tier 행 round-robin 과
+    //   hero 행의 작은 사이즈 column 이 담당하고, 빠진 사이즈는 말미 보장 검증이 구제한다.
+    //   디자인은 순서대로 round-robin — 1개면 그 디자인이 전 사이즈, 여러개면 사이즈마다 다음 디자인.
     var primary = [];
-    for (var i = 0; i < ALLSIZES_ORDER_MM.length; i++) {
+    for (var i = 0; i < ALLSIZES_HERO_COUNT && i < ALLSIZES_ORDER_MM.length; i++) {
       primary.push(_itemForSize(pairs[i % N], ALLSIZES_ORDER_MM[i]));
     }
     primary = _sortShelfItemsDesc(primary);   // 높이 내림차순 (FFDH — 큰 것부터)
@@ -1680,6 +1687,28 @@
       fillers = _sortShelfItemsDesc(fillers);
       _appendShelfFillerRows(pack, fillers, binW, binH, gap);
     }
+
+    // 보장 검증: ALLSIZES_ORDER_MM 모든 사이즈 ≥ 1장. hero 구조 전환으로 1.5"~0.75" 는
+    //   tier 행/column 이 담당하는데, 높이·폭이 극단적으로 빡빡하면 한 사이즈가 빠질 수 있어
+    //   기존 행 빈 폭에 단일 backfill 로 구제한다. 그래도 안 되면 leftover 로 보고.
+    var rescuedAny = false;
+    for (var gi = 0; gi < ALLSIZES_ORDER_MM.length; gi++) {
+      var gSize = ALLSIZES_ORDER_MM[gi];
+      if (_countSizeInRows(pack.rows, gSize) > 0) continue;
+      var rescued = false;
+      for (var gd = 0; gd < N && !rescued; gd++) {
+        var gItem = _itemForSize(pairs[gd], gSize);
+        for (var gr = 0; gr < pack.rows.length && !rescued; gr++) {
+          if (gItem.h <= pack.rows[gr].h && _canAddToShelfRow(pack.rows[gr], gItem, binW, binH, gap)) {
+            _addToShelfRow(pack.rows[gr], gItem, gap);
+            rescued = true;
+            rescuedAny = true;
+          }
+        }
+      }
+      if (!rescued) pack.leftover.push(_itemForSize(pairs[0], gSize));
+    }
+    if (rescuedAny) pack.placed = _shelfRowsToPlaced(pack.rows, binW, binH, gap);
 
     pack.mixedSummary = _buildAllSizesSummary(pack.placed.length, N);
     return pack;
@@ -1738,6 +1767,41 @@
   function _appendShelfFillerRows(packResult, fillerItems, binW, binH, gap) {
     if (!packResult || !packResult.rows || !fillerItems || fillerItems.length === 0) return;
 
+    var fillerIdx = 0;
+
+    // 0단계 hero-row column fill: 보장 라운드가 만든 hero 행(2.5"/2")의 남은 폭을
+    //   same-size 세로 column(0.75" 3단, 1" 2단 등)으로 채운다. column 사이즈는 작은
+    //   쪽(0.75")부터 round-robin — hero 행 정책상 1.5"/1.25" 단일은 hero 옆에 두지
+    //   않고, 세로 2단 이상 쌓이는 작은 사이즈만 들어간다 (1단짜리는 column 미성립 → 제외).
+    //   행 높이는 키우지 않는다 (column 합산 h ≤ row.h): 행이 자라면 아래 행과 겹친다.
+    //   디자인은 fillerIdx 커서 round-robin — 1단계 seed 는 키 기준 선택이라 커서 점프 무해.
+    var ascSizes = [];
+    for (var az = ALLSIZES_FILL_MM.length - 1; az >= 0; az--) ascSizes.push(ALLSIZES_FILL_MM[az]);
+
+    for (var br = 0; br < packResult.rows.length; br++) {
+      var existRow = packResult.rows[br];
+      var colType = 0;   // ascSizes round-robin 커서 (행마다 0.75" 부터)
+      while (true) {
+        var availW = binW - existRow.w - gap;
+        var col = null;
+        var used = colType;
+        for (var ct = 0; ct < ascSizes.length; ct++) {
+          used = (colType + ct) % ascSizes.length;
+          col = _buildSameSizeColumn(fillerItems, fillerIdx, ascSizes[used], availW, existRow.h, gap);
+          if (col !== null) break;
+        }
+        if (col === null) break;
+        fillerIdx = col.nextIdx;
+        _addToShelfRow(existRow, col, gap);
+        packResult.repeatedCount += col.cells.length;
+        colType = (used + 1) % ascSizes.length;
+      }
+    }
+
+    // 1단계: 마지막 행 아래로 새 filler 행 추가. 행은 seed(첫 아이템) 사이즈로 잠근다 —
+    //   디자인 수가 적으면 pool 순환(사이즈 4종 × N디자인)이 행 중간에서 사이즈를 섞어
+    //   [0.75 옆 1.5] 같은 무작위 행이 나오므로(단일 디자인에서 두드러짐), 행 단위 균일
+    //   사이즈로 Package tier 행과 같은 미감을 유지한다. 채움률은 자투리 폭만큼 소폭 감소.
     var startY = 0;
     if (packResult.rows.length > 0) {
       var last = packResult.rows[packResult.rows.length - 1];
@@ -1745,17 +1809,44 @@
     }
 
     var row = _newShelfRow(startY);
-    var fillerIdx = 0;
+    var rowSizeMm = 0;     // 0 = 빈 행. seed 가 정한 사이즈로 행을 잠근다.
+    var roundUsed = {};    // sizeMm -> true. 이번 바퀴(round)에 행 tier 로 쓴 사이즈.
+    var roundUsedCount = 0;
     while (true) {
       var added = false;
-      for (var step = 0; step < fillerItems.length; step++) {
-        var fi = (fillerIdx + step) % fillerItems.length;
-        if (_canAddToShelfRow(row, fillerItems[fi], binW, binH, gap)) {
-          _addToShelfRow(row, fillerItems[fi], gap);
+
+      if (rowSizeMm === 0) {
+        // seed: 이번 바퀴에서 아직 행 tier 로 안 쓴 사이즈 중 가장 키 큰 적합 아이템 —
+        //   같은 사이즈 행만 반복되는 것을 막고 사이즈가 행 단위로 고루 나오게 한다
+        //   (Package 의 tier round-robin 반복 L→M→S→XS→L… 과 같은 정책).
+        //   한 바퀴를 다 쓰면 리셋 후 새 바퀴. 같은 키는 커서 가까운 쪽 → 디자인 round-robin 유지.
+        var seedIdx = _pickShelfSeed(fillerItems, fillerIdx, row, roundUsed, binW, binH, gap);
+        if (seedIdx < 0 && roundUsedCount > 0) {
+          roundUsed = {};
+          roundUsedCount = 0;
+          seedIdx = _pickShelfSeed(fillerItems, fillerIdx, row, roundUsed, binW, binH, gap);
+        }
+        if (seedIdx >= 0) {
+          _addToShelfRow(row, fillerItems[seedIdx], gap);
           packResult.repeatedCount++;
-          fillerIdx = (fi + 1) % fillerItems.length;
+          rowSizeMm = fillerItems[seedIdx].sizeMm;
+          roundUsed[rowSizeMm] = true;
+          roundUsedCount++;
+          fillerIdx = (seedIdx + 1) % fillerItems.length;
           added = true;
-          break;
+        }
+      } else {
+        // 잠긴 행: 같은 사이즈만 이어서 채움 (디자인은 커서 round-robin).
+        for (var step = 0; step < fillerItems.length; step++) {
+          var fi = (fillerIdx + step) % fillerItems.length;
+          if (fillerItems[fi].sizeMm !== rowSizeMm) continue;
+          if (_canAddToShelfRow(row, fillerItems[fi], binW, binH, gap)) {
+            _addToShelfRow(row, fillerItems[fi], gap);
+            packResult.repeatedCount++;
+            fillerIdx = (fi + 1) % fillerItems.length;
+            added = true;
+            break;
+          }
         }
       }
 
@@ -1766,6 +1857,7 @@
       if (row.items.length > 0) {
         packResult.rows.push(row);
         row = _newShelfRow(row.y + row.h + gap);
+        rowSizeMm = 0;
         continue;
       }
 
@@ -1774,6 +1866,69 @@
 
     if (row.items.length > 0) packResult.rows.push(row);
     packResult.placed = _shelfRowsToPlaced(packResult.rows, binW, binH, gap);
+  }
+
+  // filler 행 seed 선택: excludeSizes(이번 바퀴에 행 tier 로 쓴 사이즈)를 제외하고
+  //   가장 키 큰 적합 아이템의 index 를 돌려준다. 같은 키는 커서(fromIdx)에서 가까운 쪽
+  //   우선 → 디자인 round-robin 유지. 적합한 것이 없으면 -1.
+  function _pickShelfSeed(fillerItems, fromIdx, row, excludeSizes, binW, binH, gap) {
+    var best = -1;
+    for (var s = 0; s < fillerItems.length; s++) {
+      var i = (fromIdx + s) % fillerItems.length;
+      if (excludeSizes[fillerItems[i].sizeMm]) continue;
+      if (!_canAddToShelfRow(row, fillerItems[i], binW, binH, gap)) continue;
+      if (best < 0 || fillerItems[i].h > fillerItems[best].h) best = i;
+    }
+    return best;
+  }
+
+  // same-size 세로 column 구성: sizeMm 아이템을 커서(fromIdx)부터 디자인 round-robin 으로
+  //   maxW(폭)·maxH(행 높이) 안에서 위→아래로 쌓는다. 2단 미만이면 column 미성립 → null.
+  //   반환: vstack item (+ nextIdx = 다음 커서 위치).
+  function _buildSameSizeColumn(fillerItems, fromIdx, sizeMm, maxW, maxH, gap) {
+    var cells = [];
+    var stackH = 0;
+    var stackW = 0;
+    var idx = fromIdx;
+    while (true) {
+      var found = -1;
+      for (var s = 0; s < fillerItems.length; s++) {
+        var i = (idx + s) % fillerItems.length;
+        var it = fillerItems[i];
+        if (it.sizeMm !== sizeMm) continue;
+        if (it.w > maxW) continue;
+        var nextH = cells.length > 0 ? stackH + gap + it.h : it.h;
+        if (nextH > maxH) continue;
+        found = i;
+        break;
+      }
+      if (found < 0) break;
+      var fit = fillerItems[found];
+      stackH = cells.length > 0 ? stackH + gap + fit.h : fit.h;
+      if (fit.w > stackW) stackW = fit.w;
+      cells.push(fit);
+      idx = (found + 1) % fillerItems.length;
+    }
+    if (cells.length < 2) return null;
+    return { isVStack: true, w: stackW, h: stackH, cells: cells, nextIdx: idx };
+  }
+
+  // rows(+vstack cells) 안에서 sizeMm 아이템 개수를 센다 — AllSizes 보장 검증용.
+  function _countSizeInRows(rows, sizeMm) {
+    var count = 0;
+    for (var r = 0; r < rows.length; r++) {
+      var items = rows[r].items;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].isVStack) {
+          for (var v = 0; v < items[i].cells.length; v++) {
+            if (items[i].cells[v].sizeMm === sizeMm) count++;
+          }
+        } else if (items[i].sizeMm === sizeMm) {
+          count++;
+        }
+      }
+    }
+    return count;
   }
 
   // _uniformGridPack — 단일 사이즈 모드 packer (v19).
@@ -2136,6 +2291,19 @@
       var xCursor = xLeft;
       for (var j = 0; j < n; j++) {
         var item = row.items[j];
+
+        // VStack item (AllSizes backfill): 이종 셀 세로 스택으로 expand. 셀별 payload 를 갖고,
+        //   각 셀은 슬롯 폭 안에서 가로 center, 스택 전체는 row 안에서 세로 center.
+        if (item.isVStack) {
+          var vY = yCursor + (row.h - item.h) / 2;
+          for (var vc = 0; vc < item.cells.length; vc++) {
+            var vCell = item.cells[vc];
+            placed.push({ x: xCursor + (item.w - vCell.w) / 2, y: vY, w: vCell.w, h: vCell.h, payload: vCell.payload });
+            vY += vCell.h + gap;
+          }
+          xCursor += item.w + hGap;
+          continue;
+        }
 
         // Stack item: cols × rows 로 expand. 행에서 가장 키 큰 stack 이 row.h 결정 → top 정렬.
         if (item.isStack) {
