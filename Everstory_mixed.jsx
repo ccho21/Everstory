@@ -1,25 +1,24 @@
 // Everstory — Mixed-size photo sheet (Name Included header + 디자인 cap + multiselect)
 //
 // 목적:
-//   Name Included 시트 위에 사진 스티커를 단일 사이즈 (XS/S/M/L/XL/XXL) · Mixed ·
+//   Name Included 시트 위에 사진 스티커를 단일 사이즈 (XS/S/M/L/XL/XXL) ·
 //   Package (파일명 _TIER 토큰) · 전 사이즈 모드로 배치한다. 다이얼로그 ListBox 에서 사용할 페어를
 //   직접 multiselect 하고, 사이즈별 디자인 cap 에 자동으로 맞춘다 (auto-cap).
+//   (구 Mixed zone 모드는 2026-06-11 삭제 — Shopify 'Mixed' 옵션 주문은 전 사이즈 모드로 제작.)
 //
 // 디자인 cap (단일 사이즈 = 시트 물리 슬롯 수, 디자인당 반복 cap 없음):
 //   XS 0.75" → 63 / S 1" → 35 / M 1.25" → 20 / L 1.5" → 12 / XL 2" → 9 / XXL 2.5" → 6
-//   Mixed → 1 디자인 고정 (Mixed 패커는 layoutPairs[0] 단일 사용)
 //
 // 동작:
 //   1. 02_cutout 폴더 선택
 //   2. 다이얼로그: 고객 이름 / 헤더 정보 / 페어 ListBox (multiselect) /
-//      사이즈 dropdown (인치 6단계 + Mixed + Package + 전 사이즈) / 칼선 여백
+//      사이즈 dropdown (인치 6단계 + Package + 전 사이즈) / 칼선 여백
 //      - 사이즈 변경 시 cap 갱신 + 선택 자동 trim (auto-cap)
 //   3. templates/template_cutout_v2.ait 열기 (info > body PathItem, info > header > header_right TextFrame 사용)
 //   4. info > header > header_right 영역에 우측 정렬 3줄 (이름/사이즈/재질, 디자인수, Order/date) 배치
 //   5. info > body 영역에 선택한 페어를 packing
 //      - 단일 사이즈: 적응형 직사각 셀 (max cellW × max cellH) 위 cols × rows uniform grid.
 //        모든 행이 같은 디자인 round-robin 순서, 외곽 4면 = 내부 gap 자동 균등 분배
-//      - Mixed: 2.5×1 + 2×3 를 먼저 같은 row 우선으로 배치하고, 남은 공간은 1.25/1in 균형 fill
 //   6. 캐시: 같은 sil.png 는 시트당 1회만 Image Trace, 같은 _clean.psd 는 1회만 embed (TraceStash master 복제)
 //   7. 03_output 폴더에 .ai 자동 저장 (timestamp_size_sheet01.ai)
 //
@@ -33,13 +32,13 @@
   var SCRIPT_VARIANT = "v21 unified";
   var SCRIPT_TITLE = "Everstory Mixed Sheet (" + SCRIPT_VARIANT + ")";
   var MM_TO_PT = 2.834645;
-  // body 안쪽 상하좌우 최소 여백. Package 모드 FFDH+backfill+회전이 빡빡하게 차서
+  // body 안쪽 상하좌우 최소 여백. Package/전 사이즈 packer 가 빡빡하게 차서
   // 시트 끝 0mm 으로는 운영자가 손으로 벌리는 일이 많아 2mm 로 강제.
   var BODY_PADDING_MM = 2;
-  // 셀 박스 사이 최소 간격. main flow 가 모든 모드(단일/Mixed/Package) 의 packer 에 동일 gap 전달.
+  // 셀 박스 사이 최소 간격. main flow 가 모든 모드(단일/Package/전 사이즈) 의 packer 에 동일 gap 전달.
   // cutMargin(기본 0mm) 이 셀 안에서 사진을 인셋 → silhouette 간격 = 셀 gap + 2×cutMargin. 기본 0mm 면 셀 gap(floor 2.5mm)만.
   // 단일 사이즈는 _uniformGridPack 의 cols/rows 결정 floor 에만 영향 (시각 간격은 자동 균등 분배).
-  // Mixed 는 _packMixedZones 의 zone 사이, Package 는 _packPackage 의 _canAddToShelfRow 검사에 사용.
+  // Package 는 _packPackage 의 _canAddToShelfRow 검사에 사용.
   var GAP_DEFAULT_MM = 2.5;
 
   // A5 body 148×195mm, padding 0, gap 1.5mm 기준 사이즈별 셀 수 (구 baseline).
@@ -56,9 +55,7 @@
     63.5:  6     // 2.5"
   };
 
-  var MIXED_SIZE_VALUE = -1;     // sentinel for Mixed mode in SIZE_VALUES
   var PACKAGE_SIZE_VALUE = -2;   // sentinel for Package mode (파일명 토큰 기반 packing)
-  var MIXED_MAX_DESIGNS = 1;     // Mixed 는 디자인 1개만 사용
   var PACKAGE_MAX_DESIGNS = 8;   // Package: 8 selected photos cap (Full 기준)
 
   // ── 전 사이즈 (All Sizes) 모드 ─────────────────────────────────────
@@ -76,37 +73,14 @@
   //   (0.75" 3단 등)으로 채운다. 사이즈별 ≥1장 보장은 _packAllSizes 말미의 검증·구제가 담당.
   var ALLSIZES_HERO_COUNT = 2;
 
-  // Mixed baseline. 2.5×1 + 2×3 는 고정 보장, 1.25/1in 은 _packMixedZones 가 남은 공간에 균형 fill.
-  // copies 는 header/spec fallback 용 baseline 이며, 운영 배치의 filler copy 수는 고정하지 않는다.
-  var MIXED_PATTERN = [
-    { sizeMm: 63.5,  copies: 1 },   // 2.5"  × 1 fixed
-    { sizeMm: 50.8,  copies: 3 },   // 2" × 3 fixed
-    { sizeMm: 31.75, copies: 6 },   // 1.25" filler fallback
-    { sizeMm: 25.4,  copies: 6 }    // 1"    filler fallback
-  ];
-  var MIXED_FIXED_PATTERN = [
-    { sizeMm: 63.5,  copies: 1 },
-    { sizeMm: 50.8,  copies: 3 }
-  ];
-  var MIXED_FILL_SIZES = [31.75, 25.4];
-
-  // Hero row (2.5") 옆 약 80mm 빈 폭에 1.25" 2×2 grid 를 stack 으로 끼워서 dead space 제거.
-  // 1.25"×2 stacked = 64.5mm 로 hero 높이(63.5mm) 와 거의 일치 → row 정렬 자연스러움.
-  // _appendMixedFixedRows 가 hero 직후 1회만 시도. 다른 row 는 stack 안 받음 (horizontal fill 만).
-  var MIXED_HERO_STACK = { sizeMm: 31.75, cols: 2, rows: 2 };  // 1.25" 2×2 (64.5×64.5mm)
-
-  // 2" row 끝 여유 폭에 1" 1×2 vertical stack 을 끼워서 dead space 제거 (portrait aspect 등에서 발동).
-  // square aspect + 2×3 처럼 폭이 부족하면 _canAddToShelfRow 가 자동 reject → skip.
-  // _fillMixedRowBalanced 가 horizontal filler 보다 먼저 1회 시도.
-  var MIXED_ROW_END_STACK = { sizeMm: 25.4, cols: 1, rows: 2 };  // 1" 1×2 vertical (25.4×51.8mm)
-
   // 단일 사이즈 cap = 시트 물리 슬롯 수 (SLOTS_BY_SIZE 그대로 재사용).
   // 디자인당 반복 횟수 cap 없음 — 한 시트가 담을 수 있는 최대 디자인 수까지 자유 선택.
   // 각 디자인 최소 1회 보장, 슬롯 초과 silent drop 없음.
   // (SLOTS_BY_SIZE 와 단일 출처 — slots 가 바뀌면 cap 도 자동 추종.)
   var DESIGN_LIMIT_BY_SIZE_MM = SLOTS_BY_SIZE;
 
-  // 인치 6단계 + Mixed sentinel. 라벨은 products.md size option 표기 (letter code 없이 inch / 반올림 mm).
+  // 인치 6단계 + Package/전 사이즈 sentinel. 라벨은 products.md size option 표기 (letter code 없이 inch / 반올림 mm).
+  // Shopify 'Mixed' 옵션 주문은 전 사이즈 모드로 제작한다 (구 Mixed zone 모드 2026-06-11 삭제).
   var SIZE_OPTIONS = [
     "0.75\" / 19mm",
     "1\" / 25mm",
@@ -114,12 +88,11 @@
     "1.5\" / 38mm",
     "2\" / 51mm",
     "2.5\" / 64mm",
-    "Mixed 2.5/2 + 1.25/1in",
     "Package (4 designs / 1 sheet · 8 designs / 2 sheets · 파일명 _XS/_S/_M/_L/_FAM)",
     "All sizes 0.75-2.5in (모든 사이즈 1장 이상)"
   ];
-  var SIZE_VALUES = [19.05, 25.4, 31.75, 38.1, 50.8, 63.5, MIXED_SIZE_VALUE, PACKAGE_SIZE_VALUE, ALLSIZES_SIZE_VALUE];
-  var SIZE_LETTERS = ["XS", "S", "M", "L", "XL", "XXL", "MIX", "PKG", "ALL"];
+  var SIZE_VALUES = [19.05, 25.4, 31.75, 38.1, 50.8, 63.5, PACKAGE_SIZE_VALUE, ALLSIZES_SIZE_VALUE];
+  var SIZE_LETTERS = ["XS", "S", "M", "L", "XL", "XXL", "PKG", "ALL"];
   // products.md size option 의 반올림 mm — 표기를 SOT 에 고정 (Math.round fallback 있음).
   var SIZE_MM_LABEL = { 19.05: 19, 25.4: 25, 31.75: 32, 38.1: 38, 50.8: 51, 63.5: 64 };
   var SIZE_DEFAULT_INDEX = 1;  // S = 1" — 다이어리 표준 사이즈
@@ -134,7 +107,6 @@
   // 접미사(_sil/_clean) strip 후 끝에 anchored — 레거시 _{NN}(숫자) 는 tier 글자와 안 겹침.
   // L=2"(50.8mm) 는 신규 값 — tier 패커는 인치만 받으므로 단일 사이즈 표 무변경.
   var TIER_SIZE_MM = { XS: 19.05, S: 25.4, M: 38.1, L: 50.8, FAM: 63.5 };
-  var TIER_ORDER = ["XS", "S", "M", "L", "FAM"];  // 오버플로우 상승 trim 순서 (FAM 보호: trim 제외)
   var TIER_DEFAULT = "S";
   // _sil.png/_clean.psd 접미사 제거 후 이름 끝의 _TIER 토큰. XS 를 S 보다 앞에 둬 부분매칭 방지.
   var TIER_TOKEN_RE = /_(XS|FAM|S|M|L)$/i;
@@ -177,7 +149,7 @@
 
   var padPt = BODY_PADDING_MM * MM_TO_PT;
   // 단일 사이즈는 uniform grid 가 시각 간격을 자동 균등 분배하므로 gap 입력 불필요.
-  // Mixed 모드는 _packMixedZones 가 zone 사이 간격으로 사용 — GAP_DEFAULT_MM 고정.
+  // Package/전 사이즈 packer 가 셀 간 최소 간격으로 사용 — GAP_DEFAULT_MM 고정.
   var gapPt = GAP_DEFAULT_MM * MM_TO_PT;
   var cutMarginPt = options.cutMarginMm * MM_TO_PT;
 
@@ -222,9 +194,8 @@
     totalIgnoredCount = pairs.length - layoutPairs.length;
   } else {
     // 안전판: testConfig 경로에서도 cap 위반은 잘라낸다 (다이얼로그는 auto-cap 으로 자체 보장).
-    var designLimit = options.isMixed ? MIXED_MAX_DESIGNS
-                    : (options.isAllSizes ? layoutPairs.length
-                    : (DESIGN_LIMIT_BY_SIZE_MM[options.sizeMm] || layoutPairs.length));
+    var designLimit = options.isAllSizes ? layoutPairs.length
+                    : (DESIGN_LIMIT_BY_SIZE_MM[options.sizeMm] || layoutPairs.length);
     if (layoutPairs.length > designLimit) {
       var capped = [];
       for (var ci = 0; ci < designLimit; ci++) capped.push(layoutPairs[ci]);
@@ -239,10 +210,9 @@
       } catch (eAsp) {
         layoutPairs[pi].aspect = 1;
       }
-      if (options.isMixed || options.isAllSizes) {
-        // Mixed / 전 사이즈: 가장 큰 셀(2.5") 이 시트에 들어가는지 검사
-        var heroSizeMm = options.isAllSizes ? ALLSIZES_ORDER_MM[0] : MIXED_FIXED_PATTERN[0].sizeMm;
-        var heroItem = _itemForSize(layoutPairs[pi], heroSizeMm);
+      if (options.isAllSizes) {
+        // 전 사이즈: 가장 큰 셀(2.5") 이 시트에 들어가는지 검사
+        var heroItem = _itemForSize(layoutPairs[pi], ALLSIZES_ORDER_MM[0]);
         if (heroItem.w > binW || heroItem.h > binH) anyTooBig = true;
       } else {
         layoutPairs[pi].sizeMm = options.sizeMm;
@@ -268,12 +238,6 @@
   var packResult;
   if (options.isPackage) {
     packResult = _packPackage(layoutPairs, binW, binH, gapPt);
-  } else if (options.isMixed) {
-    // Mixed: 2.5×1 + 2×3 를 보장하고, 가능한 경우 같은 row 에 먼저 배치.
-    var pair = layoutPairs[0];
-    packResult = _packMixedZones(pair, binW, binH, gapPt);
-    // 1 디자인이라 첫 placement 1개를 빼고 모두 repeated 로 카운트.
-    packResult.repeatedCount = Math.max(0, packResult.placed.length - 1);
   } else if (options.isAllSizes) {
     // 전 사이즈: 들어온 디자인(들)을 0.75"~2.5" 전 사이즈로, 각 사이즈 최소 1장씩 보장.
     //   디자인 고정 없음 — 1개면 그 1개로 전 사이즈, 여러개면 사이즈마다 순서대로 배정.
@@ -340,7 +304,7 @@
   var saveError = "";
   try {
     var outFolder = _resolveOutputFolder(inputFolder);
-    var sizeTag = options.isPackage ? "PKG" : (options.isMixed ? "MIX" : (options.isAllSizes ? "ALL" : _inchStr(options.sizeMm)));
+    var sizeTag = options.isPackage ? "PKG" : (options.isAllSizes ? "ALL" : _inchStr(options.sizeMm));
     var fileName = _timestamp() + "_" + sizeTag + "_sheet01.ai";
     var saveFile = new File(outFolder.fsName + "/" + fileName);
     _saveAi(doc, saveFile);
@@ -357,10 +321,6 @@
           " M" + tierTrim.trimmedByTier.M + " L" + tierTrim.trimmedByTier.L
         : "") +
       " / 칼선 여백: " + options.cutMarginMm + "mm";
-  } else if (options.isMixed) {
-    var mixedSummary = packResult.mixedSummary;
-    sizeLineText = "Mixed: " + (mixedSummary ? mixedSummary.human : _mixedHumanString()) +
-      " (디자인 1개) / 칼선 여백: " + options.cutMarginMm + "mm";
   } else if (options.isAllSizes) {
     var allSummary = packResult.mixedSummary;
     sizeLineText = "전 사이즈: " + (allSummary ? allSummary.human : "0.75-2.5\"") +
@@ -395,17 +355,13 @@
     inputLine +
     (packResult.repeatedCount > 0 ? " (반복 채움 " + packResult.repeatedCount + "개 포함)" : "") + "\n" +
     "행: " + packResult.rows.length + "개" +
-    (options.isPackage ? " (Package: FFDH base + tier 단위 균일 반복 + 기회주의 회전)\n" : (options.isMixed ? " (2.5/2 고정 + 1.25/1 half fill)\n" : (options.isAllSizes ? " (전 사이즈 0.75-2.5\" 각 1장+ / 작은 사이즈로 채움)\n" : " (uniform grid — 외곽 4면 = 내부 gap 균등 자동 분배)\n"))) +
+    (options.isPackage ? " (Package: tier 밴드 + 균일 반복 + column 채움 + 기회주의 회전)\n" : (options.isAllSizes ? " (전 사이즈 0.75-2.5\" 각 1장+ / 작은 사이즈로 채움)\n" : " (uniform grid — 외곽 4면 = 내부 gap 균등 자동 분배)\n")) +
     (options.isPackage
       ? "Package 배치: " + packResult.placed.length + "개 (미배치 " + packResult.leftover.length + ") / 입력 디자인 " + layoutPairs.length + "개\n"
-      : (options.isMixed
-      ? "Mixed 슬롯: " + (packResult.mixedSummary ? packResult.mixedSummary.human : _mixedHumanString()) +
-        " = " + (packResult.mixedSummary ? packResult.mixedSummary.total : _mixedTotalSlots()) +
-        " (디자인 1개 / " + (packResult.mixedSummary ? packResult.mixedSummary.zoneRows : "zone") + ")\n"
       : (options.isAllSizes
       ? "전 사이즈 슬롯: " + (packResult.mixedSummary ? packResult.mixedSummary.human : "") + " (총 " + packResult.placed.length + "장 / 디자인 " + layoutPairs.length + "개)\n"
       : "그리드: " + packResult.cols + "×" + packResult.gridRows + " = " + packResult.slots + " 슬롯 / 디자인 " + layoutPairs.length + "개" +
-        (layoutPairs.length > 0 ? " × " + Math.floor(packResult.slots / layoutPairs.length) + "회" + ((packResult.slots % layoutPairs.length) > 0 ? " (+" + (packResult.slots % layoutPairs.length) + " 보너스)" : "") : "") + "\n"))) +
+        (layoutPairs.length > 0 ? " × " + Math.floor(packResult.slots / layoutPairs.length) + "회" + ((packResult.slots % layoutPairs.length) > 0 ? " (+" + (packResult.slots % layoutPairs.length) + " 보너스)" : "") : "") + "\n")) +
     "Trace 캐시: unique " + uniquePairs.length + "개 (배치 " + packResult.placed.length + "회 → trace " + uniquePairs.length + "회)\n" +
     (packResult.leftover.length > 0 ? "미배치 사진: " + packResult.leftover.length + "개\n" : "") +
     saveLine;
@@ -528,7 +484,6 @@
       return SIZE_VALUES[SIZE_DEFAULT_INDEX];
     }
     function _capForSize(sizeMm) {
-      if (sizeMm === MIXED_SIZE_VALUE) return MIXED_MAX_DESIGNS;
       if (sizeMm === PACKAGE_SIZE_VALUE) return PACKAGE_MAX_DESIGNS;
       if (sizeMm === ALLSIZES_SIZE_VALUE) return pairsArg.length;
       return DESIGN_LIMIT_BY_SIZE_MM[sizeMm] || pairsArg.length;
@@ -549,12 +504,10 @@
           selLen = cap;
         }
         countLabel.text = "선택: " + selLen + " / " + cap;
-        if (sz === MIXED_SIZE_VALUE) {
-          hintLabel.text = "Mixed: 1 디자인 고정";
-        } else if (sz === PACKAGE_SIZE_VALUE) {
+        if (sz === PACKAGE_SIZE_VALUE) {
           hintLabel.text = "Package: 4 designs → 1 sheet · 8 designs → 2 sheets";
         } else if (sz === ALLSIZES_SIZE_VALUE) {
-          hintLabel.text = "전 사이즈: 디자인 순서대로 배정 (0.75-2.5\" 각 1장 이상)";
+          hintLabel.text = "전 사이즈: 디자인 순서대로 배정 (0.75-2.5\" 각 1장 이상) · Shopify Mixed 주문 제작용";
         } else {
           hintLabel.text = "사이즈에 따라 cap 자동 적용";
         }
@@ -626,7 +579,6 @@
       orderNumber: _trim(orderInput.text),
       orderDate: _trim(dateInput.text) || _todayIso(),
       sizeMm: sizeMm,
-      isMixed: (sizeMm === MIXED_SIZE_VALUE),
       isPackage: (sizeMm === PACKAGE_SIZE_VALUE),
       isAllSizes: (sizeMm === ALLSIZES_SIZE_VALUE),
       cutMarginMm: cutMarginMm,
@@ -638,10 +590,6 @@
     var spec;
     if (options.isPackage) {
       spec = "Package/" + options.cutMarginMm + "mm";
-    } else if (options.isMixed) {
-      var mixedSpec = (packResult && packResult.mixedSummary && packResult.mixedSummary.spec) ?
-        packResult.mixedSummary.spec : _mixedSpecString();
-      spec = mixedSpec + "/" + options.cutMarginMm + "mm";
     } else if (options.isAllSizes) {
       spec = "AllSizes/0.75-2.5in/" + options.cutMarginMm + "mm";
     } else {
@@ -692,55 +640,14 @@
     return mm + "mm / " + cm + "cm";
   }
 
-  // Mixed 패턴 → packItem 배열. _itemForSize 가 pair.aspect 로 cellW/cellH 계산하므로 pair 필요.
-  function _buildMixedItems(pair) {
-    var items = [];
-    for (var p = 0; p < MIXED_PATTERN.length; p++) {
-      var pat = MIXED_PATTERN[p];
-      for (var c = 0; c < pat.copies; c++) {
-        items.push(_itemForSize(pair, pat.sizeMm));
-      }
-    }
-    return items;
-  }
-
-  // Mixed 총 슬롯 수 (Σ copies). 결과 알림에 사용.
-  function _mixedTotalSlots() {
-    var total = 0;
-    for (var p = 0; p < MIXED_PATTERN.length; p++) total += MIXED_PATTERN[p].copies;
-    return total;
-  }
-
-  // Mixed spec 문자열 — 예: "MIX/2.5x1+2x3+1.25x6+1x6". inch 단위, "in" 생략 (간결).
-  function _mixedSpecString() {
-    var parts = [];
-    for (var p = 0; p < MIXED_PATTERN.length; p++) {
-      var inch = (MIXED_PATTERN[p].sizeMm / 25.4).toFixed(2).replace(/\.?0+$/, "");
-      parts.push(inch + "x" + MIXED_PATTERN[p].copies);
-    }
-    return "MIX/" + parts.join("+");
-  }
-
-  // Mixed 사람용 표기 — 예: "2.5×1 + 2×3 + 1.25×6 + 1×6". 결과 알림 / sizeLineText.
-  function _mixedHumanString() {
-    var parts = [];
-    for (var p = 0; p < MIXED_PATTERN.length; p++) {
-      var inch = (MIXED_PATTERN[p].sizeMm / 25.4).toFixed(2).replace(/\.?0+$/, "");
-      parts.push(inch + "×" + MIXED_PATTERN[p].copies);
-    }
-    return parts.join(" + ");
-  }
-
   function _drawProductionHeader(options, photoCount, headerRightText) {
     // 템플릿의 info > header > header_right TextFrame 에 폰트·사이즈·정렬이 미리 잡혀 있다.
     // 값만 contents 로 교체. 새 TextFrame 만들지 않음.
     var sizeToken = options.isPackage
       ? "Package"
-      : (options.isMixed
-      ? "Mixed"
       : (options.isAllSizes
       ? "All sizes 0.75-2.5\""
-      : _inchStr(options.sizeMm) + " / " + (SIZE_MM_LABEL[options.sizeMm] || Math.round(options.sizeMm)) + "mm"));
+      : _inchStr(options.sizeMm) + " / " + (SIZE_MM_LABEL[options.sizeMm] || Math.round(options.sizeMm)) + "mm");
 
     var orderNum = options.orderNumber ? options.orderNumber : "—";
     var line1 = _nfcHangul(options.nameText) + " • " + sizeToken + " • " + options.material;
@@ -1383,7 +1290,7 @@
   //  PACKING
   // ═════════════════════════════════════════════════════════
 
-  // Mixed 모드 전용: pair.cellW/cellH 를 mutate 하지 않고 (단일 사이즈 기준이므로)
+  // 전 사이즈 모드용: pair.cellW/cellH 를 mutate 하지 않고 (단일 사이즈 기준이므로)
   // size 별 packItem 을 즉석 생성. payload 는 항상 원본 pair 객체 그대로 가리켜야
   // _uniquePairsFromPlaced (pair.base dedupe) 와 cachedCutline / cutInfo (pair 에 attach)
   // 가 정확히 작동한다.
@@ -1424,238 +1331,12 @@
     return sorted;
   }
 
-  // Mixed dense packer:
-  //   2.5×1 + 2×3 를 먼저 보장한다.
-  //   고정 row 에 남는 가로 공간과 이후 남는 row 는 1.25/1in 을 사용 면적 기준으로 균형 fill 한다.
-  function _packMixedZones(pair, binW, binH, gap) {
-    var rows = [];
-    var counts = {};
-    var fillSpecs = _buildMixedFillSpecs(pair);
-
-    if (!_appendMixedFixedRows(rows, pair, fillSpecs, binW, binH, gap, counts)) {
-      var fallbackItems = _sortShelfItemsDesc(_buildMixedItems(pair));
-      var fallbackPack = { rows: [], placed: [], leftover: [], repeatedCount: 0 };
-      fallbackPack.leftover = _appendShelfRowsOnce(fallbackPack, fallbackItems, binW, binH, gap);
-      fallbackPack.mixedSummary = {
-        spec: _mixedSpecString(),
-        human: _mixedHumanString(),
-        total: fallbackPack.placed.length,
-        zoneRows: ""
-      };
-      return fallbackPack;
-    }
-
-    _appendMixedFillerRows(rows, fillSpecs, binW, binH, gap, counts);
-
-    var placed = _shelfRowsToPlaced(rows, binW, binH, gap);
-    return {
-      placed: placed,
-      leftover: [],
-      rows: rows,
-      repeatedCount: 0,
-      mixedSummary: _buildMixedSummary(counts, placed.length)
-    };
-  }
-
-  function _buildMixedFillSpecs(pair) {
-    var specs = [];
-    for (var i = 0; i < MIXED_FILL_SIZES.length; i++) {
-      var sizeMm = MIXED_FILL_SIZES[i];
-      specs.push({
-        sizeMm: sizeMm,
-        item: _itemForSize(pair, sizeMm)
-      });
-    }
-    return specs;
-  }
-
-  function _appendMixedFixedRows(rows, pair, fillSpecs, binW, binH, gap, counts) {
-    var fixedItems = _buildMixedFixedItems(pair);
-    var heroSizeMm = MIXED_FIXED_PATTERN[0].sizeMm;
-    var row = _newShelfRow(_nextMixedRowY(rows, gap));
-    var heroStackTried = false;
-
-    for (var i = 0; i < fixedItems.length; i++) {
-      var fixed = fixedItems[i];
-
-      // Hero(첫 fixed item)가 row 에 들어간 직후 1회만 hero stack 시도. fit 되면 hero row 종료 → 나머지 fixed 는 다음 row 부터.
-      if (!heroStackTried && row.items.length === 1 && row.items[0].sizeMm === heroSizeMm) {
-        heroStackTried = true;
-        var heroStack = _tryBuildStackForRow(row, pair, MIXED_HERO_STACK, binW, binH, gap);
-        if (heroStack) {
-          _addToShelfRow(row, heroStack, gap);
-          _addMixedCount(counts, heroStack.innerSizeMm, heroStack.innerCols * heroStack.innerRows);
-          rows.push(row);
-          row = _newShelfRow(_nextMixedRowY(rows, gap));
-        }
-      }
-
-      if (!_canAddToShelfRow(row, fixed, binW, binH, gap)) {
-        if (row.items.length === 0) return false;
-        _fillMixedRowBalanced(row, pair, fillSpecs, binW, binH, gap, counts);
-        rows.push(row);
-        row = _newShelfRow(_nextMixedRowY(rows, gap));
-      }
-
-      if (!_canAddToShelfRow(row, fixed, binW, binH, gap)) return false;
-      _addToShelfRow(row, fixed, gap);
-      _addMixedCount(counts, fixed.sizeMm, 1);
-    }
-
-    if (row.items.length > 0) {
-      _fillMixedRowBalanced(row, pair, fillSpecs, binW, binH, gap, counts);
-      rows.push(row);
-    }
-
-    return true;
-  }
-
-  function _buildMixedFixedItems(pair) {
-    var items = [];
-    for (var p = 0; p < MIXED_FIXED_PATTERN.length; p++) {
-      var fixed = MIXED_FIXED_PATTERN[p];
-      for (var c = 0; c < fixed.copies; c++) {
-        items.push(_itemForSize(pair, fixed.sizeMm));
-      }
-    }
-    return items;
-  }
-
-  function _appendMixedFillerRows(rows, fillSpecs, binW, binH, gap, counts) {
-    while (true) {
-      var row = _newShelfRow(_nextMixedRowY(rows, gap));
-      var spec = _chooseMixedFillSpec(fillSpecs, counts, row, binW, binH, gap);
-      if (!spec) break;
-
-      while (_canAddToShelfRow(row, spec.item, binW, binH, gap)) {
-        _addToShelfRow(row, spec.item, gap);
-        _addMixedCount(counts, spec.sizeMm, 1);
-      }
-
-      if (row.items.length === 0) break;
-      rows.push(row);
-    }
-  }
-
-  function _fillMixedRowBalanced(row, pair, fillSpecs, binW, binH, gap, counts) {
-    // Row-end stack 우선: 행 끝 여유 폭에 1" 1×2 vertical stack 끼우기. fit 안되면 skip.
-    var stack = _tryBuildStackForRow(row, pair, MIXED_ROW_END_STACK, binW, binH, gap);
-    if (stack) {
-      _addToShelfRow(row, stack, gap);
-      _addMixedCount(counts, stack.innerSizeMm, stack.innerCols * stack.innerRows);
-    }
-
-    while (true) {
-      var spec = _chooseMixedFillSpec(fillSpecs, counts, row, binW, binH, gap);
-      if (!spec) break;
-      _addToShelfRow(row, spec.item, gap);
-      _addMixedCount(counts, spec.sizeMm, 1);
-    }
-  }
-
-  // 행에 stack item 이 들어갈 수 있는지 검사. fit 되면 compound item 반환, 아니면 null.
-  // compound item 의 w/h 는 stack block 전체 크기 → `_canAddToShelfRow` 가 가로/세로 fit 검사.
-  // spec = { sizeMm, cols, rows } — 호출자가 hero stack 인지 다른 stack 인지 결정.
-  function _tryBuildStackForRow(row, pair, spec, binW, binH, gap) {
-    if (!pair || !spec) return null;
-    var inner = _itemForSize(pair, spec.sizeMm);
-    var cols = spec.cols;
-    var rowsCount = spec.rows;
-    var blockW = cols * inner.w + (cols - 1) * gap;
-    var blockH = rowsCount * inner.h + (rowsCount - 1) * gap;
-
-    var stackItem = {
-      w: blockW,
-      h: blockH,
-      payload: pair,
-      sizeMm: spec.sizeMm,
-      isStack: true,
-      innerW: inner.w,
-      innerH: inner.h,
-      innerCols: cols,
-      innerRows: rowsCount,
-      innerSizeMm: spec.sizeMm
-    };
-
-    if (!_canAddToShelfRow(row, stackItem, binW, binH, gap)) return null;
-    return stackItem;
-  }
-
-  function _chooseMixedFillSpec(fillSpecs, counts, row, binW, binH, gap) {
-    var best = null;
-    var bestArea = 0;
-
-    for (var i = 0; i < fillSpecs.length; i++) {
-      var spec = fillSpecs[i];
-      if (!_canAddToShelfRow(row, spec.item, binW, binH, gap)) continue;
-
-      var usedArea = _mixedUsedArea(counts, spec);
-      if (!best ||
-          usedArea < bestArea ||
-          (Math.abs(usedArea - bestArea) < 0.001 && spec.sizeMm > best.sizeMm)) {
-        best = spec;
-        bestArea = usedArea;
-      }
-    }
-
-    return best;
-  }
-
-  function _mixedUsedArea(counts, spec) {
-    return (_mixedCount(counts, spec.sizeMm) || 0) * spec.item.w * spec.item.h;
-  }
-
-  function _nextMixedRowY(rows, gap) {
-    if (!rows || rows.length === 0) return 0;
-    var last = rows[rows.length - 1];
-    return last.y + last.h + gap;
-  }
-
-  function _addMixedCount(counts, sizeMm, n) {
-    var key = _mixedCountKey(sizeMm);
-    counts[key] = (counts[key] || 0) + n;
-  }
-
-  function _mixedCount(counts, sizeMm) {
-    return counts[_mixedCountKey(sizeMm)] || 0;
-  }
-
-  function _mixedCountKey(sizeMm) {
-    return String(sizeMm);
-  }
-
-  function _buildMixedSummary(counts, total) {
-    var order = [63.5, 50.8, 31.75, 25.4];
-    var parts = [];
-    var humanParts = [];
-
-    for (var i = 0; i < order.length; i++) {
-      var sizeMm = order[i];
-      var count = _mixedCount(counts, sizeMm);
-      if (count <= 0) continue;
-      var label = _mixedSizeLabel(sizeMm);
-      parts.push(label + "x" + count);
-      humanParts.push(label + "×" + count);
-    }
-
-    return {
-      spec: "MIX/" + parts.join("+"),
-      human: humanParts.join(" + "),
-      total: total,
-      zoneRows: "fixed 2.5x1+2x3 / fill 1.25+1 half"
-    };
-  }
-
-  function _mixedSizeLabel(sizeMm) {
-    return (sizeMm / 25.4).toFixed(2).replace(/\.?0+$/, "");
-  }
-
   // ── 전 사이즈 (All Sizes) 모드 packer ──────────────────────────────
   // 0.75"~2.5" 전 사이즈를 각 1장 이상 출력. 시트 구조 (위→아래):
   //   hero 행: 2.5"/2" 각 1장 + 남는 폭은 작은 사이즈 세로 column (0.75" 3단, 1" 2단 …)
   //   tier 행: 1.5"→1.25"→1"→0.75" round-robin, 행마다 한 사이즈 잠금 (높이 남으면 두 바퀴째)
   //   말미 보장 검증: 빠진 사이즈는 단일 backfill 로 구제, 불가하면 leftover 보고.
-  // Mixed/Package 와 동일한 shelf 프리미티브 재사용 → 정렬/회전/좌표 동작 일관.
+  // Package 와 동일한 shelf 프리미티브 재사용 → 정렬/회전/좌표 동작 일관.
   function _packAllSizes(pairs, binW, binH, gap) {
     if (!pairs || pairs.length === 0) {
       return { rows: [], placed: [], leftover: [], repeatedCount: 0, mixedSummary: _buildAllSizesSummary(0, 0) };
@@ -1719,8 +1400,7 @@
     return {
       spec: "ALL/0.75-2.5in",
       human: "0.75-2.5\" 전 사이즈 (각 1장 이상, 총 " + total + "장, " + dStr + ")",
-      total: total,
-      zoneRows: "all sizes 0.75-2.5 / " + dStr + " / small fill"
+      total: total
     };
   }
 
@@ -2034,24 +1714,99 @@
     return pair;
   }
 
-  // _packPackage — Package 모드 packer (no_cap 변형). 목적함수 = 면적 충전 최대화 ("좀 못생겨도 OK").
-  //   알고리즘: 높이 내림차순 FFDH shelf + 행 마감 전 더 작은 미배치 아이템으로 빈 폭 backfill
-  //   (ragged 우측 dead space 감소).
-  //   Phase A — 각 사진 1회 배치(base). Phase B (Model B — tier 단위 균일 반복):
+  // _packPackage — Package 모드 packer (tier 밴드 + column, 2026-06-11 개편). 목적 = AllSizes 와
+  //   같은 정돈 + 면적 충전 (혼합 행 한가운데 떠 있던 작은 컷 제거).
+  //   행 구조: 한 행 = 한 tier(row.tierLock). 배치는 같은 tier 행 중 폭 여유 있는 행 아무 곳,
+  //   없으면 맨 아래 새 행 (_placeBanded). 마지막에 행 키 내림차순 정렬 → 위 큰 행, 아래 작은 행.
+  //   Phase A — 각 사진 1회 배치(base). 행 배치 실패(서로 다른 tier 행 누적 > binH, 예: FAM+L+M+S
+  //     4단 = 185.3mm > 171mm)는 column 후보로 보류 → column 채움 단계가 다른 행 옆에 구제.
+  //     column 까지 0장(진짜 오버사이즈)일 때만 leftover. 그 tier 은 행 pass 제외(행 비균일 방지).
+  //   Phase B (Model B — tier 단위 균일 반복, 기존 정책 그대로):
   //     · FAM 은 반복 0, 각 1장 고정 ("FAM 무조건 하나" 를 r=1 pin 으로 일반화 — 다중 FAM 도 안 버림).
   //     · 비-FAM tier 는 "그 tier 사진 전부 한 장씩" 을 atomic pass 로 추가. 한 장이라도 못 들어가면
-  //       그 pass 전체 롤백 + 그 tier 은퇴 → within-tier 균일 불변식 보존(tier 안 모든 사진 동일 횟수).
-  //     · round-robin L→M→S→XS 으로 시트가 닿을 때까지. tier 안 균일·tier끼리는 다름·빈 공간 최소.
-  //     · base 단계 leftover 가 있는 tier 은 기반이 이미 비균일 → 반복 대상 제외.
-  //   _shelfRowsToPlaced 가 외곽=내부 gap 균등 자동 분배. 반환 shape 은 기존 packResult 호환.
+  //       _snapPack 스냅샷으로 통째 롤백 + 그 tier 은퇴 → within-tier 균일 불변식 보존.
+  //     · round-robin L→M→S→XS 으로 시트가 닿을 때까지. tier 안 균일·tier끼리는 다름.
+  //   Column 채움 — 각 행의 남은 폭에 작은 tier 의 같은 사이즈 세로 column(2단+, _buildTierColumn).
+  //     셀 디자인은 tier 안 round-robin cursor → 개수 ±1 균형(엄밀 균일이 아닌 유일한 단계 —
+  //     2026-06-11 사용자 승인). AllSizes hero 행의 small column 과 동일한 시각 언어. FAM 행 옆
+  //     빈 폭이 주 수혜 (FAM 한 장 + 옆 column 채움).
+  //   _shelfRowsToPlaced 가 외곽=내부 gap 균등 분배 + isVStack expand. 반환 shape 은 기존 호환.
+  //   행 정렬 후 row.y 는 stale — 위치 SOT 는 placed (rows 는 길이/구성 통계용).
   // 기회주의 90° 회전: 원본 방향 우선 시도, 행에 안 들어갈 때만 회전(w/h swap)으로 재시도. 회전은
   //   placement 인스턴스 단위(같은 사진 복제본이 행 사정 따라 다르게 회전 가능 — 균일은 '횟수' 기준).
+  //   비-마지막 행은 행 키 성장 금지(아래 행과 겹침 방지). column 셀은 upright 고정.
   // rotated 태그는 _shelfRowsToPlaced → placed → _placePhotoSticker 로 전달돼 실제 아트워크 회전.
-  function _addOriented(row, pair, binW, binH, gap) {
-    var up = { w: pair.cellW, h: pair.cellH, payload: pair, rotated: false };
-    if (_canAddToShelfRow(row, up, binW, binH, gap)) { _addToShelfRow(row, up, gap); return true; }
-    var rot = { w: pair.cellH, h: pair.cellW, payload: pair, rotated: true };
-    if (_canAddToShelfRow(row, rot, binW, binH, gap)) { _addToShelfRow(row, rot, gap); return true; }
+  function _tryAddToBandRow(row, pair, isLast, binW, binH, gap) {
+    var cands = [
+      { w: pair.cellW, h: pair.cellH, payload: pair, rotated: false },
+      { w: pair.cellH, h: pair.cellW, payload: pair, rotated: true }
+    ];
+    for (var c = 0; c < cands.length; c++) {
+      if (!isLast && row.items.length > 0 && cands[c].h > row.h) continue;
+      if (_canAddToShelfRow(row, cands[c], binW, binH, gap)) {
+        _addToShelfRow(row, cands[c], gap);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function _placeBanded(rows, pair, binW, binH, gap) {
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].tierLock !== pair.tier) continue;
+      if (_tryAddToBandRow(rows[i], pair, i === rows.length - 1, binW, binH, gap)) return true;
+    }
+    var ny = rows.length > 0 ? rows[rows.length - 1].y + rows[rows.length - 1].h + gap : 0;
+    var nr = _newShelfRow(ny);
+    nr.tierLock = pair.tier;
+    if (_tryAddToBandRow(nr, pair, true, binW, binH, gap)) {
+      rows.push(nr);
+      return true;
+    }
+    return false;
+  }
+
+  // 같은 tier 세로 column (2단 이상) — AllSizes _buildSameSizeColumn 의 Package pair 버전.
+  function _buildTierColumn(grp, fromIdx, maxW, maxH, gap) {
+    var cells = [];
+    var stackH = 0;
+    var stackW = 0;
+    var idx = fromIdx;
+    while (true) {
+      var found = -1;
+      for (var s = 0; s < grp.length; s++) {
+        var i = (idx + s) % grp.length;
+        if (grp[i].cellW > maxW) continue;
+        var nextH = cells.length > 0 ? stackH + gap + grp[i].cellH : grp[i].cellH;
+        if (nextH > maxH) continue;
+        found = i;
+        break;
+      }
+      if (found < 0) break;
+      var fit = grp[found];
+      stackH = cells.length > 0 ? stackH + gap + fit.cellH : fit.cellH;
+      if (fit.cellW > stackW) stackW = fit.cellW;
+      cells.push({ w: fit.cellW, h: fit.cellH, payload: fit });
+      idx = (found + 1) % grp.length;
+    }
+    if (cells.length < 2) return null;
+    return { isVStack: true, w: stackW, h: stackH, cells: cells, nextIdx: idx };
+  }
+
+  // rows 안에 해당 pair 배치 존재 여부 (vstack 셀 포함) — Phase A 보류 디자인의 최종 leftover 판정.
+  function _pairPlacedInRows(rows, pair) {
+    for (var r = 0; r < rows.length; r++) {
+      var its = rows[r].items;
+      for (var i = 0; i < its.length; i++) {
+        if (its[i].isVStack) {
+          for (var c = 0; c < its[i].cells.length; c++) {
+            if (its[i].cells[c].payload === pair) return true;
+          }
+        } else if (its[i].payload === pair) {
+          return true;
+        }
+      }
+    }
     return false;
   }
 
@@ -2061,57 +1816,30 @@
     }
     for (var i = 0; i < pairs.length; i++) _tierBox(pairs[i]);
 
-    var ordered = _sortedPairsForShelf(pairs, false);  // 높이 내림차순 (FFDH)
+    var ordered = _sortedPairsForShelf(pairs, false);  // 높이 내림차순
     var n = ordered.length;
-    var done = [];
-    for (var d = 0; d < n; d++) done[d] = false;
-
     var rows = [];
-    var row = _newShelfRow(0);
     var leftover = [];
 
-    var p = 0;
-    while (p < n) {
-      if (done[p]) { p++; continue; }
-
-      if (_addOriented(row, ordered[p], binW, binH, gap)) {
-        done[p] = true; p++; continue;
-      }
-
-      // 행 마감 전 backfill: 뒤쪽(더 작은) 미배치 아이템으로 남은 폭 채움 (회전 포함)
-      var filled = false;
-      for (var q = p + 1; q < n; q++) {
-        if (done[q]) continue;
-        if (_addOriented(row, ordered[q], binW, binH, gap)) {
-          done[q] = true; filled = true;
-        }
-      }
-      if (filled) continue;
-
-      if (row.items.length > 0) {
-        rows.push(row);
-        row = _newShelfRow(row.y + row.h + gap);
-        continue;
-      }
-      // 빈 행에도 안 들어감 = 시트보다 큼. Phase 3 면적예산이 사전 차단 — 안전망.
-      // _leftover 플래그: Phase B 에서 이 tier 을 반복 대상에서 제외(within-tier 균일 불변식).
-      ordered[p]._leftover = true;
-      leftover.push(ordered[p]);
-      done[p] = true; p++;
+    // Phase A — 각 사진 1회 배치 (tier 밴드 행). 실패는 column 후보로 보류 (즉시 leftover 금지 —
+    //   FAM+L+M+S 처럼 tier 행 4단이 binH 를 넘으면 마지막 tier 가 행을 못 여는 케이스).
+    var colOnly = [];
+    for (var p = 0; p < n; p++) {
+      if (_placeBanded(rows, ordered[p], binW, binH, gap)) continue;
+      ordered[p]._colOnly = true;
+      colOnly.push(ordered[p]);
     }
-    // Phase B (Model B — tier 단위 균일 반복). FAM 은 반복 0(각 1장 고정, base 에서 끝).
-    //   비-FAM tier 는 "그 tier 사진 전부 1장씩" 을 atomic pass 로 추가 — 한 장이라도 안 들어가면
-    //   _snapPack 으로 떠둔 직전 상태로 전체 롤백 후 그 tier 은퇴(within-tier 균일 불변식 보존).
-    //   round-robin L→M→S→XS, 더 못 채울 때까지. 추가는 면적이 절대 안 늘어나므로 한 번 실패한
-    //   tier 은 재성공 불가 → retire-on-first-failure 가 최적.
+
+    // Phase B — Model B tier 단위 균일 반복 (배치만 밴드 행으로, 정책은 기존 그대로)
     var repeatedCount = 0;
     var tierSeq = ["L", "M", "S", "XS"];
     var tierGroups = { L: [], M: [], S: [], XS: [] };
-    var tierBlocked = { L: false, M: false, S: false, XS: false };
+    var tierNoRows = { L: false, M: false, S: false, XS: false };
     for (var gi = 0; gi < n; gi++) {
       var gp = ordered[gi];
       if (gp.tier === "FAM" || !tierGroups[gp.tier]) continue;  // FAM·미지정 tier 반복 제외
-      if (gp._leftover) { tierBlocked[gp.tier] = true; continue; }
+      // 행 배치 못 한 디자인이 있는 tier 은 행 pass 제외(행 기반 비균일 방지) — column 은 허용.
+      if (gp._colOnly) tierNoRows[gp.tier] = true;
       tierGroups[gp.tier].push(gp);
     }
     for (var so = 0; so < tierSeq.length; so++) {
@@ -2127,32 +1855,54 @@
         var T = tierSeq[tsq];
         if (retired[T]) continue;
         var grp = tierGroups[T];
-        if (tierBlocked[T] || !grp || grp.length === 0) { retired[T] = true; continue; }
+        if (tierNoRows[T] || !grp || grp.length === 0) { retired[T] = true; continue; }
 
-        var snap = _snapPack(rows, row);            // atomic pass: 전부 1장씩, 실패 시 통째 롤백
+        var snap = _snapPack(rows);                 // atomic pass: 전부 1장씩, 실패 시 통째 롤백
         var passOk = true;
         for (var pj = 0; pj < grp.length; pj++) {
-          if (_addOriented(row, grp[pj], binW, binH, gap)) continue;
-          if (row.items.length > 0) {                // 현재 행 포화 → 새 행 열고 1회 재시도
-            rows.push(row);
-            row = _newShelfRow(row.y + row.h + gap);
-          }
-          if (_addOriented(row, grp[pj], binW, binH, gap)) continue;
-          passOk = false;                            // 빈 행에도 안 들어감 → pass 불가
+          if (_placeBanded(rows, grp[pj], binW, binH, gap)) continue;
+          passOk = false;                           // 새 행에도 안 들어감 → pass 불가
           break;
         }
         if (passOk) {
           repeatedCount += grp.length;
           anyActive = true;
         } else {
-          rows = snap.rows;                          // pass 중 추가/신규행 전부 폐기
-          row = snap.row;
+          rows = snap;                              // pass 중 추가분·신규행 전부 폐기
           retired[T] = true;
         }
       }
     }
 
-    if (row.items.length > 0) rows.push(row);
+    // Column 채움 — 각 행 남은 폭에 작은 tier column (작은 tier 부터 시도). 행 키는 안 키움.
+    var colCursor = { XS: 0, S: 0, M: 0 };
+    var ascTiers = ["XS", "S", "M"];
+    for (var cr = 0; cr < rows.length; cr++) {
+      while (true) {
+        var col = null;
+        for (var ct = 0; ct < ascTiers.length; ct++) {
+          var cGrp = tierGroups[ascTiers[ct]];
+          if (!cGrp || cGrp.length === 0) continue;
+          col = _buildTierColumn(cGrp, colCursor[ascTiers[ct]], binW - rows[cr].w - gap, rows[cr].h, gap);
+          if (col !== null) { colCursor[ascTiers[ct]] = col.nextIdx; break; }
+        }
+        if (col === null) break;
+        _addToShelfRow(rows[cr], col, gap);
+        repeatedCount += col.cells.length;
+      }
+    }
+
+    // column 구제까지 끝난 뒤에도 0장인 보류 디자인만 진짜 leftover (시트보다 큰 오버사이즈 등).
+    for (var lo = 0; lo < colOnly.length; lo++) {
+      if (!_pairPlacedInRows(rows, colOnly[lo])) leftover.push(colOnly[lo]);
+    }
+
+    // 행 키 내림차순 정렬 (AllSizes 와 동일한 위→아래 흐름). _shelfRowsToPlaced 가 y 재계산.
+    var deco = [];
+    for (var sr = 0; sr < rows.length; sr++) deco.push({ r: rows[sr], i: sr });
+    deco.sort(function (a, b) { return (b.r.h - a.r.h) || (a.i - b.i); });
+    rows = [];
+    for (var dr = 0; dr < deco.length; dr++) rows.push(deco[dr].r);
 
     var placed = _shelfRowsToPlaced(rows, binW, binH, gap);
     return {
@@ -2222,16 +1972,16 @@
     return { y: y, w: 0, h: 0, items: [] };
   }
 
-  // _snapPack — Model B atomic tier-pass 롤백용 스냅샷. rows/현재행을 얕은-깊은 복사:
+  // _snapPack — Model B atomic tier-pass 롤백용 스냅샷 (밴드 행 배열 전체).
   //   row 객체와 items 배열은 새로 복제(slice), item 객체 자체는 추가 후 내부 변형이 없어 공유 OK.
-  //   롤백 = 호출부에서 rows/row 를 반환값으로 재대입 → pass 중 추가분·신규행 전부 폐기.
-  function _snapPack(rowsArr, cur) {
+  //   tierLock 보존. 롤백 = 호출부에서 rows 를 반환값으로 재대입 → pass 중 추가분·신규행 전부 폐기.
+  function _snapPack(rowsArr) {
     var rs = [];
     for (var i = 0; i < rowsArr.length; i++) {
       var r = rowsArr[i];
-      rs.push({ y: r.y, w: r.w, h: r.h, items: r.items.slice() });
+      rs.push({ y: r.y, w: r.w, h: r.h, items: r.items.slice(), tierLock: r.tierLock });
     }
-    return { rows: rs, row: { y: cur.y, w: cur.w, h: cur.h, items: cur.items.slice() } };
+    return rs;
   }
 
   function _canAddToShelfRow(row, item, binW, binH, gap) {
@@ -2300,20 +2050,6 @@
             var vCell = item.cells[vc];
             placed.push({ x: xCursor + (item.w - vCell.w) / 2, y: vY, w: vCell.w, h: vCell.h, payload: vCell.payload });
             vY += vCell.h + gap;
-          }
-          xCursor += item.w + hGap;
-          continue;
-        }
-
-        // Stack item: cols × rows 로 expand. 행에서 가장 키 큰 stack 이 row.h 결정 → top 정렬.
-        if (item.isStack) {
-          var stackTopY = yCursor + (row.h - item.h) / 2;
-          for (var sr = 0; sr < item.innerRows; sr++) {
-            for (var sc = 0; sc < item.innerCols; sc++) {
-              var sx = xCursor + sc * (item.innerW + gap);
-              var sy = stackTopY + sr * (item.innerH + gap);
-              placed.push({ x: sx, y: sy, w: item.innerW, h: item.innerH, payload: item.payload });
-            }
           }
           xCursor += item.w + hGap;
           continue;
