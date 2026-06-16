@@ -80,7 +80,7 @@ Complementary mapping (4 per product, order = SOT product order, self excluded):
 | Package Mini | Face Sticker, Full Body Sticker, Shape Sticker, Package Full |
 | Package Full | Face Sticker, Full Body Sticker, Shape Sticker, Package Mini |
 
-The `Photo Sheets` collection is still required for the collection page, home featured collection, and nav — it is just no longer the recommendation source.
+The `Photo Sheets` collection is required for the collection page, home featured collection, and nav, but is not the recommendation source.
 
 ## Batch 7 Checkpoint
 

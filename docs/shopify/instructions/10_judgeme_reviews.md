@@ -56,7 +56,7 @@ Judge.me 대시보드 → **Settings** 에서:
 
 ## Step 10.3 — 리뷰 요청 이메일 카피
 
-Judge.me → **Settings → Review requests → Email content** 에 아래 카피 붙여넣기. 사진 첨부를 명시적으로 권유한다 (UGC 가 목표). 톤 SOT = [`../../design/voice.md`](../../design/voice.md).
+Judge.me → **Settings → Review requests → Email content** 에 아래 카피 붙여넣기. 사진 첨부를 명시적으로 권유한다 (UGC 가 목표).
 
 **Subject**
 

@@ -76,7 +76,7 @@ SOT docs reconciled against the live store. Legend: ✅ live matches docs · �
 | 2 | Package prices | Mini $24.99 / Full $34.99 | ✅ |
 | 3 | Variant model | Non-Pkg = Size × Material (28); Pkg = Material (4); `Photos to include` = Easify dropdown add-on (+$3/photo) | 🔧 dropped 312-variant model |
 | 4 | "Mixed" size | option kept, same price | ✅ |
-| 5 | Tags | reconciled to live (removed `name-included`, `curated-pack`, etc.) | 🔧 |
+| 5 | Tags | reconciled to live | 🔧 |
 | 6 | Shipping | Domestic (Canada) / Standard $0.00 free / shipsToCountries = [CA] | ✅ |
 | 7 | Taxes | taxesIncluded=false, taxShipping=false; GST/HST registration confirmed | ✅ |
 | 8 | Markets | single market Canada (primary/active), no international | ✅ |

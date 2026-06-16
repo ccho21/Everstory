@@ -4,7 +4,6 @@
 //   Name Included 시트 위에 사진 스티커를 단일 사이즈 (XS/S/M/L/XL/XXL) ·
 //   Package (파일명 _TIER 토큰) · 전 사이즈 모드로 배치한다. 다이얼로그 ListBox 에서 사용할 페어를
 //   직접 multiselect 하고, 사이즈별 디자인 cap 에 자동으로 맞춘다 (auto-cap).
-//   (구 Mixed zone 모드는 2026-06-11 삭제 — Shopify 'Mixed' 옵션 주문은 전 사이즈 모드로 제작.)
 //
 // 디자인 cap (단일 사이즈 = 시트 물리 슬롯 수, 디자인당 반복 cap 없음):
 //   XS 0.75" → 48 / S 1" → 30 / M 1.25" → 20 / L 1.5" → 12 / XL 2" → 6 / XXL 2.5" → 4
@@ -81,7 +80,7 @@
   var DESIGN_LIMIT_BY_SIZE_MM = SLOTS_BY_SIZE;
 
   // 인치 6단계 + Package/전 사이즈 sentinel. 라벨은 products.md size option 표기 (letter code 없이 inch / 반올림 mm).
-  // Shopify 'Mixed' 옵션 주문은 전 사이즈 모드로 제작한다 (구 Mixed zone 모드 2026-06-11 삭제).
+  // Shopify 'Mixed' 옵션 주문은 전 사이즈 모드로 제작한다.
   var SIZE_OPTIONS = [
     "0.75\" / 19mm",
     "1\" / 25mm",

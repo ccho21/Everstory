@@ -3,7 +3,7 @@
     "version": "v2",
     "source": "Everstory_mixed.jsx + templates/template_cutout_v2.ait",
     "extracted": "2026-06-12",
-    "note": "시트 packing implementation 토큰 (사이즈·trace 파라미터·CutContour spot·save·rasterize). SOT 는 운영 .jsx — 본 파일은 doc mirror, .jsx 상수 변경 시 같이 갱신. web 디자인 토큰은 docs/design/tokens.json."
+    "note": "시트 packing implementation 토큰 (사이즈·trace 파라미터·CutContour spot·save·rasterize). SOT 는 운영 .jsx — 본 파일은 doc mirror, .jsx 상수 변경 시 같이 갱신."
   },
 
   "conversion": {

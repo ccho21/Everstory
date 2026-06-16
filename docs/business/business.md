@@ -171,5 +171,4 @@ Customer-facing fulfillment 기준은 **Canada-wide free shipping + local pickup
 ## Operating Principles
 
 - Shopify 앱, admin setting, policy input detail 은 `docs/shopify/` 에 둔다.
-- Brand·voice·typography·color·photography·component 기준은 `docs/design/` 에 둔다.
 - Business 문서는 사업 판단에 필요한 현재 기준만 남긴다.

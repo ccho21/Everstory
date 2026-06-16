@@ -4,7 +4,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 ## MVP
 
-첫 주력 상품은 **A5 커스텀 사진 다이컷 스티커 시트**. 대표 모드는 **Name Included** (사진 + 상단 헤더에 고객/주문 정보). 운영 메인은 **`Everstory_mixed.jsx`** (v21 unified — 구 v2/no_cap/v3 통합본, v2 브랜드 템플릿). 한 시트 정책 — A5 한 시트만 생성, 넘치는 입력은 사이즈별 디자인 cap (auto-cap, 시트 물리 슬롯 수 기준) 으로 입력 단계에서 제한. 칼선 여백 (0/0.5/1/2mm) 은 고객 옵션이 아니라 내부 제작 옵션.
+첫 주력 상품은 **A5 커스텀 사진 다이컷 스티커 시트**. 대표 모드는 **Name Included** (사진 + 상단 헤더에 고객/주문 정보). 운영 메인은 **`Everstory_mixed.jsx`** (v21 unified, v2 브랜드 템플릿). 한 시트 정책 — A5 한 시트만 생성, 넘치는 입력은 사이즈별 디자인 cap (auto-cap, 시트 물리 슬롯 수 기준) 으로 입력 단계에서 제한. 칼선 여백 (0/0.5/1/2mm) 은 고객 옵션이 아니라 내부 제작 옵션.
 
 상품/운영 정책은 [docs/business/business.md](docs/business/business.md).
 
@@ -17,22 +17,23 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 ├── plugins/everstory_save/        # Phase A — UXP 패널 플러그인 (PS)
 ├── templates/
 │   └── template_cutout_v2.ait     # v2 브랜드 템플릿 (운영 메인). info > body 142×175mm + info > header > header_right (TextFrame, 값만 주입)
+├── assets/                        # 브랜드 로고·QR·템플릿 미리보기 PNG
 ├── projects/{이름}/
 │   ├── 01_original/               # 원본 PSD/JPG/TIF
 │   ├── 02_cutout/                 # Phase A 산출 (_clean.psd + _sil.png 페어)
 │   └── 03_output/                 # Phase B 산출 (.ai 시트)
 └── docs/
     ├── business/                  # 사업·전략
-    ├── design/                    # 디자인 정의 (색·타이포·voice·brand·photography·components)
     ├── implementation/            # 운영 코드 자산 (sheet_tokens.json)
-    └── shopify/                   # 웹 스토어 — 어드민·카피·정책·시안
+    ├── shopify/                   # 웹 스토어 — 어드민·카피·정책·시안
+    └── strategy/                  # 개인 재정·세금 계획 (Everstory 사업과 별개)
 ```
 
 ## 파이프라인 요약
 
 1. **Phase 0 — 수동 (Photoshop)**: `layers[0]` = 실루엣, `layers[1..N]` = 누끼+보정.
 2. **Phase A — UXP 패널** (`plugins/everstory_save/`): `_sil.png` + `_clean.psd` 저장, longest 1800px.
-3. **Phase B — Illustrator** (`Everstory_mixed.jsx`): 폴더 → 페어 ListBox multiselect → 사이즈 (XS/S/M/L/XL/XXL · Package · 전 사이즈) → 시트 생성 → `03_output/` 자동 saveAs. 다이얼로그 5단계 (폴더 / 고객 정보 / 페어 / 사이즈 / 칼선 여백). Shopify `Mixed` 옵션 주문은 **전 사이즈 모드로 제작** (구 Mixed zone 모드 2026-06-11 삭제).
+3. **Phase B — Illustrator** (`Everstory_mixed.jsx`): 폴더 → 페어 ListBox multiselect → 사이즈 (XS/S/M/L/XL/XXL · Package · 전 사이즈) → 시트 생성 → `03_output/` 자동 saveAs. 다이얼로그 5단계 (폴더 / 고객 정보 / 페어 / 사이즈 / 칼선 여백). Shopify `Mixed` 옵션 주문은 **전 사이즈 모드로 제작**.
 
 ## 고정 컨벤션 (변경 시 파이프라인 깨짐)
 
@@ -58,7 +59,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 ## 문서 인덱스
 
-각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **design**: 디자인 정의 (색·타이포·voice·brand·photography·components, product-agnostic SOT) / **implementation**: 운영 코드 자산 / **shopify**: 웹 스토어 (어드민·카피·정책·시안).
+각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **implementation**: 운영 코드 자산 / **shopify**: 웹 스토어 (어드민·카피·정책·시안). **strategy** 는 개인 재정·세금 계획으로 Everstory 사업 문서와 별개.
 
 - [**비즈니스**](docs/business/) — 사업·전략 (의존 계층: Fact → Plan → Open)
   - [products.md](docs/business/products.md) — Layer 1 Fact. Launch SKU·Package 규칙·사이즈·가격·사진 QC (상품 SOT)
@@ -66,12 +67,6 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
   - [business.md](docs/business/business.md) — Layer 2 Plan. 사업 정의·원가/마진 모델·채널·배송·런칭 목표. raw 는 products/expenses 인용
   - [pending.md](docs/business/pending.md) — Layer 3 Open. 미확정·측정·결정 보류 항목 SOT
   - [plan.md](docs/business/plan.md) — Layer 0 Meta. 문서 목적·중요도·계층
-- [**디자인**](docs/design/) — 디자인 정의 (product-agnostic SOT)
-  - [tokens.json](docs/design/tokens.json) — 색상·타이포 디자인 토큰
-  - [brand.md](docs/design/brand.md) — 브랜드 voice·워드마크
-  - [voice.md](docs/design/voice.md) — 카피 톤 운영 규칙
-  - [components.md](docs/design/components.md) — UI 컴포넌트 rationale
-  - [photography.md](docs/design/photography.md) — 촬영 디렉션
 - [**구현**](docs/implementation/) — 운영 코드 자산
   - [sheet_tokens.json](docs/implementation/sheet_tokens.json) — 시트 packing 토큰
   - [plugins/everstory_save/README.md](plugins/everstory_save/README.md) — Phase A UXP 패널 플러그인 설치/사용

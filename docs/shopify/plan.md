@@ -38,7 +38,7 @@ Shopify 문서에서 제외한다.
 | `policies.md` | Refund, Shipping, Privacy, Terms policy SOT. | P0 | 유지 |
 | `pages_copy.md` | About, FAQ, Sizing, Materials page copy SOT. | P1 | 유지 |
 | `footer_copy.md` | 한국어 footer copy SOT. | P1 | 유지 |
-| `preview.html` | 디자인 토큰 / 컴포넌트 라이브러리 시안. admin 실행에 직접 필요 없음. | P2 | 디자인 정리 후 삭제 또는 갱신 판단 |
+| `preview.html` | 디자인 토큰 / 컴포넌트 라이브러리 시안. admin 실행에 직접 필요 없음. | P2 | 재사용 가치 없으면 삭제 판단 |
 | `wireframes/` | Horizon 테마 기반 11페이지 분리 HTML 와이어프레임. Shopify customizer 작업 시 section/block 어휘 매칭 청사진. | P1 | 유지 |
 | `instructions/` | Batch 1–10 admin·theme 실행 walkthrough (+ `_PROMPT_TEMPLATE.md` 생성 메타). Batch 10 = Judge.me 리뷰 앱. 입력값은 settings_checklist / product_descriptions / policies / pages_copy / footer_copy SOT 참조. | P0 | 유지 |
 | `everstory_product_detail_*.html` | 상품 상세 PDP HTML 시안 (full KO / full EN / pdp_block), 브랜드 토큰 기반. | P1 | 유지 |
@@ -57,7 +57,7 @@ Shopify 문서에서 제외한다.
 - Translate & Adapt 한국어 전체 페이지 전환.
 - Customily 또는 live preview 앱 전환.
 - Meta Pixel, newsletter, review app, Etsy sync.
-- `preview.html` 의 과거 proof approval 흐름은 MVP 실행 문서에서 제외되어 있으므로, 디자인 재사용 가치가 없으면 삭제한다.
+- `preview.html` 은 MVP 실행 문서에서 제외돼 있으므로, 재사용 가치가 없으면 삭제한다.
 
 ### 외부 피드백 반영 (2026-05, 지인 피드백)
 
@@ -67,7 +67,7 @@ Shopify 문서에서 제외한다.
 |------|------|------|
 | 사이즈 직관성 | PDP 미리보기에 아이폰 대비 목업 + mm/in 사이즈 표기. 이미지별 사이즈 게시로 주문 직관성 확보 | 아이폰 비교가 가장 직관적. 목업 에셋 1회 제작 → 다수 SKU 재사용 |
 | 소재 정합성 | 종이재질(소재) 이미지 ↔ 설명 불일치 정리 | **우선** (고객 혼동). product_descriptions.md / pages_copy(Materials) ↔ 라이브 이미지 정합성 점검 |
-| 채널 품질 | 인스타 업로드 시 사진 깨짐 해결 (export 해상도·비율) | **빠른 수확**. 해결책 → [`../design/photography.md`](../design/photography.md) "Instagram 업로드 (화질 깨짐 방지)" |
+| 채널 품질 | 인스타 업로드 시 사진 깨짐 해결 (export 해상도·비율) | **빠른 수확**. 사진 export 해상도·비율 정리 |
 | 채널 확장 | FB/IG shop 등 세일즈 채널 업데이트 | 위 "Meta Pixel … Etsy sync" 와 연계 |
 | 리뷰·UGC | 프로덕트별 리뷰 + 고객 실사용 사진 노출 | 위 "review app" 구체화 — UGC 사진 수집·전시 포함 |
 

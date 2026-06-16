@@ -2,7 +2,7 @@
 
 Shopify admin Stage 1 (1A–1J) 입력값. 어드민 → Settings 경로 따라가면서 한 칸씩 채우면 됨. 검증 칸은 입력 후 즉시 확인.
 
-브랜드 표기는 `docs/design/brand.md` 와 `docs/business/business.md` 기준으로 **Everstory Studio** 단일.
+브랜드 표기는 `docs/business/business.md` 기준으로 **Everstory Studio** 단일.
 
 ---
 
