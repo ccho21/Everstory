@@ -43,9 +43,9 @@ Price formula: `$18.99 + (Photos to include - 1) × $3 CAD`.
 
 ### Description
 
-> Face-forward photo stickers, hand cut in Toronto.
+> Face-forward photo stickers, made with care in Toronto.
 
-Face Sticker is made for portraits where the expression matters most. We crop around the face or upper body, clean the edge by hand, and pack the A5 sheet according to your chosen print size and photo count.
+Face Sticker is made for portraits where the expression matters most. We crop around the face or upper body, clean the edge with care, and pack the A5 sheet according to your chosen print size and photo count.
 
 **Photo tip:** choose a photo where the face is clear and fully visible — front-on or a slight angle, not covered by hair, hands, sunglasses, or shadow.
 
@@ -56,7 +56,7 @@ Face Sticker is made for portraits where the expression matters most. We crop ar
 - Size shown in inch / mm, no letter codes
 - Your selected number of different photos
 - Header printed with your name and order date
-- Reviewed and hand-cut by hand in Toronto
+- Made with care, precision-cut in Toronto
 
 **Best for**
 
@@ -85,7 +85,7 @@ Full Body Sticker keeps the full person, pet, or object in the cutout whenever t
 - Size shown in inch / mm
 - Your selected number of different photos
 - Header printed with your name and order date
-- Reviewed and hand-cut by hand in Toronto
+- Made with care, precision-cut in Toronto
 
 **Best for**
 
@@ -114,7 +114,7 @@ Shape Sticker turns your photo into a neat shape-cropped sticker sheet. It is th
 - Size shown in inch / mm
 - Your selected number of different photos
 - Header printed with your name and order date
-- Reviewed and hand-cut by hand in Toronto
+- Made with care, precision-cut in Toronto
 
 **Best for**
 
@@ -143,7 +143,7 @@ Package Mini lets you upload a few options for each print size. Everstory choose
 - Medium print: upload up to 3 photos, Studio picks 1
 - Small print: upload up to 4 photos, Studio picks 2
 - 4 selected photos total
-- Reviewed and hand-cut by hand in Toronto
+- Made with care, precision-cut in Toronto
 
 **Best for**
 
@@ -172,7 +172,7 @@ Package Full is the fuller set: more upload room, more selected photos, on two A
 - Medium print: upload up to 5 photos, Studio picks 2
 - Small print: upload up to 7 photos, Studio picks 4
 - 8 selected photos total
-- Reviewed and hand-cut by hand in Toronto
+- Made with care, precision-cut in Toronto
 
 **Best for**
 
@@ -232,7 +232,7 @@ If no special request is provided, Studio chooses the crop from the photo:
 
 ### Made in Toronto
 
-Hand cut around every subject. Hair, ears, paws, and tiny gaps are reviewed by a person, not left to an automatic mask.
+Cut out with care around every subject. Hair, ears, paws, and tiny gaps are reviewed by a person, not left to an automatic mask.
 
 Printed on Epson ET-8550 and cut on Summa D75 in Toronto.
 
@@ -277,11 +277,11 @@ Everstory sticker sheets are decorative photo products, not a toy and not a chil
 
   | SKU | Description |
   |---|---|
-  | Face Sticker | `Face-forward photo stickers, hand cut around the face or upper body in Toronto. A5 sheet, Korean premium substrates. Free Canada-wide shipping.` |
-  | Full Body Sticker | `Full-shape custom photo stickers — the whole person, pet, or subject hand cut on an A5 sheet. Korean premium substrates, made in Toronto.` |
-  | Shape Sticker | `Clean shape-crop photo stickers on an A5 sheet — currently round, hand cut in Toronto. Korean premium substrates, waterproof and laminated. Free Canada-wide shipping.` |
-  | Package Mini | `A curated one-sheet photo sticker set. Upload candidates by size tier — Everstory selects the 4 strongest photos. Hand cut in Toronto.` |
-  | Package Full | `A larger curated photo sticker set — 2 A5 sheets, 8 selected photos across Big / Medium / Small tiers. Hand cut in Toronto. Free Canada-wide shipping.` |
+  | Face Sticker | `Face-forward photo stickers, cut out around the face or upper body with care in Toronto. A5 sheet, Korean premium substrates. Free Canada-wide shipping.` |
+  | Full Body Sticker | `Full-shape custom photo stickers — the whole person, pet, or subject cut out with care on an A5 sheet. Korean premium substrates, made in Toronto.` |
+  | Shape Sticker | `Clean shape-crop photo stickers on an A5 sheet — currently round, made with care in Toronto. Korean premium substrates, waterproof and laminated. Free Canada-wide shipping.` |
+  | Package Mini | `A curated one-sheet photo sticker set. Upload candidates by size tier — Everstory selects the 4 strongest photos. Made with care in Toronto.` |
+  | Package Full | `A larger curated photo sticker set — 2 A5 sheets, 8 selected photos across Big / Medium / Small tiers. Made with care in Toronto. Free Canada-wide shipping.` |
 
 - **Product status**: Draft until launch.
 - **Channels**: Online Store handles checkout. Products are also published to Shop, Point of Sale, Facebook & Instagram, and Google & YouTube — these act as discovery surfaces that funnel back to the Online Store to check out (channel strategy SOT: [`../business/business.md`](../business/business.md) §Channels).

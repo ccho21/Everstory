@@ -10,6 +10,8 @@
 
 <a class="back-link" href="index.html">← Back to index</a>
 
+<div class="note" style="max-width: 1280px; margin: 0 auto 12px;">Mirrors the <strong>live</strong> Face PDP (everstorystudio.ca/products/face-sticker), structure as built. &nbsp; <strong>Easify</strong> = photo-capture block is live but app-injected (JS-rendered, not in theme source). &nbsp; <strong>PROPOSED</strong> = trust/conversion adds from the review, not yet live.</div>
+
 <!-- ═══ DESKTOP 1280 ═══ -->
 <div class="frame frame--desktop">
 <div class="frame-label">Desktop · 1280 · /products/face-sticker</div>
@@ -18,12 +20,12 @@
 <section class="ws" data-block="header-announcements">
   <div class="ws-inner"><div class="announcements">MADE TO KEEP · Free Canada-wide shipping</div></div>
 </section>
-<!-- header -->
+<!-- header (live nav: Shop · About · FAQ · Contact) -->
 <section class="ws" data-block="header">
   <div class="ws-inner">
     <div class="header-bar">
       <div class="ph ph--logo">EVERSTORY</div>
-      <nav><span>Shop</span><span>About</span><span>FAQ</span></nav>
+      <nav><span>Shop</span><span>About</span><span>FAQ</span><span>Contact</span></nav>
       <div class="utilities">
         <div class="ph ph--icon">⌕</div>
         <div class="ph ph--icon">☺</div>
@@ -33,107 +35,79 @@
   </div>
 </section>
 
-<!-- breadcrumb -->
-<section class="ws" data-block="section · breadcrumb">
-  <div class="ws-inner">
-    <p class="muted" style="font-size: 12px;">Shop &nbsp;›&nbsp; Photo Sheets &nbsp;›&nbsp; Face Sticker</p>
-  </div>
-</section>
+<!-- (no breadcrumb — live has none) -->
 
 <!-- product-information (2-col) -->
 <section class="ws" data-block="product-information (2-col)">
   <div class="ws-inner">
     <div class="grid grid--pdp">
 
-      <!-- LEFT: _product-media-gallery -->
+      <!-- LEFT: _product-media-gallery (live = 5 images) -->
       <div data-block="_product-media-gallery" style="position: relative;">
-        <div class="ph ph--photo-square" style="margin-bottom: 12px;">MAIN IMAGE 1:1</div>
+        <div class="ph ph--photo-square" style="margin-bottom: 12px;">MAIN · FACE STICKER SHEET</div>
         <div class="grid grid--4" style="gap: 8px;">
-          <div class="ph">THUMB 1</div>
-          <div class="ph">THUMB 2</div>
-          <div class="ph">THUMB 3</div>
-          <div class="ph">THUMB 4</div>
+          <div class="ph">ON PHONE CASE</div>
+          <div class="ph">SHEET DETAIL</div>
+          <div class="ph">ON LAPTOP</div>
+          <div class="ph">ON PLANNER</div>
         </div>
+        <div class="note"><strong>PROPOSED</strong>: add proof shots (cut-edge macro · before→after · sheet-in-hand) and lead with a baby/kid subject; rotate pet · couple · family so it's not baby-only.</div>
       </div>
 
-      <!-- RIGHT: _product-details (group of blocks) -->
+      <!-- RIGHT: product info column (live order) -->
       <div class="stack">
         <div data-block="group · header">
-          <div class="eyebrow">Custom Photo Sticker Sheet</div>
           <h1 data-block="product-title">Face Sticker</h1>
-          <p class="muted">Face or upper-body crop · A5 sheet</p>
-          <p data-block="price" style="font-size: 22px; font-weight: 600;">from $18.99 CAD</p>
+          <p class="muted">A5 face cutout sticker sheet</p>
+          <p data-block="price" style="font-size: 22px; font-weight: 600;">$18.99 CAD</p>
+          <p class="muted" data-warn="PROPOSED">★★★★★ · reviews (Judge.me) — PROPOSED, not on live</p>
         </div>
 
         <hr class="divider" data-block="_divider">
 
-        <!-- variant-picker -->
+        <!-- variant-picker (live order: Material → Size, incl. Mixed) -->
         <div data-block="variant-picker">
-          <div class="field">
-            <label>Size</label>
-            <div class="swatches">
-              <span class="swatch">0.75" / 19mm</span>
-              <span class="swatch" style="background: #1a1a1a; color: #fff;">1" / 25mm (default)</span>
-              <span class="swatch">1.25" / 32mm</span>
-              <span class="swatch">1.5" / 38mm</span>
-              <span class="swatch">2" / 51mm</span>
-              <span class="swatch">2.5" / 64mm</span>
-            </div>
-          </div>
           <div class="field">
             <label>Material</label>
             <div class="swatches">
               <span class="swatch" style="background: #1a1a1a; color: #fff;">White Matte</span>
-              <span class="swatch">Translucent</span>
               <span class="swatch">Silver</span>
               <span class="swatch">Gold</span>
+              <span class="swatch">Translucent</span>
             </div>
           </div>
           <div class="field">
-            <label>Photos to include</label>
+            <label>Size</label>
             <div class="swatches">
-              <span class="swatch" style="background: #1a1a1a; color: #fff;">1 (default)</span>
-              <span class="swatch">2</span>
-              <span class="swatch">3</span>
-              <span class="swatch">4</span>
-              <span class="swatch">5</span>
-              <span class="swatch">6</span>
-              <span class="swatch">7</span>
-              <span class="swatch">8</span>
-              <span class="swatch">9</span>
-              <span class="swatch">10</span>
-              <span class="swatch">11</span>
-              <span class="swatch">12</span>
-              <span class="swatch">13</span>
+              <span class="swatch">0.75" / 19mm</span>
+              <span class="swatch" style="background: #1a1a1a; color: #fff;">1" / 25mm</span>
+              <span class="swatch">1.25" / 32mm</span>
+              <span class="swatch">1.5" / 38mm</span>
+              <span class="swatch">2" / 51mm</span>
+              <span class="swatch">2.5" / 64mm</span>
+              <span class="swatch">Mixed</span>
             </div>
           </div>
         </div>
 
-        <!-- product-custom-property: file upload (NEEDS APP/CODE) -->
-        <div data-block="product-custom-property · file" data-warn="needs Easify app or custom Liquid">
-          <div class="field" style="margin-top: 16px;">
-            <label>Upload your photos · 1–13 (matches Photos to include)</label>
+        <!-- Easify photo capture — the core of the product. Sits BEFORE Add to cart (configure → add). -->
+        <div data-block="product-custom-property (Easify)" data-warn="LIVE · Easify app (JS-rendered)">
+          <div class="note"><strong>Live on the PDP</strong> via the Easify Product Options app — JS-rendered, so it doesn't appear in page source / WebFetch (that's why the earlier "no upload" read was wrong). Sits here, before Add to cart: configure, then add. <code>Photos to include</code> drives +$3/photo (products.md).</div>
+          <div class="field" style="margin-top: 12px;">
+            <label>Photos to include</label>
+            <div class="swatches"><span class="swatch" style="background:#1a1a1a;color:#fff;">1</span><span class="swatch">2</span><span class="swatch">3</span><span class="swatch">…</span><span class="swatch">13</span></div>
+            <p class="muted" style="margin-top: 4px;">First photo included · each extra <strong>+$3</strong> (Easify dropdown, products.md).</p>
+          </div>
+          <div class="field">
+            <label>Upload your photo(s) — must match "Photos to include"</label>
             <div class="file-upload">📎 Click to upload · JPG / JPEG / PNG / HEIC up to 100 MB</div>
+            <p class="muted" style="margin-top: 4px;">If a photo is too blurry or small to print well, we email before production.</p>
           </div>
+          <div class="field"><label>Header name (optional)</label><input class="input" placeholder="e.g. Roun · printed on sheet header"></div>
+          <div class="field"><label>Order notes (optional)</label><textarea rows="3" placeholder="A face we should not crop. Tone you prefer. Detail to keep crisp. Korean OK."></textarea></div>
         </div>
 
-        <!-- product-custom-property: text -->
-        <div data-block="product-custom-property · text">
-          <div class="field">
-            <label>Header name (optional)</label>
-            <input class="input" placeholder="e.g. Roun · printed on sheet header">
-          </div>
-        </div>
-
-        <!-- product-custom-property: textarea -->
-        <div data-block="product-custom-property · textarea">
-          <div class="field">
-            <label>Order notes (optional)</label>
-            <textarea rows="3" placeholder="Faces we should not crop. Tone you prefer. Detail to keep crisp. Korean OK."></textarea>
-          </div>
-        </div>
-
-        <!-- buy-buttons (quantity + add-to-cart + accelerated-checkout) -->
+        <!-- buy-buttons -->
         <div data-block="buy-buttons">
           <div class="row" style="margin-top: 16px;">
             <div class="field" style="margin-bottom: 0;">
@@ -146,55 +120,22 @@
             </div>
             <div style="flex: 1;">
               <label class="muted" style="display: block; margin-bottom: 4px; font-size: 11px;">&nbsp;</label>
-              <a class="btn btn--block">Add to cart — from $18.99</a>
+              <a class="btn btn--block">Add to cart</a>
             </div>
           </div>
           <div data-block="accelerated-checkout" style="margin-top: 12px;">
             <a class="btn btn--block" style="background: #5a31f4; border-color: #5a31f4;">Buy with Shop Pay</a>
-            <a class="btn btn--block btn--ghost" style="margin-top: 8px;">More payment options</a>
           </div>
         </div>
 
-        <!-- accordion -->
-        <div data-block="accordion">
-          <details class="acc" open>
-            <summary>What you get</summary>
-            <div class="acc-body">
-              <ul style="padding-left: 18px; margin: 0;">
-                <li>One A5 sticker sheet (148 × 210 mm)</li>
-                <li>Face or upper-body crop — your chosen subject, precisely cut</li>
-                <li>Your selected photos at your chosen size</li>
-                <li>Header printed with your name + order date</li>
-                <li>Reviewed and hand-cut by hand in Toronto</li>
-              </ul>
-            </div>
-          </details>
-          <details class="acc">
-            <summary>Materials &amp; sizes</summary>
-            <div class="acc-body">White Matte / Translucent / Silver / Gold — all laminated Korean substrates, waterproof and fade-resistant. Sizes 0.75"–2.5" (inch/mm). <a>See sizing guide →</a></div>
-          </details>
-          <details class="acc">
-            <summary>Care &amp; lifespan</summary>
-            <div class="acc-body">Indoor 5+ years. Outdoor 2–3 years. Hand wash recommended; not dishwasher-safe.</div>
-          </details>
-          <details class="acc">
-            <summary>Lead time &amp; shipping</summary>
-            <div class="acc-body">Print + cut: 1–3 business days. Ships 2–5 business days from order. Free Canada-wide shipping or local pickup by arrangement.</div>
-          </details>
-          <details class="acc">
-            <summary>Photo guidelines</summary>
-            <div class="acc-body">Bright lighting, subject filling the frame, minimal motion blur. We email if a photo needs replacement before printing.</div>
-          </details>
-        </div>
-
-        <!-- product-description -->
-        <div data-block="product-description">
-          <hr class="divider">
-          <div class="eyebrow">Description</div>
-          <p><em>Every face deserves a sheet of its own.</em></p>
-          <p>The Face Sticker sheet is cropped and cut around the face or upper body of your subject — a pet, a person, a portrait that captures the way you see them. Choose 1 to 13 photos, pick a size, and we handle the rest by hand in Toronto.</p>
-          <h4 style="margin-top: 12px;">Best for</h4>
-          <p>Pet portraits. Family faces. A friend's birthday. Anyone you want to stick everywhere. Face Sticker is the everyday keepsake that travels with you.</p>
+        <!-- PROPOSED: trust strip -->
+        <div data-block="group · trust strip" data-warn="PROPOSED">
+          <div class="row row--wrap" style="gap: 16px; border: 1px solid #ddd; padding: 12px; font-size: 12px; margin-top: 12px;">
+            <span>✓ Made-right promise</span>
+            <span>✓ Free Canada-wide shipping</span>
+            <span>✓ Photos used only for your order</span>
+          </div>
+          <div class="note">PROPOSED — not on live.</div>
         </div>
       </div>
 
@@ -202,28 +143,114 @@
   </div>
 </section>
 
-<!-- product-recommendations -->
+<!-- product-description · long-form (mirrors live order, 1–18) -->
+<section class="ws" data-block="product-description · long-form (live order)">
+  <div class="ws-inner" style="max-width: 760px;">
+    <div class="eyebrow">Description · as on live (in order)</div>
+
+    <h3>What you get</h3>
+    <p class="muted">A5 sheet · face/upper-body crop · your selected photos &amp; size · header w/ name + date · made with care in Toronto.</p>
+    <h3>Photo tip</h3>
+    <p class="muted">Bright, in focus, subject filling the frame.</p>
+    <h3>Best for</h3>
+    <p class="muted">Pet portraits, family faces, a friend's birthday.</p>
+    <h3>Safety and age guidance</h3>
+    <p class="muted">Small die-cut parts · not for children under 3 · adult supervision under 14.</p>
+    <h3>Materials</h3>
+    <p class="muted">White Matte · Translucent · Silver · Gold — laminated, waterproof.</p>
+    <h3>Sizes</h3>
+    <p class="muted">0.75"–2.5" (inch/mm) + Mixed.</p>
+    <h3>Care &amp; lifespan</h3>
+    <p class="muted">Indoor 5+ yr · outdoor 2–3 yr · hand wash.</p>
+    <h3>Lead time &amp; shipping</h3>
+    <p class="muted">Print + cut 1–3 business days · ships 2–5 · free Canada-wide.</p>
+    <h3>Photo guidelines</h3>
+    <p class="muted">How Studio crops by default — child = face, adult = full body, pet = full body.</p>
+
+    <hr class="divider">
+
+    <!-- rich media sections (live 10–18) -->
+    <h3>Their face, kept.</h3>
+    <div class="grid grid--2" style="gap: 16px;"><div class="ph ph--photo-wide">LIFESTYLE 1</div><div class="ph ph--photo-wide">LIFESTYLE 2</div></div>
+
+    <h3 style="margin-top: 24px;">Choose your options</h3>
+    <p class="muted">Intro to picking size + material.</p>
+
+    <h4>Size</h4>
+    <div class="ph ph--photo-wide">SIZE COMPARISON IMAGE · 6 sizes vs coin / phone</div>
+
+    <h4 style="margin-top: 16px;">Material</h4>
+    <div class="ph ph--photo-wide">MATERIAL SAMPLES IMAGE · 4 finishes</div>
+
+    <h3 style="margin-top: 24px;">One sheet, one size</h3>
+    <p class="muted">Roughly how many stickers fill one A5 sheet at each size (single size, single subject). Varies a little with photo proportion.</p>
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 16px;">
+      <thead><tr style="background:#f0f0e8;"><th style="text-align:left;padding:8px;border:1px solid #ddd;">Size</th><th style="text-align:left;padding:8px;border:1px solid #ddd;">~ stickers / A5 sheet</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:8px;border:1px solid #ddd;">0.75" / 19mm</td><td style="padding:8px;border:1px solid #ddd;">~48</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ddd;">1" / 25mm</td><td style="padding:8px;border:1px solid #ddd;">~30</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ddd;">1.25" / 32mm</td><td style="padding:8px;border:1px solid #ddd;">~20</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ddd;">1.5" / 38mm</td><td style="padding:8px;border:1px solid #ddd;">~12</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ddd;">2" / 51mm</td><td style="padding:8px;border:1px solid #ddd;">~6</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ddd;">2.5" / 64mm</td><td style="padding:8px;border:1px solid #ddd;">~4</td></tr>
+      </tbody>
+    </table>
+    <div class="grid grid--3" style="gap: 8px;"><div class="ph ph--photo-square">0.75" preview</div><div class="ph ph--photo-square">1.25" preview</div><div class="ph ph--photo-square">2.5" preview</div></div>
+    <div class="note">Counts = per-sheet slot cap (Everstory_mixed.jsx · sheet_tokens.json): 48 / 30 / 20 / 12 / 6 / 4. Confirm against the live "One sheet, one size" numbers before publishing.</div>
+
+    <h3 style="margin-top: 24px;">By the longest edge</h3>
+    <p class="muted">Long-edge sizing — portrait vs landscape explanation.</p>
+
+    <h3 style="margin-top: 24px;">Before you order — a few notes</h3>
+    <p class="muted">Made to order · no change-of-mind refund once cutting starts · 0.2–2 mm tolerance · etc.</p>
+
+    <h3 style="margin-top: 24px;">Send a sharp photo</h3>
+    <p class="muted">Photo quality — good vs hard examples (already on live).</p>
+    <div class="grid grid--2" style="gap: 16px;">
+      <div class="card"><div class="ph ph--photo-square">✓ WORKS</div><p class="muted">Bright, sharp, fills the frame</p></div>
+      <div class="card"><div class="ph ph--photo-square">✕ HARD TO USE</div><p class="muted">Blurry, dark, tiny subject</p></div>
+    </div>
+
+    <h3 style="margin-top: 24px;">Screen color and print color</h3>
+    <p class="muted">RGB vs CMYK — screen and printed color can differ.</p>
+  </div>
+</section>
+
+<!-- PROPOSED: product-reviews (not on live) -->
+<section class="ws" data-block="product-reviews (Judge.me)" data-warn="PROPOSED · reviews need Judge.me app">
+  <div class="ws-inner">
+    <h2>★★★★★ &nbsp; Reviews</h2>
+    <div class="grid grid--3" style="margin-top: 16px;">
+      <div class="card"><p class="muted">★★★★★</p><p>"Likeness + cut-edge quality."</p><div class="ph ph--photo-square">CUSTOMER PHOTO (UGC)</div><p class="muted">— Name · City</p></div>
+      <div class="card"><p class="muted">★★★★★</p><p>"Gift reaction / pet portrait."</p><div class="ph ph--photo-square">CUSTOMER PHOTO (UGC)</div><p class="muted">— Name · City</p></div>
+      <div class="card"><p class="muted">★★★★★</p><p>"Turnaround + durability."</p><div class="ph ph--photo-square">CUSTOMER PHOTO (UGC)</div><p class="muted">— Name · City</p></div>
+    </div>
+    <div class="note">PROPOSED — not on live. Judge.me; rotate UGC subjects — pet · couple · family · kid (not baby-only).</div>
+  </div>
+</section>
+
+<!-- product-recommendations (match live: Face · Full Body · Package Full · Package Mini) -->
 <section class="ws" data-block="product-recommendations">
   <div class="ws-inner">
     <h2>You may also like</h2>
     <div class="grid grid--4" style="margin-top: 16px;">
+      <div class="card"><div class="ph ph--photo">FACE</div><h3>Face Sticker</h3><p class="muted">$18.99 CAD</p></div>
       <div class="card"><div class="ph ph--photo">FULL BODY</div><h3>Full Body Sticker</h3><p class="muted">$18.99 CAD</p></div>
-      <div class="card"><div class="ph ph--photo">SHAPE</div><h3>Shape Sticker</h3><p class="muted">$18.99 CAD</p></div>
-      <div class="card"><div class="ph ph--photo">PKG MINI</div><h3>Package Mini</h3><p class="muted">$24.99 CAD</p></div>
       <div class="card"><div class="ph ph--photo">PKG FULL</div><h3>Package Full</h3><p class="muted">$34.99 CAD</p></div>
+      <div class="card"><div class="ph ph--photo">PKG MINI</div><h3>Package Mini</h3><p class="muted">$24.99 CAD</p></div>
     </div>
   </div>
 </section>
 
-<!-- footer -->
+<!-- footer (live Shop column: no Shape) -->
 <section class="ws" data-block="footer">
   <div class="ws-inner">
     <div class="footer-bar">
       <div class="jumbo">MADE TO KEEP &nbsp;|&nbsp; MOMENTS THAT MATTER</div>
       <div class="grid grid--4" style="gap: 32px; margin-bottom: 24px;">
-        <div><h4>Shop</h4><a>Face Sticker</a><a>Full Body Sticker</a><a>Shape Sticker</a><a>Package Mini</a><a>Package Full</a></div>
+        <div><h4>Shop</h4><a>Face Sticker</a><a>Full Body Sticker</a><a>Package Mini</a><a>Package Full</a></div>
         <div><h4>Help</h4><a>Shipping &amp; Pickup</a><a>Refund Policy</a><a>FAQ</a><a>Contact</a></div>
-        <div><h4>Brand</h4><a>About</a><a>Privacy</a><a>Terms</a><a>Sizing guide</a></div>
+        <div><h4>Brand</h4><a>About</a><a>Privacy</a><a>Terms</a></div>
         <div>
           <h4>Newsletter</h4>
           <p class="muted" style="color: #888; font-size: 12px;">Get 10% off your first order.</p>
@@ -264,32 +291,59 @@
 
 <section class="ws" data-block="product-information (stacked)">
   <div class="ws-inner stack">
-    <div class="ph ph--photo-square">MAIN IMAGE</div>
+    <div class="ph ph--photo-square">MAIN · FACE STICKER SHEET</div>
     <div class="row" style="gap: 6px; overflow-x: auto;">
-      <div class="ph" style="min-width: 60px; height: 60px;">T1</div>
-      <div class="ph" style="min-width: 60px; height: 60px;">T2</div>
-      <div class="ph" style="min-width: 60px; height: 60px;">T3</div>
-      <div class="ph" style="min-width: 60px; height: 60px;">T4</div>
+      <div class="ph" style="min-width: 60px; height: 60px;">PHONE</div>
+      <div class="ph" style="min-width: 60px; height: 60px;">DETAIL</div>
+      <div class="ph" style="min-width: 60px; height: 60px;">LAPTOP</div>
+      <div class="ph" style="min-width: 60px; height: 60px;">PLANNER</div>
     </div>
     <h1 data-block="product-title">Face Sticker</h1>
-    <p class="muted">Face or upper-body crop · A5 sheet</p>
-    <p data-block="price" style="font-size: 22px; font-weight: 600;">from $18.99 CAD</p>
+    <p class="muted">A5 face cutout sticker sheet</p>
+    <p data-block="price" style="font-size: 22px; font-weight: 600;">$18.99 CAD</p>
+    <p class="muted" data-warn="PROPOSED">★★★★★ · reviews (Judge.me) — PROPOSED</p>
     <hr class="divider">
-    <div class="field"><label>Size</label><select><option>1" / 25mm (default)</option></select></div>
     <div class="field"><label>Material</label><select><option>White Matte</option></select></div>
-    <div class="field"><label>Photos to include</label><select><option>1 (default)</option></select></div>
-    <div data-warn="needs Easify app or custom Liquid">
-      <div class="field"><label>Upload your photos · 1–13</label><div class="file-upload">📎 Tap to upload · JPG / JPEG / PNG / HEIC up to 100 MB</div></div>
+    <div class="field"><label>Size</label><select><option>1" / 25mm</option><option>… + Mixed</option></select></div>
+    <div data-warn="LIVE · Easify">
+      <div class="note">Live via Easify app (JS-rendered). Before Add to cart: Photos to include (+$3 each) · upload · name · notes.</div>
+      <div class="field"><label>Photos to include</label><select><option>1</option></select></div>
+      <div class="field"><label>Upload your photo(s)</label><div class="file-upload">📎 Tap to upload · up to 100 MB</div></div>
+      <div class="field"><label>Header name</label><input class="input" placeholder="e.g. Roun"></div>
+      <div class="field"><label>Notes</label><textarea rows="3"></textarea></div>
     </div>
-    <div class="field"><label>Header name</label><input class="input" placeholder="e.g. Roun"></div>
-    <div class="field"><label>Notes</label><textarea rows="3"></textarea></div>
-    <a class="btn btn--block">Add to cart — from $18.99</a>
+    <a class="btn btn--block">Add to cart</a>
     <a class="btn btn--block" style="background: #5a31f4; border-color: #5a31f4;">Buy with Shop Pay</a>
-    <details class="acc" open><summary>What you get</summary><div class="acc-body">A5 sheet · face/upper-body crop · your selected photos &amp; size · header w/ name + date · hand-cut Toronto.</div></details>
-    <details class="acc"><summary>Materials &amp; sizes</summary><div class="acc-body">4 substrates · 0.75"–2.5" (inch/mm).</div></details>
-    <details class="acc"><summary>Care &amp; lifespan</summary><div class="acc-body">Indoor 5+ yr · waterproof · hand wash.</div></details>
-    <details class="acc"><summary>Lead time &amp; shipping</summary><div class="acc-body">2–5 business days · free Canada-wide.</div></details>
-    <details class="acc"><summary>Photo guidelines</summary><div class="acc-body">Bright, in-frame, low blur.</div></details>
+
+    <div data-warn="PROPOSED">
+      <div class="row row--wrap" style="gap: 8px; border: 1px solid #ddd; padding: 10px; font-size: 11px;"><span>✓ Made-right</span><span>✓ Free shipping</span><span>✓ Photos private</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="ws" data-block="product-description · long-form (live order)">
+  <div class="ws-inner stack">
+    <div class="eyebrow">Description · as on live (in order)</div>
+    <p class="muted">What you get · Photo tip · Best for · Safety and age guidance · Materials · Sizes · Care &amp; lifespan · Lead time &amp; shipping · Photo guidelines</p>
+    <hr class="divider">
+    <div class="ph ph--photo-wide">"Their face, kept." · lifestyle</div>
+    <h4>Choose your options</h4>
+    <div class="ph ph--photo-wide">SIZE COMPARISON</div>
+    <div class="ph ph--photo-wide">MATERIAL SAMPLES</div>
+    <h4>One sheet, one size</h4>
+    <p class="muted">Per-size preview + counts.</p>
+    <h4>By the longest edge</h4>
+    <h4>Before you order — a few notes</h4>
+    <h4>Send a sharp photo</h4>
+    <div class="row" style="gap: 8px;"><div class="card" style="flex:1;"><div class="ph ph--photo-square">✓ WORKS</div></div><div class="card" style="flex:1;"><div class="ph ph--photo-square">✕ HARD</div></div></div>
+    <h4>Screen color and print color</h4>
+  </div>
+</section>
+
+<section class="ws" data-block="product-reviews (Judge.me)" data-warn="PROPOSED">
+  <div class="ws-inner stack">
+    <h4>★★★★★ Reviews — PROPOSED (not on live)</h4>
+    <div class="card"><p class="muted">★★★★★</p><p>"Customer quote."</p><div class="ph ph--photo-square">UGC PHOTO</div><p class="muted">— Name · City</p></div>
   </div>
 </section>
 
@@ -297,7 +351,7 @@
   <div class="ws-inner stack">
     <h2>You may also like</h2>
     <div class="card"><div class="ph ph--photo">FULL BODY</div><h3>Full Body Sticker</h3><p class="muted">$18.99</p></div>
-    <div class="card"><div class="ph ph--photo">PKG MINI</div><h3>Package Mini</h3><p class="muted">$24.99</p></div>
+    <div class="card"><div class="ph ph--photo">PKG FULL</div><h3>Package Full</h3><p class="muted">$34.99</p></div>
   </div>
 </section>
 
@@ -305,8 +359,8 @@
   <div class="ws-inner">
     <div class="footer-bar">
       <div class="jumbo" style="font-size: 18px;">MADE TO KEEP</div>
-      <details class="acc"><summary>Shop</summary><div class="acc-body">Face · Full Body · Shape · Package Mini · Package Full</div></details>
-      <details class="acc"><summary>Help</summary><div class="acc-body">Shipping · Refund · FAQ</div></details>
+      <details class="acc"><summary>Shop</summary><div class="acc-body">Face · Full Body · Package Mini · Package Full</div></details>
+      <details class="acc"><summary>Help</summary><div class="acc-body">Shipping · Refund · FAQ · Contact</div></details>
       <details class="acc"><summary>Brand</summary><div class="acc-body">About · Privacy · Terms</div></details>
       <div class="muted" style="color: #888; margin-top: 16px;">© 2026 Everstory Studio</div>
     </div>

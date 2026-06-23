@@ -13,7 +13,7 @@ Shopify 어드민 → Settings → Policies 에 4개 페이지로 등록. Refund
 ```
 Last updated: [YYYY-MM-DD]
 
-Every Everstory Studio order is made to order. Each sticker sheet is custom designed and hand cut as soon as your order arrives. To keep our turnaround fast, we begin work within one business day. Please review this policy carefully before ordering.
+Every Everstory Studio order is made to order. Each sticker sheet is custom designed and cut to order as soon as your order arrives. To keep our turnaround fast, we begin work within one business day. Please review this policy carefully before ordering.
 
 CANCELLATION
 

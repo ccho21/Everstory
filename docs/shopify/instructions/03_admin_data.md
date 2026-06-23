@@ -68,7 +68,7 @@ Create manual collection:
 |-------|-------|
 | Title | `Photo Sheets` |
 | Handle | `photo-sheets` |
-| Description | `A5 custom photo sticker sheets, hand cut in Toronto.` |
+| Description | `A5 custom photo sticker sheets, made with care in Toronto.` |
 | Products | Face Sticker, Full Body Sticker, Shape Sticker, Package Mini, Package Full |
 | Sort | Manual, in the product order above |
 | SEO title | `Photo Sheets | Everstory Studio` |

@@ -79,6 +79,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
     - [pages_copy.md](docs/shopify/pages_copy.md) — About/FAQ/가이드/Contact 페이지 카피
     - [product_descriptions.md](docs/shopify/product_descriptions.md) — 5 SKU 상품 설명
     - [footer_copy.md](docs/shopify/footer_copy.md) — 한국어 footer 카피
+    - [photo_shotlist.md](docs/shopify/photo_shotlist.md) — 촬영 체크리스트 (증거샷·de-baby 균형·페이지 슬롯 매핑)
   - **정책**
     - [policies.md](docs/shopify/policies.md) — 환불/배송 정책 본문
   - **시안**

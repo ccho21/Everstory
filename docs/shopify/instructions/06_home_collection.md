@@ -19,7 +19,7 @@ Hero:
 
 | Field | Value |
 |-------|-------|
-| Heading | `Photographs, kept by hand.` |
+| Heading | `Photographs, kept with care.` |
 | Body | `A5 custom photo sticker sheets, made in Toronto and finished one by one.` |
 | Primary button | `Shop photo sheets` -> `/collections/photo-sheets` |
 | Secondary button | `How it works` -> `#how-it-works` |
@@ -30,7 +30,7 @@ How it works:
 |------|------|
 | 1 | Choose Face, Full Body, Shape, or a curated Package. |
 | 2 | Upload photos and add crop notes. |
-| 3 | We hand-cut, print, and ship from Toronto. |
+| 3 | We cut out with care, print, and ship from Toronto. |
 
 Featured collection:
 

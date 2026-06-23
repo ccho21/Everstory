@@ -107,10 +107,49 @@ Judge.me 설치 시 테마에 **app embed + app blocks** 가 추가된다. Theme
 
 ✅ **Checkpoint**: 상품 페이지 preview 에서 — 가격 아래 별점 배지(리뷰 0개면 "No reviews yet" 또는 빈 별), 상품 설명 아래 리뷰 위젯 영역이 보임.
 
-## Step 10.5 — 시딩 / 임포트 (선택)
+## Step 10.5 — 시딩 / 임포트 + Founding-customer 오퍼
 
-- **기존 리뷰 이전**: Judge.me → **Import** → CSV 업로드 (무료 플랜 CSV import 지원).
-- **런칭 시 리뷰 0개**: 첫 실주문 fulfillment 후 자동 요청 이메일로 자연 수집. 초기엔 샘플을 받은 지인/베타 고객에게 **사진 포함 리뷰**를 요청해 갤러리를 비우지 않게 한다.
+자동 요청 이메일(Step 10.3)은 fulfilled 주문에 자동 발송된다. 아래는 **런칭 직후 갤러리를 비우지 않기 위한 수동 시딩 + 오퍼** — 10.3 과 중복이 아니라 보완이다.
+
+**(a) 기존 리뷰 이전 (있으면)**
+
+- Judge.me → **Import** → CSV 업로드 (무료 플랜 CSV import 지원).
+
+**(b) 지인 · 첫 고객 개인 요청 (DM·이메일)**
+
+샘플을 받은 지인/베타 고객에게 **사진 포함 리뷰**를 직접 요청해 초기 갤러리를 채운다.
+
+EN:
+
+```
+Hi [name] — you've got one of the very first Everstory sheets. Would you leave a quick review with a photo of it in real life? Honest is perfect — it helps the next person picture their own keepsake. Here's the link: [review link]. Thank you for being first.
+```
+
+KR:
+
+```
+[이름]님, 에버스토리 초기 시트 받으신 분이에요. 실제로 쓰는 사진 한 장이랑 짧은 후기 남겨주실 수 있을까요? 솔직한 후기가 다음 분께 제일 도움이 됩니다. 링크: [링크]. 첫 손님이 되어주셔서 감사해요.
+```
+
+**(c) Founding-customer 오퍼 (첫 100 주문)**
+
+첫 **100 주문** 고객에게 **사진 포함 후기 → 다음 주문 15% off**. 사진 UGC 가 목표이므로 "사진 포함" 을 조건으로 명시한다. 후기 사진 재게시는 **opt-in** (고객 동의 시에만).
+
+EN:
+
+```
+You're one of our first 100 orders — thank you. Leave a review with a photo of your stickers and we'll send you 15% off your next order. (With your OK, we may feature your photo on our page.)
+```
+
+KR:
+
+```
+에버스토리 첫 100 주문 고객님이세요 — 감사합니다. 스티커 실물 사진과 함께 후기를 남겨주시면 다음 주문에 쓰실 수 있는 15% 할인을 보내드려요. (동의해주시면 후기 사진을 저희 페이지에 소개할 수도 있어요.)
+```
+
+> 무료 플랜은 리뷰→쿠폰 자동 발급이 없다. 운영: 사진 후기가 올라오면 **수동으로** Shopify **Discounts** 에서 15% 할인 코드를 만들어 고객에게 발송하거나, 공용 코드 1개를 first-100 안내에 동봉한다. 재게시 동의가 있으면 해당 사진을 상품/About 페이지 UGC 로 사용한다.
+
+✅ **Checkpoint**: 런칭 1–2주 내 **사진 포함 리뷰 ≥ 5건** 목표 (별점 갤러리가 비어 보이지 않는 최소선).
 
 ## 종료 검증 체크리스트
 
@@ -122,6 +161,7 @@ Judge.me 설치 시 테마에 **app embed + app blocks** 가 추가된다. Theme
 - [ ] 상품 페이지: 가격 아래 Preview Badge + 하단 Review Widget 노출
 - [ ] 테스트 주문 1건 fulfill → 7일 후(또는 수동 트리거) 요청 이메일 수신 확인
 - [ ] 테스트 리뷰 1건(사진 포함) 작성 → 위젯·별점 배지에 반영
+- [ ] (런칭 후) 지인·첫 고객 시딩 요청 발송 + founding-customer 오퍼(첫 100 · 사진 후기 → 15% off) 안내 — Step 10.5
 
 ## 🛟 자주 막히는 지점
 
