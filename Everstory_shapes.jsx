@@ -15,7 +15,7 @@
 //   → 도형으로 클립 → 뒤 배경색 채움
 //   (_clean.psd 는 Phase A 에서 trim 안 됨 → 캔버스 바닥 ≠ 피사체 바닥. 그래서 _sil 기준.)
 //
-// 미구현(다음 증분): 브랜드 템플릿(info>body) 연동, 사진 embed(현재 linked place),
+// 미구현(다음 증분): 브랜드 템플릿(info>body)·헤더 연동, unique 페어 embed 캐시(현재 셀마다 embed),
 //   디자인별 반복 cap / aspect 별 도형 자동선택, 옆면 hBias 자동, 얼굴 1클릭 UI.
 //
 // 사용: File → Scripts → Other Script → Everstory_shapes.jsx
@@ -197,7 +197,7 @@
     bg.filled  = true;
     bg.fillColor = _rgb(opt.bg);
 
-    // ② 사진 place (linked) + 얼굴 기준 fill
+    // ② 사진 place + 얼굴 기준 fill
     doc.activeLayer = printLayer;
     var photo = printLayer.placedItems.add();
     photo.file = pair.clean;
@@ -219,10 +219,20 @@
     var shapeBottom = cy - D / 2;
     photo.top = shapeBottom - BLEED * D + bottomFrac * ph;   // 피사체 바닥 = shapeBottom - BLEED*D
 
-    // ③ 클립 그룹: [clip(앞) · 사진 · 배경(뒤)]
+    // embed(기본) — 링크 깨짐 방지. embed 후 bounds 로 재탐색(Everstory_mixed 방식).
+    //   v0 는 셀마다 embed. linked 모드(체크 해제)는 합성만 빠르게 검증할 때.
+    var art = photo;
+    if (opt.embed) {
+      var pL = photo.left, pT = photo.top, pW = photo.width, pH = photo.height;
+      photo.embed();
+      art = _findEmbeddedNear(printLayer, pL, pT, pW, pH);
+      if (!art) throw new Error("embed 재탐색 실패 (" + pair.base + ")");
+    }
+
+    // ③ 클립 그룹: [clip(앞) · art · 배경(뒤)]
     var grp = printLayer.groupItems.add();
     bg.move(grp, ElementPlacement.PLACEATEND);
-    photo.move(grp, ElementPlacement.PLACEATBEGINNING);
+    art.move(grp, ElementPlacement.PLACEATBEGINNING);
     var clip = _makeShape(printLayer, opt.shape, D, cx, cy);
     clip.move(grp, ElementPlacement.PLACEATBEGINNING);
     clip.clipping = true;
@@ -328,6 +338,47 @@
       };
     } finally {
       try { tmp.close(SaveOptions.DONOTSAVECHANGES); } catch (e2) {}
+    }
+  }
+
+
+  // ═══════════════════════════════════════════════════════
+  //  EMBED 재탐색 (Everstory_mixed _stripEmbeddedPSDPathsNear 차용)
+  //  embed 후 placedItem 핸들이 무효 → bounds 매칭으로 결과(그룹/raster) 재탐색.
+  // ═══════════════════════════════════════════════════════
+  function _findEmbeddedNear(layer, L, T, W, H) {
+    for (var i = 0; i < layer.groupItems.length; i++) {
+      var g = layer.groupItems[i];
+      if (g.clipped) continue;                              // 이미 만든 클립 그룹 제외
+      if (_boundsMatch(g.geometricBounds, L, T, W, H)) { _stripPSDPaths(g); return g; }
+    }
+    for (var k = 0; k < layer.rasterItems.length; k++) {    // 단일 raster 로 embed 된 경우
+      if (_boundsMatch(layer.rasterItems[k].geometricBounds, L, T, W, H)) return layer.rasterItems[k];
+    }
+    return null;
+  }
+
+  function _boundsMatch(b, L, T, W, H) {
+    var w = b[2] - b[0], h = b[1] - b[3];
+    return Math.abs(b[0] - L) < 1 && Math.abs(b[1] - T) < 1 &&
+           Math.abs(w - W) < 1 && Math.abs(h - H) < 1;
+  }
+
+  function _stripPSDPaths(group) {
+    if (group.pathItems) {
+      for (var i = group.pathItems.length - 1; i >= 0; i--) {
+        try { if (!group.pathItems[i].clipping) group.pathItems[i].remove(); } catch (e) {}
+      }
+    }
+    if (group.compoundPathItems) {
+      for (var j = group.compoundPathItems.length - 1; j >= 0; j--) {
+        try { group.compoundPathItems[j].remove(); } catch (e2) {}
+      }
+    }
+    if (group.groupItems) {
+      for (var g = group.groupItems.length - 1; g >= 0; g--) {
+        try { _stripPSDPaths(group.groupItems[g]); } catch (e3) {}
+      }
     }
   }
 
@@ -452,6 +503,9 @@
     var fC = g4.add("edittext", undefined, String(DEF_CROP)); fC.preferredSize = [60, 22];
     g4.add("statictext", undefined, "당김 — 작을수록 얼굴 큼");
 
+    var embedChk = dlg.add("checkbox", undefined, "사진 embed (해제 시 linked — 합성만 빠르게 확인)");
+    embedChk.value = true;
+
     var pp = dlg.add("panel", undefined, "사용할 페어 (multi-select)");
     pp.orientation = "column"; pp.alignChildren = "fill";
     pp.margins = [12, 16, 12, 12]; pp.spacing = 6;
@@ -504,6 +558,7 @@
       bgName:  BG_NAMES[bgIdx],
       cropPct: _num(fC.text, DEF_CROP),
       faceX:   DEF_FACE_X,
+      embed:   embedChk.value,
       selectedPairs: selectedPairs
     };
   }
