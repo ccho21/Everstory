@@ -15,7 +15,7 @@
 //   → 도형으로 클립 → 뒤 배경색 채움
 //   (_clean.psd 는 Phase A 에서 trim 안 됨 → 캔버스 바닥 ≠ 피사체 바닥. 그래서 _sil 기준.)
 //
-// 미구현(다음 증분): 브랜드 템플릿(info>body)·헤더 연동, unique 페어 embed 캐시(현재 셀마다 embed),
+// 미구현(다음 증분): unique 페어 embed 캐시(현재 셀마다 embed),
 //   디자인별 반복 cap / aspect 별 도형 자동선택, 옆면 hBias 자동, 얼굴 1클릭 UI.
 //
 // 사용: File → Scripts → Other Script → Everstory_shapes.jsx
@@ -47,10 +47,11 @@
   var HBIAS = 0.0;       // 옆면 looking room (v0 수동, 기본 0)
   var BLEED = 0.02;      // 하단 블리드 — 피사체 바닥을 도형 바닥 살짝 아래로 → 하단 여백 0
 
-  // A5 시트
+  // 시트 — 브랜드 템플릿(template_cutout_v2.ait) info>body 를 packing 영역으로 사용.
+  //   A5_W/H 는 참고용 (실제 문서 크기는 .ait 가 결정).
   var A5_W_MM = 148, A5_H_MM = 210;
-  var SHEET_MARGIN_MM = 5;   // 시트 외곽 여백
-  var SHEET_GAP_MM = 3;      // 셀 간 최소 간격
+  var BODY_PADDING_MM = 2;     // info>body 내부 여백 (sheet_tokens: body_padding_mm)
+  var SHEET_GAP_MM    = 2.5;   // 셀 간 최소 간격   (sheet_tokens: gap_mm)
 
   // 1) 폴더 선택 + 페어 수집
   var folder = Folder.selectDialog("02_cutout 폴더 선택 (_clean.psd + _sil.png 페어)");
@@ -91,39 +92,63 @@
   // ═══════════════════════════════════════════════════════
   function _buildSheet(opt, folder, noSil) {
     var D   = opt.sizeMm * MM_TO_PT;
-    var pad = SHEET_MARGIN_MM * MM_TO_PT;
+    var pad = BODY_PADDING_MM * MM_TO_PT;
     var gap = SHEET_GAP_MM * MM_TO_PT;
-    var aw  = A5_W_MM * MM_TO_PT;
-    var ah  = A5_H_MM * MM_TO_PT;
 
-    var doc = app.documents.add(DocumentColorSpace.RGB, aw, ah);
-    try { doc.rasterEffectSettings.resolution = 300; } catch (eR) {}
+    // 브랜드 템플릿 열기
+    var templateFile = _resolveTemplate();
+    if (!templateFile || !templateFile.exists) {
+      alert("template_cutout_v2.ait 를 찾을 수 없습니다.\n" +
+            "스크립트와 같은 위치의 templates/ 폴더를 확인하세요.");
+      return;
+    }
+    var doc = _openTemplateDoc(templateFile);
 
-    var ab = doc.artboards[0].artboardRect;   // [L, T, R, B]  (T > B)
-    var abL = ab[0], abT = ab[1], abR = ab[2], abB = ab[3];
+    // info>body packing 영역, info>header>header_right 헤더 TextFrame
+    var bodyPath, headerText;
+    try {
+      bodyPath   = _findInfoPath(doc, "body");
+      headerText = _findInfoPath(doc, "header_right");
+      if (headerText.typename !== "TextFrame")
+        throw new Error("info > header > header_right 가 TextFrame 이 아닙니다 (현재: " +
+          headerText.typename + "). 템플릿에서 같은 이름의 다른 오브젝트를 제거하세요.");
+    } catch (eTmpl) {
+      alert(eTmpl.message);
+      try { doc.close(SaveOptions.DONOTSAVECHANGES); } catch (ec) {}
+      return;
+    }
 
     var printLayer = doc.layers.add(); printLayer.name = "PrintData";
     var kissLayer  = doc.layers.add(); kissLayer.name  = "KissCut";
     var cutSpot = _ensureCutContour(doc);
 
-    var binW = (abR - abL) - 2 * pad;
-    var binH = (abT - abB) - 2 * pad;
+    // body bbox → packing bin (기존 abL/abT 대신 body PathItem 기준)
+    var bb = bodyPath.geometricBounds;   // [L, T, R, B]  (T > B, y-up)
+    var bL = bb[0], bT = bb[1], bR = bb[2], bB = bb[3];
+    var binW = (bR - bL) - 2 * pad;
+    var binH = (bT - bB) - 2 * pad;
+
+    if (binW <= 0 || binH <= 0) {
+      alert("info > body 영역이 BODY_PADDING_MM 보다 작습니다.");
+      try { doc.close(SaveOptions.DONOTSAVECHANGES); } catch (ec2) {}
+      return;
+    }
 
     var cells = _gridCells(binW, binH, D, gap);
     if (cells.length === 0) {
       try { doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eClose) {}
-      alert("이 사이즈는 A5 한 셀도 안 들어갑니다. 더 작은 사이즈를 고르세요.");
+      alert("이 사이즈는 body 영역에 한 셀도 안 들어갑니다. 더 작은 사이즈를 고르세요.");
       return;
     }
 
     var sel = opt.selectedPairs;
     var placed = 0, failed = 0;
     for (var i = 0; i < cells.length; i++) {
-      var pair = sel[i % sel.length];               // 슬롯 round-robin
-      var cellLeftX = abL + pad + cells[i].x;        // 셀 좌상단 (x 오른쪽)
-      var cellTopY  = (abT - pad) - cells[i].y;      // 셀 좌상단 (y 아래로 감소)
+      var pair = sel[i % sel.length];                // 슬롯 round-robin
+      var cellLeftX = bL + pad + cells[i].x;         // 셀 좌상단 (x 오른쪽, body 기준)
+      var cellTopY  = bT - pad - cells[i].y;         // 셀 좌상단 (y 아래로 감소)
       var ccx = cellLeftX + D / 2;
-      var ccy = cellTopY - D / 2;
+      var ccy = cellTopY  - D / 2;
       try {
         _composeStickerAt(doc, printLayer, kissLayer, cutSpot, pair, opt, ccx, ccy, D);
         placed++;
@@ -134,6 +159,9 @@
 
     try { kissLayer.move(doc, ElementPlacement.PLACEATBEGINNING); } catch (eK) {}
     doc.selection = null;
+
+    // 헤더 주입 (info > header > header_right)
+    _drawHeader(opt, sel.length, headerText);
 
     // 저장
     var savedPath = "", saveErr = "";
@@ -151,16 +179,17 @@
     var rows = (cols > 0) ? Math.round(cells.length / cols) : 0;
 
     alert(
-      "완료: 도형 스티커 시트 (PoC)\n\n" +
+      "완료: 도형 스티커 시트\n\n" +
       "도형: " + opt.shape + "  /  사이즈: " + opt.sizeMm + "mm  /  배경: " + opt.bgName + "  /  크롭 " + opt.cropPct + "%\n" +
       "격자: " + cols + "×" + rows + " = " + cells.length + " 슬롯  /  선택 디자인 " + sel.length + "개\n" +
       "배치: " + placed + "개" + (failed > 0 ? ("  (실패 " + failed + ")") : "") +
-        (sel.length > cells.length ? ("  / 슬롯 초과로 미배치 디자인 " + (sel.length - cells.length) + "개") : "") + "\n" +
+        (sel.length > cells.length ? ("  / 슬롯 초과 미배치 " + (sel.length - cells.length) + "개") : "") + "\n" +
       (noSil > 0 ? ("⚠ _sil 없는 디자인 " + noSil + "개 — 캔버스 바닥 폴백(하단 여백 생길 수 있음)\n") : "") +
-      "레이어: KissCut(CutContour) > PrintData(셀별 clip group: 사진 + 배경)\n\n" +
+      "사진: " + (opt.embed ? "embed" : "linked") + "  /  템플릿: template_cutout_v2.ait\n" +
+      "헤더: " + (opt.customerName || "—") + " • " + opt.shape + " • " + opt.sizeMm + "mm 주입 완료\n\n" +
       (savedPath ? ("저장: " + savedPath) :
                    ("저장 실패: " + (saveErr || "unknown") + " — 직접 저장하세요.")) + "\n\n" +
-      "확인: 칼선=사진 외곽 정합 / 하단 여백 0 / 얼굴 위쪽 / 배경 채움 / 셀 간격."
+      "확인: 칼선=도형 외곽 정합 / 하단 여백 0 / 얼굴 위쪽 / 배경 채움 / 헤더 텍스트."
     );
   }
 
@@ -476,6 +505,130 @@
     return c;
   }
 
+  function _todayStr() {
+    var d = new Date();
+    function p(n) { return (n < 10 ? "0" : "") + n; }
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+
+
+  // ═══════════════════════════════════════════════════════
+  //  BRAND TEMPLATE (template_cutout_v2.ait)
+  //  — Everstory_mixed.jsx 방식 그대로. info>body packing 영역, header_right 헤더 주입.
+  // ═══════════════════════════════════════════════════════
+  function _resolveTemplate() {
+    var scriptDir = (new File($.fileName)).parent;
+    var candidates = [
+      scriptDir.fsName + "/templates/template_cutout_v2.ait",
+      scriptDir.parent.fsName + "/templates/template_cutout_v2.ait"
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+      var f = new File(candidates[i]);
+      if (f.exists) return f;
+    }
+    return File.openDialog("template_cutout_v2.ait 위치 선택", "*.ait");
+  }
+
+  function _openTemplateDoc(templateFile) {
+    var doc = app.open(templateFile);
+    try {
+      var rfx = doc.rasterEffectSettings;
+      rfx.colorModel = RasterizationColorModel.DEFAULTCOLORMODEL;
+      rfx.resolution = 300;
+    } catch (e) {}
+    return doc;
+  }
+
+  function _findInfoPath(doc, pathName) {
+    var infoLayer = null;
+    for (var i = 0; i < doc.layers.length; i++) {
+      if (doc.layers[i].name.toLowerCase() === "info") {
+        infoLayer = doc.layers[i]; break;
+      }
+    }
+    if (!infoLayer) throw new Error("템플릿에 'info' 레이어가 없습니다");
+    var item = _deepFindByName(infoLayer, pathName);
+    if (!item) throw new Error("info 레이어 안에 '" + pathName + "' 가 없습니다");
+    return item;
+  }
+
+  function _deepFindByName(container, name) {
+    if (container.pathItems) {
+      for (var i = 0; i < container.pathItems.length; i++)
+        if (container.pathItems[i].name === name) return container.pathItems[i];
+    }
+    if (container.compoundPathItems) {
+      for (var j = 0; j < container.compoundPathItems.length; j++)
+        if (container.compoundPathItems[j].name === name) return container.compoundPathItems[j];
+    }
+    if (container.textFrames) {
+      for (var t = 0; t < container.textFrames.length; t++)
+        if (container.textFrames[t].name === name) return container.textFrames[t];
+    }
+    if (container.groupItems) {
+      for (var g = 0; g < container.groupItems.length; g++) {
+        var found = _deepFindByName(container.groupItems[g], name);
+        if (found) return found;
+      }
+    }
+    if (container.layers) {
+      for (var L = 0; L < container.layers.length; L++) {
+        var foundL = _deepFindByName(container.layers[L], name);
+        if (foundL) return foundL;
+      }
+    }
+    return null;
+  }
+
+  function _drawHeader(opt, designCount, headerText) {
+    var line1 = _nfcHangul(opt.customerName || "—") + " • " + opt.shape + " • " + opt.sizeMm + "mm";
+    var line2 = designCount + " design(s)";
+    var line3 = "date: " + (opt.orderDate || _todayStr());
+    headerText.contents = line1 + "\r" + line2 + "\r" + line3;
+    _applyHangulFontOverride(headerText, _resolveHangulFont());
+  }
+
+  function _nfcHangul(s) {
+    if (!s) return s;
+    var out = "", i = 0;
+    while (i < s.length) {
+      var L = s.charCodeAt(i);
+      if (L >= 0x1100 && L <= 0x1112 && i + 1 < s.length) {
+        var V = s.charCodeAt(i + 1);
+        if (V >= 0x1161 && V <= 0x1175) {
+          var T = 0, step = 2;
+          if (i + 2 < s.length) {
+            var Tc = s.charCodeAt(i + 2);
+            if (Tc >= 0x11A8 && Tc <= 0x11C2) { T = Tc - 0x11A7; step = 3; }
+          }
+          out += String.fromCharCode(0xAC00 + (L - 0x1100) * 21 * 28 + (V - 0x1161) * 28 + T);
+          i += step; continue;
+        }
+      }
+      out += s.charAt(i); i++;
+    }
+    return out;
+  }
+
+  function _resolveHangulFont() {
+    var candidates = ["TTOmniGothicL", "AppleSDGothicNeo-Bold", "AppleSDGothicNeo-SemiBold", "AppleGothic"];
+    for (var i = 0; i < candidates.length; i++) {
+      try { return app.textFonts.getByName(candidates[i]); } catch (e) {}
+    }
+    return null;
+  }
+
+  function _applyHangulFontOverride(textFrame, hangulFont) {
+    if (!hangulFont) return;
+    var s = textFrame.contents;
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      if ((c >= 0xAC00 && c <= 0xD7AF) || (c >= 0x1100 && c <= 0x11FF) || (c >= 0x3130 && c <= 0x318F)) {
+        try { textFrame.textRange.characters[i].textFont = hangulFont; } catch (e) {}
+      }
+    }
+  }
+
 
   // ═══════════════════════════════════════════════════════
   //  DIALOG
@@ -502,6 +655,13 @@
     var g4 = dlg.add("group"); g4.add("statictext", undefined, "크롭 %");
     var fC = g4.add("edittext", undefined, String(DEF_CROP)); fC.preferredSize = [60, 22];
     g4.add("statictext", undefined, "당김 — 작을수록 얼굴 큼");
+
+    var g5 = dlg.add("group"); g5.add("statictext", undefined, "고객 이름");
+    var fName = g5.add("edittext", undefined, ""); fName.preferredSize = [180, 22];
+
+    var g6 = dlg.add("group"); g6.add("statictext", undefined, "날짜");
+    var fDate = g6.add("edittext", undefined, _todayStr()); fDate.preferredSize = [120, 22];
+    g6.add("statictext", undefined, "헤더 표기용");
 
     var embedChk = dlg.add("checkbox", undefined, "사진 embed (해제 시 linked — 합성만 빠르게 확인)");
     embedChk.value = true;
@@ -552,13 +712,15 @@
 
     var bgIdx = bgDd.selection.index;
     return {
-      shape:   SHAPE_OPTIONS[shapeDd.selection.index],
-      sizeMm:  SIZE_MM[sizeDd.selection.index],
-      bg:      BG_RGB[bgIdx],
-      bgName:  BG_NAMES[bgIdx],
-      cropPct: _num(fC.text, DEF_CROP),
-      faceX:   DEF_FACE_X,
-      embed:   embedChk.value,
+      shape:        SHAPE_OPTIONS[shapeDd.selection.index],
+      sizeMm:       SIZE_MM[sizeDd.selection.index],
+      bg:           BG_RGB[bgIdx],
+      bgName:       BG_NAMES[bgIdx],
+      cropPct:      _num(fC.text, DEF_CROP),
+      faceX:        DEF_FACE_X,
+      embed:        embedChk.value,
+      customerName: fName.text.replace(/^\s+|\s+$/g, ""),
+      orderDate:    fDate.text.replace(/^\s+|\s+$/g, ""),
       selectedPairs: selectedPairs
     };
   }
