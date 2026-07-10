@@ -11,9 +11,18 @@ Shopify 어드민 → Settings → Policies 에 4개 페이지로 등록. Refund
 ## 1. Refund Policy
 
 ```
-Last updated: [YYYY-MM-DD]
+Last updated: 2026-07-08
 
 Every Everstory Studio order is made to order. Each sticker sheet is custom designed and cut to order as soon as your order arrives. To keep our turnaround fast, we begin work within one business day. Please review this policy carefully before ordering.
+
+MADE-RIGHT PROMISE
+
+Every cutout is done with care, every sheet made to order — and we stand behind it.
+- Defects — a print or cut flaw? Email a photo within 7 days and we remake and reship, free.
+- Clearly off from your photo — if the result doesn't reflect the photo you sent, tell us and we'll make it right.
+- Lost in the mail — not delivered within 14 business days? We reprint and reship once, free.
+
+Because each sheet is custom and made to order, we can't refund a change of mind once production begins. Anything that matters — a face we shouldn't crop, a tone, a detail — please leave it in the order notes so we get it right the first time.
 
 CANCELLATION
 
@@ -30,6 +39,10 @@ If your photograph genuinely cannot be used (too low resolution, too blurry to c
 PRINT DEFECTS
 
 If your sheet arrives with a print or cutting defect — visible color shift, lamination flaws, misaligned cuts, or visible damage — we will reprint and reship at no cost. Email us within 7 days of delivery with a photo of the issue at studio.everstory@gmail.com.
+
+CLEARLY OFF FROM YOUR PHOTO
+
+If the finished sheet clearly doesn't reflect the photo and notes you submitted — the wrong subject, a mismatched crop, or another production error — tell us within 7 days of delivery and we'll remake it or refund you, free. This is different from personal preference about how a correctly-made sticker turned out (see below): it covers cases where the result doesn't match what you actually sent us.
 
 PHOTO QUALITY & PERSONAL PREFERENCE
 
@@ -59,7 +72,7 @@ Everstory Studio
 ## 2. Shipping Policy
 
 ```
-Last updated: [YYYY-MM-DD]
+Last updated: 2026-07-08
 
 WHERE WE SHIP
 

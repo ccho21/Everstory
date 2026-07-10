@@ -7,9 +7,7 @@ Shopify pages copy SOT. Product-specific setup lives in [`product_descriptions.m
 **Page title**: `About Everstory Studio`
 **Handle**: `about`
 
-Everstory Studio is a small photo sticker brand based in Toronto. We make A5 custom photo sticker sheets from customer photos, finished one by one.
-
-We are not a bulk sticker factory. We clean the subject edge with care, check the crop, and choose the layout that gives the photo the best chance to feel kept, not disposable.
+**Everstory Studio** is a small Toronto studio. No dramatic origin story — just one standard we won't drop: your photo deserves better than an auto-cutout app. We do every cutout ourselves, with care — every edge, every strand of hair, every paw, masked and color-checked by a person, not an algorithm. Each sheet is then printed, precision-cut, and packed with care in Toronto. That care is the difference between a sticker and a keepsake.
 
 Our materials are Korean premium inkjet substrates finished with lamination. White Matte, Translucent, Silver, and Gold are selected for photographic print quality, durability, and a soft keepsake feel.
 

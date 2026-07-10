@@ -124,6 +124,23 @@ Clean portraits, names, small gifts, party favors, planner layouts, and packagin
 
 ---
 
+## Single vs Package
+
+**A single sticker, or a package?**
+A **single sticker** (Face / Full Body / Shape) is yours to direct — you pick the subject, the size, how many photos. A **package** is the hands-off option: upload your candidates by size tier, and we curate the strongest set for you.
+
+| | Single sticker | Package Mini | Package Full |
+|---|---|---|---|
+| Price | from $18.99 | $24.99 | $34.99 |
+| Sheets | 1 A5 | 1 A5 | 2 A5 |
+| Photos | Your photos, your size | We pick 4 from up to 10 you upload | We pick 8 from up to 17 you upload |
+| Who chooses crop & layout | You | Studio curates | Studio curates |
+| Best for | One subject, full control | A first curated set · easy gift | A bigger keepsake · multiple subjects |
+
+Packages aren't a premium upsell — they're a curated value pack. Give us a few candidates per size; we choose the crop, layout, and mix that work best together.
+
+---
+
 ## SKU 4 — Package Mini
 
 **Title**: `Package Mini`

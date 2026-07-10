@@ -157,7 +157,10 @@
       }
     }
 
+    // z-order 위→아래 = KissCut → info(템플릿) → PrintData (CLAUDE.md 고정 컨벤션).
+    // layers.add() 가 맨 위에 쌓이므로 PrintData 를 맨 아래로 내려 info 가 사진 위에 오게 한다.
     try { kissLayer.move(doc, ElementPlacement.PLACEATBEGINNING); } catch (eK) {}
+    try { printLayer.move(doc, ElementPlacement.PLACEATEND); } catch (eP) {}
     doc.selection = null;
 
     // 헤더 주입 (info > header > header_right)

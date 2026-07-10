@@ -1,0 +1,714 @@
+{
+  "anchors": {
+    "face": {
+      "name": "Image_A_face_anchor",
+      "path": "output/00_anchors/Image_A_face_anchor.png",
+      "prompt": "Create a completely fictional Korean 24-month-old toddler boy as if captured in a natural real-life candid phone photo.\n\nHe must not resemble or be based on any real existing child, celebrity, public figure, or real person.\n\nMake him look like an ordinary real-life toddler, not a perfect baby model. He should have slightly awkward but endearing facial features: a soft round toddler face, mild facial asymmetry, realistic Korean toddler proportions, natural cheeks, a small uneven smile, slightly messy fine black hair with flyaway strands, realistic ears, realistic eyes, natural baby teeth if visible, and natural skin texture.\n\nHis face should feel believable and imperfect, with subtle everyday details such as faint skin redness, tiny expression lines, soft under-eye shadows, uneven baby hair, natural facial proportions, and a relaxed candid expression.\n\nUse natural everyday lighting, like a casual phone photo taken at home or outdoors. The image should feel like a real family snapshot, with realistic focus, natural depth, ordinary clothing, and a casual background.\n\nAvoid studio lighting, perfect posing, glossy retouching, fashion editorial style, plastic-looking skin, overly smooth skin, exaggerated cuteness, doll-like features, anime style, cartoon style, or hyper-polished AI aesthetics.\n\nThe final result should be a clear face identity anchor for the same fictional Korean 24-month-old toddler boy."
+    },
+    "body": {
+      "name": "Image_B_body_anchor",
+      "path": "output/00_anchors/Image_B_body_anchor.png",
+      "prompt": "Use Image A as the facial identity reference for the same completely fictional Korean 24-month-old toddler boy.\n\nCreate a natural full-body candid phone photo of the same toddler boy standing in a relaxed ordinary pose. Preserve the same facial identity, face shape, eyes, ears, skin tone, hair texture, hairline, age, and natural toddler proportions from Image A.\n\nMake his body look like a realistic 24-month-old toddler: short toddler height, large head-to-body ratio, slightly round body, natural baby belly, realistic arms and legs, small toddler hands and feet, and a slightly awkward but natural standing posture.\n\nHe should wear simple ordinary everyday clothing that does not hide his body proportions too much. His full body should be visible from head to feet.\n\nDo not redesign him, beautify him, or turn him into a different child. Keep him as the same ordinary real-life toddler from Image A.\n\nThe image should look like a natural real-life candid phone photo, not AI-generated. Use natural everyday lighting, realistic focus, and a casual home or outdoor background.\n\nAvoid perfect studio lighting, fashion editorial posing, glossy retouching, doll-like features, overly smooth skin, plastic-looking face, exaggerated cuteness, anime style, cartoon style, or hyper-polished AI aesthetics."
+    }
+  },
+  "reference_sets": {
+    "anchor": {
+      "face": [],
+      "body": [
+        {
+          "role": "face_identity",
+          "anchor": "face"
+        }
+      ]
+    },
+    "variation": {
+      "face": [
+        {
+          "role": "face_identity",
+          "anchor": "face"
+        }
+      ],
+      "body": [
+        {
+          "role": "face_identity",
+          "anchor": "face"
+        },
+        {
+          "role": "body_proportion",
+          "anchor": "body"
+        }
+      ]
+    }
+  },
+  "identity_locks": {
+    "face": "Use Image A as the only facial identity reference for the same completely fictional Korean 24-month-old toddler boy.\n\nThis child must remain fictional and must not resemble or be based on any real existing child, celebrity, public figure, or real person. Use only Image A to preserve the fictional character identity.\n\nPreserve the same face shape, eyes, ears, nose, mouth, cheeks, skin tone, hair texture, hairline, mild facial asymmetry, age, and ordinary real-life toddler appearance.\n\nDo not redesign the child, beautify him, age him up, make him younger, change his face structure, or turn him into a different child.",
+    "body": "Use Image A as the primary facial identity reference for the same completely fictional Korean 24-month-old toddler boy.\nUse Image B only as the full-body and body proportion reference for the same fictional child.\n\nThis child must remain fictional and must not resemble or be based on any real existing child, celebrity, public figure, or real person. Use Image A to preserve facial identity and Image B to preserve body proportions.\n\nPreserve the same face shape, eyes, ears, nose, mouth, cheeks, skin tone, hair texture, hairline, mild facial asymmetry, age, toddler body proportions, head-to-body ratio, arm and leg proportions, hand and foot size, and ordinary real-life toddler appearance.\n\nDo not redesign the child, beautify him, age him up, make him younger, change his face structure, change his body type, or turn him into a different child."
+  },
+  "templates": {
+    "variation": "{identity_lock}\n\nCreate a new image of the same child with the following variation:\n\nExpression:\n{expression}\n\nPose / Action:\n{pose_action}\n\nCamera Angle:\n{camera_angle}\n\nFraming:\n{framing}\n\nClothing:\n{clothing}\n\nHairstyle / Hair Styling:\n{hairstyle}\n\nAccessory:\n{accessory}\n\nBackground:\n{background}\n\nActivity / Micro-scene:\n{micro_scene}\n\nPhoto Style:\nNatural real-life candid phone photo, ordinary everyday lighting, realistic focus, natural skin texture, believable toddler movement, and imperfect real-life details. Make this variation visibly different from the other variations through pose, gesture, camera angle, framing, outfit, activity context, or background while preserving identity.\n\nDo not redesign the child, beautify him, age him up, make him younger, change his face structure, change his body type, or turn him into a different child.\n\nOnly change the requested expression, pose, action, activity context, clothing, light hairstyle styling, accessory, camera angle, background, lighting, and composition. Preserve the same hairline and hair texture; do not use hairstyle changes to redesign the child.\n\nAvoid studio lighting, beauty retouching, perfect symmetry, doll-like features, plastic-looking skin, anime style, cartoon style, exaggerated cuteness, fashion editorial posing, and hyper-polished AI aesthetics."
+  },
+  "variations": {
+    "face": {
+      "label": "Face Sticker Matrix",
+      "rows": [
+        {
+          "id": "F01",
+          "type": "Face",
+          "expression": "calm neutral with relaxed mouth and curious eyes",
+          "pose_action": "standing close to the camera, holding one hand near his chest naturally",
+          "camera_angle": "slightly above eye level, gentle 3/4 angle",
+          "framing": "close portrait showing head, neck, shoulders, and one small hand partly visible",
+          "clothing": "soft striped long-sleeve shirt",
+          "accessory": "none",
+          "background": "simple living room background with soft natural window light",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, natural messy flyaway strands",
+          "micro_scene": "quiet candid moment at home, as if he just paused while playing"
+        },
+        {
+          "id": "F02",
+          "type": "Face",
+          "expression": "small shy smile with cheeks slightly raised",
+          "pose_action": "turning slightly toward the camera while holding the edge of his hoodie",
+          "camera_angle": "low toddler-eye-level 3/4 angle",
+          "framing": "upper-body portrait with shoulders and hands visible",
+          "clothing": "light hoodie with a simple cotton collar visible",
+          "accessory": "none",
+          "background": "neighborhood playground background with rubber safety flooring softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, slight side-swept toddler hair",
+          "micro_scene": "playground greeting moment with the child paused near play equipment"
+        },
+        {
+          "id": "F03",
+          "type": "Face",
+          "expression": "natural open-mouth laugh, joyful but not exaggerated",
+          "pose_action": "leaning forward slightly as if laughing during play",
+          "camera_angle": "slightly low angle from toddler height",
+          "framing": "upper-body candid portrait with motion in shoulders",
+          "clothing": "denim overall bib visible over a simple T-shirt",
+          "accessory": "none",
+          "background": "quiet city park path background with trees softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, lightly tousled after play",
+          "micro_scene": "park play moment, captured mid-laugh with natural movement"
+        },
+        {
+          "id": "F04",
+          "type": "Face",
+          "expression": "sad pout with watery eyes but not extreme crying",
+          "pose_action": "sitting or crouching close to the camera with shoulders slightly hunched",
+          "camera_angle": "slightly above eye level looking down gently",
+          "framing": "close portrait with upper torso visible",
+          "clothing": "plain toddler sweatshirt",
+          "accessory": "none",
+          "background": "family car back-seat background in soft daylight",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, softly brushed forward bangs",
+          "micro_scene": "quiet car-seat moment after becoming upset"
+        },
+        {
+          "id": "F05",
+          "type": "Face",
+          "expression": "crying toddler face with scrunched nose and open mouth, realistic not theatrical",
+          "pose_action": "reaching one hand slightly toward the camera",
+          "camera_angle": "front-facing at toddler eye level",
+          "framing": "close portrait with hand gesture visible",
+          "clothing": "soft pajama top",
+          "accessory": "none",
+          "background": "small daycare classroom background with simple shelves softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, slightly messy bedhead while preserving identity",
+          "micro_scene": "daycare moment, captured quickly while needing comfort"
+        },
+        {
+          "id": "F06",
+          "type": "Face",
+          "expression": "mild angry toddler frown with knitted brows",
+          "pose_action": "crossing arms loosely or pulling hands inward near chest",
+          "camera_angle": "front-facing with slight downward tilt",
+          "framing": "upper-body portrait with arms visible",
+          "clothing": "color-block windbreaker collar visible",
+          "accessory": "none",
+          "background": "apartment hallway background with neutral walls and clean floor",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, small natural cowlick visible",
+          "micro_scene": "hallway moment after refusing to move, ordinary toddler mood"
+        },
+        {
+          "id": "F07",
+          "type": "Face",
+          "expression": "sleepy half-open eyes with relaxed mouth",
+          "pose_action": "rubbing one eye gently with the back of one hand",
+          "camera_angle": "soft side 3/4 angle",
+          "framing": "close portrait with one hand near face visible",
+          "clothing": "soft pajama top",
+          "accessory": "none",
+          "background": "simple bedroom background with soft morning light",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, natural sleepy bedhead",
+          "micro_scene": "bedroom morning moment just after waking up"
+        },
+        {
+          "id": "F08",
+          "type": "Face",
+          "expression": "surprised wide eyes and small open mouth",
+          "pose_action": "looking upward and slightly to the side as if noticing something",
+          "camera_angle": "low angle looking slightly upward",
+          "framing": "upper-body portrait with head turned",
+          "clothing": "simple button-up overshirt over a T-shirt",
+          "accessory": "none",
+          "background": "aquarium hallway background with blue tank glow softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, slightly neater combed toddler hair",
+          "micro_scene": "aquarium hallway moment reacting to a bright tank"
+        },
+        {
+          "id": "F09",
+          "type": "Face",
+          "expression": "calm neutral with observant eyes",
+          "pose_action": "holding the brim of the bucket hat with one small hand",
+          "camera_angle": "3/4 angle from slightly above",
+          "framing": "close portrait with hat and hand gesture visible",
+          "clothing": "plain toddler sweatshirt",
+          "accessory": "soft bucket hat, face fully visible",
+          "background": "zoo walking path background with distant enclosure fencing softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, hair partly visible under the hat",
+          "micro_scene": "zoo walkway pause while looking around calmly"
+        },
+        {
+          "id": "F10",
+          "type": "Face",
+          "expression": "small proud smile behind child-safe sunglasses",
+          "pose_action": "tilting head slightly while touching the sunglasses frame",
+          "camera_angle": "front-facing with slight side tilt",
+          "framing": "upper-body portrait with sunglasses gesture visible",
+          "clothing": "neat polo shirt",
+          "accessory": "child-safe sunglasses, eyes may be partially covered but face shape remains clear",
+          "background": "shopping mall atrium background with storefronts and soft indoor lighting",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, hair visible around the temples",
+          "micro_scene": "shopping mall moment, playful dress-up feeling but still candid"
+        },
+        {
+          "id": "F11",
+          "type": "Face",
+          "expression": "quiet curious expression",
+          "pose_action": "looking out a cafe window from the side",
+          "camera_angle": "left side profile at eye level",
+          "framing": "side-profile portrait with shoulder and cheek contour clear",
+          "clothing": "knit sweater collar visible",
+          "accessory": "none",
+          "background": "casual cafe window background with tables softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, side profile hair contour preserved",
+          "micro_scene": "cafe window moment watching something outside"
+        },
+        {
+          "id": "F12",
+          "type": "Face",
+          "expression": "focused neutral expression",
+          "pose_action": "looking toward a low bookshelf from the side",
+          "camera_angle": "right side profile at toddler eye level",
+          "framing": "side-profile portrait with shoulder and ear visible",
+          "clothing": "light cardigan over a simple shirt",
+          "accessory": "none",
+          "background": "children's library corner background with low bookshelves softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, side profile hair contour preserved",
+          "micro_scene": "library moment while scanning bookshelves"
+        },
+        {
+          "id": "F13",
+          "type": "Face",
+          "expression": "small smile with relaxed cheeks",
+          "pose_action": "turning back toward the camera from a 45-degree angle",
+          "camera_angle": "left 45-degree angle at eye level",
+          "framing": "3/4 face portrait with upper torso visible",
+          "clothing": "casual matching sweatshirt top",
+          "accessory": "small knit beanie pushed back so forehead and face remain visible",
+          "background": "restaurant storefront sidewalk background with simple signage shapes softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, slight side-swept toddler hair",
+          "micro_scene": "restaurant storefront moment while pausing on the sidewalk"
+        },
+        {
+          "id": "F14",
+          "type": "Face",
+          "expression": "small smile with curious eyes",
+          "pose_action": "holding backpack straps while turning slightly to the camera",
+          "camera_angle": "right 45-degree angle from toddler height",
+          "framing": "upper-body 3/4 portrait with strap gesture visible",
+          "clothing": "simple thermal shirt",
+          "accessory": "small toddler backpack straps barely visible on shoulders",
+          "background": "grocery store aisle background with shelves softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, natural messy flyaway strands",
+          "micro_scene": "grocery aisle moment while walking with family"
+        }
+      ]
+    },
+    "body": {
+      "label": "Full-Body Sticker Matrix",
+      "rows": [
+        {
+          "id": "B01",
+          "type": "Body",
+          "expression": "neutral and observant",
+          "pose_action": "standing with feet slightly apart and one hand resting on his belly",
+          "camera_angle": "front-facing at toddler eye level",
+          "framing": "full body from head to feet with clean floor visible",
+          "clothing": "soft striped long-sleeve shirt with comfortable cotton pants and toddler sneakers",
+          "accessory": "none",
+          "background": "simple living room background with clean floor and soft natural light",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, natural messy flyaway strands",
+          "micro_scene": "standing still in the living room after being called by name"
+        },
+        {
+          "id": "B02",
+          "type": "Body",
+          "expression": "happy small smile",
+          "pose_action": "waving one hand high while shifting weight onto one foot",
+          "camera_angle": "3/4 angle at toddler eye level",
+          "framing": "full body with waving hand fully visible",
+          "clothing": "light hoodie with elastic-waist play pants and toddler sneakers",
+          "accessory": "none",
+          "background": "neighborhood playground background with rubber safety flooring and a slide softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, lightly tousled after play",
+          "micro_scene": "playground greeting moment near a slide"
+        },
+        {
+          "id": "B03",
+          "type": "Body",
+          "expression": "curious and focused",
+          "pose_action": "pointing with one arm extended while the other hand holds a backpack strap",
+          "camera_angle": "3/4 angle looking slightly in the direction he points",
+          "framing": "full body with pointing arm and feet visible",
+          "clothing": "puffer vest over a long-sleeve shirt with soft joggers and toddler shoes",
+          "accessory": "small toddler backpack with simple straps",
+          "background": "zoo walking path background with distant animal enclosure fencing and family visitors softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, small natural cowlick visible",
+          "micro_scene": "zoo path moment pointing toward something interesting off-camera"
+        },
+        {
+          "id": "B04",
+          "type": "Body",
+          "expression": "happy and relaxed",
+          "pose_action": "walking mid-step with arms naturally swinging",
+          "camera_angle": "side angle with slight 3/4 visibility of the face",
+          "framing": "full body in mid-step, feet not cropped",
+          "clothing": "color-block windbreaker with comfortable pants and toddler shoes",
+          "accessory": "none",
+          "background": "shopping mall corridor background with storefronts softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, slight side-swept toddler hair",
+          "micro_scene": "shopping mall corridor walking moment with family nearby out of frame"
+        },
+        {
+          "id": "B05",
+          "type": "Body",
+          "expression": "excited open smile",
+          "pose_action": "running carefully with short toddler steps and arms bent",
+          "camera_angle": "side angle at low toddler height",
+          "framing": "full body with motion but child still sharp enough for sticker use",
+          "clothing": "rain jacket with comfortable pants and small rain boots",
+          "accessory": "none",
+          "background": "quiet city park path background with trees and benches softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, damp-looking tousled hair from outdoor play",
+          "micro_scene": "park path moment while running toward someone familiar"
+        },
+        {
+          "id": "B06",
+          "type": "Body",
+          "expression": "focused and absorbed",
+          "pose_action": "sitting on the floor with knees bent, holding a small toy in both hands",
+          "camera_angle": "slightly above eye level looking down gently",
+          "framing": "full seated body with hands and toy visible",
+          "clothing": "denim overalls over a simple cotton T-shirt with socks",
+          "accessory": "small toy",
+          "background": "small daycare classroom floor background with simple toys softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, softly brushed forward bangs",
+          "micro_scene": "daycare floor moment while concentrating on a toy"
+        },
+        {
+          "id": "B07",
+          "type": "Body",
+          "expression": "happy smile",
+          "pose_action": "clapping hands together at chest height",
+          "camera_angle": "front-facing at toddler eye level",
+          "framing": "full body with both hands visible during clap",
+          "clothing": "neat polo shirt with soft chinos and toddler sneakers",
+          "accessory": "none",
+          "background": "casual restaurant patio entrance background with simple outdoor seating softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, slightly neater combed toddler hair",
+          "micro_scene": "restaurant patio entrance moment after seeing something exciting"
+        },
+        {
+          "id": "B08",
+          "type": "Body",
+          "expression": "curious with slightly open mouth",
+          "pose_action": "crouching low with one hand near the floor and one hand balancing",
+          "camera_angle": "3/4 angle from slightly above",
+          "framing": "full crouching body with hands and shoes visible",
+          "clothing": "plain toddler sweatshirt with relaxed jogger pants and toddler sneakers",
+          "accessory": "soft bucket hat, face fully visible",
+          "background": "indoor play cafe background with padded play equipment softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, natural messy flyaway strands",
+          "micro_scene": "indoor play cafe moment inspecting something on the padded floor"
+        },
+        {
+          "id": "B09",
+          "type": "Body",
+          "expression": "playful proud smile",
+          "pose_action": "holding a small toy out toward the camera with both hands",
+          "camera_angle": "front-facing at toddler eye level",
+          "framing": "full body with toy extended forward and feet visible",
+          "clothing": "casual matching set with soft sweatshirt and pants",
+          "accessory": "small toy",
+          "background": "children's library corner background with low bookshelves softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, lightly tousled after play",
+          "micro_scene": "library corner moment proudly showing a toy or small object"
+        },
+        {
+          "id": "B10",
+          "type": "Body",
+          "expression": "curious look-back expression",
+          "pose_action": "walking away slightly then looking back over one shoulder",
+          "camera_angle": "3/4 back angle with face still partly visible",
+          "framing": "full body from head to feet with backpack visible",
+          "clothing": "simple button-up overshirt over a T-shirt with relaxed pants",
+          "accessory": "small toddler backpack with simple straps",
+          "background": "aquarium hallway background with blue tank glow softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, back and side hair contour preserved",
+          "micro_scene": "aquarium hallway moment looking back at family while walking"
+        },
+        {
+          "id": "B11",
+          "type": "Body",
+          "expression": "happy excited smile",
+          "pose_action": "small toddler jump with both feet just leaving the floor and arms slightly out",
+          "camera_angle": "front-facing at low toddler height",
+          "framing": "full body with space around arms and feet",
+          "clothing": "puffer vest over a long-sleeve shirt with soft joggers and toddler sneakers",
+          "accessory": "none",
+          "background": "community center hallway background with neutral walls and soft indoor lighting",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, bouncy tousled toddler hair",
+          "micro_scene": "community center hallway moment during a tiny jump"
+        },
+        {
+          "id": "B12",
+          "type": "Body",
+          "expression": "calm neutral with soft eyes",
+          "pose_action": "sitting on a small chair with feet dangling and hands resting on lap",
+          "camera_angle": "front-facing slightly above toddler eye level",
+          "framing": "full body seated on small chair with feet visible",
+          "clothing": "knit sweater with comfortable pants and small sneakers",
+          "accessory": "soft scarf loosely worn, face and neck still visible",
+          "background": "casual cafe window corner background with tables and warm daylight softly out of focus",
+          "status": "Pending",
+          "hairstyle": "same fine black hair and same hairline, softly brushed forward bangs",
+          "micro_scene": "cafe window corner moment while sitting quietly"
+        }
+      ]
+    }
+  },
+  "background_presets": {
+    "home_and_everyday": [
+      "simple living room background with soft natural window light",
+      "apartment hallway background with neutral walls and clean floor",
+      "family car back-seat background in soft daylight",
+      "small daycare classroom background with simple shelves softly out of focus"
+    ],
+    "outdoor_family_places": [
+      "neighborhood playground background with rubber safety flooring and a slide softly out of focus",
+      "quiet city park path background with trees and benches softly out of focus",
+      "zoo walking path background with distant animal enclosure fencing and family visitors softly out of focus",
+      "aquarium hallway background with blue tank glow softly out of focus"
+    ],
+    "public_everyday_places": [
+      "shopping mall atrium background with storefronts and soft indoor lighting",
+      "restaurant storefront sidewalk background with simple signage shapes softly out of focus",
+      "casual cafe window background with tables and warm daylight softly out of focus",
+      "grocery store aisle background with shelves softly out of focus",
+      "children's library corner background with low bookshelves softly out of focus",
+      "indoor play cafe background with padded play equipment softly out of focus",
+      "community center hallway background with neutral walls and soft indoor lighting"
+    ]
+  },
+  "fashion_presets": {
+    "clothing": {
+      "casual_layers": [
+        "soft striped long-sleeve shirt with comfortable cotton pants",
+        "plain toddler sweatshirt with relaxed jogger pants",
+        "denim overalls over a simple cotton T-shirt",
+        "light cardigan over a simple shirt with soft pants"
+      ],
+      "outdoor_play": [
+        "light hoodie with elastic-waist play pants and toddler sneakers",
+        "color-block windbreaker with comfortable pants and toddler shoes",
+        "puffer vest over a long-sleeve shirt with soft joggers",
+        "rain jacket with comfortable pants and small rain boots"
+      ],
+      "public_outing": [
+        "neat polo shirt with soft chinos and toddler sneakers",
+        "simple button-up overshirt over a T-shirt with relaxed pants",
+        "knit sweater with comfortable pants and small sneakers",
+        "casual matching set with soft sweatshirt and pants"
+      ],
+      "cozy_home": [
+        "soft pajama top with comfortable pajama pants",
+        "simple thermal shirt with soft lounge pants",
+        "cozy fleece pullover with relaxed pants"
+      ]
+    },
+    "accessories": {
+      "headwear": [
+        "soft bucket hat, face fully visible",
+        "small knit beanie, hairline partly visible",
+        "light baseball cap worn naturally, eyes fully visible"
+      ],
+      "outing": [
+        "small toddler backpack with simple straps",
+        "soft scarf loosely worn, face and neck still visible",
+        "small crossbody toddler pouch"
+      ],
+      "play": [
+        "small toy held naturally",
+        "small sticker sheet held in one hand",
+        "child-safe sunglasses, only for sunglasses-specific variation"
+      ]
+    },
+    "hairstyles": {
+      "safe_identity_preserving": [
+        "same fine black hair and same hairline, natural messy flyaway strands",
+        "same fine black hair and same hairline, softly brushed forward bangs",
+        "same fine black hair and same hairline, slight side-swept toddler hair",
+        "same fine black hair and same hairline, small natural cowlick visible",
+        "same fine black hair and same hairline, lightly tousled after play",
+        "same fine black hair and same hairline, slightly neater combed toddler hair"
+      ]
+    }
+  },
+  "variation_strategy": {
+    "goal": "Increase visible differences between images while preserving Image A facial identity and Image B body proportions.",
+    "safe_to_vary": [
+      "expression intensity",
+      "pose and gesture",
+      "camera angle",
+      "framing distance",
+      "activity context",
+      "clothing",
+      "light hairstyle styling",
+      "accessory",
+      "background"
+    ],
+    "do_not_vary": [
+      "face structure",
+      "eye shape",
+      "ear shape and placement",
+      "skin tone",
+      "hairline",
+      "core hair texture",
+      "age",
+      "head-to-body ratio",
+      "body type"
+    ],
+    "prompt_rule": "Every variation should have a visibly different action, gesture, camera angle, framing, or activity context, not only a different outfit or background."
+  },
+  "randomization_pools": {
+    "face": {
+      "expressions": [
+        "calm neutral with curious eyes",
+        "small shy smile with cheeks slightly raised",
+        "natural open-mouth laugh, joyful but not exaggerated",
+        "sleepy half-open eyes with relaxed mouth",
+        "surprised wide eyes and small open mouth",
+        "mild pout with soft cheeks",
+        "focused quiet expression"
+      ],
+      "pose_actions": [
+        "turning slightly toward the camera while holding the edge of his shirt",
+        "standing close to the camera with one hand near his chest",
+        "rubbing one eye gently with the back of one hand",
+        "holding the brim of a hat with one small hand",
+        "looking upward and slightly to the side as if noticing something",
+        "leaning forward slightly as if laughing during play",
+        "holding backpack straps while turning slightly to the camera"
+      ],
+      "camera_angles": [
+        "front-facing at toddler eye level",
+        "slightly above eye level, gentle 3/4 angle",
+        "low toddler-eye-level 3/4 angle",
+        "soft side 3/4 angle",
+        "left 45-degree angle at eye level",
+        "right 45-degree angle from toddler height"
+      ],
+      "framings": [
+        "close portrait showing head, neck, shoulders, and one small hand partly visible",
+        "upper-body portrait with shoulders and hands visible",
+        "close portrait with one hand near face visible",
+        "3/4 face portrait with upper torso visible",
+        "upper-body candid portrait with natural shoulder movement"
+      ],
+      "micro_scenes": [
+        "quiet candid moment after pausing during play",
+        "playground greeting moment near play equipment",
+        "cafe window moment watching something outside",
+        "bedroom morning moment just after waking up",
+        "zoo walkway pause while looking around calmly",
+        "grocery aisle moment while walking with family",
+        "aquarium hallway moment reacting to a bright tank"
+      ]
+    },
+    "body": {
+      "expressions": [
+        "neutral and observant",
+        "happy small smile",
+        "curious and focused",
+        "playful proud smile",
+        "excited open smile",
+        "calm neutral with soft eyes",
+        "curious look-back expression"
+      ],
+      "pose_actions": [
+        "waving one hand high while shifting weight onto one foot",
+        "pointing with one arm extended while the other hand stays near his body",
+        "walking mid-step with arms naturally swinging",
+        "sitting on the floor with knees bent, holding a small toy in both hands",
+        "clapping hands together at chest height",
+        "crouching low with one hand near the floor and one hand balancing",
+        "holding a small toy out toward the camera with both hands",
+        "walking away slightly then looking back over one shoulder",
+        "small toddler jump with both feet just leaving the floor and arms slightly out",
+        "sitting on a small chair with feet dangling and hands resting on lap"
+      ],
+      "camera_angles": [
+        "front-facing at toddler eye level",
+        "3/4 angle at toddler eye level",
+        "3/4 angle looking slightly in the direction he points",
+        "side angle with slight 3/4 visibility of the face",
+        "slightly above eye level looking down gently",
+        "3/4 back angle with face still partly visible",
+        "front-facing at low toddler height"
+      ],
+      "framings": [
+        "full body from head to feet with clean floor visible",
+        "full body with both hands visible",
+        "full body with toy extended forward and feet visible",
+        "full seated body with hands visible",
+        "full crouching body with hands and shoes visible",
+        "full body in mid-step, feet not cropped",
+        "full body with space around arms and feet"
+      ],
+      "micro_scenes": [
+        "playground greeting moment near a slide",
+        "zoo path moment pointing toward something interesting off-camera",
+        "shopping mall corridor walking moment with family nearby out of frame",
+        "park path moment while moving toward someone familiar",
+        "daycare floor moment while concentrating on a toy",
+        "restaurant patio entrance moment after seeing something exciting",
+        "indoor play cafe moment inspecting something on the padded floor",
+        "library corner moment proudly showing a toy or small object",
+        "aquarium hallway moment looking back at family while walking",
+        "community center hallway moment during a tiny jump"
+      ]
+    }
+  },
+  "scene_presets": [
+    {
+      "name": "home_living_room_pause",
+      "clothing_categories": ["casual_layers", "cozy_home"],
+      "background": "simple living room background with soft natural window light",
+      "face_micro_scene": "quiet candid home moment in a simple living room",
+      "body_micro_scene": "ordinary home moment in a simple living room with clean floor space"
+    },
+    {
+      "name": "playground_greeting",
+      "clothing_categories": ["outdoor_play", "casual_layers"],
+      "background": "neighborhood playground background with rubber safety flooring and a slide softly out of focus",
+      "face_micro_scene": "playground moment near play equipment",
+      "body_micro_scene": "playground moment near a slide with open floor space"
+    },
+    {
+      "name": "city_park_play",
+      "clothing_categories": ["outdoor_play", "casual_layers"],
+      "background": "quiet city park path background with trees and benches softly out of focus",
+      "face_micro_scene": "city park path moment with natural outdoor movement",
+      "body_micro_scene": "city park path moment with room for toddler movement"
+    },
+    {
+      "name": "daycare_floor_play",
+      "clothing_categories": ["casual_layers", "cozy_home"],
+      "background": "small daycare classroom floor background with simple toys softly out of focus",
+      "face_micro_scene": "daycare classroom moment during ordinary play",
+      "body_micro_scene": "daycare floor moment with simple toys nearby"
+    },
+    {
+      "name": "zoo_walkway",
+      "clothing_categories": ["outdoor_play", "casual_layers"],
+      "background": "zoo walking path background with distant animal enclosure fencing and family visitors softly out of focus",
+      "face_micro_scene": "zoo walkway moment while looking around calmly",
+      "body_micro_scene": "zoo path moment with family context softly out of focus"
+    },
+    {
+      "name": "mall_corridor",
+      "clothing_categories": ["public_outing", "casual_layers"],
+      "background": "shopping mall corridor background with storefronts softly out of focus",
+      "face_micro_scene": "shopping mall moment with soft storefront shapes behind him",
+      "body_micro_scene": "shopping mall corridor moment with clean walking space"
+    },
+    {
+      "name": "restaurant_patio",
+      "clothing_categories": ["public_outing", "casual_layers"],
+      "background": "casual restaurant patio entrance background with simple outdoor seating softly out of focus",
+      "face_micro_scene": "restaurant storefront or patio moment during a family outing",
+      "body_micro_scene": "restaurant patio entrance moment during a family outing"
+    },
+    {
+      "name": "indoor_play_cafe",
+      "clothing_categories": ["casual_layers", "outdoor_play"],
+      "background": "indoor play cafe background with padded play equipment softly out of focus",
+      "face_micro_scene": "indoor play cafe moment near padded play equipment",
+      "body_micro_scene": "indoor play cafe moment with padded floor space"
+    },
+    {
+      "name": "library_corner",
+      "clothing_categories": ["public_outing", "casual_layers"],
+      "background": "children's library corner background with low bookshelves softly out of focus",
+      "face_micro_scene": "children's library corner moment near low bookshelves",
+      "body_micro_scene": "children's library corner moment with low bookshelves behind him"
+    },
+    {
+      "name": "aquarium_hallway",
+      "clothing_categories": ["public_outing", "casual_layers"],
+      "background": "aquarium hallway background with blue tank glow softly out of focus",
+      "face_micro_scene": "aquarium hallway moment with soft blue tank glow",
+      "body_micro_scene": "aquarium hallway moment with soft blue tank glow and walking space"
+    },
+    {
+      "name": "cafe_window",
+      "clothing_categories": ["public_outing", "casual_layers"],
+      "background": "casual cafe window corner background with tables and warm daylight softly out of focus",
+      "face_micro_scene": "cafe window corner moment in warm daylight",
+      "body_micro_scene": "cafe window corner moment in warm daylight"
+    },
+    {
+      "name": "grocery_aisle",
+      "clothing_categories": ["public_outing", "casual_layers"],
+      "background": "grocery store aisle background with shelves softly out of focus",
+      "face_micro_scene": "grocery aisle moment while walking with family",
+      "body_micro_scene": "grocery aisle moment with shelves softly out of focus"
+    }
+  ]
+}

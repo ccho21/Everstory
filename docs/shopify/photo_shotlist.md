@@ -36,7 +36,7 @@ Face Sticker가 리드 SKU다. PDP 갤러리(라이브 = 이미지 5장)가 지�
 | 컷 | 왜 | 어디 쓰나 | 팁 |
 |---|---|---|---|
 | **칼선 매크로** (다이컷 가장자리) | 깔끔한 컷 = 품질·정성 증명 | PDP 썸네일, Home "made with care" | 폰 접사/매크로, 가장자리에 초점, 흰 테두리 옵션 보이게 |
-| **before → after** | "내 사진 → 이 결과" 직접 증명 | PDP 썸네일, FAQ "사진 기준" | 원본·완성을 같은 프레임 또는 2분할. 동일 피사체 |
+| **before → after** | "내 사진 → 이 결과" 직접 증명 | PDP 썸네일 (FAQ "사진 기준" 답변에 참고용으로 링크 가능 — FAQ 자체는 텍스트 전용 페이지, 별도 이미지 슬롯 아님) | 원본·완성을 같은 프레임 또는 2분할. 동일 피사체 |
 | **스케일 레퍼런스** | 사이즈 오해 방지 (스티커는 늘 작게 느낌) | PDP "Size comparison" 슬롯, Sizing | 동전/손/폰 옆에 6사이즈(0.75·1·1.25·1.5·2·2.5″) 나란히 |
 
 ### C. 실사용 / Lifestyle
@@ -78,12 +78,31 @@ Face Sticker가 리드 SKU다. PDP 갤러리(라이브 = 이미지 5장)가 지�
 | **Face PDP** | `_product-media-gallery` (5) | 손에 든 시트 / 평면 / 칼선 매크로 / before→after / lifestyle |
 | | "Size comparison" 슬롯 | 6사이즈 vs 동전 |
 | **Full Body PDP** | 갤러리 (5) | 위 5컷 템플릿, 전신 피사체로 |
+| **Shape PDP** | 갤러리 (5) | 위 5컷 템플릿, 원형 크롭 피사체로 (텀블러·노트북 사용 예시 위주) |
 | **Package Mini PDP** | 갤러리 (2) | 시트 평면 + 여러 피사체 한 시트 |
 | **Package Full PDP** | 갤러리 (2) | 2장 시트 같이 + lifestyle |
-| **Home** | 히어로 / 다양성 그리드 | 아기-리드 손컷 / 펫·커플·가족 그리드 |
-| **Collection** | SKU 썸네일 ×4 | Face·Full Body·Pkg Mini·Pkg Full 각 깔끔한 시트 |
-| **About** | "person behind it" | 과정·사람·작업 공간 |
+| **Home** | 히어로 (1) / 다양성 그리드 (4~6) | 아기-리드 손컷 / 펫·커플·가족·아이 최소 1컷씩 |
+| **Collection** | SKU 썸네일 ×4 | Face·Full Body·Pkg Mini·Pkg Full 각 깔끔한 시트 1컷씩 |
+| **About** | "person behind it" (2~3) | 과정·사람·작업 공간 |
 | **Reviews** | UGC 슬롯 | 고객 실사용 사진 (시딩으로 수집 — 직접 촬영 아님) |
+
+> Full Body·Shape PDP는 별도 와이어프레임 없이 Face PDP 구조(archetype)를 그대로 쓴다 — 갤러리 구성도 동일 5컷 템플릿을 피사체만 바꿔 찍으면 된다.
+
+---
+
+## 이미지 스펙 (비율 · 방향)
+
+실제 PDP CSS(`everstory_pdp_general.html`/`_en.html`)에 이미 박혀있는 비율 기준. 이 비율에 맞춰 넉넉하게(여유 크롭분 포함) 찍어두면 업로드 후 바로 들어맞는다.
+
+| 슬롯 | 비율 | 방향 | 근거 |
+|---|---|---|---|
+| PDP 갤러리 MAIN + 썸네일 4장 | 1:1 | 정방형 | Shopify 기본 상품 갤러리 관행 |
+| Size comparison / Material samples | 16:9 | 가로 | CSS `.option-image--wide { aspect-ratio: 16/9 }` |
+| Photo-quality 예시 (✓/✕) | 4:5 | 세로 | CSS `.option-image { aspect-ratio: 4/5 }` |
+| 사이즈별 시트 목업 | 148:210 (A5) | 세로 | CSS `.sheet-image { aspect-ratio: 148/210 }` |
+| 포장 예시 (single-photo) | 4:3 | 가로 | CSS `.single-photo { aspect-ratio: 4/3 }` |
+| Home 히어로 | 21:9 ~ 16:9 | 가로 (배너) | About "STUDIO WIDE SHOT · 21:9"와 동일 관행 |
+| Collection SKU 썸네일 | 1:1 | 정방형 | 갤러리와 동일 |
 
 ---
 

@@ -1,0 +1,39 @@
+{identity_lock}
+
+Create a new image of the same child with the following variation:
+
+Expression:
+{expression}
+
+Pose / Action:
+{pose_action}
+
+Camera Angle:
+{camera_angle}
+
+Framing:
+{framing}
+
+Clothing:
+{clothing}
+
+Hairstyle / Hair Styling:
+{hairstyle}
+
+Accessory:
+{accessory}
+
+Background:
+{background}
+
+Activity / Micro-scene:
+{micro_scene}
+
+Photo Style:
+Natural real-life candid phone photo, ordinary everyday lighting, realistic focus, natural skin texture, believable toddler movement, and imperfect real-life details. Make this variation visibly different from the other variations through pose, gesture, camera angle, framing, outfit, activity context, or background while preserving identity.
+
+Do not redesign the child, beautify him, age him up, make him younger, change his face structure, change his body type, or turn him into a different child.
+
+Only change the requested expression, pose, action, activity context, clothing, light hairstyle styling, accessory, camera angle, background, lighting, and composition. Preserve the same hairline and hair texture; do not use hairstyle changes to redesign the child.
+
+Avoid studio lighting, beauty retouching, perfect symmetry, doll-like features, plastic-looking skin, anime style, cartoon style, exaggerated cuteness, fashion editorial posing, and hyper-polished AI aesthetics.
