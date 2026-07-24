@@ -359,6 +359,16 @@
     missingSizesLine = "⚠ 전 사이즈 보장 실패 (공간 부족, 0장): " + msParts.join(", ") + "\n";
   }
 
+  // 전 사이즈 모드: evict 구제 내역 — 채움 1개를 빼고 보장 사이즈를 넣은 교체 기록 (운영자 확인용).
+  var evictionLine = "";
+  if (packResult.evictions && packResult.evictions.length > 0) {
+    var evParts = [];
+    for (var evI = 0; evI < packResult.evictions.length; evI++) {
+      evParts.push(_inchStr(packResult.evictions[evI].outSize) + " 1개 → " + _inchStr(packResult.evictions[evI].inSize));
+    }
+    evictionLine = "보장 구제 교체 (채움 양보): " + evParts.join(", ") + "\n";
+  }
+
   var msg =
     "완료: Name Included 시트 생성\n\n" +
     "스크립트: " + SCRIPT_VARIANT + "\n" +
@@ -380,6 +390,7 @@
     "Trace 캐시: unique " + uniquePairs.length + "개 (배치 " + packResult.placed.length + "회 → trace " + uniquePairs.length + "회)\n" +
     (packResult.leftover.length > 0 ? "미배치 사진: " + packResult.leftover.length + "개\n" : "") +
     missingSizesLine +
+    evictionLine +
     saveLine;
 
   if (failedItems.length > 0) {
@@ -1361,11 +1372,11 @@
   // 0.75"~2.5" 전 사이즈를 각 1장 이상 출력. 시트 구조 (위→아래):
   //   hero 행: 2.5"/2" 각 1장 + 남는 폭은 작은 사이즈 세로 column (0.75" 3단, 1" 2단 …)
   //   tier 행: 1.5"→1.25"→1"→0.75" round-robin, 행마다 한 사이즈 잠금 (높이 남으면 두 바퀴째)
-  //   말미 보장 검증: 빠진 사이즈는 단일 backfill 로 구제, 불가하면 leftover 보고.
+  //   말미 보장 검증: 빠진 사이즈는 단일 backfill → evict 교체 순으로 구제, 불가하면 leftover 보고.
   // Package 와 동일한 shelf 프리미티브 재사용 → 정렬/회전/좌표 동작 일관.
   function _packAllSizes(pairs, binW, binH, gap) {
     if (!pairs || pairs.length === 0) {
-      return { rows: [], placed: [], leftover: [], repeatedCount: 0, missingSizes: [], mixedSummary: _buildAllSizesSummary(0, 0) };
+      return { rows: [], placed: [], leftover: [], repeatedCount: 0, missingSizes: [], evictions: [], mixedSummary: _buildAllSizesSummary(0, 0) };
     }
     var N = pairs.length;
 
@@ -1379,7 +1390,7 @@
     }
     primary = _sortShelfItemsDesc(primary);   // 높이 내림차순 (FFDH — 큰 것부터)
 
-    var pack = { rows: [], placed: [], leftover: [], repeatedCount: 0, missingSizes: [] };
+    var pack = { rows: [], placed: [], leftover: [], repeatedCount: 0, missingSizes: [], evictions: [] };
     pack.leftover = _appendShelfRowsOnce(pack, primary, binW, binH, gap);
 
     // 2단계: 남는 공간을 (작은 사이즈 × 디자인) round-robin 으로 채움.
@@ -1397,7 +1408,8 @@
 
     // 보장 검증: ALLSIZES_ORDER_MM 모든 사이즈 ≥ 1장. hero 구조 전환으로 1.5"~0.75" 는
     //   tier 행/column 이 담당하는데, 높이·폭이 극단적으로 빡빡하면 한 사이즈가 빠질 수 있어
-    //   기존 행 빈 폭에 단일 backfill 로 구제한다. 그래도 안 되면 leftover 로 보고.
+    //   기존 행 빈 폭에 단일 backfill 로 구제한다. 빈 폭도 없으면 채움 아이템 1개를 빼고
+    //   교체(_rescueByEviction). 그래도 안 되면 leftover 로 보고.
     var rescuedAny = false;
     for (var gi = 0; gi < ALLSIZES_ORDER_MM.length; gi++) {
       var gSize = ALLSIZES_ORDER_MM[gi];
@@ -1413,6 +1425,10 @@
           }
         }
       }
+      if (!rescued && _rescueByEviction(pack, pairs, gSize, binW, gap)) {
+        rescued = true;
+        rescuedAny = true;
+      }
       if (!rescued) {
         pack.leftover.push(_itemForSize(pairs[0], gSize));
         pack.missingSizes.push(gSize);   // 완료 메시지에 보장 실패 사이즈로 명시
@@ -1422,6 +1438,37 @@
 
     pack.mixedSummary = _buildAllSizesSummary(pack.placed.length, N);
     return pack;
+  }
+
+  // evict 구제: 단일 backfill 이 실패한 보장 사이즈를, 기존 행의 채움 아이템 1개와 교체해 넣는다.
+  //   정사각(aspect≈1) 디자인은 hero 잔여폭(≈18.7mm < 0.75" 폭 19.05mm)과 tier 4행째 높이가
+  //   모두 mm 차이로 부족해 0.75" 가 column·tier 행·backfill 어느 경로로도 못 들어간다 —
+  //   채움 1장을 양보하면 "각 사이즈 ≥1장" 요구사항(ALLSIZES_ORDER_MM)을 지킬 수 있다.
+  //   후보 조건: vstack 제외, 시트 잔존 ≥2 인 사이즈만 (하나뿐인 사이즈를 빼면 그쪽 보장이
+  //   깨짐 — hero 2.5"/2" 단일도 이 조건으로 자동 배제), 교체 후 행 폭 ≤ binW. 행 높이는
+  //   유지 (gItem.h ≤ row.h — 행이 커지면 아래 행과 겹침, backfill 과 동일 규칙).
+  //   탐색은 아래 행부터·행 안에서는 오른쪽부터 — hero/tier 상단 미감은 두고 마지막 채움부터 양보.
+  function _rescueByEviction(pack, pairs, gSize, binW, gap) {
+    for (var gd = 0; gd < pairs.length; gd++) {
+      var gItem = _itemForSize(pairs[gd], gSize);
+      for (var r = pack.rows.length - 1; r >= 0; r--) {
+        var row = pack.rows[r];
+        if (gItem.h > row.h) continue;
+        for (var i = row.items.length - 1; i >= 0; i--) {
+          var out = row.items[i];
+          if (out.isVStack) continue;
+          if (_countSizeInRows(pack.rows, out.sizeMm) < 2) continue;
+          var wAfterSwap = row.items.length > 1 ? row.w - out.w + gItem.w : gItem.w;
+          if (wAfterSwap > binW) continue;
+          row.items.splice(i, 1);
+          row.w = row.items.length > 0 ? row.w - out.w - gap : 0;
+          _addToShelfRow(row, gItem, gap);
+          pack.evictions.push({ outSize: out.sizeMm, inSize: gSize });
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   function _buildAllSizesSummary(total, designCount) {
