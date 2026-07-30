@@ -1,6 +1,6 @@
 # Everstory Reference Image Index
 
-**Version:** 1.7  
+**Version:** 1.8  
 **Updated:** 2026-07-29  
 **Current status:** No actual product reference registered
 
@@ -50,7 +50,7 @@ Add only approved images.
 | ID | Suggested filename | Approves | Status |
 |---|---|---|---|
 | `GOLDEN_STYLE_01` | `golden_style_topdown_01.png` | top-down background, lighting, crop, negative space, replacement readiness | approved — 93/100 |
-| `GOLDEN_STYLE_02` | `golden_style_02_warm_blush_paper.png` | warm blush paper background, natural fibre texture, lighting, crop, negative space, replacement readiness | approved — 96/100 |
+| `GOLDEN_STYLE_02` | `golden_style_02_warm_blush_paper.png` | warm blush paper background, natural fibre texture, tonal family, crop, negative space, replacement readiness; lighting requires the documented override | approved with lighting override — 96/100 |
 | `GOLDEN_STYLE_SINGLE_01` | `golden_style_single_01.png` | single-sticker scene, lighting, object clarity, negative space, replacement readiness | approved — 93/100 |
 | `GOLDEN_STYLE_MATERIAL_01` | `golden_style_material_layout_01.png` | 2×2 material-comparison layout, equal spacing, neutral lighting, label room, replacement readiness | approved — 93/100 |
 | `GOLDEN_STYLE_PHONE_16PRO_01` | `golden_style_phone_16pro_01.png` | iPhone 16 Pro concept scene, lighting, 4:5 composition, single-sticker placement, replacement readiness | approved — 93/100 |
@@ -58,7 +58,7 @@ Add only approved images.
 | `GOLDEN_STYLE_HANDHELD_01` | `golden_style_handheld_01.png` | hand position, grip, near-front framing, A5 visibility, lighting, replacement boundary | approved — 94/100 |
 | `GOLDEN_STYLE_03` | `golden_style_lifestyle_01.png` | prop restraint and daily-life context | not created |
 
-Golden Style References do not approve sticker art, layout, count, cut lines, or material accuracy.
+Golden Style References do not approve sticker art, layout, count, cut lines, or material accuracy. A documented lighting override takes precedence over the literal lighting visible in its source reference.
 
 ### `GOLDEN_STYLE_01` Approval
 
@@ -83,15 +83,20 @@ Golden Style References do not approve sticker art, layout, count, cut lines, or
 - **Template:** `EVS_TOPDOWN_01`
 - **QA score:** 96/100
 - **Texture classification:** Natural Paper-Like
-- **Visual QA:** Pass
-- **Approved qualities:** warm blush paper background, slightly peach-forward blush-greige tone, sparse irregular multidirectional paper fibres, gentle organic tonal variation, neutral white sheet, soft upper-left lighting, restrained contact shadow, top-down angle, square crop, clean negative space, and replacement readiness
+- **Visual QA:** Pass for background, texture, composition, and replacement readiness; lighting override required
+- **Approved qualities:** warm blush paper background, slightly peach-forward blush-greige tone, sparse irregular multidirectional paper fibres, gentle organic tonal variation, neutral white sheet, top-down angle, square crop, clean negative space, and replacement readiness
 - **Product facts approved:** None
-- **Elements not approved:** exact A5 dimension proof, actual paper or sticker material, sticker artwork, sticker count, sticker layout, cut lines, border width, lamination, and actual Everstory product accuracy
-- **Safe use:** alternate Golden Style scene reference and compositing base for an actual A5 product image
-- **Preserve:** approved background colour, natural paper-fibre texture, sheet geometry and placement, full-sheet visibility, neutral sheet white, crop, negative space, lighting direction, shadow, and clear replacement boundary
+- **Elements not approved:** exact A5 dimension proof, actual paper or sticker material, sticker artwork, sticker count, sticker layout, cut lines, border width, lamination, actual Everstory product accuracy, the localized upper-left hotspot, and the original long directional shadow
+- **Safe use:** alternate Golden Style scene reference and compositing base for an actual A5 product image after applying the lighting override below
+- **Preserve:** approved background colour, natural paper-fibre texture, sheet geometry and placement, full-sheet visibility, neutral sheet white, crop, negative space, tonal family, and clear replacement boundary
 - **Texture locks:** no linen or canvas appearance, horizontal-and-vertical crosshatch, uniform fibre spacing, repeated digital tile, grid, wood grain, folds, seams, or pronounced texture
+- **Lighting reference:** use `GOLDEN_STYLE_01` only for broad natural diffusion, balanced exposure, and contact-shadow softness; do not copy its pale wood surface, wood grain, colour, crop, or sheet geometry
+- **Lighting override:** remove the visible upper-left 45-degree hotspot and localized bright patch; replace them with large-window-through-sheer-curtain or large-softbox diffusion distributed across the full frame
+- **Shadow override:** retain only a close, faint contact shadow with a subtle lower-right falloff; no hard edge, long cast shadow, or floating appearance
+- **Lighting locks:** no spotlight, narrow beam, window-shaped light, circular or oval hotspot, harsh contrast, heavy vignette, overexposed sheet, or corner darkening
+- **Controlled-change scope:** change only light distribution, exposure balance, and shadow softness; preserve all approved background, texture, geometry, crop, and colour locks
 - **Minor variation accepted:** the approved result is slightly lighter and more peach-forward than the earlier muted blush-greige candidate; do not correct this unless a new controlled QA cycle is intentionally started
-- **Do not regenerate:** preserve the approved image and replace only the blank sheet area when an actual product source becomes available
+- **Do not broadly regenerate:** apply one controlled lighting-only edit, complete a new visual QA check, then preserve the accepted derivative and replace only the blank sheet area when an actual product source becomes available
 - **Approved:** 2026-07-29
 
 ### `GOLDEN_STYLE_HANDHELD_01` Approval
@@ -246,10 +251,16 @@ When attaching multiple images, identify them explicitly:
 Image 1 — Actual product source:
 Preserve exact sticker artwork, count, layout, cut shape, header, and material.
 
-Image 2 — Golden Style reference:
-Use only the background, lighting, camera angle, and composition.
+Image 2 — Golden Style base:
+Use only its explicitly approved background, texture, tonal family, camera angle,
+composition, and replacement boundary. Apply any documented override instead of
+copying a rejected source-image property.
 
-Image 3 — Optional prop reference:
+Image 3 — Optional separate lighting reference:
+Use only the approved diffusion quality, exposure balance, and shadow softness.
+Do not copy its surface material, colour, texture, crop, or object geometry.
+
+Image 4 — Optional prop reference:
 Use only the prop type and approximate position.
 ```
 

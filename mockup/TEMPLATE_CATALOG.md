@@ -1,6 +1,6 @@
 # Everstory Mockup Template Catalog
 
-**Version:** 1.6  
+**Version:** 1.7  
 **Updated:** 2026-07-29  
 **Default mode:** `concept`
 
@@ -48,20 +48,34 @@
 - clean square composition,
 - actual sheet replacement required before ecommerce use.
 
-#### `GOLDEN_STYLE_02` — Warm Blush Paper
+#### `GOLDEN_STYLE_02` — Warm Blush Paper (Lighting Override Required)
 
 - warm blush-greige uncoated paper background,
 - slightly peach-forward approved tone,
 - sparse, irregular, multidirectional paper fibres,
 - gentle organic tonal variation,
 - neutral white sheet,
-- soft upper-left lighting and restrained contact shadow,
+- broad, softly diffused illumination with no localized upper-left hotspot,
+- close, faint contact shadow with no long or hard-edged directional cast,
 - no wood grain, linen weave, canvas texture, crosshatch, grid, or repeated digital pattern,
 - actual sheet replacement required before ecommerce use.
 
 When using `GOLDEN_STYLE_02`, reference the approved image for its background
-colour, natural paper-fibre texture, lighting, tonal balance, and negative-space
-system. Do not reinterpret its blank sheet as an actual Everstory product.
+colour, natural paper-fibre texture, tonal family, sheet placement, crop, and
+negative-space system. Use `GOLDEN_STYLE_01` only as a secondary reference for
+broad natural light diffusion and shadow softness. Do not copy its pale wood
+background, wood grain, colour, or sheet geometry. Do not reinterpret the blank
+sheet in either reference as an actual Everstory product.
+
+### `GOLDEN_STYLE_02` Lighting Override
+
+- remove the visible upper-left 45-degree hotspot and any localized bright patch,
+- use large-window-through-sheer-curtain or large-softbox diffusion across the full frame,
+- keep exposure transitions gradual from the centre to all four edges,
+- retain only a subtle, close contact shadow with a faint lower-right falloff,
+- no narrow light beam, window-shaped light, hard shadow edge, long cast shadow, or heavy vignette,
+- change only light distribution, exposure balance, and shadow softness,
+- preserve the warm blush-greige tone, natural fibres, white-sheet geometry, top-down crop, and negative space.
 
 ### Hard Locks
 
