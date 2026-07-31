@@ -1,0 +1,103 @@
+{
+  "_meta": {
+    "schema": "Everstory Product Gallery QA",
+    "version": "1.0",
+    "maximum_score": 100,
+    "scope": "shared; evaluate only against the active SKU sources"
+  },
+  "automatic_rejection_gates": [
+    {
+      "id": "GATE_WRONG_EVIDENCE_STATUS",
+      "condition": "A concept scene or generative composite is presented as an actual photograph or final product proof without verification.",
+      "result": "reject"
+    },
+    {
+      "id": "GATE_IDENTITY_DRIFT",
+      "condition": "A supplied customer or mockup face is redrawn, beautified, aged, rotated, or varied when exact preservation is required.",
+      "result": "reject"
+    },
+    {
+      "id": "GATE_COUNT_OR_LAYOUT_DRIFT",
+      "condition": "The output adds, removes, duplicates, reorders, crops, or changes sticker positions against the locked asset-specific layout.",
+      "result": "reject"
+    },
+    {
+      "id": "GATE_TEXT_OR_QR_DRIFT",
+      "condition": "A locked logo, header, mock name, date, order field, footer, or QR is removed, rewritten, blurred, or regenerated incorrectly.",
+      "result": "reject"
+    },
+    {
+      "id": "GATE_PHYSICAL_DRIFT",
+      "condition": "The actual photographed sheet becomes floating, plastic, overly thick, severely warped, or inconsistent with its real edge and shadow.",
+      "result": "reject"
+    },
+    {
+      "id": "GATE_INVENTED_PRODUCT_FACT",
+      "condition": "The image invents a universal count, unsupported material behavior, size, performance claim, packaging, or product feature.",
+      "result": "reject"
+    },
+    {
+      "id": "GATE_PRODUCT_CROP",
+      "condition": "A full-sheet gallery slot crops or hides the sheet boundary.",
+      "result": "reject"
+    },
+    {
+      "id": "GATE_BRAND_CONFLICT",
+      "condition": "The result uses a yellow cast, candy-pastel scrapbook direction, clutter, or generic glossy CGI product styling.",
+      "result": "reject"
+    }
+  ],
+  "score_categories": [
+    {
+      "id": "PRODUCT_FIDELITY",
+      "weight": 30,
+      "full_score": "All source-locked product details match the registered references."
+    },
+    {
+      "id": "PURCHASE_CLARITY",
+      "weight": 20,
+      "full_score": "The gallery slot answers its assigned customer question immediately."
+    },
+    {
+      "id": "PHYSICAL_REALISM",
+      "weight": 15,
+      "full_score": "Sheet geometry, material response, perspective and shadow look photographed."
+    },
+    {
+      "id": "COMPOSITION",
+      "weight": 15,
+      "full_score": "Product scale, crop and negative space suit the intended ecommerce slot."
+    },
+    {
+      "id": "BRAND_ALIGNMENT",
+      "weight": 10,
+      "full_score": "The image feels warm, quiet, editorial, personal and restrained."
+    },
+    {
+      "id": "SERIES_FIT",
+      "weight": 5,
+      "full_score": "The image contributes a distinct role without duplicating another gallery slot."
+    },
+    {
+      "id": "OUTPUT_FIT",
+      "weight": 5,
+      "full_score": "Resolution, aspect ratio and crop room fit Shopify use."
+    }
+  ],
+  "score_interpretation": {
+    "95_100": "Eligible for final_candidate only if every automatic gate passes and a human verifies the sources.",
+    "90_94": "Strong review candidate. Revise one fidelity or visual issue.",
+    "80_89": "Direction may be useful but requires major correction.",
+    "0_79": "Reject for gallery use."
+  },
+  "required_review_output": [
+    "status",
+    "gallery_slot",
+    "automatic_gate_result",
+    "product_fidelity",
+    "total_score",
+    "detected_deviations",
+    "safe_use",
+    "single_highest_priority_next_action"
+  ]
+}

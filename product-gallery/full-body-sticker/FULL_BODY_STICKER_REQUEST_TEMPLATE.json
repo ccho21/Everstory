@@ -1,0 +1,50 @@
+{
+  "_meta": {
+    "schema": "Everstory Full Body Sticker Gallery Request",
+    "version": "1.0",
+    "active_sku": "Full Body Sticker"
+  },
+  "gallery_slot": "01",
+  "objective": "Improve the actual photographed Full Body Sticker sheet for the PDP hero",
+  "output": {
+    "use": "Shopify PDP gallery",
+    "aspect_ratio": "1:1",
+    "variation_count": 1
+  },
+  "inputs": [
+    {
+      "reference_id": "FULL_ACTUAL_SHEET_01",
+      "role": "actual_product_photo",
+      "preserve": [
+        "complete physical sheet",
+        "all printed stickers",
+        "identity and pose",
+        "count and layout",
+        "header and footer",
+        "approved mock data",
+        "QR",
+        "sheet edge and corners",
+        "curvature and contact shadow"
+      ]
+    }
+  ],
+  "allowed_changes": [
+    "square crop",
+    "neutral-warm white balance",
+    "moderate exposure and contrast correction",
+    "isolated background dust cleanup"
+  ],
+  "hard_locks": [
+    "do not replace the printed surface",
+    "do not use Face Sticker references",
+    "do not redraw identities or text",
+    "do not add or remove stickers",
+    "do not alter the QR"
+  ],
+  "status_target": "actual_photo_correction_candidate",
+  "final_use_requires": [
+    "comparison with FULL_ACTUAL_SHEET_01",
+    "shared QA_RUBRIC automatic gates pass",
+    "human approval"
+  ]
+}
