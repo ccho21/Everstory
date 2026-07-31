@@ -1,0 +1,37 @@
+{
+  "product_id": "full_body_sticker",
+  "status": "actual_reference_available",
+  "sheet_format": {
+    "name": "A5",
+    "width_mm": 148,
+    "height_mm": 210
+  },
+  "verified_example": {
+    "size_in": 1.5,
+    "size_mm": 38,
+    "material": "White Matte",
+    "design_count": 1,
+    "layout_columns": 5,
+    "layout_rows": 4,
+    "position_count": 20
+  },
+  "default_material_for_mockups": "White Matte",
+  "references": ["REF_FULL_BODY_SHEET_01", "REF_FULL_BODY_SCALE_01"],
+  "hard_locks": [
+    "identity",
+    "face",
+    "body_pose",
+    "hands_and_feet",
+    "clothing",
+    "body_proportions",
+    "full_silhouette",
+    "cutline",
+    "aspect_ratio",
+    "verified_sheet_layout"
+  ],
+  "unknowns": [
+    "sizes other than the verified 1.5in example",
+    "materials other than White Matte"
+  ]
+}
+

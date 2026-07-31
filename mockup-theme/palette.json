@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "color_space": "sRGB",
+  "core": {
+    "soft_neutral_gray": "#D2D0CD",
+    "deep_teal": "#295E61",
+    "blue_gray": "#536873",
+    "warm_off_white": "#F8F0EA",
+    "dark_stone": "#595858",
+    "warm_cream": "#E7E1C5"
+  },
+  "extended": {
+    "muted_coral": "#C9786A",
+    "controlled_cobalt": "#4F6F9C",
+    "sage": "#8FA38C",
+    "smoky_lavender": "#938BA4",
+    "muted_saffron": "#D3AD4A"
+  },
+  "lighting": {
+    "white_balance_kelvin_min": 5000,
+    "white_balance_kelvin_max": 5600,
+    "forbidden_casts": ["yellow", "orange", "brown", "all-beige"]
+  },
+  "scene_recipes": {
+    "S01_SHEET": ["#D9E2EA", "#F8F0EA", "#C9786A", "#4F6F9C", "#8FA38C"],
+    "S02_STATIONERY": ["#F0F2F3", "#295E61", "#F8F0EA", "#4F6F9C", "#C9786A"],
+    "S03_TECH": ["#343A40", "#536873", "#C7CBD0", "#4F6F9C", "#D3AD4A"],
+    "L01_LIFESTYLE": ["#C9CDD0", "#295E61", "#8FA38C", "#C9786A"]
+  },
+  "rules": {
+    "colors_per_image_min": 3,
+    "colors_per_image_max": 4,
+    "muted_saffron_max_percent": 5,
+    "color_comes_from": ["product surface", "prop surface", "background plane"],
+    "color_does_not_come_from": ["global color cast", "yellow lighting"]
+  }
+}
+

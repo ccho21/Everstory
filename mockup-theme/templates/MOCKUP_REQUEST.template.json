@@ -1,0 +1,59 @@
+{
+  "request_id": "YYYYMMDD-product-scene-v01",
+  "mode": "reference_locked",
+  "scene_id": "S02_STATIONERY",
+  "output": {
+    "use": "shopify_product_gallery",
+    "aspect_ratio": "4:5",
+    "orientation": "portrait"
+  },
+  "products": [
+    {
+      "product_id": "face_sticker",
+      "asset_ref": "REF_FACE_SHEET_01",
+      "unit": "sheet",
+      "size_in": 1.25,
+      "material": "White Matte",
+      "show_complete_sheet": true
+    },
+    {
+      "product_id": "face_sticker",
+      "asset_ref": "REF_FACE_SHEET_01",
+      "unit": "single",
+      "size_in": 1.25,
+      "material": "White Matte"
+    },
+    {
+      "product_id": "full_body_sticker",
+      "asset_ref": "REF_FULL_BODY_SHEET_01",
+      "unit": "single",
+      "size_in": 1.5,
+      "material": "White Matte"
+    }
+  ],
+  "product_placements": [
+    {
+      "asset_ref": "REF_FACE_SHEET_01",
+      "target": "a5_sheet_slot",
+      "action": "replace_blank_sheet"
+    },
+    {
+      "asset_ref": "REF_FACE_SHEET_01",
+      "target": "notebook_lower_right",
+      "size_in": 1.25,
+      "action": "apply_single_sticker"
+    },
+    {
+      "asset_ref": "REF_FULL_BODY_SHEET_01",
+      "target": "large_key_tag_center",
+      "size_in": 1.5,
+      "action": "apply_single_sticker"
+    }
+  ],
+  "leave_blank": ["metal_pencil_case"],
+  "device_references": [],
+  "lifestyle_context": null,
+  "color_recipe": "S02_STATIONERY",
+  "notes": "Change only request values. Do not loosen product hard locks."
+}
+
