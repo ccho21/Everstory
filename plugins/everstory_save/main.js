@@ -122,8 +122,8 @@ function parsePath(absPath) {
 
 async function nextSequenceNumber(folderEntry, prefix) {
   // folderEntry 안의 `{prefix}_NN[_TIER]_clean.psd` 들 중 최대 번호 + 1 반환.
-  // tier (XS|S|M|L|FAM) 는 옵션 — tier 무관하게 NN 공유 카운트, 레거시 무-tier 파일과도 호환.
-  const re = new RegExp("^" + escapeRegex(prefix) + "_([0-9]+)(?:_(?:XS|S|M|L|FAM))?_clean\\.psd$", "i");
+  // tier 는 옵션 — tier 무관하게 NN 공유 카운트. 레거시 무-tier 및 _FAM 파일도 인식한다.
+  const re = new RegExp("^" + escapeRegex(prefix) + "_([0-9]+)(?:_(?:XS|S|M|L|XL|XXL|FAM))?_clean\\.psd$", "i");
   let maxN = 0;
   try {
     const entries = await folderEntry.getEntries();

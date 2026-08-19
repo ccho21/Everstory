@@ -88,7 +88,7 @@
     "1.5\" / 38mm",
     "2\" / 51mm",
     "2.5\" / 64mm",
-    "Package (4 designs / 1 sheet · 8 designs / 2 sheets · 파일명 _XS/_S/_M/_L/_FAM)",
+    "Package (4 designs / 1 sheet · 8 designs / 2 sheets · 파일명 _XS/_S/_M/_L/_XL/_XXL)",
     "All sizes 0.75-2.5in (모든 사이즈 1장 이상)"
   ];
   var SIZE_VALUES = [19.05, 25.4, 31.75, 38.1, 50.8, 63.5, PACKAGE_SIZE_VALUE, ALLSIZES_SIZE_VALUE];
@@ -103,13 +103,13 @@
 
   // ── Package 모드 (no_cap 변형, 파일명 토큰 입력) ───────────────────
   // 고객이 사진마다 사이즈를 임의 지정. Phase A 파일명 = {folder}_{NN}_{TIER}:
-  // 끝에 _XS/_S/_M/_L/_FAM (대소문자 무시). 토큰 없으면 S(=1") 기본.
+  // 끝에 _XS/_S/_M/_L/_XL/_XXL (대소문자 무시). 토큰 없으면 S(=1") 기본.
+  // 과거 2.5" 토큰 _FAM 은 읽을 때 XXL 로 정규화한다.
   // 접미사(_sil/_clean) strip 후 끝에 anchored — 레거시 _{NN}(숫자) 는 tier 글자와 안 겹침.
-  // L=2"(50.8mm) 는 신규 값 — tier 패커는 인치만 받으므로 단일 사이즈 표 무변경.
-  var TIER_SIZE_MM = { XS: 19.05, S: 25.4, M: 38.1, L: 50.8, FAM: 63.5 };
+  var TIER_SIZE_MM = { XS: 19.05, S: 25.4, M: 31.75, L: 38.1, XL: 50.8, XXL: 63.5 };
   var TIER_DEFAULT = "S";
-  // _sil.png/_clean.psd 접미사 제거 후 이름 끝의 _TIER 토큰. XS 를 S 보다 앞에 둬 부분매칭 방지.
-  var TIER_TOKEN_RE = /_(XS|FAM|S|M|L)$/i;
+  // _sil.png/_clean.psd 접미사 제거 후 이름 끝의 _TIER 토큰. 긴 토큰을 먼저 둬 부분매칭 방지.
+  var TIER_TOKEN_RE = /_(XXL|XL|XS|FAM|S|M|L)$/i;
   // shelf 충전 한계 (ragged edge). 면적 예산 사전 trim 게이트 — 보수적으로 잡아 packer leftover 최소화.
   var TIER_PACK_EFFICIENCY = 0.80;
 
@@ -192,7 +192,7 @@
     tierTrim = _tierAreaBudget(layoutPairs, binW, binH);
     if (tierTrim.rejected) {
       alert("Family(2.5\") 사진만으로 A5 한 시트를 초과합니다.\n" +
-            "Family 수를 줄이거나 일부를 L 이하로 조정하세요. (Family 는 자동 trim 안 함 — 운영자 확인 필요)");
+            "Family 수를 줄이거나 일부를 XL 이하로 조정하세요. (Family 는 자동 trim 안 함 — 운영자 확인 필요)");
       try { doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eTrj) {}
       return;
     }
@@ -322,7 +322,8 @@
     sizeLineText = "Package (파일명): " + _packageDistStr(layoutPairs) +
       (tierTrim && tierTrim.trimmed.length > 0
         ? " / 예산 trim XS" + tierTrim.trimmedByTier.XS + " S" + tierTrim.trimmedByTier.S +
-          " M" + tierTrim.trimmedByTier.M + " L" + tierTrim.trimmedByTier.L
+          " M" + tierTrim.trimmedByTier.M + " L" + tierTrim.trimmedByTier.L +
+          " XL" + tierTrim.trimmedByTier.XL
         : "") +
       " / 칼선 여백: " + options.cutMarginMm + "mm";
   } else if (options.isAllSizes) {
@@ -1093,6 +1094,7 @@
         var nameNoSuffix = pngName.replace(/_sil\.png$/i, "");
         var tierMatch = nameNoSuffix.match(TIER_TOKEN_RE);
         var tier = tierMatch ? tierMatch[1].toUpperCase() : TIER_DEFAULT;
+        if (tier === "FAM") tier = "XXL";
         pairs.push({
           psd: psdFile,
           sil: pngFiles[i],
@@ -1764,15 +1766,15 @@
     };
   }
 
-  // 티어 분포 문자열 (FAM→XS 순, 0 인 tier 생략). 완료 메시지/사이즈 라인 표시용.
+  // 티어 분포 문자열 (XXL→XS 순, 0 인 tier 생략). 완료 메시지/사이즈 라인 표시용.
   function _packageDistStr(arr) {
-    var c = { XS: 0, S: 0, M: 0, L: 0, FAM: 0 };
+    var c = { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 };
     for (var i = 0; i < arr.length; i++) {
       var t = arr[i].tier;
       if (c[t] == null) t = TIER_DEFAULT;
       c[t]++;
     }
-    var order = ["FAM", "L", "M", "S", "XS"];
+    var order = ["XXL", "XL", "L", "M", "S", "XS"];
     var parts = [];
     for (var k = 0; k < order.length; k++) {
       if (c[order[k]] > 0) parts.push(order[k] + "×" + c[order[k]]);
@@ -1794,18 +1796,18 @@
   //   같은 정돈 + 면적 충전 (혼합 행 한가운데 떠 있던 작은 컷 제거).
   //   행 구조: 한 행 = 한 tier(row.tierLock). 배치는 같은 tier 행 중 폭 여유 있는 행 아무 곳,
   //   없으면 맨 아래 새 행 (_placeBanded). 마지막에 행 키 내림차순 정렬 → 위 큰 행, 아래 작은 행.
-  //   Phase A — 각 사진 1회 배치(base). 행 배치 실패(서로 다른 tier 행 누적 > binH, 예: FAM+L+M+S
+  //   Phase A — 각 사진 1회 배치(base). 행 배치 실패(서로 다른 tier 행 누적 > binH, 예: XXL+XL+L+M
   //     4단 = 185.3mm > 171mm)는 column 후보로 보류 → column 채움 단계가 다른 행 옆에 구제.
   //     column 까지 0장(진짜 오버사이즈)일 때만 leftover. 그 tier 은 행 pass 제외(행 비균일 방지).
   //   Phase B (Model B — tier 단위 균일 반복, 기존 정책 그대로):
-  //     · FAM 은 반복 0, 각 1장 고정 ("FAM 무조건 하나" 를 r=1 pin 으로 일반화 — 다중 FAM 도 안 버림).
-  //     · 비-FAM tier 는 "그 tier 사진 전부 한 장씩" 을 atomic pass 로 추가. 한 장이라도 못 들어가면
+  //     · XXL 은 반복 0, 각 1장 고정 (다중 XXL 도 버리지 않음).
+  //     · 비-XXL tier 는 "그 tier 사진 전부 한 장씩" 을 atomic pass 로 추가. 한 장이라도 못 들어가면
   //       _snapPack 스냅샷으로 통째 롤백 + 그 tier 은퇴 → within-tier 균일 불변식 보존.
-  //     · round-robin L→M→S→XS 으로 시트가 닿을 때까지. tier 안 균일·tier끼리는 다름.
+  //     · round-robin XL→L→M→S→XS 으로 시트가 닿을 때까지. tier 안 균일·tier끼리는 다름.
   //   Column 채움 — 각 행의 남은 폭에 작은 tier 의 같은 사이즈 세로 column(2단+, _buildTierColumn).
   //     셀 디자인은 tier 안 round-robin cursor → 개수 ±1 균형(엄밀 균일이 아닌 유일한 단계 —
-  //     2026-06-11 사용자 승인). AllSizes hero 행의 small column 과 동일한 시각 언어. FAM 행 옆
-  //     빈 폭이 주 수혜 (FAM 한 장 + 옆 column 채움).
+  //     2026-06-11 사용자 승인). AllSizes hero 행의 small column 과 동일한 시각 언어. XXL 행 옆
+  //     빈 폭이 주 수혜 (XXL 한 장 + 옆 column 채움).
   //   _shelfRowsToPlaced 가 외곽=내부 gap 균등 분배 + isVStack expand. 반환 shape 은 기존 호환.
   //   행 정렬 후 row.y 는 stale — 위치 SOT 는 placed (rows 는 길이/구성 통계용).
   // 기회주의 90° 회전: 원본 방향 우선 시도, 행에 안 들어갈 때만 회전(w/h swap)으로 재시도. 회전은
@@ -1898,7 +1900,7 @@
     var leftover = [];
 
     // Phase A — 각 사진 1회 배치 (tier 밴드 행). 실패는 column 후보로 보류 (즉시 leftover 금지 —
-    //   FAM+L+M+S 처럼 tier 행 4단이 binH 를 넘으면 마지막 tier 가 행을 못 여는 케이스).
+    //   XXL+XL+L+M 처럼 tier 행 누적이 binH 를 넘으면 마지막 tier 가 행을 못 여는 케이스).
     var colOnly = [];
     for (var p = 0; p < n; p++) {
       if (_placeBanded(rows, ordered[p], binW, binH, gap)) continue;
@@ -1908,12 +1910,12 @@
 
     // Phase B — Model B tier 단위 균일 반복 (배치만 밴드 행으로, 정책은 기존 그대로)
     var repeatedCount = 0;
-    var tierSeq = ["L", "M", "S", "XS"];
-    var tierGroups = { L: [], M: [], S: [], XS: [] };
-    var tierNoRows = { L: false, M: false, S: false, XS: false };
+    var tierSeq = ["XL", "L", "M", "S", "XS"];
+    var tierGroups = { XL: [], L: [], M: [], S: [], XS: [] };
+    var tierNoRows = { XL: false, L: false, M: false, S: false, XS: false };
     for (var gi = 0; gi < n; gi++) {
       var gp = ordered[gi];
-      if (gp.tier === "FAM" || !tierGroups[gp.tier]) continue;  // FAM·미지정 tier 반복 제외
+      if (gp.tier === "XXL" || !tierGroups[gp.tier]) continue;  // XXL·미지정 tier 반복 제외
       // 행 배치 못 한 디자인이 있는 tier 은 행 pass 제외(행 기반 비균일 방지) — column 은 허용.
       if (gp._colOnly) tierNoRows[gp.tier] = true;
       tierGroups[gp.tier].push(gp);
@@ -1922,7 +1924,7 @@
       tierGroups[tierSeq[so]] = _sortedPairsForShelf(tierGroups[tierSeq[so]], false);
     }
 
-    var retired = { L: false, M: false, S: false, XS: false };
+    var retired = { XL: false, L: false, M: false, S: false, XS: false };
     var guard = 0;
     var anyActive = true;
     while (anyActive && guard++ < 100000) {
@@ -1951,8 +1953,8 @@
     }
 
     // Column 채움 — 각 행 남은 폭에 작은 tier column (작은 tier 부터 시도). 행 키는 안 키움.
-    var colCursor = { XS: 0, S: 0, M: 0 };
-    var ascTiers = ["XS", "S", "M"];
+    var colCursor = { XS: 0, S: 0, M: 0, L: 0 };
+    var ascTiers = ["XS", "S", "M", "L"];
     for (var cr = 0; cr < rows.length; cr++) {
       while (true) {
         var col = null;
@@ -1993,13 +1995,13 @@
   }
 
   // _tierAreaBudget — 한 시트 면적 예산 사전 trim (Phase 3, Option 1 정책).
-  //   상승 trim: XS→S→M→L 순, 각 tier 안에서 작은 면적부터 제거(시각 손실 최소). FAM 은 보호.
-  //   XS~L 전부 빼도 FAM-only 가 예산 초과면 rejected=true → 호출부가 hard reject + alert.
+  //   상승 trim: XS→S→M→L→XL 순, 각 tier 안에서 작은 면적부터 제거(시각 손실 최소). XXL 은 보호.
+  //   XS~XL 전부 빼도 XXL-only 가 예산 초과면 rejected=true → 호출부가 hard reject + alert.
   //   pairs 는 _measurePairAspect 가 선행돼 .aspect 가 채워져 있어야 함 (다른 packer 와 동일 전제).
   function _tierAreaBudget(pairs, binW, binH) {
     var budget = binW * binH * TIER_PACK_EFFICIENCY;
 
-    var buckets = { XS: [], S: [], M: [], L: [], FAM: [] };
+    var buckets = { XS: [], S: [], M: [], L: [], XL: [], XXL: [] };
     for (var i = 0; i < pairs.length; i++) {
       _tierBox(pairs[i]);
       var t = pairs[i].tier;
@@ -2010,12 +2012,13 @@
     function _area(p) { return p.cellW * p.cellH; }
     function _sum(arr) { var s = 0; for (var k = 0; k < arr.length; k++) s += _area(arr[k]); return s; }
     function _total() {
-      return _sum(buckets.XS) + _sum(buckets.S) + _sum(buckets.M) + _sum(buckets.L) + _sum(buckets.FAM);
+      return _sum(buckets.XS) + _sum(buckets.S) + _sum(buckets.M) + _sum(buckets.L) +
+        _sum(buckets.XL) + _sum(buckets.XXL);
     }
 
     var trimmed = [];
-    var trimmedByTier = { XS: 0, S: 0, M: 0, L: 0 };
-    var ladder = ["XS", "S", "M", "L"];
+    var trimmedByTier = { XS: 0, S: 0, M: 0, L: 0, XL: 0 };
+    var ladder = ["XS", "S", "M", "L", "XL"];
     for (var li = 0; li < ladder.length && _total() > budget; li++) {
       var b = buckets[ladder[li]];
       b.sort(function (a, c) { return _area(a) - _area(c); });
@@ -2025,10 +2028,10 @@
       }
     }
 
-    var rejected = (_total() > budget);  // XS~L 다 비웠는데도 초과 = FAM-only 초과
+    var rejected = (_total() > budget);  // XS~XL 다 비웠는데도 초과 = XXL-only 초과
 
     var kept = [];
-    var keepOrder = ["FAM", "L", "M", "S", "XS"];
+    var keepOrder = ["XXL", "XL", "L", "M", "S", "XS"];
     for (var ko = 0; ko < keepOrder.length; ko++) {
       var kb = buckets[keepOrder[ko]];
       for (var kj = 0; kj < kb.length; kj++) kept.push(kb[kj]);
@@ -2039,7 +2042,7 @@
       trimmed: trimmed,
       trimmedByTier: trimmedByTier,
       rejected: rejected,
-      famPt2: _sum(buckets.FAM),
+      famPt2: _sum(buckets.XXL),
       budgetPt2: budget
     };
   }
