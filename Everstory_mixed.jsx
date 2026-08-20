@@ -16,8 +16,9 @@
 //   3. templates/template_cutout_v2.ait 열기 (info > body PathItem, info > header > header_right TextFrame 사용)
 //   4. info > header > header_right 영역에 우측 정렬 3줄 (이름/사이즈/재질, 디자인수, Order/date) 배치
 //   5. info > body 영역에 선택한 페어를 packing
-//      - 단일 사이즈: 적응형 직사각 셀 (max cellW × max cellH) 위 cols × rows uniform grid.
-//        모든 행이 같은 디자인 round-robin 순서, 외곽 4면 = 내부 gap 자동 균등 분배
+//      - 단일 사이즈: aspect 밴드 격자 (v22) — 비율 혼합 입력은 방향/비율 밴드로 분리해
+//        밴드별 cellBox (max cellW × max cellH) 격자로 여백 최소화. 비율 균일 (밴드 1개) 이면
+//        기존 uniform grid 그대로. 모든 행이 같은 디자인 round-robin 순서, 외곽 = 내부 gap 균등
 //   6. 캐시: 같은 sil.png 는 시트당 1회만 Image Trace, 같은 _clean.psd 는 1회만 embed (TraceStash master 복제)
 //   7. 03_output 폴더에 .ai 자동 저장 (timestamp_size_sheet01.ai)
 //
@@ -28,7 +29,7 @@
 (function () {
   "use strict";
 
-  var SCRIPT_VARIANT = "v21 unified";
+  var SCRIPT_VARIANT = "v22 unified";
   var SCRIPT_TITLE = "Everstory Mixed Sheet (" + SCRIPT_VARIANT + ")";
   var MM_TO_PT = 2.834645;
   // body 안쪽 상하좌우 최소 여백. Package/전 사이즈 packer 가 빡빡하게 차서
@@ -39,6 +40,10 @@
   // 단일 사이즈는 _uniformGridPack 의 cols/rows 결정 floor 에만 영향 (시각 간격은 자동 균등 분배).
   // Package 는 _packPackage 의 _canAddToShelfRow 검사에 사용.
   var GAP_DEFAULT_MM = 2.5;
+  // 단일 사이즈 aspect 밴드 병합 허용비 — 같은 방향 (세로/가로) 에서 가변 변 (세로=cellW,
+  // 가로=cellH) 비율이 이 값 이상이면 같은 밴드. 1.0 에 가까울수록 밴드가 잘게 쪼개져
+  // 셀 여백은 줄고 밴드 경계 자투리 (부분 반복 행) 는 늘어난다.
+  var BAND_CELL_TOL = 0.85;
 
   // body 142×175mm (template_cutout_v2.ait info > body), BODY_PADDING_MM 2, GAP_DEFAULT_MM 2.5 기준
   // 사이즈별 슬롯 수 — _uniformGridPack 의 cols×rows floor 식을 정사각(aspect 1) 셀로 산출 (2026-06-12 갱신).
@@ -46,6 +51,8 @@
   // cap > 실제 슬롯이면 초과 디자인이 round-robin 에서 한 번도 안 놓이는 silent drop 발생 (구 148×195
   // baseline 표의 문제) — body/padding/gap 변경 시 이 표를 같은 식으로 반드시 재산출할 것.
   // 인치 6단계 (XS 0.75 / S 1 / M 1.25 / L 1.5 / XL 2 / XXL 2.5") 기준.
+  // aspect 밴드 격자 (v22) 에서도 floor 성질 유지 — 밴드 경로는 전 디자인 ≥1 배치를 자체
+  // 보장하고, 보장 불가 시 uniform grid fallback 이라 cap ≤ 실제 슬롯 불변식이 안 깨진다.
   var SLOTS_BY_SIZE = {
     19.05: 48,   // 0.75"  (6×8)
     25.4:  30,   // 1"     (5×6)
@@ -112,6 +119,20 @@
   var TIER_TOKEN_RE = /_(XXL|XL|XS|FAM|S|M|L)$/i;
   // shelf 충전 한계 (ragged edge). 면적 예산 사전 trim 게이트 — 보수적으로 잡아 packer leftover 최소화.
   var TIER_PACK_EFFICIENCY = 0.80;
+  // ── Package 디자인당 출력 장수 (min/max, hard max) ─────────────────
+  // 디자인×tier 당 시트 출력 장수 범위 (내부 제작 옵션). min 은 강제 pass(B0) + min 구제
+  // column 으로 보장 시도 — 공간 부족 시 완료 메시지에 min 미달 경고. max 는 hard cap:
+  // 행 pass·column·고아 행 채움 모두 준수, 남는 공간은 justify 가 간격으로 흡수.
+  // L/M/S min 2 — 쓰임새가 가장 많은 사이즈라 우선 확보 (2026-08-19 사용자 결정).
+  // XXL 1/1 은 기존 "XXL 반복 0, 각 1장 고정" 규칙의 표현 (tier 반복 기계에서 계속 제외).
+  var PKG_COUNT_BY_TIER = {
+    XXL: { min: 1, max: 1 },
+    XL:  { min: 1, max: 2 },
+    L:   { min: 2, max: 3 },
+    M:   { min: 2, max: 4 },
+    S:   { min: 2, max: 6 },
+    XS:  { min: 1, max: 8 }
+  };
 
   var testConfig = $.global.__EVERSTORY_NAME_INCLUDED_TEST__;
 
@@ -249,9 +270,9 @@
     // 보장분(6 사이즈)을 뺀 나머지는 채움 카운트.
     packResult.repeatedCount = Math.max(0, packResult.placed.length - ALLSIZES_ORDER_MM.length);
   } else {
-    // 단일 사이즈: 적응형 직사각 셀 위 격자 packer. 모든 행 동일 순서, 외곽 4면 = 내부 gap 균등.
-    // gap 입력은 최소 floor 이고 시각 간격은 (binW - cols × cellBoxW) / (cols + 1) 로 자동 분배.
-    packResult = _uniformGridPack(layoutPairs, binW, binH, gapPt);
+    // 단일 사이즈: aspect 밴드 격자. 비율 혼합 입력은 방향/비율 밴드별 cellBox 격자로
+    // 여백 최소화, 비율 균일 (밴드 1개)/배분 불가 입력은 내부에서 uniform grid 로 위임.
+    packResult = _aspectBandGridPack(layoutPairs, binW, binH, gapPt);
   }
 
   // _shelfRowsToPlaced 가 per-row + 세로 justify 로 final body 좌표 직접 산출 — 별도 centering 불필요
@@ -370,6 +391,17 @@
     evictionLine = "보장 구제 교체 (채움 양보): " + evParts.join(", ") + "\n";
   }
 
+  // Package 모드: PKG_COUNT_BY_TIER.min 을 공간 부족으로 못 채운 디자인 경고.
+  var pkgMinLine = "";
+  if (packResult.minShortfall && packResult.minShortfall.length > 0) {
+    var pmParts = [];
+    for (var pmI = 0; pmI < packResult.minShortfall.length; pmI++) {
+      var pm = packResult.minShortfall[pmI];
+      pmParts.push(pm.base + "(" + pm.tier + ") " + pm.count + "/" + pm.min + "장");
+    }
+    pkgMinLine = "⚠ Package min 미달 (공간 부족): " + pmParts.join(", ") + "\n";
+  }
+
   var msg =
     "완료: Name Included 시트 생성\n\n" +
     "스크립트: " + SCRIPT_VARIANT + "\n" +
@@ -381,17 +413,20 @@
     inputLine +
     (packResult.repeatedCount > 0 ? " (반복 채움 " + packResult.repeatedCount + "개 포함)" : "") + "\n" +
     "행: " + packResult.rows.length + "개" +
-    (options.isPackage ? " (Package: tier 밴드 + 균일 반복 + column 채움 + 기회주의 회전)\n" : (options.isAllSizes ? " (전 사이즈 0.75-2.5\" 각 1장+ / 작은 사이즈로 채움)\n" : " (uniform grid — 외곽 4면 = 내부 gap 균등 자동 분배)\n")) +
+    (options.isPackage ? " (Package: tier 밴드 + 균일 반복 + column 채움 + 기회주의 회전)\n" : (options.isAllSizes ? " (전 사이즈 0.75-2.5\" 각 1장+ / 작은 사이즈로 채움)\n" : (packResult.bandInfo ? " (aspect 밴드 격자 — 방향/비율별 cellBox, 외곽 4면 = 내부 gap 균등)\n" : " (uniform grid — 외곽 4면 = 내부 gap 균등 자동 분배)\n"))) +
     (options.isPackage
       ? "Package 배치: " + packResult.placed.length + "개 (미배치 " + packResult.leftover.length + ") / 입력 디자인 " + layoutPairs.length + "개\n"
       : (options.isAllSizes
       ? "전 사이즈 슬롯: " + (packResult.mixedSummary ? packResult.mixedSummary.human : "") + " (총 " + packResult.placed.length + "장 / 디자인 " + layoutPairs.length + "개)\n"
+      : (packResult.bandInfo
+      ? "밴드 그리드: " + _bandGridStr(packResult.bandInfo) + " = " + packResult.slots + " 슬롯 / 디자인 " + layoutPairs.length + "개\n"
       : "그리드: " + packResult.cols + "×" + packResult.gridRows + " = " + packResult.slots + " 슬롯 / 디자인 " + layoutPairs.length + "개" +
-        (layoutPairs.length > 0 ? " × " + Math.floor(packResult.slots / layoutPairs.length) + "회" + ((packResult.slots % layoutPairs.length) > 0 ? " (+" + (packResult.slots % layoutPairs.length) + " 보너스)" : "") : "") + "\n")) +
+        (layoutPairs.length > 0 ? " × " + Math.floor(packResult.slots / layoutPairs.length) + "회" + ((packResult.slots % layoutPairs.length) > 0 ? " (+" + (packResult.slots % layoutPairs.length) + " 보너스)" : "") : "") + "\n"))) +
     "Trace 캐시: unique " + uniquePairs.length + "개 (배치 " + packResult.placed.length + "회 → trace " + uniquePairs.length + "회)\n" +
     (packResult.leftover.length > 0 ? "미배치 사진: " + packResult.leftover.length + "개\n" : "") +
     missingSizesLine +
     evictionLine +
+    pkgMinLine +
     saveLine;
 
   if (failedItems.length > 0) {
@@ -1689,6 +1724,204 @@
     return count;
   }
 
+  // ── 단일 사이즈 aspect 밴드 격자 (v22) ─────────────────────────────
+  // 비율 혼합 입력에서 uniform grid 의 통합 cellBox (max W × max H) 가 정사각으로 퇴화해
+  // 셀마다 여백이 크게 남는 문제를 밴드로 해결한다. 우선순위: 여백 최소 > 미감, 회전 불사용
+  // (90° 사진 기각 — 2026-08-19 결정).
+  //   1) 밴드 분류 (_bandClusters): 방향 (tall = cellH > cellW / wide) 분리 후, 같은 방향
+  //      안에서 가변 변 (tall=cellW / wide=cellH) 내림차순 greedy 클러스터 — 리더 대비 비율
+  //      ≥ BAND_CELL_TOL 이면 같은 밴드. 밴드 cellBox = 밴드 내 max (통합 박스보다 항상 타이트).
+  //   2) 행 배분: 밴드 cols = floor((binW+gap)/(boxW+gap)), 초기 rows = ceil(D/cols) 로
+  //      전 디자인 ≥1 배치 보장. 남는 높이는 greedy — 현재 반복 수 (슬롯/디자인) 가 가장 낮은
+  //      밴드부터 행 추가, 아무 밴드도 못 들어갈 때까지 (여백 최소 + 디자인 반복 균형).
+  //      초기 배분이 binH 초과면 cliff fallback 대신 박스 면적 증가가 최소인 밴드 쌍부터
+  //      병합해 재시도 (_mergeClosestBands) — 밴드가 1개까지 줄면 uniform grid 와 동일
+  //      조건이므로 위임한다 (비율 다양 × 디자인 많은 입력에서 점진적 완화).
+  //   3) 정렬: 밴드는 boxH 내림차순 (위 큰 밴드 — Package/AllSizes 와 동일한 위→아래 흐름),
+  //      밴드 안 디자인은 입력 (선택) 순서 round-robin — 모든 행 같은 순서 (v19 원칙 유지).
+  //   좌표는 shelf row 로 변환해 _shelfRowsToPlaced 재사용 — 밴드 안 행들은 구성이 같아
+  //   컬럼이 정렬되고, 가로·세로 외곽 = 내부 gap 균등도 기존 grid 와 동일하게 적용된다.
+  //   밴드가 1개면 (비율 균일 입력) 그대로 _uniformGridPack — 기존 경로 무변경.
+  //   반환 shape 은 grid 호환 + bandInfo [{cols, rows, designs}] (완료 메시지용 — 존재 자체가
+  //   "밴드 경로로 배치됨" 마커. fallback/단일 밴드는 bandInfo 없음).
+  function _aspectBandGridPack(layoutPairs, binW, binH, gap) {
+    if (!layoutPairs || layoutPairs.length === 0) {
+      return _uniformGridPack(layoutPairs, binW, binH, gap);
+    }
+
+    var tall = [];
+    var wide = [];
+    for (var i = 0; i < layoutPairs.length; i++) {
+      layoutPairs[i]._ordIdx = i;   // 입력 순서 복원 + tie-break 용
+      if (layoutPairs[i].cellH > layoutPairs[i].cellW) tall.push(layoutPairs[i]);
+      else wide.push(layoutPairs[i]);
+    }
+
+    var bands = [];
+    _bandClusters(bands, tall, true);
+    _bandClusters(bands, wide, false);
+    if (bands.length <= 1) return _uniformGridPack(layoutPairs, binW, binH, gap);
+
+    var safeGap = gap < 0 ? 0 : gap;
+    var totalRows, totalH;
+    while (true) {
+      totalRows = 0;
+      totalH = 0;
+      for (var b = 0; b < bands.length; b++) {
+        var bd = bands[b];
+        bd.cols = Math.floor((binW + safeGap) / (bd.boxW + safeGap));
+        // main flow 의 anyTooBig 검사 (셀 ≤ bin) 로 cols ≥ 1 이 보장되지만, testConfig 직접 호출
+        // 등 검사 우회 경로에서도 grid 와 같은 동작이 되도록 fallback 으로 넘긴다.
+        if (bd.cols < 1) return _uniformGridPack(layoutPairs, binW, binH, gap);
+        bd.rows = Math.ceil(bd.pairs.length / bd.cols);
+        totalRows += bd.rows;
+        totalH += bd.rows * bd.boxH;
+      }
+      totalH += (totalRows - 1) * safeGap;
+      if (totalH <= binH) break;
+      // 초기 배분 (전 디자인 ≥1) 이 안 들어감 → 박스가 가장 비슷한 밴드 쌍 병합 후 재시도.
+      if (bands.length <= 2) return _uniformGridPack(layoutPairs, binW, binH, gap);
+      _mergeClosestBands(bands);
+    }
+
+    // greedy 행 추가 — 반복 수 최소 밴드 우선, tie 는 boxH 큰 밴드 (큰 셀이 남은 높이를
+    // 먼저 확보해야 나중에 못 들어가는 역전이 없다).
+    while (true) {
+      var best = -1;
+      var bestRatio = 0;
+      for (var g = 0; g < bands.length; g++) {
+        if (totalH + safeGap + bands[g].boxH > binH) continue;
+        var ratio = (bands[g].rows * bands[g].cols) / bands[g].pairs.length;
+        if (best < 0 || ratio < bestRatio ||
+            (ratio === bestRatio && bands[g].boxH > bands[best].boxH)) {
+          best = g;
+          bestRatio = ratio;
+        }
+      }
+      if (best < 0) break;
+      bands[best].rows++;
+      totalRows++;
+      totalH += safeGap + bands[best].boxH;
+    }
+
+    // 밴드 순서: boxH 내림차순 → boxW 내림차순 → 첫 디자인 입력 순 (결정적 출력).
+    bands.sort(function (a, c) {
+      if (a.boxH !== c.boxH) return c.boxH - a.boxH;
+      if (a.boxW !== c.boxW) return c.boxW - a.boxW;
+      return a.ord - c.ord;
+    });
+
+    var rowsList = [];
+    var bandInfo = [];
+    var y = 0;
+    var slots = 0;
+    for (var m = 0; m < bands.length; m++) {
+      var band = bands[m];
+      var cursor = 0;
+      for (var r = 0; r < band.rows; r++) {
+        var items = [];
+        for (var c2 = 0; c2 < band.cols; c2++) {
+          items.push({ w: band.boxW, h: band.boxH, payload: band.pairs[cursor % band.pairs.length] });
+          cursor++;
+        }
+        rowsList.push({ y: y, w: band.cols * band.boxW + (band.cols - 1) * safeGap, h: band.boxH, items: items });
+        y += band.boxH + safeGap;
+      }
+      slots += band.rows * band.cols;
+      bandInfo.push({ cols: band.cols, rows: band.rows, designs: band.pairs.length });
+    }
+
+    var placed = _shelfRowsToPlaced(rowsList, binW, binH, gap);
+    var D = layoutPairs.length;
+    return {
+      placed: placed,
+      leftover: [],
+      rows: rowsList,
+      repeatedCount: (slots > D) ? (slots - D) : 0,
+      cols: 0,
+      gridRows: totalRows,
+      slots: slots,
+      hSpace: 0,
+      vSpace: 0,
+      cellBoxW: 0,
+      cellBoxH: 0,
+      bandInfo: bandInfo
+    };
+  }
+
+  // 같은 방향 그룹을 가변 변 내림차순으로 정렬한 뒤 greedy 클러스터해 bands 에 push 한다.
+  // 리더 (클러스터에서 가변 변이 가장 큰 디자인) 대비 비율 ≥ BAND_CELL_TOL 이면 같은 밴드 —
+  // 조금씩 다른 비율 (4:5 vs 3:4) 은 묶고 크게 다른 것 (3:4 vs 9:16) 만 분리한다.
+  // 정렬은 클러스터 판정에만 쓰고, 밴드 안 디자인 순서는 입력 (선택) 순서로 복원한다.
+  function _bandClusters(bands, group, isTall) {
+    if (!group || group.length === 0) return;
+
+    var sorted = [];
+    for (var i = 0; i < group.length; i++) sorted.push(group[i]);
+    sorted.sort(function (a, b) {
+      var av = isTall ? a.cellW : a.cellH;
+      var bv = isTall ? b.cellW : b.cellH;
+      if (av !== bv) return bv - av;
+      return a._ordIdx - b._ordIdx;
+    });
+
+    var leaderV = 0;
+    for (var s = 0; s < sorted.length; s++) {
+      var v = isTall ? sorted[s].cellW : sorted[s].cellH;
+      if (s === 0 || v < leaderV * BAND_CELL_TOL) {
+        bands.push({ pairs: [], boxW: 0, boxH: 0, ord: sorted[s]._ordIdx });
+        leaderV = v;
+      }
+      sorted[s]._bandIdx = bands.length - 1;
+    }
+
+    for (var g = 0; g < group.length; g++) {   // 입력 순서로 다시 돌며 밴드에 적재
+      var p = group[g];
+      var bd = bands[p._bandIdx];
+      bd.pairs.push(p);
+      if (p.cellW > bd.boxW) bd.boxW = p.cellW;
+      if (p.cellH > bd.boxH) bd.boxH = p.cellH;
+      if (p._ordIdx < bd.ord) bd.ord = p._ordIdx;
+    }
+  }
+
+  // 초기 행 배분이 binH 를 넘을 때 밴드 한 쌍을 병합한다. 병합 비용 = 두 밴드의 디자인들이
+  // 합쳐진 cellBox (max W × max H) 로 옮겨갈 때 늘어나는 박스 면적 합 — 최소 쌍을 고른다
+  // (방향 경계 무관: tall+wide 병합은 박스가 정사각에 가까워지는 비용으로 자연히 후순위).
+  function _mergeClosestBands(bands) {
+    var bi = 0;
+    var bj = 1;
+    var bestCost = -1;
+    for (var i = 0; i < bands.length; i++) {
+      for (var j = i + 1; j < bands.length; j++) {
+        var mw = bands[i].boxW > bands[j].boxW ? bands[i].boxW : bands[j].boxW;
+        var mh = bands[i].boxH > bands[j].boxH ? bands[i].boxH : bands[j].boxH;
+        var cost = bands[i].pairs.length * (mw * mh - bands[i].boxW * bands[i].boxH) +
+                   bands[j].pairs.length * (mw * mh - bands[j].boxW * bands[j].boxH);
+        if (bestCost < 0 || cost < bestCost) {
+          bestCost = cost;
+          bi = i;
+          bj = j;
+        }
+      }
+    }
+    var keep = bands[bi];
+    var gone = bands[bj];
+    for (var k = 0; k < gone.pairs.length; k++) keep.pairs.push(gone.pairs[k]);
+    keep.pairs.sort(function (a, b) { return a._ordIdx - b._ordIdx; });   // 입력 순서 복원
+    if (gone.boxW > keep.boxW) keep.boxW = gone.boxW;
+    if (gone.boxH > keep.boxH) keep.boxH = gone.boxH;
+    if (gone.ord < keep.ord) keep.ord = gone.ord;
+    bands.splice(bj, 1);
+  }
+
+  // 밴드 grid 표기: "8×2 + 5×3 (밴드 2개)" — 완료 메시지용.
+  function _bandGridStr(bandInfo) {
+    var parts = [];
+    for (var i = 0; i < bandInfo.length; i++) parts.push(bandInfo[i].cols + "×" + bandInfo[i].rows);
+    return parts.join(" + ") + " (밴드 " + bandInfo.length + "개)";
+  }
+
   // _uniformGridPack — 단일 사이즈 모드 packer (v19).
   //   적응형 직사각 셀 (cellBoxW = max cellW, cellBoxH = max cellH) 위에 cols × rows 격자 산출.
   //   gap 입력은 "최소 사진 간격 floor" 이며, 실제 시각 간격은 (binW - cols × cellBoxW) / (cols + 1) 로
@@ -1799,11 +2032,14 @@
   //   Phase A — 각 사진 1회 배치(base). 행 배치 실패(서로 다른 tier 행 누적 > binH, 예: XXL+XL+L+M
   //     4단 = 185.3mm > 171mm)는 column 후보로 보류 → column 채움 단계가 다른 행 옆에 구제.
   //     column 까지 0장(진짜 오버사이즈)일 때만 leftover. 그 tier 은 행 pass 제외(행 비균일 방지).
-  //   Phase B (Model B — tier 단위 균일 반복, 기존 정책 그대로):
-  //     · XXL 은 반복 0, 각 1장 고정 (다중 XXL 도 버리지 않음).
+  //   Phase B (Model B — tier 단위 균일 반복 + min/max, 2026-08-19 확장):
+  //     · XXL 은 반복 0, 각 1장 고정 (다중 XXL 도 버리지 않음) = PKG_COUNT_BY_TIER.XXL 1/1.
   //     · 비-XXL tier 는 "그 tier 사진 전부 한 장씩" 을 atomic pass 로 추가. 한 장이라도 못 들어가면
   //       _snapPack 스냅샷으로 통째 롤백 + 그 tier 은퇴 → within-tier 균일 불변식 보존.
-  //     · round-robin XL→L→M→S→XS 으로 시트가 닿을 때까지. tier 안 균일·tier끼리는 다름.
+  //     · B0 (min 강제): PKG_COUNT_BY_TIER.min 까지 round-robin pass 를 greedy 보다 먼저 실행.
+  //     · B1 (greedy): round-robin XL→L→M→S→XS 으로 max cap 또는 시트가 닿을 때까지.
+  //     · min 구제 column / 고아 행 채움: 행 pass 가 못 채운 min 을 column 으로 구제하고,
+  //       tierNoRows 로 반복이 막힌 행을 자기 디자인으로 가로 채움. 미달은 minShortfall 보고.
   //   Column 채움 — 각 행의 남은 폭에 작은 tier 의 같은 사이즈 세로 column(2단+, _buildTierColumn).
   //     셀 디자인은 tier 안 round-robin cursor → 개수 ±1 균형(엄밀 균일이 아닌 유일한 단계 —
   //     2026-06-11 사용자 승인). AllSizes hero 행의 small column 과 동일한 시각 언어. XXL 행 옆
@@ -1814,13 +2050,17 @@
   //   placement 인스턴스 단위(같은 사진 복제본이 행 사정 따라 다르게 회전 가능 — 균일은 '횟수' 기준).
   //   비-마지막 행은 행 키 성장 금지(아래 행과 겹침 방지). column 셀은 upright 고정.
   // rotated 태그는 _shelfRowsToPlaced → placed → _placePhotoSticker 로 전달돼 실제 아트워크 회전.
-  function _tryAddToBandRow(row, pair, isLast, binW, binH, gap) {
+  function _tryAddToBandRow(row, pair, isLast, binW, binH, gap, relaxed) {
     var cands = [
       { w: pair.cellW, h: pair.cellH, payload: pair, rotated: false },
       { w: pair.cellH, h: pair.cellW, payload: pair, rotated: true }
     ];
     for (var c = 0; c < cands.length; c++) {
       if (!isLast && row.items.length > 0 && cands[c].h > row.h) continue;
+      // 높이 유사성 게이트 (v22): 같은 tier 라도 방향/비율 차이로 행 높이와 크게 다르면
+      // (예: 세로형 행에 납작한 가로형) 그 행에 안 넣는다 — 별도 행 또는 회전 후보가 처리.
+      // relaxed (게이트 해제) 는 _placeBanded 의 최후 fallback 전용.
+      if (!relaxed && row.items.length > 0 && !_heightsClose(cands[c].h, row.h)) continue;
       if (_canAddToShelfRow(row, cands[c], binW, binH, gap)) {
         _addToShelfRow(row, cands[c], gap);
         return true;
@@ -1832,28 +2072,52 @@
   function _placeBanded(rows, pair, binW, binH, gap) {
     for (var i = 0; i < rows.length; i++) {
       if (rows[i].tierLock !== pair.tier) continue;
-      if (_tryAddToBandRow(rows[i], pair, i === rows.length - 1, binW, binH, gap)) return true;
+      if (_tryAddToBandRow(rows[i], pair, i === rows.length - 1, binW, binH, gap, false)) return true;
     }
     var ny = rows.length > 0 ? rows[rows.length - 1].y + rows[rows.length - 1].h + gap : 0;
     var nr = _newShelfRow(ny);
     nr.tierLock = pair.tier;
-    if (_tryAddToBandRow(nr, pair, true, binW, binH, gap)) {
+    if (_tryAddToBandRow(nr, pair, true, binW, binH, gap, false)) {
       rows.push(nr);
       return true;
+    }
+    // 게이트 완화 fallback: 게이트 통과 행도, 새 행도 불가할 때만 기존 행에 게이트 없이
+    // (v21 동작) 재시도. 행 높이가 양방향 후보 사이에 끼는 dead-zone (예: 28.6mm 행에
+    // 21.4/38.1 후보) 에서 atomic pass 전체가 롤백되는 회귀 방지 — 게이트 이전에 가능했던
+    // 배치는 이 경로로 전부 유지되므로 게이트는 순수 선호 순서만 바꾼다.
+    for (var j = 0; j < rows.length; j++) {
+      if (rows[j].tierLock !== pair.tier) continue;
+      if (_tryAddToBandRow(rows[j], pair, j === rows.length - 1, binW, binH, gap, true)) return true;
     }
     return false;
   }
 
   // 같은 tier 세로 column (2단 이상) — AllSizes _buildSameSizeColumn 의 Package pair 버전.
-  function _buildTierColumn(grp, fromIdx, maxW, maxH, gap) {
+  function _pkgMin(tier) {
+    var c = PKG_COUNT_BY_TIER[tier];
+    return c ? c.min : 1;
+  }
+
+  function _pkgMax(tier) {
+    var c = PKG_COUNT_BY_TIER[tier];
+    return c ? c.max : 999999;
+  }
+
+  // counts 를 주면 max cap 준수: 디자인별 (기존 counts + 이 column 안 추가분) ≥ max 면 제외.
+  function _buildTierColumn(grp, fromIdx, maxW, maxH, gap, counts) {
     var cells = [];
     var stackH = 0;
     var stackW = 0;
     var idx = fromIdx;
+    var localAdd = {};
     while (true) {
       var found = -1;
       for (var s = 0; s < grp.length; s++) {
         var i = (idx + s) % grp.length;
+        if (counts) {
+          var eff = counts[grp[i].base] + (localAdd[grp[i].base] || 0);
+          if (eff >= _pkgMax(grp[i].tier)) continue;
+        }
         if (grp[i].cellW > maxW) continue;
         var nextH = cells.length > 0 ? stackH + gap + grp[i].cellH : grp[i].cellH;
         if (nextH > maxH) continue;
@@ -1865,6 +2129,7 @@
       stackH = cells.length > 0 ? stackH + gap + fit.cellH : fit.cellH;
       if (fit.cellW > stackW) stackW = fit.cellW;
       cells.push({ w: fit.cellW, h: fit.cellH, payload: fit });
+      localAdd[fit.base] = (localAdd[fit.base] || 0) + 1;
       idx = (found + 1) % grp.length;
     }
     if (cells.length < 2) return null;
@@ -1901,14 +2166,19 @@
 
     // Phase A — 각 사진 1회 배치 (tier 밴드 행). 실패는 column 후보로 보류 (즉시 leftover 금지 —
     //   XXL+XL+L+M 처럼 tier 행 누적이 binH 를 넘으면 마지막 tier 가 행을 못 여는 케이스).
+    var counts = {};   // base → 시트 출력 장수 (min/max 판정의 SOT)
+    for (var ci0 = 0; ci0 < n; ci0++) counts[ordered[ci0].base] = 0;
+
     var colOnly = [];
     for (var p = 0; p < n; p++) {
-      if (_placeBanded(rows, ordered[p], binW, binH, gap)) continue;
+      if (_placeBanded(rows, ordered[p], binW, binH, gap)) {
+        counts[ordered[p].base]++;
+        continue;
+      }
       ordered[p]._colOnly = true;
       colOnly.push(ordered[p]);
     }
 
-    // Phase B — Model B tier 단위 균일 반복 (배치만 밴드 행으로, 정책은 기존 그대로)
     var repeatedCount = 0;
     var tierSeq = ["XL", "L", "M", "S", "XS"];
     var tierGroups = { XL: [], L: [], M: [], S: [], XS: [] };
@@ -1926,6 +2196,39 @@
 
     var retired = { XL: false, L: false, M: false, S: false, XS: false };
     var guard = 0;
+
+    // Phase B0 — min 강제 pass (2026-08-19): PKG_COUNT_BY_TIER.min 까지 tier round-robin
+    //   으로 atomic pass 우선 실행 — greedy 반복(B1)이 다른 tier 의 min 공간을 먹기 전에
+    //   확보한다. pass 실패 tier 는 은퇴 (잔여 min 은 아래 min 구제 column 이 시도).
+    var minActive = true;
+    while (minActive && guard++ < 100000) {
+      minActive = false;
+      for (var tmq = 0; tmq < tierSeq.length; tmq++) {
+        var TM = tierSeq[tmq];
+        if (retired[TM] || tierNoRows[TM]) continue;
+        var mGrp = tierGroups[TM];
+        if (!mGrp || mGrp.length === 0) continue;
+        if (counts[mGrp[0].base] >= _pkgMin(TM)) continue;   // pass 는 균일이라 대표 검사
+        var mSnap = _snapPack(rows);
+        var mOk = true;
+        for (var mj = 0; mj < mGrp.length; mj++) {
+          if (_placeBanded(rows, mGrp[mj], binW, binH, gap)) continue;
+          mOk = false;
+          break;
+        }
+        if (mOk) {
+          for (var mj2 = 0; mj2 < mGrp.length; mj2++) counts[mGrp[mj2].base]++;
+          repeatedCount += mGrp.length;
+          minActive = true;
+        } else {
+          rows = mSnap;
+          retired[TM] = true;
+        }
+      }
+    }
+
+    // Phase B1 — Model B tier 단위 균일 반복 (기존 greedy). max cap 준수: 다음 pass 로
+    //   디자인 하나라도 max 를 넘기면 그 tier 은퇴 (hard max — 남는 공간은 justify 몫).
     var anyActive = true;
     while (anyActive && guard++ < 100000) {
       anyActive = false;
@@ -1934,6 +2237,12 @@
         if (retired[T]) continue;
         var grp = tierGroups[T];
         if (tierNoRows[T] || !grp || grp.length === 0) { retired[T] = true; continue; }
+        var maxT = _pkgMax(T);
+        var canRepeat = true;
+        for (var mc = 0; mc < grp.length; mc++) {
+          if (counts[grp[mc].base] + 1 > maxT) { canRepeat = false; break; }
+        }
+        if (!canRepeat) { retired[T] = true; continue; }
 
         var snap = _snapPack(rows);                 // atomic pass: 전부 1장씩, 실패 시 통째 롤백
         var passOk = true;
@@ -1943,6 +2252,7 @@
           break;
         }
         if (passOk) {
+          for (var pj2 = 0; pj2 < grp.length; pj2++) counts[grp[pj2].base]++;
           repeatedCount += grp.length;
           anyActive = true;
         } else {
@@ -1952,27 +2262,102 @@
       }
     }
 
-    // Column 채움 — 각 행 남은 폭에 작은 tier column (작은 tier 부터 시도). 행 키는 안 키움.
+    // min 구제 column (2026-08-19) — count < min 인 디자인 (Phase A 실패 colOnly 포함) 을
+    //   일반 column 채움 전에 우선 배치해 min 보장 복원. tier 큰 순서로, 폭 남는 행 어디든.
+    //   R8c 케이스: 행을 못 연 S tier 가 XS column 독식에 밀려 0장이 되던 문제 해소.
+    //   XXL 은 column 자체가 비실용적 (2단 127mm+) 이라 기존대로 제외 — 미달 시 leftover 보고.
+    var resActive = true;
+    while (resActive) {
+      resActive = false;
+      for (var rt = 0; rt < tierSeq.length && !resActive; rt++) {
+        var rGrp = tierGroups[tierSeq[rt]];
+        if (!rGrp || rGrp.length === 0) continue;
+        var deficit = [];
+        for (var rd = 0; rd < rGrp.length; rd++) {
+          if (counts[rGrp[rd].base] < _pkgMin(rGrp[rd].tier)) deficit.push(rGrp[rd]);
+        }
+        if (deficit.length === 0) continue;
+        for (var rr = 0; rr < rows.length; rr++) {
+          var rCol = _buildTierColumn(deficit, 0, binW - rows[rr].w - gap, rows[rr].h, gap, counts);
+          if (rCol === null) continue;
+          _addToShelfRow(rows[rr], rCol, gap);
+          for (var rc = 0; rc < rCol.cells.length; rc++) {
+            var rb = rCol.cells[rc].payload.base;
+            if (counts[rb] > 0) repeatedCount++;
+            counts[rb]++;
+          }
+          resActive = true;   // counts 갱신됐으니 deficit 재계산 후 재시도
+          break;
+        }
+      }
+    }
+
+    // 고아 행 채움 (2026-08-19) — tierNoRows 로 반복이 막힌 tier 의 기존 행 (Phase A 가 연
+    //   행) 을 자기 tier 디자인 반복으로 가로 채움. max 준수, 행 키 성장 금지 (isLast=false).
+    //   R8c 케이스: 마지막 자투리 높이에 턱걸이로 열린 행이 한 장 덩그러니 남던 문제 해소.
+    for (var orI = 0; orI < rows.length; orI++) {
+      var orRow = rows[orI];
+      if (!orRow.tierLock || !tierNoRows[orRow.tierLock]) continue;
+      var orGrp = tierGroups[orRow.tierLock];
+      if (!orGrp || orGrp.length === 0) continue;
+      var orCur = 0;
+      var orAdded = true;
+      while (orAdded) {
+        orAdded = false;
+        for (var os = 0; os < orGrp.length; os++) {
+          var oi = (orCur + os) % orGrp.length;
+          var op = orGrp[oi];
+          if (counts[op.base] >= _pkgMax(op.tier)) continue;
+          if (_tryAddToBandRow(orRow, op, false, binW, binH, gap, false)) {
+            if (counts[op.base] > 0) repeatedCount++;
+            counts[op.base]++;
+            orCur = oi + 1;
+            orAdded = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // Column 채움 — 각 행 남은 폭에 작은 tier column. 행 키는 안 키움. max cap 준수 +
+    //   시작 tier 회전 (한 tier 가 남은 폭을 독식하지 않게 — max 와 이중 안전판).
     var colCursor = { XS: 0, S: 0, M: 0, L: 0 };
     var ascTiers = ["XS", "S", "M", "L"];
+    var colStart = 0;
     for (var cr = 0; cr < rows.length; cr++) {
       while (true) {
         var col = null;
+        var used = colStart;
         for (var ct = 0; ct < ascTiers.length; ct++) {
-          var cGrp = tierGroups[ascTiers[ct]];
+          used = (colStart + ct) % ascTiers.length;
+          var cGrp = tierGroups[ascTiers[used]];
           if (!cGrp || cGrp.length === 0) continue;
-          col = _buildTierColumn(cGrp, colCursor[ascTiers[ct]], binW - rows[cr].w - gap, rows[cr].h, gap);
-          if (col !== null) { colCursor[ascTiers[ct]] = col.nextIdx; break; }
+          col = _buildTierColumn(cGrp, colCursor[ascTiers[used]], binW - rows[cr].w - gap, rows[cr].h, gap, counts);
+          if (col !== null) { colCursor[ascTiers[used]] = col.nextIdx; break; }
         }
         if (col === null) break;
+        colStart = (used + 1) % ascTiers.length;
         _addToShelfRow(rows[cr], col, gap);
-        repeatedCount += col.cells.length;
+        for (var cc = 0; cc < col.cells.length; cc++) {
+          var cb = col.cells[cc].payload.base;
+          if (counts[cb] > 0) repeatedCount++;
+          counts[cb]++;
+        }
       }
     }
 
     // column 구제까지 끝난 뒤에도 0장인 보류 디자인만 진짜 leftover (시트보다 큰 오버사이즈 등).
     for (var lo = 0; lo < colOnly.length; lo++) {
       if (!_pairPlacedInRows(rows, colOnly[lo])) leftover.push(colOnly[lo]);
+    }
+
+    // min 미달 집계 — 완료 메시지 경고용 (공간 부족으로 min 을 못 채운 디자인).
+    var minShortfall = [];
+    for (var msf = 0; msf < n; msf++) {
+      var mp = ordered[msf];
+      if (counts[mp.base] < _pkgMin(mp.tier)) {
+        minShortfall.push({ base: mp.base, tier: mp.tier, count: counts[mp.base], min: _pkgMin(mp.tier) });
+      }
     }
 
     // 행 키 내림차순 정렬 (AllSizes 와 동일한 위→아래 흐름). _shelfRowsToPlaced 가 y 재계산.
@@ -1990,7 +2375,9 @@
       repeatedCount: repeatedCount,
       cols: 0,
       gridRows: rows.length,
-      slots: placed.length
+      slots: placed.length,
+      counts: counts,
+      minShortfall: minShortfall
     };
   }
 
@@ -2068,6 +2455,15 @@
     var nextW = row.items.length > 0 ? row.w + gap + item.w : item.w;
     var nextH = row.h > item.h ? row.h : item.h;
     return nextW <= binW && row.y + nextH <= binH;
+  }
+
+  // 높이 유사성 게이트 (v22) — 두 높이의 비율이 BAND_CELL_TOL 이상이면 같은 행에 어울림.
+  // Package 밴드 행 (_tryAddToBandRow) 전용: 방향·비율 혼합 여백 (키 작은 아이템 위아래
+  // 공백) 방지. 전 사이즈 (ALL) 모드는 게이트 없이 v21 동작 유지 — 사용자 결정 (2026-08-19).
+  function _heightsClose(h1, h2) {
+    var lo = h1 < h2 ? h1 : h2;
+    var hi = h1 < h2 ? h2 : h1;
+    return lo >= hi * BAND_CELL_TOL;
   }
 
   function _addToShelfRow(row, item, gap) {
