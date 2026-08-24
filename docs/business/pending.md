@@ -16,6 +16,12 @@
 | CapEx 내용연수·감가 정책 | [`expenses.md`](expenses.md) §1 | 정책 결정 → 월 감가 → 건당 배부 산출 |
 | 인건비 (cutout time) | [`business.md`](business.md) *Pricing And Cost* | first-50 주문 실측 → 모델 안으로 편입 여부 결정 |
 
+## 상품 (→ products.md)
+
+| 항목 | 출처 | 닫는 조건 |
+|------|------|-----------|
+| Shape Sticker 출시 | [`products.md`](products.md) §Launch SKU | shape 크롭 제작 플로우 확정 → Shopify 상품 공개 |
+
 ## 인쇄 디자인
 
 (현재 항목 없음. Phase A/B 자동화 관련 미확정 발생 시 여기에.)

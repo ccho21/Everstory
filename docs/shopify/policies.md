@@ -30,6 +30,8 @@ You can cancel for a full refund any time before we begin printing — typically
 
 Once printing starts, the order cannot be refunded. The work is yours.
 
+Approved refunds are returned automatically to your original payment method within 10 business days.
+
 ORDER DETAILS YOU PROVIDE
 
 At checkout, you upload your photograph(s) and share details that matter — name for the header, any specific request (a face we should not crop, a tone you prefer, a detail we should keep crisp). The more specific your notes, the closer the result matches your expectation. We work directly from what you provide; we do not send a mockup for approval.
@@ -80,10 +82,13 @@ Everstory Studio currently ships across Canada and offers local pickup by arrang
 
 DELIVERY OPTIONS
 
-1. Free shipping across Canada
-   Canada Post lettermail. No tracking number. Delivery typically arrives 3–7 business days after shipping confirmation (longer for remote areas), but lettermail timing varies.
+1. Free standard lettermail
+   Canada Post lettermail. No tracking number. Delivery typically arrives 4–10 business days after shipping confirmation (longer for remote areas), but lettermail timing varies.
 
-2. Local pickup (by arrangement)
+2. Canada Post Expedited Parcel
+   Optional paid shipping with tracking. Price and delivery estimate are calculated at checkout.
+
+3. Local pickup (by arrangement)
    Free, for nearby customers. We email you after production to arrange a pickup location and time. Pickup window is 30 days from that email.
 
 LEAD TIME

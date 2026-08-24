@@ -15,14 +15,14 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 ├── Everstory_mixed.jsx            # 운영 메인 (v23 multi-sheet). 단일/Package/전 사이즈, v2 브랜드 템플릿용, info > header > header_right TextFrame 주입
 ├── sim/                           # node 시뮬 하니스 — .jsx 에서 패커/배분층을 추출해 배치를 미리 검증 (sim/README.md)
 ├── Everstory_CleanOffsetPath.jsx  # offset/compound path 내부 조각 제거 유틸
-├── SHOPIFY 사진 다운로드.command   # Phase -1 런처 — 더블클릭하면 브라우저에 주문받기 화면. 이름은 바꿔도 됨
+├── SHOPIFY_ORDER_DOWNLOAD.command   # Phase -1 런처 — 더블클릭하면 브라우저에 주문받기 화면. 이름은 바꿔도 됨
 ├── scripts/order_intake/          # Phase -1 — Shopify 주문 사진 다운로드·리네임 (scripts/order_intake/README.md)
 ├── plugins/everstory_save/        # Phase A — UXP 패널 플러그인 (PS)
 ├── templates/
 │   └── template_cutout_v2.ait     # v2 브랜드 템플릿 (운영 메인). info > body 142×175mm + info > header > header_right (TextFrame, 값만 주입)
 ├── assets/                        # 브랜드 로고·QR·템플릿 미리보기 PNG
 ├── projects/{고객명 주문번호}/     # 예: `Naekyung Seong EVS-1007`. 구 폴더는 이름만 (`하린`) — 혼재 정상
-│   ├── _order.json                # 주문 매니페스트 (고객·SKU·옵션·사진별 원본URL/sha256). 인테이크가 생성
+│   ├── _order.json                # 주문 매니페스트 — 고객·SKU·옵션·사진 원본URL + `job`(제작 잡티켓) + `shipping`(배송지). 인테이크가 생성, Phase B 가 읽어 다이얼로그를 채움. **개인정보 · gitignore**
 │   ├── 01_original/               # 원본 PSD/JPG/TIF
 │   ├── 02_cutout/                 # Phase A 산출 (_clean.psd + _sil.png 페어)
 │   │   └── _cutcache/             # 칼선 트레이스 디스크 캐시 (.evcut). 지워도 안전 — 다시 트레이스함
@@ -34,10 +34,10 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 ## 파이프라인 요약
 
-0. **Phase -1 — 주문 인테이크** (`scripts/order_intake/intake.py`): Shopify 주문 JSON → 프로젝트 폴더 생성 + Easify 사진 다운로드 + `{NN}_{BUCKET}_{원본명}` 리네임 + `_order.json`. **Easify CDN(`cdn.tigren.com`)은 업로드 90일 후 사진을 삭제한다** — 이 단계가 유일한 아카이브 경로다.
+0. **Phase -1 — 주문 인테이크 · 주문 보드** (`scripts/order_intake/`): Shopify 주문 JSON → 프로젝트 폴더 생성 + Easify 사진 다운로드 + `{NN}_{BUCKET}_{원본명}` 리네임 + `_order.json`. 같은 화면이 **주문 보드**다 — 주문별 진행(받음 / 누끼 / 시트)을 **폴더만 보고** 표시한다 (별도 상태 파일 없음, 2초마다 네트워크 없이 자동 갱신). 인쇄·발송은 디스크에 흔적이 없어 표시하지 않는다. **Easify CDN(`cdn.tigren.com`)은 업로드 90일 후 사진을 삭제한다** — 이 단계가 유일한 아카이브 경로다.
 1. **Phase 0 — 수동 (Photoshop)**: `layers[0]` = 실루엣, `layers[1..N]` = 누끼+보정.
 2. **Phase A — UXP 패널** (`plugins/everstory_save/`): `_sil.png` + `_clean.psd` 저장, longest 1800px. `자동` 버튼이 원본 파일명의 `_BIG/_MED/_SML` 을 읽어 그대로 출력명에 넣는다 — 버킷은 주문에서 온 값이라 손으로 다시 정하지 않는다. 버킷이 없으면 멈추고 수동 버튼을 요구한다.
-3. **Phase B — Illustrator** (`Everstory_mixed.jsx`): 폴더 → 페어 ListBox multiselect → 사이즈 (XS/S/M/L/XL/XXL · Package · 전 사이즈) → 시트 생성 → `03_output/` 자동 saveAs. 다이얼로그 5단계 (폴더 / 고객 정보 / 페어 / 사이즈+시트수 / 칼선 여백). **Package 입력은 파일명 `_BIG/_MED/_SML` 3버킷** — 정확한 인치는 스크립트가 시트 구성을 보고 배정한다 (레거시 6티어 토큰도 계속 읽음). Shopify `Mixed` 옵션 주문은 **전 사이즈 모드로 제작**.
+3. **Phase B — Illustrator** (`Everstory_mixed.jsx`): 폴더 → 페어 ListBox multiselect → 사이즈 (XS/S/M/L/XL/XXL · Package · 전 사이즈) → 시트 생성 → `03_output/` 자동 saveAs. 다이얼로그 5단계 (폴더 / 고객 정보 / 페어 / 사이즈+시트수 / 칼선 여백) — **고객 이름·주문번호·재질·사이즈·시트수·스티커 이름은 `_order.json` 의 `job` 블록에서 자동으로 채워지고 운영자는 확인만 한다** (SKU 해석은 인테이크가 한 번만 한다 — `job` 이 없는 구 매니페스트는 스크립트가 직접 해석하고, `intake.py --backfill-job` 으로 채울 수 있다). 받는 사람이 주문자와 다르면 (선물) 경고를 띄우되 헤더 이름은 자동으로 바꾸지 않는다. 값이 한 개로 안 좁혀지면 (매니페스트 없음, line item 마다 재질 다름 등) 그 칸은 기본값으로 두고 다이얼로그 상단에 이유를 띄운다 — 추측하지 않는다. **Package 입력은 파일명 `_BIG/_MED/_SML` 3버킷** — 정확한 인치는 스크립트가 시트 구성을 보고 배정한다 (레거시 6티어 토큰도 계속 읽음). Shopify `Mixed` 옵션 주문은 **전 사이즈 모드로 제작**.
 
 ## 고정 컨벤션 (변경 시 파이프라인 깨짐)
 

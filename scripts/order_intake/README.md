@@ -19,13 +19,20 @@ x-amz-expiration: expiry-date="...", rule-id="ExpireAllObjectsAfterNinetyDays"
 ## 클릭으로 쓰기
 
 **프로젝트 루트의 `.command` 파일을 더블클릭하면** 브라우저에 화면이 뜬다
-(현재 이름: `SHOPIFY 사진 다운로드.command`).
+(현재 이름: `SHOPIFY_ORDER_DOWNLOAD.command`).
 
 런처는 **이름이 아니라 자기 위치**로 `webui.py` 를 찾는다 — 그래서 **이름은 마음대로 바꿔도 되고**,
 `포토샵누끼/` 와 `scripts/order_intake/` 둘 다에서 동작한다. 그 밖으로는 옮기지 말고,
 다른 곳에서 쓰고 싶으면 **별칭(alias)** 을 만들 것. 못 찾으면 어디를 찾아봤는지 알려주고 멈춘다.
 
-- **표**: 최근 주문 25건 + 상태(안 받음 / 완료 / 일부 유실). 안 받은 건 주황색 배경
+- **표**: 최근 주문 25건 + 상태(안 받음 / 완료 / 일부 유실) + **진행**(누끼 · 시트).
+  안 받은 건 주황색 배경, 지금 손볼 칸은 주황 글씨
+- **진행 열**은 폴더만 보고 만든다 — 별도 상태 파일이 없으니 손으로 갱신할 일도, 실제와
+  어긋날 일도 없다. `누끼` = `02_cutout` 의 `_clean.psd`+`_sil.png` 페어 / `01_original` 사진,
+  `시트` = `03_output` 의 `.ai` 개수. **네트워크 없이 2초마다 알아서 갱신**되므로 포토샵에서
+  누끼를 저장하면 브라우저를 봤을 때 이미 반영돼 있다 (새로고침 버튼은 Shopify 재조회 담당)
+- 맨 위 한 줄에 **지금 손볼 것**이 뜬다 — `주문 25건 · 안 받음 2 · 누끼 대기 3 · 시트 대기 1`.
+  한 주문은 **가장 앞선 미완 단계 하나만** 센다 (누끼가 덜 끝났으면 시트 대기로 안 센다)
 - **안 받은 주문 전부 받기** = `--all-new`
 - **선택한 주문 받기** = 체크박스로 골라서
 - **폴더 열기** = 체크한 주문 폴더를 Finder 로
@@ -57,7 +64,7 @@ Desktop 안의 파일을 못 읽고, 프롬프트도 안 뜨고 조용히 죽는
 
 ```bash
 python3 intake.py --check              # 토큰·도메인·API 버전·스코프 확인
-python3 intake.py --list               # 최근 20건의 아카이브 여부만 표시
+python3 intake.py --list               # 최근 20건의 아카이브 여부 + 진행(누끼·시트)
 python3 intake.py --order EVS-1008     # 단건 인테이크
 python3 intake.py --all-new            # 매니페스트 없는 주문 전부
 python3 intake.py --all-new --dry-run  # 위를 계획만
@@ -66,7 +73,8 @@ python3 intake.py --all-new --dry-run  # 위를 계획만
 | 옵션 | 뜻 |
 |---|---|
 | `--check` | 토큰·도메인·API 버전·**부여된 스코프**를 확인만. 주문 조회 안 함 |
-| `--list [N]` | 최근 N건(기본 20)과 아카이브 여부. 다운로드 안 함 |
+| `--backfill-job` | 이미 받아둔 `_order.json` 전부에 `job` 블록을 채운다. **토큰·네트워크 불필요** |
+| `--list [N]` | 최근 N건(기본 20)의 아카이브 여부 + 진행(누끼·시트). 다운로드 안 함 |
 | `--order NAME` | 주문번호로 Admin API 에서 가져와 인테이크 |
 | `--all-new` | 매니페스트가 없는 주문을 전부 인테이크 |
 | `--order-json PATH` | 주문 JSON 파일에서 읽음 (**토큰 불필요** — 폴백 경로) |
@@ -88,6 +96,7 @@ python3 intake.py --all-new --dry-run  # 위를 계획만
 | ❌ 미아카이브 | 아직 안 받음 → `--all-new` |
 
 유실을 ❌ 와 구분하는 이유: 해결 불가능한 ❌ 가 목록에 상주하면 **진짜 놓친 주문이 잡음에 묻힌다.**
+같은 이유로 사진이 0장인 주문(전부 유실)은 진행 열에서 `—` 로 두고 "누끼 대기" 로 세지 않는다.
 못 받은 사진도 매니페스트에 `"unavailable": true` 로 남겨서 "이 URL 에 사진이 있었고
 받기 전에 사라졌다"는 사실을 보존한다.
 
@@ -115,6 +124,7 @@ Webhooks API version(최신), **Access scopes** 를 채우고 **Release** 를 �
 |---|---|
 | `read_orders` | 주문·line item property (사진 URL) |
 | `read_customers` | `customer { firstName lastName }` — 폴더명에 쓴다 |
+| — | 배송지(`shippingAddress`)는 `read_orders` 로 같이 온다. 추가 스코프 없음 |
 | `read_all_orders` | **없으면 최근 60일 주문만 조회된다** (오류 없이 조용히) |
 
 **3. 스토어에 설치**
@@ -182,6 +192,43 @@ projects/{고객명 주문번호}/
 `Photos to include`, `Special instructions` …)·사진별 원본 URL/sha256/용량/포맷/
 다운로드 시각을 담는다. 원본 URL 이 만료된 뒤에도 추적이 가능한 유일한 기록이다.
 
+### `job` — 제작 잡티켓
+
+```json
+"job": { "order":"EVS-1007", "customer":"Naekyung Seong", "product":"Package Full",
+         "material":"White Matte", "mode":"package", "size_mm":null, "sheets":2,
+         "quantity":1, "photos":14, "sticker_name":"", "notes":[] }
+```
+
+재질·사이즈는 SKU 문자열 안에 인코딩돼 있다 (`EVS-PACKAGE-FULL-WM`). 그대로 두면 **읽는
+쪽마다 SKU 해석기를 한 벌씩** 갖게 되고 (일러스트·포토샵·CLI), 규칙이 바뀔 때 하나만
+빠뜨려도 **틀린 재질로 인쇄된다.** 그래서 해석은 인테이크에서 한 번만 하고 결과를 박아둔다.
+
+- `mode` = `single` (그때만 `size_mm`) · `package` (그때만 `sheets`) · `all`(Mixed → 전 사이즈)
+- **한 값으로 안 좁혀지면 채우지 않고 `notes` 에 이유를 남긴다.** line item 이 여럿이고
+  재질이 엇갈리면 임의로 하나를 고르는 순간 절반이 틀린 재질로 나간다.
+- 일러스트(`Everstory_mixed.jsx`)는 `job` 이 있으면 그대로 쓰고, 없으면(구 매니페스트)
+  SKU 를 직접 해석한다. 두 경로가 같은 값을 내는지는 `sim/ordertest.js` 가 **python
+  `build_job` 을 실제로 호출해 교차 검증**한다.
+- 이미 받아둔 주문은 `--backfill-job` 으로 채운다 (매니페스트 안의 값만 쓰므로 토큰 불필요).
+
+### `shipping` — 배송지
+
+```json
+"shipping": { "name":"Neuri Park", "address1":"53 Angus Dr", "address2":null,
+              "city":"North York", "provinceCode":"ON", "zip":"M2J 2W9",
+              "countryCodeV2":"CA", "phone":null, "company":null }
+```
+
+`read_orders` 스코프로 같이 온다 (추가 스코프 없음). **개인정보이므로 `.gitignore` 에
+`**/_order.json` 으로 못 박아 뒀다.**
+
+**받는 사람이 주문자와 다르면 선물이다** — 실제로 `EVS-1007` 이 그렇다 (주문 Naekyung Seong /
+배송 Neuri Park). 인테이크가 콘솔에 `⚠ 주문자와 다름 (선물)` 로 알리고, 일러스트 다이얼로그도
+경고를 띄운다. **헤더에 누구 이름을 넣을지는 자동으로 정하지 않는다** — 운영자가 고를 일이다.
+
+`--backfill-job` 은 배송지를 못 채운다 (구 매니페스트에 없던 값이라 API 를 다시 불러야 한다).
+
 ## 리네임 규칙과 그 이유
 
 `{NN}_{TOKEN}_{원본명}.{ext}`
@@ -223,7 +270,23 @@ SKU 사이즈 코드 ↔ 티어: `19`→XS(0.75") · `25`→S(1") · `32`→M(1.
 4. **URL 형식이 두 가지다.** 신 `uploads/{uuid}-{name}`, 구 `uploads/YYYYMM/{epoch_ms}-{name}`.
    둘 다 접두를 벗겨야 사람이 읽을 이름이 나온다. 퍼센트 인코딩도 푼다.
 
+### 진행 열이 안 보여주는 것
+
+**인쇄·발송(Phase C)은 디스크에 흔적이 남지 않는다.** 시트 `.ai` 가 나온 뒤 실제로 뽑았는지,
+컷했는지, 보냈는지는 어디에도 기록이 없고 **추측해서 채우지 않는다.** 진행 열의 마지막
+칸이 `시트` 인 이유다. 이걸 표시하려면 손으로 상태를 남기는 단계가 새로 필요한데,
+손으로 갱신하는 상태는 반드시 실제와 어긋난다 — 지금은 그 대가를 치르지 않기로 했다.
+
 ## 검증
+
+```bash
+python3 progress_test.py     # 진행 표시 (임시 폴더에 실파일 생성, 네트워크 없음)
+python3 job_test.py          # job 백필 왕복 + 배송지 추출
+```
+
+`progress_test.py` 는 `project_progress` / `fill_progress` / `summary_note` 를 실제 파일로
+검증한다 — 페어 한쪽만 있는 경우, 한글 파일명(NFD), 사진 아닌 파일, 사진 0장 주문 등
+**폴더 규약이 어긋나면 보드가 조용히 거짓말하는** 경계들이다.
 
 `intake.py` 의 순수 함수(`original_basename` / `split_key` / `sniff_format`)는
 실주문 URL 5종·키 5종·매직바이트 5종으로 확인했다. 네트워크 없이 재현 가능하다.

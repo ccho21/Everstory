@@ -6,6 +6,10 @@ projects/*/02_cutout/
 projects/*/03_output/
 projects
 
+# 주문 매니페스트 — 고객 이름·이메일·주소·사진 원본 URL 이 들어 있다 (개인정보).
+# 위 `projects` 규칙이 이미 덮지만, 그 규칙을 좁히더라도 이건 남게 따로 못 박아 둔다.
+**/_order.json
+
 # sim 자동 생성물 — extract.js / extract_all.js 가 매 실행마다 다시 만든다.
 # 커밋하면 실코드와 드리프트한 사본이 저장소에 남는다 (sim/README.md 참조).
 sim/packer.js

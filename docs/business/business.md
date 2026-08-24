@@ -35,7 +35,7 @@ Everstory Studio 는 Toronto GTA + Korean diaspora 를 위한 A5 custom photo di
 
 **Launch SKU**
 
-런칭 SKU는 Face Sticker / Full Body Sticker / Shape Sticker / Package Mini / Package Full 5종이다. 각 SKU의 customer promise, photos selected, sheets, Shopify price 상세는 [`products.md`](products.md) 를 단일 기준으로 한다.
+런칭 SKU는 Face Sticker / Full Body Sticker / Package Mini / Package Full 4종이다. 각 SKU의 customer promise, photos selected, sheets, Shopify price 상세는 [`products.md`](products.md) 를 단일 기준으로 한다.
 
 **Customer-facing options**
 
@@ -147,7 +147,8 @@ Shopify 는 결제와 브랜드 신뢰의 중심이다. Instagram 과 커뮤니�
 
 Customer-facing fulfillment 기준은 **Canada-wide free shipping + local pickup (by arrangement)** 이다.
 
-- Canada-wide shipping: Canada Post lettermail, free shipping, no tracking. Lettermail 단가는 거리 무관 동일 (province 별 차이 없음).
+- Canada-wide shipping: Canada Post lettermail 무료 배송, 추적 없음 (발송 후 4–10영업일). Lettermail 단가는 거리 무관 동일 (province 별 차이 없음).
+- Canada Post Expedited Parcel: 유료 옵션, 추적 포함. 가격·배송 예상일은 checkout 에서 계산.
 - Local pickup (by arrangement): 결제 후 이메일로 픽업 장소·시간 협의. 가정집 주소 자동 공유 안 함. 실질 운영은 토론토 인근 지인 위주.
 - International (US, Korea 등): MVP launch scope 밖. 예외 주문은 이메일로 별도 검토.
 

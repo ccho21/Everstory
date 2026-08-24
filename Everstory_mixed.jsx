@@ -112,6 +112,29 @@
   var CUT_MARGIN_DEFAULT_INDEX = 0; // 기본 0mm (사용자 지정) — 0.5/1/2mm 는 운영자가 의도적으로 선택
   var MATERIAL_OPTIONS = ["White Matte", "Translucent", "Silver", "Gold"];
 
+  // ── 주문 매니페스트 (_order.json) 프리필 ───────────────────────────
+  // 인테이크(scripts/order_intake)가 프로젝트 폴더에 남긴 매니페스트에서 고객 이름·주문번호·
+  // 재질·사이즈를 읽어 다이얼로그를 채운다. 이 값들은 전부 주문 데이터에 이미 있는데도
+  // 운영자가 일러스트에서 손으로 다시 입력했고, 대조할 곳이 없어 재질이 틀려도 인쇄 전에
+  // 걸리지 않았다 (재제작 = 원가 100% 손실).
+  // **추측하지 않는다** — 매니페스트가 없거나 line item 끼리 값이 엇갈리면 그 칸은 기본값으로
+  // 두고 다이얼로그 상단에 이유를 적는다 (intake.py 의 "조용히 추측하지 않는다" 와 같은 규약).
+  var ORDER_MANIFEST_NAME = "_order.json";
+  // SKU = EVS-{PRODUCT}-{SIZE}-{MATERIAL}. 끝 두 글자가 재질 코드다
+  // (문서에 코드표가 없어 라이브 스토어 variant 로 확인 — 2026-08-24).
+  var SKU_MATERIAL_RE = /-([A-Z]{2})$/i;
+  var SKU_MATERIAL = { WM: "White Matte", TR: "Translucent", SV: "Silver", GD: "Gold" };
+  // 사이즈 코드 → SIZE_VALUES 의 mm. MIX 는 전 사이즈 모드로 제작한다 (CLAUDE.md).
+  var SKU_SIZE_RE = /-(\d{2}|MIX)-[A-Z]{2}$/i;
+  var SKU_SIZE_MM = { "19": 19.05, "25": 25.4, "32": 31.75, "38": 38.1, "51": 50.8, "64": 63.5 };
+  // Package SKU 는 사이즈 코드 자리에 FULL/MINI 가 온다 (EVS-PACKAGE-FULL-WM) — 그게 곧 시트 수다.
+  var SKU_PACKAGE_RE = /-PACKAGE-(FULL|MINI)-[A-Z]{2}$/i;
+  var PACKAGE_SHEETS_BY_KIND = { FULL: 2, MINI: 1 };
+  // SKU 가 없는 초기 주문(#1001~#1004)은 사이즈가 옵션 라벨에 있다: "Photos to include (19mm)".
+  var OPTION_MM_RE = /\((\d{2})\s*mm\)/;
+  // 폴더명 `{고객} {주문번호}` 끝의 주문번호 — 매니페스트가 없는 폴더용 폴백.
+  var FOLDER_ORDER_RE = /\s+#?([A-Z]{2,5}-\d+|\d{3,})$/;
+
   // ── Package 모드 (no_cap 변형, 파일명 토큰 입력) ───────────────────
   // 고객이 사진마다 사이즈를 임의 지정. Phase A 파일명 = {folder}_{NN}_{TIER}:
   // 끝에 _XS/_S/_M/_L/_XL/_XXL (대소문자 무시). 토큰 없으면 S(=1") 기본.
@@ -1079,8 +1102,10 @@
     return;
   }
 
-  var defaultCustomerName = _deriveDefaultCustomerName(inputFolder);
-  var options = (testConfig && testConfig.options) ? testConfig.options : _showDialog(pairs, defaultCustomerName);
+  // 주문 매니페스트에서 고객·주문번호·재질·사이즈·스티커 이름을 읽어 다이얼로그를 채운다.
+  // 못 읽으면 폴더명 폴백 — 어느 쪽이든 다이얼로그 상단이 출처와 미확정 항목을 표시한다.
+  var orderInfo = _orderDefaultsFrom(_readOrderManifest(inputFolder), _deriveDefaultCustomerName(inputFolder));
+  var options = (testConfig && testConfig.options) ? testConfig.options : _showDialog(pairs, orderInfo);
   if (!options) return;
 
   var templateFile = _resolveTemplate();
@@ -1439,18 +1464,26 @@
   //  UI
   // ═════════════════════════════════════════════════════════
 
-  function _showDialog(pairsArg, defaultCustomerName) {
+  function _showDialog(pairsArg, orderInfo) {
     var dlg = new Window("dialog", SCRIPT_TITLE);
     dlg.orientation = "column";
     dlg.alignChildren = "fill";
     dlg.margins = 18;
     dlg.spacing = 12;
 
+    // 매니페스트에서 온 값 요약 — 손으로 다시 입력하는 대신 여기서 눈으로 대조한다.
+    // 못 좁힌 항목은 아래 주황색 줄로 이유가 뜬다 (그 칸만 직접 고르면 된다).
+    dlg.add("statictext", undefined, _orderSummaryLine(orderInfo));
+    for (var noteI = 0; noteI < orderInfo.notes.length; noteI++) {
+      var noteLine = dlg.add("statictext", undefined, "⚠ " + orderInfo.notes[noteI]);
+      try { noteLine.graphics.foregroundColor = noteLine.graphics.newPen(noteLine.graphics.PenType.SOLID_COLOR, [0.78, 0.42, 0.06], 1); } catch (eNote) {}
+    }
+
     var namePanel = dlg.add("panel", undefined, "고객 이름");
     namePanel.orientation = "column";
     namePanel.alignChildren = "fill";
     namePanel.margins = [14, 18, 14, 14];
-    var initialName = (defaultCustomerName && defaultCustomerName.length > 0) ? defaultCustomerName : "Mina";
+    var initialName = (orderInfo.customerName && orderInfo.customerName.length > 0) ? orderInfo.customerName : "Mina";
     var nameInput = namePanel.add("edittext", undefined, initialName);
     nameInput.preferredSize = [320, 24];
 
@@ -1461,7 +1494,7 @@
     stickerPanel.alignChildren = "fill";
     stickerPanel.margins = [14, 18, 14, 14];
     stickerPanel.spacing = 4;
-    var stickerNameInput = stickerPanel.add("edittext", undefined, "");
+    var stickerNameInput = stickerPanel.add("edittext", undefined, orderInfo.stickerName || "");
     stickerNameInput.preferredSize = [320, 24];
     var stickerHint = stickerPanel.add("statictext", undefined,
       "9.5mm 프레임 · 스페이스에서만 줄바꿈 · 전 모드 · 자리 없으면 사진을 빼고 넣음 · 첫 장에만");
@@ -1478,14 +1511,14 @@
     materialGroup.alignChildren = "center";
     materialGroup.add("statictext", undefined, "재질");
     var materialDropdown = materialGroup.add("dropdownlist", undefined, MATERIAL_OPTIONS);
-    materialDropdown.selection = 0;
+    materialDropdown.selection = _indexOfValue(MATERIAL_OPTIONS, orderInfo.material, 0);
     materialDropdown.preferredSize = [250, 24];
 
     var orderGroup = detailPanel.add("group");
     orderGroup.orientation = "row";
     orderGroup.alignChildren = "center";
     orderGroup.add("statictext", undefined, "주문번호");
-    var orderInput = orderGroup.add("edittext", undefined, "");
+    var orderInput = orderGroup.add("edittext", undefined, orderInfo.orderNumber || "");
     orderInput.preferredSize = [250, 24];
 
     var dateGroup = detailPanel.add("group");
@@ -1501,12 +1534,12 @@
     sizePanel.margins = [14, 18, 14, 14];
     sizePanel.spacing = 8;
     var sizeDropdown = sizePanel.add("dropdownlist", undefined, SIZE_OPTIONS);
-    sizeDropdown.selection = SIZE_DEFAULT_INDEX;
+    sizeDropdown.selection = _indexOfValue(SIZE_VALUES, orderInfo.sizeMm, SIZE_DEFAULT_INDEX);
     sizeDropdown.preferredSize = [320, 24];
     // Package 전용 시트 수. 다른 모드는 한 시트 정책이라 비활성.
     sizePanel.add("statictext", undefined, "시트");
     var sheetDropdown = sizePanel.add("dropdownlist", undefined, PACKAGE_SHEET_OPTIONS);
-    sheetDropdown.selection = PACKAGE_SHEET_DEFAULT_INDEX;
+    sheetDropdown.selection = _indexOfValue(PACKAGE_SHEET_VALUES, orderInfo.packageSheets, PACKAGE_SHEET_DEFAULT_INDEX);
     sheetDropdown.preferredSize = [110, 24];
 
     var pairsPanel = dlg.add("panel", undefined, "사용할 사진 페어 (multi-select)");
@@ -2442,6 +2475,234 @@
     } catch (e) {
       return "";
     }
+  }
+
+  // ═════════════════════════════════════════════════════════
+  //  ORDER MANIFEST (_order.json) → 다이얼로그 프리필
+  // ═════════════════════════════════════════════════════════
+
+  // 02_cutout 을 골라도, 프로젝트 폴더를 골라도 찾히게 두 단계만 본다.
+  function _orderManifestFile(folder) {
+    if (!folder) return null;
+    var here = new File(folder.fsName + "/" + ORDER_MANIFEST_NAME);
+    if (here.exists) return here;
+    if (folder.parent) {
+      var up = new File(folder.parent.fsName + "/" + ORDER_MANIFEST_NAME);
+      if (up.exists) return up;
+    }
+    return null;
+  }
+
+  function _readOrderManifest(folder) {
+    var f = _orderManifestFile(folder);
+    if (!f) return null;
+    var text = null;
+    try {
+      f.encoding = "UTF-8";
+      if (!f.open("r")) return null;
+      text = f.read();
+      f.close();
+    } catch (eOmRead) {
+      try { f.close(); } catch (eOmClose) {}
+      return null;
+    }
+    if (!text) return null;
+    // ExtendScript 에는 JSON 객체가 없다. 이 파일은 intake.py 가 json.dump 로 쓴 우리 파일이고
+    // JSON 은 객체 리터럴의 부분집합이라 eval 로 읽는다. 깨졌으면 null → 전부 수동 입력 폴백.
+    try {
+      return eval("(" + text + ")");
+    } catch (eOmParse) {
+      return null;
+    }
+  }
+
+  // "_Photos-2" → "photos". intake.py 의 split_key 와 같은 정규화 (앞 `_`, 뒤 `-N` 제거).
+  function _normalizeOptionKey(rawKey) {
+    var k = String(rawKey || "");
+    if (k.charAt(0) === "_") k = k.substring(1);
+    k = k.replace(/-\d+$/, "");
+    return _trim(k).toLowerCase();
+  }
+
+  function _materialFromSku(sku) {
+    if (!sku) return null;
+    var m = String(sku).match(SKU_MATERIAL_RE);
+    return m ? (SKU_MATERIAL[m[1].toUpperCase()] || null) : null;
+  }
+
+  // SKU → { sizeMm, packageSheets }. Package 는 PACKAGE_SIZE_VALUE + 시트 수, Mixed 는
+  // 전 사이즈 모드. 모르는 SKU 는 null 을 돌려주고 호출부가 그 칸을 비워둔다.
+  function _sizeFromSku(sku) {
+    if (!sku) return null;
+    var s = String(sku);
+    var pkg = s.match(SKU_PACKAGE_RE);
+    if (pkg) {
+      return {
+        sizeMm: PACKAGE_SIZE_VALUE,
+        packageSheets: PACKAGE_SHEETS_BY_KIND[pkg[1].toUpperCase()] || null
+      };
+    }
+    var m = s.match(SKU_SIZE_RE);
+    if (!m) return null;
+    var code = m[1].toUpperCase();
+    if (code === "MIX") return { sizeMm: ALLSIZES_SIZE_VALUE, packageSheets: null };
+    var mm = SKU_SIZE_MM[code];
+    return mm ? { sizeMm: mm, packageSheets: null } : null;
+  }
+
+  // SKU 없는 초기 주문 폴백 — 같은 line item 의 옵션 라벨에서 mm 을 읽는다.
+  function _sizeFromOptions(optionRows, lineItemIndex) {
+    for (var i = 0; i < optionRows.length; i++) {
+      if (optionRows[i].line_item !== lineItemIndex) continue;
+      var m = String(optionRows[i].key || "").match(OPTION_MM_RE);
+      if (!m) continue;
+      var mm = SKU_SIZE_MM[m[1]];
+      if (mm) return { sizeMm: mm, packageSheets: null };
+    }
+    return null;
+  }
+
+  // 폴더명 `{고객} {주문번호}` 분리. 인테이크가 만든 폴더는 주문번호가 뒤에 붙어 있어서
+  // 폴더명을 그대로 쓰면 헤더 이름 칸에 `Naekyung Seong EVS-1007` 이 들어갔다.
+  function _splitFolderCustomerOrder(folderName) {
+    var n = _trim(folderName || "");
+    var m = n.match(FOLDER_ORDER_RE);
+    if (!m) return { customerName: n, orderNumber: "" };
+    return { customerName: _trim(n.substring(0, n.length - m[0].length)), orderNumber: m[1] };
+  }
+
+  function _pushUnique(arr, v) {
+    for (var i = 0; i < arr.length; i++) { if (arr[i] === v) return; }
+    arr.push(v);
+  }
+
+  // 값이 목록에 있으면 그 index, 없거나 null 이면 fallback. 드롭다운 프리필용.
+  function _indexOfValue(arr, v, fallback) {
+    if (v === null || v === undefined) return fallback;
+    for (var i = 0; i < arr.length; i++) { if (arr[i] === v) return i; }
+    return fallback;
+  }
+
+  // 매니페스트 → 다이얼로그 프리필. **순수 함수** (sim/ordertest.js 가 이걸 그대로 호출한다).
+  // 한 값으로 안 좁혀지면 채우지 않고 notes 에 이유를 남긴다.
+  function _orderDefaultsFrom(manifest, folderName) {
+    var fromFolder = _splitFolderCustomerOrder(folderName);
+    var out = {
+      customerName: fromFolder.customerName,
+      orderNumber: fromFolder.orderNumber,
+      stickerName: "",
+      material: null,
+      sizeMm: null,
+      packageSheets: null,
+      productTitle: "",
+      shipTo: "",
+      via: "",
+      hasManifest: false,
+      notes: []
+    };
+    if (!manifest || !manifest.order) {
+      out.notes.push(ORDER_MANIFEST_NAME + " 없음 — 폴더명에서 이름·주문번호만 추정. 재질·사이즈는 직접 지정");
+      return out;
+    }
+    out.hasManifest = true;
+
+    // intake.py 가 SKU 를 미리 해석해 둔 잡티켓이 있으면 그대로 쓴다 — 해석기를 여러 벌
+    // 두면 규칙이 바뀔 때 하나를 빠뜨려 **틀린 재질로 인쇄된다.** 없으면(구 매니페스트)
+    // 아래에서 직접 해석한다. `python3 intake.py --backfill-job` 으로 채워 넣을 수 있다.
+    if (manifest.job) {
+      _applyJobBlock(out, manifest.job);
+      _noteGift(out, manifest);
+      return out;
+    }
+    out.via = "sku";
+
+    if (manifest.order.customer) out.customerName = _trim(String(manifest.order.customer));
+    if (manifest.order.name) out.orderNumber = _trim(String(manifest.order.name)).replace(/^#/, "");
+
+    // 옵션 `Name` = 스티커에 넣을 이름. 고객 이름과 별개다 (선물이면 받는 사람 이름).
+    var optionRows = manifest.options || [];
+    for (var oi = 0; oi < optionRows.length; oi++) {
+      if (_normalizeOptionKey(optionRows[oi].key) === "name" && optionRows[oi].value) {
+        out.stickerName = _trim(String(optionRows[oi].value));
+        break;
+      }
+    }
+
+    var items = manifest.line_items || [];
+    var materials = [], sizes = [], sheets = [], titles = [];
+    for (var li = 0; li < items.length; li++) {
+      if (items[li].title) _pushUnique(titles, String(items[li].title));
+      var mat = _materialFromSku(items[li].sku);
+      if (mat) _pushUnique(materials, mat);
+      var sz = _sizeFromSku(items[li].sku) || _sizeFromOptions(optionRows, items[li].index);
+      if (sz) {
+        _pushUnique(sizes, sz.sizeMm);
+        if (sz.packageSheets) _pushUnique(sheets, sz.packageSheets);
+      }
+    }
+    out.productTitle = titles.join(" + ");
+
+    if (materials.length === 1) out.material = materials[0];
+    else if (materials.length === 0) out.notes.push("재질: SKU 에서 못 읽음 — 직접 선택");
+    else out.notes.push("재질: line item 마다 다름 (" + materials.join(" / ") + ") — 직접 선택");
+
+    if (sizes.length === 1) {
+      out.sizeMm = sizes[0];
+      if (sheets.length === 1) out.packageSheets = sheets[0];
+    } else if (sizes.length === 0) {
+      out.notes.push("사이즈: SKU 에서 못 읽음 — 직접 선택");
+    } else {
+      out.notes.push("사이즈: line item 마다 다름 — 직접 선택 (주문을 나눠 제작할 것)");
+    }
+    _noteGift(out, manifest);
+    return out;
+  }
+
+  // intake.py 의 job 블록 → 다이얼로그 값. 매니페스트는 일러스트 내부 sentinel(-2/-3) 을
+  // 몰라야 하므로 mode 문자열("single"/"package"/"all")로 오고, 그 매핑이 여기다.
+  function _applyJobBlock(out, job) {
+    out.via = "job";
+    if (job.order) out.orderNumber = _trim(String(job.order)).replace(/^#/, "");
+    if (job.customer) out.customerName = _trim(String(job.customer));
+    if (job.sticker_name) out.stickerName = _trim(String(job.sticker_name));
+    if (job.product) out.productTitle = String(job.product);
+    if (job.material) out.material = String(job.material);
+    if (job.mode === "package") {
+      out.sizeMm = PACKAGE_SIZE_VALUE;
+      if (job.sheets) out.packageSheets = job.sheets;
+    } else if (job.mode === "all") {
+      out.sizeMm = ALLSIZES_SIZE_VALUE;
+    } else if (job.mode === "single" && job.size_mm) {
+      out.sizeMm = job.size_mm;
+    }
+    var notes = job.notes || [];
+    for (var ji = 0; ji < notes.length; ji++) out.notes.push(String(notes[ji]));
+  }
+
+  // 받는 사람이 주문자와 다르면 **선물이다.** 헤더에 누구 이름을 넣을지가 달라지는데
+  // 그건 스크립트가 정할 일이 아니라서, 자동으로 바꾸지 않고 다이얼로그에 띄우기만 한다.
+  function _noteGift(out, manifest) {
+    var ship = manifest.shipping;
+    if (!ship || !ship.name) return;
+    var to = _trim(String(ship.name));
+    if (to === _trim(out.customerName)) return;
+    out.shipTo = to;
+    out.notes.push("선물 — 받는 사람 " + to + " (헤더 이름 확인)");
+  }
+
+  // 다이얼로그 상단 한 줄. 운영자가 "이 시트가 이 주문이 맞나"를 눈으로 대조하는 용도.
+  function _orderSummaryLine(info) {
+    if (!info.hasManifest) return ORDER_MANIFEST_NAME + " 없음 — 아래 값을 직접 확인하세요";
+    var bits = [];
+    if (info.orderNumber) bits.push(info.orderNumber);
+    if (info.customerName) bits.push(info.customerName);
+    if (info.productTitle) bits.push(info.productTitle);
+    if (info.material) bits.push(info.material);
+    if (info.sizeMm !== null) bits.push(_sizeLetter(info.sizeMm));
+    if (info.packageSheets) bits.push(info.packageSheets + "시트");
+    // job 블록이 없어 스크립트가 SKU 를 직접 읽은 경우만 표시 — 매니페스트가 낡았다는 신호다.
+    return ORDER_MANIFEST_NAME + " — " + bits.join(" · ") +
+           (info.via === "sku" ? "  (job 없음 · SKU 해석)" : "");
   }
 
 

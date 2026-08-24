@@ -7,7 +7,7 @@ Illustrator 를 켜지 않고 **배치 로직만** node 로 돌려본다.
 ## .jsx 를 고쳤으면 이것부터
 
 ```bash
-cd sim && node extract.js ../Everstory_mixed.jsx packer.js && node hoisttest.js && node nametest.js && node modetest.js && node regress.js
+cd sim && node extract.js ../Everstory_mixed.jsx packer.js && node hoisttest.js && node nametest.js && node modetest.js && node ordertest.js && node regress.js
 ```
 
 `extract.js` 를 먼저 안 돌리면 **낡은 `packer.js` 로 테스트가 통과**한다. 실제로 여러 번 당했다.
@@ -35,6 +35,7 @@ cd sim && node extract.js ../Everstory_mixed.jsx packer.js && node hoisttest.js 
 | `hoisttest.js` | 최상위 `var` 상수가 메인 플로우 **위**에 있는지 + 중복 `var`/함수 + 미선언 | ExtendScript 는 함수만 호이스팅한다 → 상수가 `undefined` 로 조용히 죽는다 |
 | `nametest.js` | 이름 스티커 — 단어별 줄바꿈, 간격 비율, 유닛 하이브리드, 행 오른쪽 끝 정렬, 이름 아래 채움, **겹침·시트밖** | 이름이 안 나오거나 사진과 겹친다 |
 | `modetest.js` | 이름이 **Package 외 모드**(단일·전 사이즈)에서도 나오는지, evict 비용, 전 사이즈 "각 사이즈 ≥1장" 보장 | 그 모드에서 이름이 조용히 무시된다 |
+| `ordertest.js` | `_order.json` → 다이얼로그 프리필. `job` 블록 경로와 SKU 폴백 경로가 같은 값을 내는지 **python `build_job` 을 실제로 호출해 교차 검증** (`python3` 필요) | 두 해석기가 갈라져 잘못된 재질·사이즈로 인쇄된다 (재제작 = 원가 100%) |
 | `regress.js` | 단일/전 사이즈 = **바이트 동일**, Package = 변화 방향(컷↑ 잔여↓) | 무관한 배치가 흔들렸다 |
 | `cachetest.js` | 칼선 디스크 캐시 포맷 왕복 + 무효화 + 손상 내성 | 캐시가 깨진 칼선을 재사용한다 |
 | `verify_impl.js` | Package 3버킷 배분층 (레거시 호환·배타성·누락 0) | 디자인이 시트 배분에서 사라진다 |

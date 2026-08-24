@@ -80,6 +80,156 @@ def tier_from_sku(sku):
     # Mixed 는 전 사이즈 모드로 제작한다 — 파일명에 토큰을 박지 않는다.
     return None if code == "MIX" else SKU_MM_TO_TIER.get(code)
 
+# SKU 사이즈 코드 -> mm. tier 토큰(SKU_MM_TO_TIER)과 같은 표를 mm 으로 본 것.
+SKU_SIZE_MM = {"19": 19.05, "25": 25.4, "32": 31.75, "38": 38.1, "51": 50.8, "64": 63.5}
+
+# SKU 끝 두 글자가 재질 코드다 (라이브 스토어 variant 로 확인 2026-08-24).
+SKU_MATERIAL_RE = re.compile(r"-([A-Z]{2})$", re.I)
+SKU_MATERIAL = {"WM": "White Matte", "TR": "Translucent", "SV": "Silver", "GD": "Gold"}
+
+# Package SKU 는 사이즈 코드 자리에 FULL/MINI 가 온다 (EVS-PACKAGE-FULL-WM) — 그게 곧 시트 수다.
+SKU_PACKAGE_RE = re.compile(r"-PACKAGE-(FULL|MINI)-[A-Z]{2}$", re.I)
+PACKAGE_SHEETS_BY_KIND = {"FULL": 2, "MINI": 1}
+
+
+def material_from_sku(sku):
+    """SKU -> 재질 이름. 모르면 None (추측하지 않는다)."""
+    if not sku:
+        return None
+    m = SKU_MATERIAL_RE.search(sku)
+    return SKU_MATERIAL.get(m.group(1).upper()) if m else None
+
+
+def size_from_sku(sku):
+    """SKU -> (mode, size_mm, sheets). mode = single | package | all. 모르면 None.
+
+    일러스트 스크립트의 내부 sentinel(-2/-3) 을 매니페스트에 쓰지 않는다 — 저 숫자는
+    Everstory_mixed.jsx 사정이고, 매니페스트는 그 사정을 몰라야 한다.
+    """
+    if not sku:
+        return None
+    m = SKU_PACKAGE_RE.search(sku)
+    if m:
+        return ("package", None, PACKAGE_SHEETS_BY_KIND.get(m.group(1).upper()))
+    m = SKU_SIZE_RE.search(sku)
+    if not m:
+        return None
+    code = m.group(1).upper()
+    if code == "MIX":
+        return ("all", None, None)          # Mixed 는 전 사이즈 모드로 제작
+    mm = SKU_SIZE_MM.get(code)
+    return ("single", mm, None) if mm else None
+
+
+def size_from_options(options, line_item_index):
+    """SKU 없는 초기 주문(#1001~#1004) 폴백 — 옵션 라벨의 (19mm) 에서 읽는다."""
+    for o in options:
+        if o.get("line_item") != line_item_index:
+            continue
+        m = OPTION_MM_RE.search(o.get("key") or "")
+        if m:
+            mm = SKU_SIZE_MM.get(m.group(1))
+            if mm:
+                return ("single", mm, None)
+    return None
+
+
+def build_job(manifest):
+    """매니페스트 -> 제작 잡티켓. **매니페스트 안의 값만 쓴다** (네트워크 없음).
+
+    왜 미리 계산해서 박아두나: 재질·사이즈는 SKU 문자열 안에 인코딩돼 있어서, 읽는 쪽마다
+    SKU 해석기를 한 벌씩 갖게 된다 (일러스트·포토샵·CLI…). 규칙이 바뀌면 전부 고쳐야 하고,
+    하나라도 빠뜨리면 **틀린 재질로 인쇄된다.** 해석은 여기서 한 번만 한다.
+
+    **한 값으로 안 좁혀지면 채우지 않고 notes 에 이유를 남긴다** — 임의로 하나를 고르면
+    line item 이 여러 개인 주문에서 절반이 틀린 재질로 나간다.
+    """
+    order = manifest.get("order") or {}
+    items = manifest.get("line_items") or []
+    options = manifest.get("options") or []
+    photos = manifest.get("photos") or []
+
+    job = {
+        "order": (order.get("name") or "").lstrip("#"),
+        "customer": order.get("customer") or "",
+        "product": "",
+        "quantity": 0,
+        "material": None,
+        "mode": None,
+        "size_mm": None,
+        "sheets": None,
+        "photos": sum(1 for p in photos if p.get("file")),
+        "sticker_name": "",
+        "notes": [],
+    }
+
+    # 옵션 `Name` = 스티커에 넣을 이름. 고객 이름과 별개다 (선물이면 받는 사람 이름).
+    for o in options:
+        key, _ = split_key(o.get("key") or "")
+        if key == "name" and o.get("value"):
+            job["sticker_name"] = str(o["value"]).strip()
+            break
+
+    titles, materials, sizes = [], [], []
+    for it in items:
+        title = it.get("title")
+        if title and title not in titles:
+            titles.append(title)
+        job["quantity"] += it.get("quantity") or 0
+        mat = material_from_sku(it.get("sku"))
+        if mat and mat not in materials:
+            materials.append(mat)
+        size = size_from_sku(it.get("sku")) or size_from_options(options, it.get("index"))
+        if size and size not in sizes:
+            sizes.append(size)
+    job["product"] = " + ".join(titles)
+
+    if len(materials) == 1:
+        job["material"] = materials[0]
+    elif not materials:
+        job["notes"].append("재질: SKU 에서 못 읽음")
+    else:
+        job["notes"].append("재질: line item 마다 다름 (%s)" % " / ".join(materials))
+
+    if len(sizes) == 1:
+        job["mode"], job["size_mm"], job["sheets"] = sizes[0]
+    elif not sizes:
+        job["notes"].append("사이즈: SKU 에서 못 읽음")
+    else:
+        job["notes"].append("사이즈: line item 마다 다름 — 주문을 나눠 제작할 것")
+    return job
+
+
+def job_label(job):
+    """잡티켓 -> 콘솔 한 줄."""
+    bits = [job["product"] or "?"]
+    if job["material"]:
+        bits.append(job["material"])
+    if job["mode"] == "package":
+        bits.append("Package %s시트" % (job["sheets"] or "?"))
+    elif job["mode"] == "all":
+        bits.append("전 사이즈")
+    elif job["mode"] == "single" and job["size_mm"]:
+        bits.append('%.2f" / %dmm' % (job["size_mm"] / 25.4, round(job["size_mm"])))
+    if job["sticker_name"]:
+        bits.append("이름 '%s'" % job["sticker_name"])
+    line = " · ".join(bits)
+    return line + ("   ⚠ " + " / ".join(job["notes"]) if job["notes"] else "")
+
+
+def shipping_block(order):
+    """Shopify shippingAddress -> 매니페스트용. 없으면 None.
+
+    **개인정보다.** `_order.json` 은 .gitignore 에 명시돼 있고 커밋되지 않는다.
+    """
+    a = order.get("shippingAddress")
+    if not a:
+        return None
+    return {k: a.get(k) for k in
+            ("name", "company", "address1", "address2", "city",
+             "province", "provinceCode", "zip", "country", "countryCodeV2", "phone")}
+
+
 # 매직바이트 -> 확장자. URL 확장자는 믿지 않는다.
 HEIF_BRANDS = {
     b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis", b"hevm", b"hevs",
@@ -328,6 +478,10 @@ ORDER_FIELDS = """
       createdAt
       email
       customer { firstName lastName }
+      shippingAddress {
+        name firstName lastName company
+        address1 address2 city province provinceCode zip country countryCodeV2 phone
+      }
       lineItems(first: 100) {
         nodes { title quantity sku customAttributes { key value } }
       }
@@ -553,6 +707,103 @@ def archived_orders(projects_dir):
     return found
 
 
+# 01_original 에 들어오는 사진. 인테이크가 매직바이트로 판정해 저장하는 포맷 + 수동으로
+# 넣는 PSD/TIF. 확장자 목록이라 완벽하진 않지만, 세는 대상이 "사진 몇 장 들어왔나" 라
+# 목록에 없는 포맷이 하나 섞여도 진행 표시가 하나 어긋날 뿐이다.
+PHOTO_EXTS = ("jpg", "jpeg", "png", "heic", "heif", "avif", "tif", "tiff",
+              "webp", "gif", "psd", "psb")
+
+
+def _listdir(path):
+    try:
+        return [n for n in os.listdir(path) if not n.startswith(".")]
+    except OSError:
+        return []
+
+
+def project_progress(project_dir):
+    """폴더만 보고 파이프라인 진행을 읽는다 -> {originals, pairs, sheets}.
+
+    상태 저장소를 따로 두지 않는다. 각 Phase 는 이미 산출물을 정해진 폴더에 남기므로
+    그것이 곧 진행 기록이고, 손으로 갱신할 일이 없어 실제와 어긋날 수가 없다.
+
+      originals  01_original 사진 수                       (Phase -1 인테이크 산출)
+      pairs      02_cutout 의 _clean.psd + _sil.png 페어 수  (Phase A 누끼 산출)
+      sheets     03_output 의 .ai 시트 수                    (Phase B 산출)
+
+    인쇄·발송(Phase C)은 디스크에 흔적이 남지 않는다. 추측해서 채우지 않는다.
+    """
+    originals = [n for n in _listdir(os.path.join(project_dir, "01_original"))
+                 if n.rsplit(".", 1)[-1].lower() in PHOTO_EXTS]
+
+    # 페어 = 같은 base 의 _clean.psd 와 _sil.png 가 **둘 다** 있는 것. 한쪽만 있으면
+    # Phase B 가 그 디자인을 못 쓰므로 진행으로 세지 않는다.
+    # 양쪽 다 같은 listdir 결과라 macOS NFD 정규화가 서로 어긋날 일이 없다.
+    cleans, sils = set(), set()
+    for n in _listdir(os.path.join(project_dir, "02_cutout")):
+        low = n.lower()
+        if low.endswith("_clean.psd"):
+            cleans.add(n[:-len("_clean.psd")])
+        elif low.endswith("_sil.png"):
+            sils.add(n[:-len("_sil.png")])
+
+    sheets = [n for n in _listdir(os.path.join(project_dir, "03_output"))
+              if n.lower().endswith(".ai")]
+
+    return {"originals": len(originals), "pairs": len(cleans & sils), "sheets": len(sheets)}
+
+
+def progress_label(prog):
+    """project_progress -> 한 줄 표기. 사진이 하나도 없으면 셀 것이 없다."""
+    if not prog["originals"]:
+        return "—"
+    return "누끼 %d/%d · 시트 %s" % (
+        prog["pairs"], prog["originals"], prog["sheets"] if prog["sheets"] else "—")
+
+
+def address_oneline(ship):
+    """배송지 -> 한 줄. 라벨 붙일 때 눈으로 대조하는 용도."""
+    if not ship:
+        return "-"
+    parts = [ship.get("address1"), ship.get("address2"), ship.get("city"),
+             ship.get("provinceCode") or ship.get("province"), ship.get("zip"),
+             ship.get("countryCodeV2") or ship.get("country")]
+    return ", ".join(p for p in parts if p)
+
+
+def backfill_jobs(projects_dir):
+    """기존 `_order.json` 에 job 블록을 채워 넣는다. **토큰·네트워크 불필요.**
+
+    job 은 매니페스트 안의 line_items/options/photos 만으로 계산되므로, 이미 받아둔
+    주문도 Shopify 를 다시 부르지 않고 잡티켓을 갖게 된다. 배송지(shipping)는 매니페스트에
+    없던 값이라 여기서 못 채운다 — 그건 해당 주문을 다시 인테이크해야 들어온다.
+    """
+    try:
+        names = sorted(os.listdir(projects_dir))
+    except OSError:
+        raise SystemExit("projects 폴더를 못 찾았다: %s" % projects_dir)
+    done = 0
+    for n in names:
+        path = os.path.join(projects_dir, n, "_order.json")
+        if not os.path.isfile(path):
+            continue
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                doc = json.load(f)
+        except (OSError, ValueError) as e:
+            print("  ⚠ %s — 읽기 실패: %s" % (n, e))
+            continue
+        doc["job"] = build_job(doc)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(doc, f, ensure_ascii=False, indent=2)
+        done += 1
+        print("  %-34s %s" % (n, job_label(doc["job"])))
+        if not doc.get("shipping"):
+            print("  %-34s (배송지 없음 — 다시 인테이크해야 들어온다)" % "")
+    print("")
+    print("job 블록 %d건 갱신." % done)
+
+
 # ---------------------------------------------------------------- 주문 처리
 
 
@@ -699,10 +950,22 @@ def process_order(order, args, projects_dir):
         "photos": records,
         "warnings": warnings,
     }
+    # 제작 잡티켓 — SKU 해석을 여기서 한 번만 한다. 읽는 쪽(일러스트·포토샵)은 그대로 쓴다.
+    manifest["job"] = build_job(manifest)
+    # 배송지 — 개인정보. `_order.json` 은 .gitignore 에 명시돼 있다.
+    manifest["shipping"] = shipping_block(order)
+
     manifest_path = os.path.join(project_dir, "_order.json")
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
     print("")
+    print("제작      : %s" % job_label(manifest["job"]))
+    ship = manifest["shipping"]
+    if ship:
+        # 받는 사람이 주문자와 다르면 **선물이다.** 포장·동봉물이 달라지므로 눈에 띄게 알린다.
+        gift = " ⚠ 주문자와 다름 (선물)" if (ship.get("name") or "") != customer else ""
+        print("받는 사람 : %s%s" % (ship.get("name") or "?", gift))
+        print("배송지    : %s" % address_oneline(ship))
     print("매니페스트: %s" % manifest_path)
     return True
 
@@ -725,6 +988,8 @@ def main():
                      help="매니페스트가 없는 주문을 전부 인테이크")
     src.add_argument("--check", action="store_true",
                      help="토큰·도메인·API 버전이 통하는지만 확인. 주문 조회 안 함")
+    src.add_argument("--backfill-job", action="store_true",
+                     help="기존 _order.json 에 job 블록을 채운다 (토큰·네트워크 불필요)")
 
     ap.add_argument(
         "--projects-dir",
@@ -751,12 +1016,18 @@ def main():
 
     projects_dir = os.path.abspath(args.projects_dir)
 
+    # --- 기존 매니페스트에 job 채우기 (오프라인) ---
+    if args.backfill_job:
+        backfill_jobs(projects_dir)
+        return
+
     # --- 목록만 보기 ---
     if args.list is not None:
         orders = fetch_orders(args, None, args.list)
         done = archived_orders(projects_dir)
         print("")
-        print("%-10s %-18s %-17s %4s  %s" % ("주문", "고객", "날짜", "사진", "아카이브"))
+        print("%-10s %-18s %-17s %4s  %-13s %-20s %s"
+              % ("주문", "고객", "날짜", "사진", "아카이브", "진행", "폴더"))
         missing = 0
         lost_total = 0
         for o in orders:
@@ -770,11 +1041,15 @@ def main():
                 # CDN 만료로 사라진 사진. 재시도해도 못 받는다 — 미아카이브와 구분해야
                 # 진짜 놓친 주문이 잡음에 묻히지 않는다.
                 lost_total += rec["lost"]
-                mark = "⚠ %d장 유실 · %s" % (rec["lost"], os.path.basename(rec["folder"]))
+                mark = "⚠ %d장 유실" % rec["lost"]
             else:
-                mark = "✅ %s" % os.path.basename(rec["folder"])
-            print("%-10s %-18s %-17s %4d  %s"
-                  % (nm, customer_label(o), (o.get("createdAt") or "")[:16], len(photos), mark))
+                mark = "✅ 받음"
+            # 진행은 매니페스트가 아니라 폴더에서 읽는다 — 인테이크 이후 단계(누끼·시트)는
+            # 이 스크립트가 만드는 것이 아니라서 매니페스트에 기록이 없다.
+            prog = progress_label(project_progress(rec["folder"])) if rec else "—"
+            print("%-10s %-18s %-17s %4d  %-13s %-20s %s"
+                  % (nm, customer_label(o), (o.get("createdAt") or "")[:16], len(photos),
+                     mark, prog, os.path.basename(rec["folder"]) if rec else ""))
         print("")
         print("최근 %d건 중 미아카이브 %d건%s"
               % (len(orders), missing, "  ->  --all-new 로 한 번에 처리" if missing else ""))

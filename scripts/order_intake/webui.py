@@ -18,6 +18,7 @@ import secrets
 import socket
 import sys
 import threading
+import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -42,6 +43,11 @@ class Args(object):
             setattr(self, k, v)
 
 
+# 진행 열은 폴더만 읽으면 되므로 폴링 때마다 다시 읽는다. 매번 읽으면 낭비라 이만큼만 캐시.
+# 짧게 둔 이유: 포토샵에서 누끼 하나 저장하고 브라우저를 봤을 때 이미 반영돼 있어야 한다.
+PROGRESS_TTL = 2.0
+
+
 class State(object):
     def __init__(self):
         self.lock = threading.Lock()
@@ -51,6 +57,30 @@ class State(object):
         self.log = []
         self.busy = False
         self.note = "준비됨"
+        self.progress_at = 0.0
+        # 오류 메시지는 진행 요약이 덮어쓰면 안 된다 — 운영자가 못 보고 지나간다.
+        self.sticky = False
+
+    def refresh_progress(self):
+        """폴더만 다시 읽어 진행 열을 갱신한다. **네트워크 없음.**
+
+        포토샵·일러스트로 작업하는 동안 보드가 알아서 따라오게 하려는 것.
+        주문 조회는 Shopify API 를 때리므로 여기서 하지 않는다 (새로고침 버튼 담당).
+        """
+        if self.busy:
+            return
+        now = time.time()
+        with self.lock:
+            if not self.rows or now - self.progress_at < PROGRESS_TTL:
+                return
+            self.progress_at = now
+            rows = self.rows
+        for r in rows:
+            if not r["folderPath"]:
+                continue
+            fill_progress(r, intake.project_progress(r["folderPath"]))
+        if not self.sticky:
+            self.note = summary_note(rows)
 
     def emit(self, text):
         with self.lock:
@@ -92,6 +122,44 @@ class Writer(object):
             self.buf = ""
 
 
+def fill_progress(row, prog):
+    """project_progress -> 표의 두 칸(누끼·시트) 텍스트와 색.
+
+    ok   = 그 단계 끝남 / wait = 다음에 손볼 것 / none = 셀 것이 없음(사진 유실 등).
+    사진이 0장인 주문은 wait 로 두지 않는다 — CDN 만료로 영영 못 받는 주문이 대기
+    목록에 상주하면 **진짜 할 일이 잡음에 묻힌다** (intake.py 의 ⚠ / ❌ 구분과 같은 이유).
+    """
+    o, p, sh = prog["originals"], prog["pairs"], prog["sheets"]
+    row["originals"], row["pairs"], row["sheets"] = o, p, sh
+    if not o:
+        row["cutText"], row["cutKind"] = "—", "none"
+    else:
+        row["cutText"] = "%d/%d" % (p, o)
+        row["cutKind"] = "ok" if p >= o else "wait"
+    if sh:
+        row["sheetText"], row["sheetKind"] = str(sh), "ok"
+    elif o and p >= o:
+        row["sheetText"], row["sheetKind"] = "—", "wait"
+    else:
+        # 누끼가 덜 끝났으면 **지금 할 일은 누끼다.** 시트까지 같이 대기로 세면 한 주문이
+        # 두 번 세어져 "지금 손볼 것 N건" 이 부풀고, 그 숫자를 안 믿게 된다.
+        row["sheetText"], row["sheetKind"] = "—", "none"
+
+
+def summary_note(rows):
+    """지금 손볼 것이 몇 건인지 한 줄로. 단계 순서대로 읽힌다."""
+    bits = ["주문 %d건" % len(rows)]
+    for label, key, val in (("안 받음", "kind", "new"),
+                            ("누끼 대기", "cutKind", "wait"),
+                            ("시트 대기", "sheetKind", "wait")):
+        n = sum(1 for r in rows if r.get(key) == val)
+        if n:
+            bits.append("%s %d" % (label, n))
+    if len(bits) == 1:
+        bits.append("전부 처리됨")
+    return " · ".join(bits)
+
+
 def build_rows(orders, archived):
     rows = []
     for o in orders:
@@ -105,7 +173,7 @@ def build_rows(orders, archived):
             kind, folder = "lost", rec["folder"]
         else:
             state, kind, folder = "완료", "done", rec["folder"]
-        rows.append({
+        row = {
             "name": nm,
             "customer": intake.customer_label(o),
             "date": (o.get("createdAt") or "")[:10],
@@ -114,7 +182,12 @@ def build_rows(orders, archived):
             "kind": kind,
             "folder": os.path.basename(folder) if folder else "",
             "folderPath": folder or "",
-        })
+        }
+        # 진행(누끼·시트)은 매니페스트가 아니라 폴더에서 읽는다 — Phase A/B 산출물은
+        # 인테이크가 만드는 것이 아니라 매니페스트에 기록이 없다.
+        fill_progress(row, intake.project_progress(folder) if folder
+                      else {"originals": 0, "pairs": 0, "sheets": 0})
+        rows.append(row)
     return rows
 
 
@@ -124,6 +197,7 @@ def run_job(fn, note):
         return False
     STATE.busy = True
     STATE.note = note
+    STATE.sticky = False
 
     def wrapped():
         old = sys.stdout
@@ -135,10 +209,12 @@ def run_job(fn, note):
             STATE.emit("")
             STATE.emit("⚠ " + str(e))
             STATE.note = "오류 — 아래 로그 확인"
+            STATE.sticky = True
         except Exception as e:  # noqa: BLE001
             STATE.emit("")
             STATE.emit("⚠ %s: %s" % (type(e).__name__, e))
             STATE.note = "오류 — 아래 로그 확인"
+            STATE.sticky = True
         finally:
             w.flush()
             sys.stdout = old
@@ -155,9 +231,8 @@ def job_refresh():
     STATE.orders = orders
     STATE.archived = archived
     STATE.rows = build_rows(orders, archived)
-    n_new = sum(1 for r in STATE.rows if r["kind"] == "new")
-    STATE.note = ("주문 %d건 · 안 받은 것 %d건" % (len(STATE.rows), n_new)) if n_new \
-        else ("주문 %d건 · 전부 받음" % len(STATE.rows))
+    STATE.progress_at = time.time()
+    STATE.note = summary_note(STATE.rows)
 
 
 def job_fetch(names):
@@ -176,7 +251,8 @@ def job_fetch(names):
     archived = intake.archived_orders(args.projects_dir)
     STATE.archived = archived
     STATE.rows = build_rows(STATE.orders, archived)
-    STATE.note = "완료"
+    STATE.progress_at = time.time()
+    STATE.note = summary_note(STATE.rows)
 
 
 PAGE = """<!doctype html>
@@ -211,6 +287,11 @@ PAGE = """<!doctype html>
   tr.done .state { color:var(--done); }
   tr.lost .state { color:var(--lost); }
   td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  /* 진행 칸 — ok 끝남 / wait 다음에 손볼 것 / none 셀 것 없음 */
+  td.prog { text-align:right; font-variant-numeric:tabular-nums; font-size:13.5px; }
+  td.prog.ok { color:var(--done); }
+  td.prog.wait { color:var(--new); font-weight:650; }
+  td.prog.none { color:var(--lost); }
   .folder { color:var(--mut); font-size:12.5px; }
   #log { margin:16px 24px 24px; padding:12px 14px; border-radius:10px; background:#141414;
          color:#d6d6d6; font:12.5px/1.55 Menlo,monospace; height:260px; overflow:auto;
@@ -231,7 +312,9 @@ PAGE = """<!doctype html>
   <button id="bOpen">폴더 열기</button>
 </div>
 <div class="wrap"><table>
-  <thead><tr><th></th><th>주문</th><th>고객</th><th>날짜</th><th>사진</th><th>상태</th><th>폴더</th></tr></thead>
+  <thead><tr><th></th><th>주문</th><th>고객</th><th>날짜</th><th>사진</th><th>상태</th>
+    <th title="02_cutout 의 _clean.psd + _sil.png 페어 / 01_original 사진">누끼</th>
+    <th title="03_output 의 .ai 시트 수">시트</th><th>폴더</th></tr></thead>
   <tbody id="rows"></tbody>
 </table></div>
 <div id="log"></div>
@@ -258,6 +341,8 @@ function render(rows) {
     <td><input type="checkbox" value="${r.name}" ${keep.has(r.name)?"checked":""}></td>
     <td>${r.name}</td><td>${r.customer}</td><td>${r.date}</td>
     <td class="num">${r.photos}</td><td class="state">${r.state}</td>
+    <td class="prog ${r.cutKind}">${r.cutText}</td>
+    <td class="prog ${r.sheetKind}">${r.sheetText}</td>
     <td class="folder">${r.folder}</td></tr>`).join("");
 }
 function setBusy(b) {
@@ -324,6 +409,7 @@ class Handler(BaseHTTPRequestHandler):
                 since = int((self._query().get("since") or ["0"])[0])
             except ValueError:
                 since = 0
+            STATE.refresh_progress()
             return self._send(200, json.dumps(STATE.snapshot(since), ensure_ascii=False))
         self._send(404, json.dumps({"error": "not found"}))
 

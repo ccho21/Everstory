@@ -12,7 +12,6 @@ GTA 한인 커뮤니티 분들 환영합니다. 결제는 영어로 진행되지
 상품 선택
 - Face Sticker: 얼굴/상반신 중심 스티커
 - Full Body Sticker: 전신/전체 피사체 중심 스티커
-- Shape Sticker: shape 크롭 스티커 (현재 원형)
 - Package Mini: Big / Medium / Small print 후보 사진을 올리면 Studio가 4장을 골라 1장 시트로 제작
 - Package Full: Big / Medium / Small print 후보 사진을 올리면 Studio가 8장을 골라 2장 시트로 제작
 
@@ -60,7 +59,7 @@ A. 본 제품은 장식용 사진 스티커이며 장난감 또는 어린이용 
 
 현재 캐나다 전역으로 무료 배송됩니다. 토론토 인근 로컬 픽업은 사전 협의 후 가능합니다.
 
-배송은 Canada Post lettermail로 진행되며 추적 번호가 없습니다. 제작은 보통 1–3영업일, 발송까지 총 2–5영업일 기준입니다.
+무료 배송은 Canada Post lettermail로 진행되며 추적 번호가 없습니다 (발송 후 4–10영업일). 추적이 필요하시면 checkout에서 유료 Canada Post Expedited Parcel을 선택하실 수 있습니다. 제작은 보통 1–3영업일, 발송까지 총 2–5영업일 기준입니다.
 
 문의: studio.everstory@gmail.com
 ```
