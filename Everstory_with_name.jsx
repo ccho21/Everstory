@@ -54,10 +54,56 @@
   var NAME_BOTTOM_RISE_RATIO = 0.16;
   var NAME_BOTTOM_GAP_MM = 0.45;
   var NAME_LEGIBILITY_MIN_MM = 25.4;
-  var NAME_FONT_CACHE = null;
-  var NAME_FONT_RESOLVED = false;
   var HANGUL_FONT_CACHE = null;
   var HANGUL_FONT_RESOLVED = false;
+
+  // ── 이름 스타일 프리셋 ────────────────────────────────────────
+  // Everstory_calligraphy.jsx 의 뮤트 팔레트 시트에서 고른 6종.
+  // 각 프리셋은 서체 + 3가지 색을 함께 들고 있다:
+  //   ink = 배경 위에 얹을 때의 글자색 (보통 밝은 색)
+  //   solo = 배경 없이 글자만 쓸 때의 글자색 (그 스티커의 대표색)
+  //   bg / sh = 컬러 배경과 하드 그림자
+  // ink 를 배경 없이 쓰면 흰 글자가 흰 종이에서 사라지므로 solo 를 따로 둔다.
+  var NAME_FONT_OPTIONS = [
+    { label: "Fredoka Bold — 통통한 라운드 (기본)", hangul: false,
+      cands: ["Fredoka-Bold", "Fredoka-SemiBold"],
+      ink: "FFFFFF", solo: "C4756B", bg: "C4756B", sh: "7A423B" },
+    { label: "Titan One — 레트로 굵은 라운드", hangul: false,
+      cands: ["TitanOne"],
+      ink: "F5EFE6", solo: "8A7BA8", bg: "8A7BA8", sh: "4E4463" },
+    { label: "Luckiest Guy — 스티커 클래식 (대문자 전용)", hangul: false,
+      cands: ["LuckiestGuy-Regular"],
+      ink: "7A4A3A", solo: "7A4A3A", bg: "EADFC8", sh: "C7B393" },
+    { label: "Archivo Black — 초굵은 그로테스크", hangul: false,
+      cands: ["ArchivoBlack-Regular"],
+      ink: "EADFC8", solo: "3A3733", bg: "3A3733", sh: "8A7BA8" },
+    { label: "Shantell Sans Bold — 말랑한 손글씨", hangul: false,
+      cands: ["ShantellSans-Bold"],
+      ink: "FFFFFF", solo: "C98F7A", bg: "C98F7A", sh: "7A4A3A" },
+    { label: "Chewy — 통통한 손글씨", hangul: false,
+      cands: ["Chewy-Regular"],
+      ink: "FFFFFF", solo: "A88BA8", bg: "A88BA8", sh: "5F4A5F" }
+  ];
+  var NAME_FONT_DEFAULT_INDEX = 0;
+
+  // 스타일 단계. 0 → 1 → 2 로 갈수록 이름의 존재감이 커진다.
+  var NAME_STYLE_OPTIONS = [
+    "서체만 — 글자 먹",
+    "서체 + 글자색",
+    "서체 + 글자색 + 컬러 배경 + 그림자"
+  ];
+  var NAME_STYLE_INK_ONLY = 0, NAME_STYLE_COLOR = 1, NAME_STYLE_LAYERED = 2;
+  var NAME_STYLE_DEFAULT_INDEX = 0;
+
+  // 레이어드 모드에서 잉크 높이 대비 비율
+  var NAME_BG_OFFSET_RATIO = 0.20;   // 컬러 배경이 글자 밖으로 벌어지는 양
+  var NAME_SHADOW_RATIO = 0.06;      // 하드 그림자 우하향 이동량
+
+  // 메인 플로우에서 옵션으로 덮어쓴다. var 할당은 호이스팅되지 않으므로
+  // 선언은 반드시 여기(플로우 위)에 둘 것.
+  var NAME_FONT_INDEX = 0;
+  var NAME_STYLE_MODE = 0;
+  var NAME_FONT_CACHE = {};
 
   var SIZE_OPTIONS = [
     "0.75\" / 19mm", "1\" / 25mm", "1.25\" / 32mm",
@@ -100,6 +146,14 @@
   if (!options) return;
   options.nameText = _composeHangulNFC(String(options.nameText));
   options.namePosition = (options.namePosition === "bottom") ? "bottom" : "top";
+  var fi = options.nameFontIndex;
+  options.nameFontIndex =
+    (fi >= 0 && fi < NAME_FONT_OPTIONS.length) ? fi : NAME_FONT_DEFAULT_INDEX;
+  NAME_FONT_INDEX = options.nameFontIndex;
+  var sm = options.nameStyleMode;
+  options.nameStyleMode =
+    (sm >= 0 && sm < NAME_STYLE_OPTIONS.length) ? sm : NAME_STYLE_DEFAULT_INDEX;
+  NAME_STYLE_MODE = options.nameStyleMode;
 
   var selectedPairs = [];
   for (var si = 0; si < options.pairIndexes.length; si++) {
@@ -262,6 +316,8 @@
     "스크립트: " + SCRIPT_VARIANT + " (템플릿: " + TEMPLATE_NAME + ")\n" +
     "이름: " + options.nameText + "\n" +
     "위치: " + (options.namePosition === "bottom" ? "아래 (턱 아래)" : "위 (정수리 위)") + "\n" +
+    "서체: " + NAME_FONT_OPTIONS[options.nameFontIndex].label + "\n" +
+    "스타일: " + NAME_STYLE_OPTIONS[options.nameStyleMode] + "\n" +
     "사이즈: " + (INCH_STR[options.sizeMm] || options.sizeMm + "mm") + " (사진 긴 변 기준)\n" +
     "그리드: " + packInfo.cols + "×" + packInfo.rows + " / 배치 " + placedCount + "장 / 디자인 " + selectedPairs.length + "개\n" +
     (options.sizeMm < NAME_LEGIBILITY_MIN_MM ? "⚠ 작은 사이즈입니다. 이름 가독성을 확인하세요.\n" : "") +
@@ -383,15 +439,19 @@
     return _nameFontSizeForLongSide(longSidePt) * 1.15 + NAME_HALO_PT * 2;
   }
 
+  function _nameFontForIndex(idx) {
+    if (NAME_FONT_CACHE.hasOwnProperty(idx)) return NAME_FONT_CACHE[idx];
+    var f = _resolveFont(NAME_FONT_OPTIONS[idx].cands);
+    NAME_FONT_CACHE[idx] = f;
+    return f;
+  }
+
   function _getNameFont(nameText) {
-    if (_containsHangul(nameText)) return _getHangulFont();
-    if (!NAME_FONT_RESOLVED) {
-      NAME_FONT_CACHE = _resolveFont([
-        "Fredoka-Bold", "Fredoka-SemiBold", "Baloo2-ExtraBold", "AmaticSC-Bold"
-      ]);
-      NAME_FONT_RESOLVED = true;
-    }
-    return NAME_FONT_CACHE;
+    var entry = NAME_FONT_OPTIONS[NAME_FONT_INDEX] || NAME_FONT_OPTIONS[0];
+    // 한글 서체를 직접 골랐으면 그대로 쓴다.
+    // 라틴 서체인데 이름에 한글이 섞이면 한글 폴백으로 넘긴다.
+    if (!entry.hangul && _containsHangul(nameText)) return _getHangulFont();
+    return _nameFontForIndex(NAME_FONT_INDEX) || _getHangulFont();
   }
 
   function _copyPathsAsSolid(item, destGroup) {
@@ -495,8 +555,23 @@
     nameRange.characterAttributes.size = fontSize;
     nameRange.characterAttributes.tracking = NAME_TRACKING;
     nameRange.characterAttributes.horizontalScale = horizontalScale;
-    nameRange.characterAttributes.fillColor = INK;
-    nameRange.characterAttributes.strokeColor = INK;
+    var preset = NAME_FONT_OPTIONS[NAME_FONT_INDEX] || NAME_FONT_OPTIONS[0];
+    // 배경이 없으면 solo(대표색), 배경 위에 얹으면 ink.
+    // 서체만 모드는 브랜드 먹.
+    // 함정: 여러 줄에 걸친 **중첩 삼항 연산자를 쓰지 말 것**.
+    // ExtendScript 에서 첫 조건이 true 인데도 두 번째 분기가 실행됐다
+    // (실측: mode=0, INK_ONLY=0, 비교식은 true 인데 결과는 solo 색).
+    // if/else 로 풀어 쓰면 정상 동작한다.
+    var inkColor;
+    if (NAME_STYLE_MODE === NAME_STYLE_INK_ONLY) {
+      inkColor = INK;
+    } else if (NAME_STYLE_MODE === NAME_STYLE_COLOR) {
+      inkColor = _hexToRGB(preset.solo, INK);
+    } else {
+      inkColor = _hexToRGB(preset.ink, INK);
+    }
+    nameRange.characterAttributes.fillColor = inkColor;
+    nameRange.characterAttributes.strokeColor = inkColor;
     nameRange.characterAttributes.strokeWeight = NAME_TEXT_STROKE_PT;
     nameRange.paragraphAttributes.justification = Justification.CENTER;
 
@@ -506,21 +581,56 @@
     _bounceGlyphs(inkOutline, _seedOfText(artworkText));
     nameFrame = inkOutline;   // 하위 코드가 참조하는 변수명 유지
 
-    // 칼선 = 글자 아웃라인 그대로. 여백(offset)은 주지 않는다 —
-    // 나중에 Offset Path 로 직접 주기 때문에, 여기서 미리 벌려두면
-    // 여백이 두 번 들어간다.
     var nameCut = kissL.groupItems.add();
-    _copyPathsAsSolid(inkOutline, nameCut);
+    var extraItems = [];   // 레이어드에서 같이 움직여야 하는 배경·그림자
+    var bgItem = null;
+    if (NAME_STYLE_MODE === NAME_STYLE_LAYERED) {
+      // 하드 그림자 → 컬러 배경 → 칼선(배경 윤곽) 순으로 쌓는다.
+      var ib = inkOutline.geometricBounds;
+      var inkH = ib[1] - ib[3];
+      var shd = inkH * NAME_SHADOW_RATIO;
+
+      var shadowItem = inkOutline.duplicate(printL, ElementPlacement.PLACEATEND);
+      _setFillAll(shadowItem, _hexToRGB(preset.sh, INK));
+      shadowItem.translate(shd, -shd);
+      try { shadowItem.name = "name_shadow_" + itemBase; } catch (eShN) {}
+
+      // 배경 오프셋은 잉크 ∪ 그림자 기준 — 잉크만 쓰면 그림자가 삐져나온다.
+      var silh = printL.groupItems.add();
+      inkOutline.duplicate(silh, ElementPlacement.PLACEATEND);
+      shadowItem.duplicate(silh, ElementPlacement.PLACEATEND);
+
+      bgItem = _offsetSolid(sheetDoc, printL, silh,
+                            inkH * NAME_BG_OFFSET_RATIO,
+                            _hexToRGB(preset.bg, INK));
+      try { silh.remove(); } catch (eRmSilh) {}
+      try { bgItem.name = "name_bg_" + itemBase; } catch (eBgN) {}
+      try { bgItem.move(printL, ElementPlacement.PLACEATEND); } catch (eMvBg) {}
+
+      extraItems.push(shadowItem);
+      extraItems.push(bgItem);
+
+      // 레이어드에서는 인쇄된 배경 가장자리가 곧 컷 경계다.
+      _copyPathsAsSolid(bgItem, nameCut);
+    } else {
+      // 칼선 = 글자 아웃라인 그대로. 여백(offset)은 주지 않는다 —
+      // 나중에 Offset Path 로 직접 주기 때문에, 여기서 미리 벌려두면
+      // 여백이 두 번 들어간다.
+      _copyPathsAsSolid(inkOutline, nameCut);
+    }
 
     if (namePosition === "bottom") {
-      // 턱 아래 간격은 **글자 기준**으로 잰다. 인쇄되는 것이 글자뿐이라
-      // 칼선(오프셋만큼 더 큼) 기준으로 재면 눈에 보이는 간격이 어긋난다.
-      var initialNameCutBounds = inkOutline.geometricBounds;
+      // 턱 아래 간격은 **눈에 보이는 것** 기준으로 잰다.
+      // 배경이 있으면 배경 상단, 없으면 글자 상단.
+      var refBounds = bgItem ? bgItem.geometricBounds : inkOutline.geometricBounds;
       var targetNameTop = cutB - NAME_BOTTOM_GAP_MM * MM_TO_PT;
-      var nameShiftY = targetNameTop - initialNameCutBounds[1];
+      var nameShiftY = targetNameTop - refBounds[1];
       if (Math.abs(nameShiftY) > 0.01) {
         nameFrame.translate(0, nameShiftY);
         nameCut.translate(0, nameShiftY);
+        for (var ei = 0; ei < extraItems.length; ei++) {
+          try { extraItems[ei].translate(0, nameShiftY); } catch (eTr) {}
+        }
       }
     }
 
@@ -813,6 +923,22 @@
     var positionDrop = positionGroup.add("dropdownlist", undefined, ["위 (정수리 위)", "아래 (턱 아래)"]);
     positionDrop.selection = 0;
 
+    var fontGroup = dlg.add("group");
+    fontGroup.add("statictext", undefined, "이름 서체:");
+    var fontLabels = [];
+    for (var fi2 = 0; fi2 < NAME_FONT_OPTIONS.length; fi2++) {
+      fontLabels.push(NAME_FONT_OPTIONS[fi2].label);
+    }
+    var fontDrop = fontGroup.add("dropdownlist", undefined, fontLabels);
+    fontDrop.selection = NAME_FONT_DEFAULT_INDEX;
+    fontDrop.preferredSize = [330, 24];
+
+    var styleGroup = dlg.add("group");
+    styleGroup.add("statictext", undefined, "이름 스타일:");
+    var styleDrop = styleGroup.add("dropdownlist", undefined, NAME_STYLE_OPTIONS);
+    styleDrop.selection = NAME_STYLE_DEFAULT_INDEX;
+    styleDrop.preferredSize = [300, 24];
+
     dlg.add("statictext", undefined, "이름:");
     var nameInput = dlg.add("edittext", undefined, defName);
     nameInput.characters = 24;
@@ -835,7 +961,9 @@
         pairIndexes: idxs,
         sizeMm: SIZE_VALUES[sizeDrop.selection.index],
         nameText: nm,
-        namePosition: positionDrop.selection.index === 1 ? "bottom" : "top"
+        namePosition: positionDrop.selection.index === 1 ? "bottom" : "top",
+        nameFontIndex: fontDrop.selection.index,
+        nameStyleMode: styleDrop.selection.index
       };
       dlg.close();
     };
@@ -1201,11 +1329,66 @@
   //  Everstory_calligraphy.jsx 에서 이식 (2026-08-19)
   // ═════════════════════════════════════════════════════════
 
-  // 이름 칼선에 여백을 주는 헬퍼(_offsetSolid)는 제거했다 — 칼선을 글자
-  // 윤곽 그대로 두고 Offset Path 는 나중에 수동으로 준다.
-  // 다시 필요하면 Everstory_calligraphy.jsx 의 _offsetShape 를 참고할 것.
-  // (함정: 굵은 스트로크 + expandStyle 은 확장되지 않는다. Offset Path
-  //  라이브 이펙트를 써야 하고 jntp 는 **0 이 round** 다.)
+  // srcItem 을 offsetPt 만큼 바깥으로 부풀린 단일 도형 (레이어드 배경용).
+  //
+  // 함정 (실측 확인 — 되돌리지 말 것): 굵은 스트로크를 주고 expandStyle
+  // 하는 방식은 여백이 전혀 생기지 않는다. Expand Appearance 는 라이브
+  // 이펙트만 확장하고 평범한 스트로크는 그대로 두기 때문이다.
+  // 반드시 Offset Path 라이브 이펙트를 쓸 것. jntp 는 **0 이 round** 다
+  // (통념은 1=round 이지만 Illustrator 2026 에서 0 이 round 로 확인됨).
+  function _offsetSolid(sheetDoc, layer, srcItem, offsetPt, colorObj) {
+    var src = srcItem.duplicate(layer, ElementPlacement.PLACEATEND);
+    src.applyEffect('<LiveEffect name="Adobe Offset Path">' +
+      '<Dict data="R mlim 4 R ofst ' + offsetPt + ' I jntp 0 "/></LiveEffect>');
+    sheetDoc.selection = null;
+    src.selected = true;
+    app.executeMenuCommand("expandStyle");
+    var sel = sheetDoc.selection;
+    var expanded = (sel && sel.length > 0) ? sel[0] : src;
+
+    // compound 를 풀고 솔리드로 만들어야 Pathfinder 가 먹는다.
+    var g = layer.groupItems.add();
+    _copyPathsAsSolid(expanded, g);
+    try { expanded.remove(); } catch (eRm) {}
+
+    _forceTempFill(g);
+    sheetDoc.selection = null;
+    g.selected = true;
+    app.executeMenuCommand("group");
+    app.executeMenuCommand("Live Pathfinder Add");
+    app.executeMenuCommand("expandStyle");
+    var sel2 = sheetDoc.selection;
+    var united = (sel2 && sel2.length > 0) ? sel2[0] : g;
+    _setFillAll(united, colorObj);
+    sheetDoc.selection = null;
+    return united;
+  }
+
+  function _setFillAll(item, colorObj) {
+    try {
+      if (item.typename === "GroupItem") {
+        for (var i = 0; i < item.pageItems.length; i++) _setFillAll(item.pageItems[i], colorObj);
+        return;
+      }
+      if (item.typename === "CompoundPathItem") {
+        for (var j = 0; j < item.pathItems.length; j++) _setFillAll(item.pathItems[j], colorObj);
+        return;
+      }
+      if (item.typename === "PathItem") {
+        item.stroked = false; item.filled = true; item.fillColor = colorObj;
+      }
+    } catch (e) {}
+  }
+
+  // "A9503C" / "#A9503C" → RGBColor. 파싱 실패하면 fallback.
+  function _hexToRGB(hex, fallback) {
+    if (!hex) return fallback;
+    var s = String(hex).replace(/^#/, "");
+    if (!/^[0-9A-Fa-f]{6}$/.test(s)) return fallback;
+    return C(parseInt(s.substring(0, 2), 16),
+             parseInt(s.substring(2, 4), 16),
+             parseInt(s.substring(4, 6), 16));
+  }
 
   // 글자마다 상하로 튀고 살짝 회전·크기 변화.
   // createOutline 은 글자를 **역순**으로 담으므로 x 중심 기준 정렬 후 변형.

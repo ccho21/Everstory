@@ -1,0 +1,6 @@
+#!/bin/zsh
+# Everstory 주문 사진 인테이크 런처.
+# 한글이 섞인 긴 경로를 매번 안 쳐도 되게 하는 얇은 래퍼일 뿐이다.
+# 인자는 전부 intake.py 로 그대로 넘긴다.
+HERE="${0:A:h}"
+exec /usr/bin/python3 "$HERE/intake.py" "$@"

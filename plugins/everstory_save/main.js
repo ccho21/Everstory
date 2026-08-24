@@ -6,6 +6,19 @@ const { executeAsModal } = core;
 const TARGET_LONGEST_PX = 1800;
 const SIL_LAYER_INDEX = 0;     // 맨 위 = 실루엣. 그 아래 모든 레이어(보정 포함) = 누끼.
 
+// 주문 인테이크(scripts/order_intake)가 01_original 파일에 붙인 `{NN}_{TOKEN}_` 접두.
+// 토큰은 두 종류이고 둘 다 주문 데이터에서 온 값이라 손으로 다시 정하지 않는다.
+//   · Package 상품  -> BIG/MED/SML  (주문 속성 Big/Medium/Small print)
+//   · 그 외 상품     -> XS..XXL      (SKU 사이즈 코드, 예: EVS-FACE-19-WM -> XS)
+// Mixed 주문은 전 사이즈 모드로 제작하므로 토큰이 없다 -> 자동이 멈추고 수동 버튼을 요구한다.
+// 긴 대안을 먼저 둔다 (S 가 SML 을, X 가 XXL 을 가로채지 않게).
+const BUCKET_RE = /^\d+_(BIG|MED|SML|XXL|XL|XS|FAM|S|M|L)_/i;
+
+function parseBucketFromName(fileName) {
+  const m = fileName.match(BUCKET_RE);
+  return m ? m[1].toUpperCase() : null;
+}
+
 entrypoints.setup({
   panels: {
     save: {
@@ -21,8 +34,8 @@ tierButtons.forEach((btn) => {
   btn.addEventListener("click", () => runNukki(btn.dataset.tier));
 });
 
-async function runNukki(tier) {
-  setStatus(`${tier} 처리 중...`, "info");
+async function runNukki(requestedTier) {
+  setStatus(`${requestedTier === "AUTO" ? "자동 감지" : requestedTier} 처리 중...`, "info");
   tierButtons.forEach((b) => { b.disabled = true; });
 
   try {
@@ -41,6 +54,24 @@ async function runNukki(tier) {
     if (origDoc.layers.length < 2) {
       setStatus("PSD에 최소 두 개의 레이어가 필요합니다.\n맨 위: 실루엣 / 그 아래: 누끼(+보정 레이어)", "err");
       return;
+    }
+
+    // AUTO = 파일명의 버킷을 그대로 쓴다. 못 읽으면 추측하지 않고 멈춘다.
+    let tier = requestedTier;
+    let autoNote = "";
+    if (tier === "AUTO") {
+      const sep = docPath.includes("\\") ? "\\" : "/";
+      const baseName = docPath.substring(docPath.lastIndexOf(sep) + 1);
+      const detected = parseBucketFromName(baseName);
+      if (!detected) {
+        setStatus(
+          `파일명에서 버킷을 못 읽었습니다.\n${baseName}\n\n` +
+          `주문 인테이크로 받은 파일은 01_BIG_… 처럼 시작합니다.\n` +
+          `그 외 사진은 아래 사이즈 버튼을 직접 누르세요.`, "err");
+        return;
+      }
+      tier = detected;
+      autoNote = ` (파일명에서 자동 감지)`;
     }
 
     const parsed = parsePath(docPath);
@@ -90,7 +121,7 @@ async function runNukki(tier) {
       await dupDoc.closeWithoutSaving();
     }, { commandName: "Everstory Nukki" });
 
-    setStatus(`완료\nclean: ${cleanFile.nativePath}\nsil:   ${silFile.nativePath}`, "ok");
+    setStatus(`완료 — ${tier}${autoNote}\nclean: ${cleanFile.nativePath}\nsil:   ${silFile.nativePath}`, "ok");
 
   } catch (e) {
     setStatus(`오류: ${e.message || e}`, "err");
@@ -122,8 +153,9 @@ function parsePath(absPath) {
 
 async function nextSequenceNumber(folderEntry, prefix) {
   // folderEntry 안의 `{prefix}_NN[_TIER]_clean.psd` 들 중 최대 번호 + 1 반환.
-  // tier 는 옵션 — tier 무관하게 NN 공유 카운트. 레거시 무-tier 및 _FAM 파일도 인식한다.
-  const re = new RegExp("^" + escapeRegex(prefix) + "_([0-9]+)(?:_(?:XS|S|M|L|XL|XXL|FAM))?_clean\\.psd$", "i");
+  // tier 는 옵션 — tier 무관하게 NN 공유 카운트. 레거시 무-tier·_FAM·버킷(_BIG/_MED/_SML) 전부 인식한다.
+  const re = new RegExp(
+    "^" + escapeRegex(prefix) + "_([0-9]+)(?:_(?:XXL|XL|XS|SML|MED|BIG|FAM|S|M|L))?_clean\\.psd$", "i");
   let maxN = 0;
   try {
     const entries = await folderEntry.getEntries();

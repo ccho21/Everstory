@@ -11,13 +11,22 @@
     PSD 컨벤션:<br>
     · 맨 위 = 실루엣<br>
     · 그 아래 모든 레이어 = 누끼 (+보정 레이어 OK)<br>
-    · 사이즈 버튼 = 출력 tier (파일명 끝 _XS/_S/_M/_L/_XL/_XXL)
+    · 사이즈 버튼 = 출력 tier (파일명 끝 _XS/_S/_M/_L/_XL/_XXL)<br>
+    · <b>자동</b> = 주문 인테이크가 붙인 파일명(01_BIG_…)에서 버킷을 읽음
   </sp-detail>
 
   <sp-divider size="m"></sp-divider>
 
+  <sp-button class="tier-btn" data-tier="AUTO" variant="cta">자동 — 파일명에서</sp-button>
+
+  <sp-detail class="hint">Package 버킷 (직접 지정)</sp-detail>
+  <sp-button class="tier-btn" data-tier="BIG" variant="secondary">BIG</sp-button>
+  <sp-button class="tier-btn" data-tier="MED" variant="secondary">MED</sp-button>
+  <sp-button class="tier-btn" data-tier="SML" variant="secondary">SML</sp-button>
+
+  <sp-detail class="hint">단일 · 전 사이즈 tier</sp-detail>
   <sp-button class="tier-btn" data-tier="XS" variant="secondary">XS — 0.75″</sp-button>
-  <sp-button class="tier-btn" data-tier="S" variant="cta">S — 1″</sp-button>
+  <sp-button class="tier-btn" data-tier="S" variant="secondary">S — 1″</sp-button>
   <sp-button class="tier-btn" data-tier="M" variant="secondary">M — 1.25″</sp-button>
   <sp-button class="tier-btn" data-tier="L" variant="secondary">L — 1.5″</sp-button>
   <sp-button class="tier-btn" data-tier="XL" variant="secondary">XL — 2″</sp-button>
