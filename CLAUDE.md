@@ -29,9 +29,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 │   └── 03_output/                 # Phase B 산출 (.ai 시트)
 └── docs/
     ├── business/                  # 사업·전략
-    ├── implementation/            # 운영 코드 자산 (sheet_tokens.json)
-    ├── shopify/                   # 웹 스토어 — 어드민·카피·정책·시안
-    └── strategy/                  # 개인 재정·세금 계획 (Everstory 사업과 별개)
+    └── shopify/                   # 웹 스토어 — 어드민·카피·정책
 ```
 
 ## 파이프라인 요약
@@ -65,7 +63,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 ## 문서 인덱스
 
-각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **implementation**: 운영 코드 자산 / **shopify**: 웹 스토어 (어드민·카피·정책·시안). **strategy** 는 개인 재정·세금 계획으로 Everstory 사업 문서와 별개.
+각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **shopify**: 웹 스토어 운영 문서 (어드민·카피·정책).
 
 - [**비즈니스**](docs/business/) — 사업·전략 (의존 계층: Fact → Plan → Open)
   - [products.md](docs/business/products.md) — Layer 1 Fact. Launch SKU·Package 규칙·사이즈·가격·사진 QC (상품 SOT)
@@ -73,24 +71,15 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
   - [business.md](docs/business/business.md) — Layer 2 Plan. 사업 정의·원가/마진 모델·채널·배송·런칭 목표. raw 는 products/expenses 인용
   - [pending.md](docs/business/pending.md) — Layer 3 Open. 미확정·측정·결정 보류 항목 SOT
   - [plan.md](docs/business/plan.md) — Layer 0 Meta. 문서 목적·중요도·계층
-- [**구현**](docs/implementation/) — 운영 코드 자산
-  - [sheet_tokens.json](docs/implementation/sheet_tokens.json) — 시트 packing 토큰
-  - [plugins/everstory_save/README.md](plugins/everstory_save/README.md) — Phase A UXP 패널 플러그인 설치/사용
+- [**구현**](plugins/everstory_save/) — Phase A UXP 패널 플러그인 설치/사용
 - [**Shopify**](docs/shopify/) — 웹 스토어
   - [plan.md](docs/shopify/plan.md) — Shopify 문서 목적·중요도·정리 계획
   - **셋업·어드민**
     - [settings_checklist.md](docs/shopify/settings_checklist.md) — 1A–1J 설정 체크리스트와 통합 smoke test
-    - [instructions/](docs/shopify/instructions/) — Batch 1–10 admin·theme 실행 walkthrough (값은 SOT 문서 참조)
   - **카피·콘텐츠**
     - [pages_copy.md](docs/shopify/pages_copy.md) — About/FAQ/가이드/Contact 페이지 카피
-    - [product_descriptions.md](docs/shopify/product_descriptions.md) — 5 SKU 상품 설명
+    - [product_descriptions.md](docs/shopify/product_descriptions.md) — 운영 상품 설명
     - [footer_copy.md](docs/shopify/footer_copy.md) — 한국어 footer 카피
-    - [photo_shotlist.md](docs/shopify/photo_shotlist.md) — 촬영 체크리스트 (증거샷·de-baby 균형·페이지 슬롯 매핑)
+    - [photo_shotlist.md](docs/shopify/photo_shotlist.md) — 촬영 체크리스트
   - **정책**
     - [policies.md](docs/shopify/policies.md) — 환불/배송 정책 본문
-  - **시안**
-    - [wireframes/index.html](docs/shopify/wireframes/index.html) — Horizon 테마 기반 11페이지 와이어프레임 (페이지별 분리 HTML)
-    - [preview.html](docs/shopify/preview.html) — 스토어프론트 프리뷰 시안
-    - [everstory_pdp_general.html](docs/shopify/everstory_pdp_general.html) (+ `_en.html`) — PDP 공용 블록 시안 (product info *밖*, Options/Sizes/공용 섹션, KR/EN)
-    - [everstory_pdp_product_intro.html](docs/shopify/everstory_pdp_product_intro.html) (+ `_en.html`) — SKU 별 intro metafield 시안 (product info *안*, KR/EN)
-    - [horizon_wireframe_application_plan.md](docs/shopify/horizon_wireframe_application_plan.md) — 문서·wireframe → Horizon 테마 적용 매핑 플랜

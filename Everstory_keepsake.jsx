@@ -13,9 +13,9 @@
 //    4. _sil.png Image Trace → 사진 칼선 → plaque_cut 과 Unite → CutContour
 //    5. 03_output/{timestamp}_KEEP_sheet01.ai 자동 저장
 //
-//  전제: Phase A 는 기존 파이프라인 그대로 (loose BG 는
-//  create-asymmetric-loose-photo-background.psjs 로 — 이 시안은 배경색 흰색).
-//  칼선 여백은 loose BG 에 이미 베이크되어 있으므로 추가 inset 없음.
+//  전제: Phase A 는 기존 파이프라인 그대로 (이 시안은 배경색 흰색).
+//  칼선 여백 옵션 없음 — 사진에 베이크된 여백을 그대로 쓴다. 여백 없는
+//  사진을 넣으면 칼선이 피사체에 붙는다 (loose BG 도구는 2026-08-24 제거).
 //
 //  레이어 컨벤션: KissCut → info → PrintData (TemplateGuide 는 여기서 삭제).
 //

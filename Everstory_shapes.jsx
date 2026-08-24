@@ -50,8 +50,8 @@
   // 시트 — 브랜드 템플릿(template_cutout_v2.ait) info>body 를 packing 영역으로 사용.
   //   A5_W/H 는 참고용 (실제 문서 크기는 .ait 가 결정).
   var A5_W_MM = 148, A5_H_MM = 210;
-  var BODY_PADDING_MM = 2;     // info>body 내부 여백 (sheet_tokens: body_padding_mm)
-  var SHEET_GAP_MM    = 2.5;   // 셀 간 최소 간격   (sheet_tokens: gap_mm)
+  var BODY_PADDING_MM = 2;     // info>body 내부 여백 (이 스크립트의 운영 상수)
+  var SHEET_GAP_MM    = 2.5;   // 셀 간 최소 간격   (이 스크립트의 운영 상수)
 
   // 1) 폴더 선택 + 페어 수집
   var folder = Folder.selectDialog("02_cutout 폴더 선택 (_clean.psd + _sil.png 페어)");

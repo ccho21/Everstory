@@ -252,7 +252,7 @@
   var BG_MARGIN_DEFAULT_INDEX = 2;  // 2.5mm
 
   var STYLE_OPTIONS = ["심플 — 흰 테두리만", "레이어드 — 컬러 배경 + 흰 테두리"];
-  // 라이브 브랜드 clay (#A9503C). design_system.html 의 --accent-clay 는 stale.
+  // 라이브 브랜드 clay (#A9503C).
   var INK_HEX_DEFAULT = "231F1D";
   var BG_HEX_DEFAULT = "A9503C";
   var SHADOW_HEX_DEFAULT = "1E1E1E";

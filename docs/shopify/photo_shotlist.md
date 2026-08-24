@@ -1,10 +1,10 @@
 # 촬영 체크리스트 (Photo Shotlist)
 
-스토어 신뢰·전환을 위한 **사진 촬영 가이드**. 커스텀 포토 상품은 "내 사진이 이렇게 나온다"를 *눈으로* 보여줘야 주문이 일어난다 — 그래서 사진이 최대 레버다. 이 문서는 *무엇을 · 왜 · 어디에 쓸지*를 와이어프레임 슬롯에 맞춰 박아둔 것. 카메라만 들면 되게.
+스토어 신뢰·전환을 위한 **사진 촬영 가이드**. 커스텀 포토 상품은 "내 사진이 이렇게 나온다"를 *눈으로* 보여줘야 주문이 일어난다 — 그래서 사진이 최대 레버다. 이 문서는 운영몰을 기준으로 *무엇을 · 왜 · 어디에 쓸지*를 정리한다.
 
-- 사실 기준: 상품·사이즈·모드는 [`../business/products.md`](../business/products.md), 페이지 슬롯은 [`wireframes/`](wireframes/).
+- 사실 기준: 상품·사이즈·모드는 [`../business/products.md`](../business/products.md), 페이지 슬롯은 현재 운영몰.
 - 톤: 연출 과하지 않게, 실제 손·실제 환경. 스톡·과보정 금지(아래 "하지 말 것").
-- UGC(고객 실사용 사진)는 별개 — [`instructions/10_judgeme_reviews.md`](instructions/10_judgeme_reviews.md) Step 10.5 시딩으로 수집.
+- UGC(고객 실사용 사진)는 별개 — 운영몰의 Judge.me 리뷰 흐름으로 수집.
 
 ---
 
@@ -78,7 +78,6 @@ Face Sticker가 리드 SKU다. PDP 갤러리(라이브 = 이미지 5장)가 지�
 | **Face PDP** | `_product-media-gallery` (5) | 손에 든 시트 / 평면 / 칼선 매크로 / before→after / lifestyle |
 | | "Size comparison" 슬롯 | 6사이즈 vs 동전 |
 | **Full Body PDP** | 갤러리 (5) | 위 5컷 템플릿, 전신 피사체로 |
-| **Shape PDP** | 갤러리 (5) | 위 5컷 템플릿, 원형 크롭 피사체로 (텀블러·노트북 사용 예시 위주) |
 | **Package Mini PDP** | 갤러리 (2) | 시트 평면 + 여러 피사체 한 시트 |
 | **Package Full PDP** | 갤러리 (2) | 2장 시트 같이 + lifestyle |
 | **Home** | 히어로 (1) / 다양성 그리드 (4~6) | 아기-리드 손컷 / 펫·커플·가족·아이 최소 1컷씩 |
@@ -86,13 +85,13 @@ Face Sticker가 리드 SKU다. PDP 갤러리(라이브 = 이미지 5장)가 지�
 | **About** | "person behind it" (2~3) | 과정·사람·작업 공간 |
 | **Reviews** | UGC 슬롯 | 고객 실사용 사진 (시딩으로 수집 — 직접 촬영 아님) |
 
-> Full Body·Shape PDP는 별도 와이어프레임 없이 Face PDP 구조(archetype)를 그대로 쓴다 — 갤러리 구성도 동일 5컷 템플릿을 피사체만 바꿔 찍으면 된다.
+> Full Body PDP는 Face PDP와 동일한 5컷 구성을 피사체만 바꿔 사용한다.
 
 ---
 
 ## 이미지 스펙 (비율 · 방향)
 
-실제 PDP CSS(`everstory_pdp_general.html`/`_en.html`)에 이미 박혀있는 비율 기준. 이 비율에 맞춰 넉넉하게(여유 크롭분 포함) 찍어두면 업로드 후 바로 들어맞는다.
+현재 운영 PDP의 이미지 슬롯 비율 기준. 여유 크롭분을 포함해 촬영한다.
 
 | 슬롯 | 비율 | 방향 | 근거 |
 |---|---|---|---|
@@ -115,14 +114,14 @@ Face Sticker가 리드 SKU다. PDP 갤러리(라이브 = 이미지 5장)가 지�
 
 ## 파일 핸드오프
 
-와이어프레임 슬롯과 매칭되게 파일명 규칙:
+운영몰 슬롯과 매칭되게 파일명 규칙:
 
 ```
 {page}_{slot}_{subject}.jpg
 예: face_main_baby.jpg · face_thumb_macro.jpg · home_hero_baby.jpg · about_process_cutting.jpg
 ```
 
-촬영 후 이 파일들을 Shopify 상품 미디어 / 테마 섹션에 업로드하면 와이어프레임 placeholder가 채워진다.
+촬영 후 Shopify 상품 미디어 또는 테마 섹션에 업로드한다.
 
 ---
 

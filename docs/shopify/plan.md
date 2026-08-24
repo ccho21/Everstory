@@ -16,7 +16,7 @@ Shopify 문서는 다음 질문에 답해야 한다.
 
 - admin에서 어떤 순서로 무엇을 설정하는가
 - 결제, 세금, 배송, 픽업, 마켓, 계정 설정은 어떤 값인가
-- 어떤 상품 5종을 만들고 어떤 variant/options를 붙이는가
+- 현재 운영 상품 4종에 어떤 variant/options를 붙이는가
 - Easify로 사진 업로드와 주문 노트를 어떻게 받는가
 - 정책/페이지/상품 카피는 어디에서 복사해 붙이는가
 - 테스트 주문은 어떻게 통과시키는가
@@ -34,21 +34,14 @@ Shopify 문서에서 제외한다.
 |------|------|--------|------|
 | `plan.md` | Shopify 문서 범위와 남은 작업 우선순위. | P0 | 유지 |
 | `settings_checklist.md` | Shopify admin 실행 SOT. Settings 1A-1J 입력값과 통합 smoke test. | P0 | 유지 |
-| `product_descriptions.md` | 상품 5종 description copy, variant 기준, Easify option set SOT. | P0 | 유지 |
+| `product_descriptions.md` | 운영 상품 description copy, variant 기준, Easify option set SOT. | P0 | 운영몰 기준 갱신 필요 |
 | `policies.md` | Refund, Shipping, Privacy, Terms policy SOT. | P0 | 유지 |
 | `pages_copy.md` | About, FAQ, Sizing, Materials page copy SOT. | P1 | 유지 |
 | `footer_copy.md` | 한국어 footer copy SOT. | P1 | 유지 |
-| `preview.html` | 디자인 토큰 / 컴포넌트 라이브러리 시안. admin 실행에 직접 필요 없음. | P2 | 재사용 가치 없으면 삭제 판단 |
-| `wireframes/` | Horizon 테마 기반 11페이지 분리 HTML 와이어프레임. Shopify customizer 작업 시 section/block 어휘 매칭 청사진. | P1 | 유지 |
-| `instructions/` | Batch 1–10 admin·theme 실행 walkthrough (+ `_PROMPT_TEMPLATE.md` 생성 메타). Batch 10 = Judge.me 리뷰 앱. 입력값은 settings_checklist / product_descriptions / policies / pages_copy / footer_copy SOT 참조. | P0 | 유지 |
-| `everstory_product_detail_*.html` | 상품 상세 PDP HTML 시안 (full KO / full EN / pdp_block), 브랜드 토큰 기반. | P1 | 유지 |
-| `horizon_wireframe_application_plan.md` | Shopify 문서·wireframe → Horizon 테마 적용 매핑 플랜 (5-product). | P1 | 유지 |
-
-> instructions/ 의 "Batch N" 은 위 SOT 문서를 admin/theme 에서 실행하는 walkthrough 단위다. settings_checklist.md 의 "Stage 1 (1A–1J)" 값을 §단위로 참조하며 (`01:§1A–1D`, `02:§1E–1J`), 값/절차를 분리해 SOT 단일화를 유지한다.
 
 ## Remaining Work
 
-현재 Shopify MVP 실행 문서의 P0/P1 정리는 완료된 상태로 본다. 남은 항목은 MVP 이후 고도화와 시안 파일 정리 판단이다.
+운영몰이 문서보다 앞서 있으므로 상품 수, Package Full 업로드 제한, 배송·환불 정책, 페이지 존재 여부를 라이브 기준으로 다시 맞춘다.
 
 ## P2 Later
 
@@ -57,7 +50,6 @@ Shopify 문서에서 제외한다.
 - Translate & Adapt 한국어 전체 페이지 전환.
 - Customily 또는 live preview 앱 전환.
 - Meta Pixel, newsletter, review app, Etsy sync.
-- `preview.html` 은 MVP 실행 문서에서 제외돼 있으므로, 재사용 가치가 없으면 삭제한다.
 
 ### 외부 피드백 반영 (2026-05, 지인 피드백)
 
@@ -81,7 +73,7 @@ Shopify 문서에서 제외한다.
 | Loox | $9.99 ~ $34.99/mo | 사진·비디오 리뷰 특화, 캡처율 높음 | Meta 사진광고 본격화 시 재검토 |
 | Okendo / Yotpo | $19 / 엔터프라이즈+ | 통합 깊이(Klaviyo·Meta 카탈로그·로열티) | 고 GMV 단계 — 현재 과함 |
 
-- **결정 (2026-05-29): Judge.me Forever Free** 로 런칭 (사진 리뷰·UGC·rich snippet 충족). 사진 기반 Meta 광고 본격화 시 Loox 재검토. 설치 walkthrough → [`instructions/10_judgeme_reviews.md`](instructions/10_judgeme_reviews.md).
+- **결정 (2026-05-29): Judge.me Forever Free** 로 런칭 (사진 리뷰·UGC·rich snippet 충족). 현재 설정은 운영몰을 기준으로 관리하고, 사진 기반 Meta 광고 본격화 시 Loox를 재검토한다.
   - 무료 티어 범위: 무제한 리뷰·리뷰요청 이메일, 사진 리뷰, SEO rich snippet. 제외(=$15 Awesome): 비디오 리뷰, Q&A, 리뷰 캐러셀 위젯, 풀 CSS, "Powered by Judge.me" 배지 제거.
 
 #### FB/IG shop 셋업 순서 (리서치 2026-05)

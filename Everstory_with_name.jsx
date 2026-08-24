@@ -12,7 +12,8 @@
 //  03_output/{ts}_{inch}NAME_sheet01.ai 자동 저장.
 //
 //  단순화: 단일 사이즈 uniform grid 만. Package/전 사이즈/회전 없음.
-//  칼선 여백 옵션 없음 (loose BG 에 베이크된 여백 그대로).
+//  칼선 여백 옵션 없음 (사진에 베이크된 여백 그대로 — 여백 없는 사진은
+//  칼선이 피사체에 붙는다).
 //
 //  함정 (keepsake 에서 실측 — 되돌리지 말 것):
 //   · paste 셀렉션 참조를 embed 리플로우 이후에 쓰면 stale — TraceStash
