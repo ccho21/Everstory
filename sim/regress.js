@@ -1,6 +1,9 @@
 // 회귀: 단일 사이즈 / 전 사이즈 패커가 변경 전후 바이트 동일한 배치를 내는지.
 var fs=require('fs'),cp=require('child_process');
-var OLD='/private/tmp/claude-501/-Users-heatherchung-Desktop-EVERSTORY/77f1ec5f-8011-46e7-8ea3-eca1a90e5163/scratchpad/backup_before_multisheet.jsx';
+// 기준본 = multi-sheet 개편 **직전**의 Everstory_mixed.jsx. 어떤 커밋과도 일치하지 않아
+// (개편 중간 스냅샷) 저장소에 파일로 둔다. 예전엔 세션 임시폴더(/private/tmp)를 가리켜
+// 있었는데, 그게 지워지면 회귀 테스트가 통째로 죽는다 (2026-08-24 정리).
+var OLD='./baseline/before_multisheet.jsx';
 var NEW='../Everstory_mixed.jsx';
 // 최상위 심볼 전체를 추출해 비교 — 의존 목록을 손으로 관리하지 않는다.
 [['old',OLD],['new',NEW]].forEach(function(x){

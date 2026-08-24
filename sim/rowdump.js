@@ -1,4 +1,6 @@
-var P=require(process.env.MOD); var MM=P.MM_TO_PT;
+// 행 구조·잔여 폭 덤프 (빈 구간 진단용). 원래는 프로토 모듈과 비교하려고 MOD 를 받았는데
+// 프로토는 전부 정리됐다 — 인자 없이 돌리면 실코드(packer.js)를 본다 (2026-08-24).
+var P=require(process.env.MOD || './packer.js'); var MM=P.MM_TO_PT;
 var binW=138*MM,binH=171*MM,gap=P.GAP_DEFAULT_MM*MM;
 var D=[['01','XXL',1.3889],['03','S',0.7017],['04','L',0.7872],['05','M',0.7957],['06','M',0.4094],
 ['07','XS',0.7387],['08','S',0.7387],['09','L',0.7478],['12','S',0.9299],['14','L',0.4889],
