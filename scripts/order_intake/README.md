@@ -35,7 +35,17 @@ x-amz-expiration: expiry-date="...", rule-id="ExpireAllObjectsAfterNinetyDays"
   한 주문은 **가장 앞선 미완 단계 하나만** 센다 (누끼가 덜 끝났으면 시트 대기로 안 센다)
 - **안 받은 주문 전부 받기** = `--all-new`
 - **선택한 주문 받기** = 체크박스로 골라서
+- **주소 라벨** = 체크한 주문으로 `--labels` 를 돌려 `projects/_labels.txt` 를 만들고
+  `Everstory_address_labels.jsx` 를 Illustrator 로 연다 (파일 칸이 채워진 채 뜬다).
+  **라벨 칸 순서 = 표에 보이는 순서.** 시작 칸은 실물 시트를 보고 손 입력 — 파일로 추적하지 않는다
 - **폴더 열기** = 체크한 주문 폴더를 Finder 로
+- **행별 작업 버튼** — 보드가 다음 단계 앱을 대상까지 챙겨서 열어준다. 작업 자체는 앱 안에서 수동:
+  - `누끼` = 그 주문의 **누끼 안 된 원본만** Photoshop 으로 연다 (페어 있는 사진은 건너뜀.
+    순번 `NN` 을 못 읽는 옛 파일명은 판정 불가라 전부 연다 — 빠뜨리는 쪽보다 낫다)
+  - `시트` = `Everstory_mixed.jsx` 를 Illustrator 로 열되 **폴더 선택 다이얼로그를 건너뛰고**
+    그 주문의 `02_cutout` 이 이미 골라져 있다. 페어가 0장이면 앱을 띄우지 않고 로그로 알린다.
+    폴더 전달은 osascript 가 `$.global.__EVERSTORY_LAUNCH__` 에 넣는다 — .jsx 가 읽자마자
+    지우므로(consume-once) 다음 수동 실행이 옛 폴더로 열리는 일이 없다
 - 아래 검은 칸에 진행 상황이 실시간으로 흐른다
 
 같이 뜨는 **터미널 창이 서버다. 닫으면 화면도 멈춘다.** 끝내려면 그 창을 닫거나 `Ctrl+C`.
@@ -68,6 +78,8 @@ python3 intake.py --list               # 최근 20건의 아카이브 여부 + �
 python3 intake.py --order EVS-1008     # 단건 인테이크
 python3 intake.py --all-new            # 매니페스트 없는 주문 전부
 python3 intake.py --all-new --dry-run  # 위를 계획만
+python3 intake.py --labels             # 배송지 → 주소 라벨 텍스트 (전부)
+python3 intake.py --labels EVS-1007,EVS-1006   # 인쇄할 순서대로만
 ```
 
 | 옵션 | 뜻 |
@@ -75,6 +87,8 @@ python3 intake.py --all-new --dry-run  # 위를 계획만
 | `--check` | 토큰·도메인·API 버전·**부여된 스코프**를 확인만. 주문 조회 안 함 |
 | `--backfill-job` | 이미 받아둔 `_order.json` 전부에 `job` 블록을 채운다. **토큰·네트워크 불필요** |
 | `--list [N]` | 최근 N건(기본 20)의 아카이브 여부 + 진행(누끼·시트). 다운로드 안 함 |
+| `--labels [ORDERS]` | 배송지를 주소 라벨 텍스트로 뽑는다. 주문번호를 쉼표로 나열하면 **그 순서대로**, 생략하면 전부. **토큰·네트워크 불필요** |
+| `--labels-out PATH` | `--labels` 출력 경로. 기본 `projects/_labels.txt` (개인정보라 `.gitignore` 안쪽) |
 | `--order NAME` | 주문번호로 Admin API 에서 가져와 인테이크 |
 | `--all-new` | 매니페스트가 없는 주문을 전부 인테이크 |
 | `--order-json PATH` | 주문 JSON 파일에서 읽음 (**토큰 불필요** — 폴백 경로) |
@@ -229,6 +243,30 @@ projects/{고객명 주문번호}/
 
 `--backfill-job` 은 배송지를 못 채운다 (구 매니페스트에 없던 값이라 API 를 다시 불러야 한다).
 
+### `--labels` — 주소 라벨 텍스트
+
+`shipping` 을 `Everstory_address_labels.jsx` 가 읽는 형식으로 뽑는다. 빈 줄로 구분된
+블록 하나가 라벨 한 장, `#` 줄은 주석이다.
+
+```
+# EVS-1007
+Naekyung Seong
+123 Main St W
+Unit 4
+Toronto ON  M5V 2T6
+```
+
+- **캐나다 국내 우편에는 국가명 줄을 넣지 않는다** (Canada Post 권고 — 넣으면 국제 우편으로
+  오분류될 수 있다). 국가코드가 `CA` 가 아닐 때만 마지막 줄에 붙는다.
+- 우편번호·주(province)는 대문자로 정규화한다. 이름·거리는 원래 대소문자를 지킨다 —
+  전부 대문자는 OCR 용 관행이라 수제 브랜드 라벨에는 과하다.
+- **주문번호를 나열한 순서가 곧 칸 순서다.** 폴더 정렬로 바꾸지 않는다.
+- 배송지가 없거나 거리 주소(`address1`)가 비면 **조용히 빼지 않고 이유를 찍는다.**
+  주소 없는 라벨이 인쇄되면 소포가 안 간다.
+- 산출 파일은 고객 주소다 — `.gitignore` 에 `**/_labels.txt` 로 못 박아 뒀다.
+
+인쇄 방식(칼선 선 일괄 · 인쇄 후 분할)과 그 위험·완화책은 `../../CLAUDE.md` Phase C 참조.
+
 ## 리네임 규칙과 그 이유
 
 `{NN}_{TOKEN}_{원본명}.{ext}`
@@ -282,7 +320,12 @@ SKU 사이즈 코드 ↔ 티어: `19`→XS(0.75") · `25`→S(1") · `32`→M(1.
 ```bash
 python3 progress_test.py     # 진행 표시 (임시 폴더에 실파일 생성, 네트워크 없음)
 python3 job_test.py          # job 백필 왕복 + 배송지 추출
+python3 label_test.py        # 주소 라벨 — 빈 필드 조합·국내/국제·선택 순서
 ```
+
+`label_test.py` 는 Shopify 배송지에서 자주 비는 필드(`company`·`address2`·`provinceCode`·
+`zip`)의 조합을 고정한다. python 이 쓴 파일을 `.jsx` 파서가 그대로 읽는지는
+`sim/labeltest.js` 가 **양쪽을 실제로 실행해** 교차검증한다 (`ordertest.js` 와 같은 방식).
 
 `progress_test.py` 는 `project_progress` / `fill_progress` / `summary_note` 를 실제 파일로
 검증한다 — 페어 한쪽만 있는 경우, 한글 파일명(NFD), 사진 아닌 파일, 사진 0장 주문 등

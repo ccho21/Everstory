@@ -721,6 +721,23 @@ def _listdir(path):
         return []
 
 
+def cutout_pairs(project_dir):
+    """02_cutout 의 _clean.psd + _sil.png 페어 base 집합.
+
+    페어 = 같은 base 의 _clean.psd 와 _sil.png 가 **둘 다** 있는 것. 한쪽만 있으면
+    Phase B 가 그 디자인을 못 쓰므로 페어로 세지 않는다.
+    양쪽 다 같은 listdir 결과라 macOS NFD 정규화가 서로 어긋날 일이 없다.
+    """
+    cleans, sils = set(), set()
+    for n in _listdir(os.path.join(project_dir, "02_cutout")):
+        low = n.lower()
+        if low.endswith("_clean.psd"):
+            cleans.add(n[:-len("_clean.psd")])
+        elif low.endswith("_sil.png"):
+            sils.add(n[:-len("_sil.png")])
+    return cleans & sils
+
+
 def project_progress(project_dir):
     """폴더만 보고 파이프라인 진행을 읽는다 -> {originals, pairs, sheets}.
 
@@ -736,21 +753,11 @@ def project_progress(project_dir):
     originals = [n for n in _listdir(os.path.join(project_dir, "01_original"))
                  if n.rsplit(".", 1)[-1].lower() in PHOTO_EXTS]
 
-    # 페어 = 같은 base 의 _clean.psd 와 _sil.png 가 **둘 다** 있는 것. 한쪽만 있으면
-    # Phase B 가 그 디자인을 못 쓰므로 진행으로 세지 않는다.
-    # 양쪽 다 같은 listdir 결과라 macOS NFD 정규화가 서로 어긋날 일이 없다.
-    cleans, sils = set(), set()
-    for n in _listdir(os.path.join(project_dir, "02_cutout")):
-        low = n.lower()
-        if low.endswith("_clean.psd"):
-            cleans.add(n[:-len("_clean.psd")])
-        elif low.endswith("_sil.png"):
-            sils.add(n[:-len("_sil.png")])
-
     sheets = [n for n in _listdir(os.path.join(project_dir, "03_output"))
               if n.lower().endswith(".ai")]
 
-    return {"originals": len(originals), "pairs": len(cleans & sils), "sheets": len(sheets)}
+    return {"originals": len(originals), "pairs": len(cutout_pairs(project_dir)),
+            "sheets": len(sheets)}
 
 
 def progress_label(prog):
@@ -769,6 +776,134 @@ def address_oneline(ship):
              ship.get("provinceCode") or ship.get("province"), ship.get("zip"),
              ship.get("countryCodeV2") or ship.get("country")]
     return ", ".join(p for p in parts if p)
+
+
+def address_lines(ship):
+    """배송지 -> 라벨에 찍을 여러 줄. 주소가 없으면 None.
+
+    Canada Post 권고에 맞춘다: 우편번호·주(province)는 대문자, **캐나다 국내 우편에는
+    국가명 줄을 넣지 않는다** (넣으면 국제 우편으로 오분류될 수 있다).
+    이름/거리는 원래 대소문자를 지킨다 — 전부 대문자로 쓰는 건 OCR 용 관행이라
+    수제 브랜드 라벨에는 과하다.
+    """
+    if not ship:
+        return None
+    lines = []
+    name = (ship.get("name") or "").strip()
+    company = (ship.get("company") or "").strip()
+    if name:
+        lines.append(name)
+    if company and company != name:
+        lines.append(company)
+    for k in ("address1", "address2"):
+        v = (ship.get(k) or "").strip()
+        if v:
+            lines.append(v)
+    city = (ship.get("city") or "").strip()
+    prov = (ship.get("provinceCode") or ship.get("province") or "").strip().upper()
+    zipc = (ship.get("zip") or "").strip().upper()
+    tail = " ".join(p for p in (city, prov) if p)
+    if zipc:
+        tail = (tail + "  " + zipc).strip()
+    if tail:
+        lines.append(tail)
+    cc = (ship.get("countryCodeV2") or "").strip().upper()
+    if cc and cc != "CA":
+        lines.append((ship.get("country") or cc).strip())
+    return lines or None
+
+
+def collect_labels(projects_dir, only=None):
+    """매니페스트들 -> 라벨 목록. 네트워크 불필요.
+
+    `only` 가 주어지면 그 주문번호만 (대소문자·`#` 무시). 순서는 주어진 순서를 지킨다
+    — 어느 칸에 누가 찍히는지가 인쇄 순서로 정해지므로, 폴더 정렬 순서로 바꾸면
+    사용자가 의도한 배치와 어긋난다.
+    """
+    wanted = None
+    if only:
+        wanted = [s.strip().lstrip("#").upper() for s in only if s.strip()]
+    found = {}
+    try:
+        names = sorted(os.listdir(projects_dir))
+    except OSError:
+        raise SystemExit("projects 폴더를 못 찾았다: %s" % projects_dir)
+    order_seen = []
+    for n in names:
+        path = os.path.join(projects_dir, n, "_order.json")
+        if not os.path.isfile(path):
+            continue
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                doc = json.load(f)
+        except (OSError, ValueError) as e:
+            print("  ⚠ %s — 읽기 실패: %s" % (n, e))
+            continue
+        num = ((doc.get("order") or {}).get("name") or "").lstrip("#")
+        rec = {
+            "folder": n,
+            "order": num,
+            "lines": address_lines(doc.get("shipping")),
+            "has_street": bool((doc.get("shipping") or {}).get("address1")),
+        }
+        found[num.upper()] = rec
+        order_seen.append(rec)
+    if wanted is None:
+        return order_seen, []
+    picked, missing = [], []
+    for w in wanted:
+        if w in found:
+            picked.append(found[w])
+        else:
+            missing.append(w)
+    return picked, missing
+
+
+def write_labels(projects_dir, out_path, only=None):
+    """라벨 텍스트 파일 생성. `Everstory_address_labels.jsx` 가 이걸 읽는다.
+
+    형식: 빈 줄로 구분된 블록 하나 = 라벨 하나. `#` 줄은 주석.
+    **개인정보다** — 기본 출력 경로가 .gitignore 된 projects/ 안인 이유.
+    """
+    recs, missing = collect_labels(projects_dir, only)
+    for m in missing:
+        print("  ⚠ %s — 매니페스트가 없다 (인테이크 먼저)" % m)
+    ready, blocked = [], []
+    for r in recs:
+        if r["lines"] and r["has_street"]:
+            ready.append(r)
+        else:
+            blocked.append(r)
+
+    out = ["# Everstory 주소 라벨 — 빈 줄로 구분된 블록 하나가 라벨 한 장.",
+           "# Everstory_address_labels.jsx 의 '인쇄' 모드에서 이 파일을 고른다.",
+           "# 개인정보 — 저장소에 커밋되지 않는다.",
+           ""]
+    for r in ready:
+        out.append("# " + (r["order"] or r["folder"]))
+        out.extend(r["lines"])
+        out.append("")
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(out))
+
+    print("")
+    for r in ready:
+        print("  %-12s %s" % (r["order"] or r["folder"], " / ".join(r["lines"])))
+    for r in blocked:
+        why = "배송지 없음 — 다시 인테이크해야 들어온다"
+        if r["lines"] and not r["has_street"]:
+            why = "거리 주소(address1)가 비어 있다 — Shopify 주문을 확인할 것"
+        print("  %-12s ⚠ %s" % (r["order"] or r["folder"], why))
+    print("")
+    print("라벨 %d건 -> %s" % (len(ready), out_path))
+    if blocked:
+        print("제외 %d건 (위 ⚠ 참조)." % len(blocked))
+    if ready:
+        print("")
+        print("다음: Illustrator 에서 Everstory_address_labels.jsx 실행 -> '인쇄' 모드 ->")
+        print("      이 파일 선택 -> 시트에 남은 첫 칸 번호를 시작 칸으로.")
+    # 주문 보드(webui.py)가 "만들 라벨이 있어야 Illustrator 를 띄운다" 판단에 쓴다.
+    return len(ready)
 
 
 def backfill_jobs(projects_dir):
@@ -990,6 +1125,9 @@ def main():
                      help="토큰·도메인·API 버전이 통하는지만 확인. 주문 조회 안 함")
     src.add_argument("--backfill-job", action="store_true",
                      help="기존 _order.json 에 job 블록을 채운다 (토큰·네트워크 불필요)")
+    src.add_argument("--labels", nargs="?", const="", metavar="ORDERS",
+                     help="배송지를 주소 라벨 텍스트로 뽑는다. 주문번호를 쉼표로 나열하면 "
+                          "그 순서대로, 생략하면 전부 (토큰·네트워크 불필요)")
 
     ap.add_argument(
         "--projects-dir",
@@ -1005,6 +1143,9 @@ def main():
                     help="Admin API 버전 (기본 %s)" % DEFAULT_API_VERSION)
     ap.add_argument("--scan", type=int, default=50, metavar="N",
                     help="--all-new 이 훑을 최근 주문 수 (기본 50)")
+    ap.add_argument("--labels-out", metavar="PATH",
+                    help="--labels 출력 경로 (기본 projects/_labels.txt — 개인정보라 "
+                         ".gitignore 안쪽)")
     args = ap.parse_args()
 
     if args.folder and args.all_new:
@@ -1019,6 +1160,13 @@ def main():
     # --- 기존 매니페스트에 job 채우기 (오프라인) ---
     if args.backfill_job:
         backfill_jobs(projects_dir)
+        return
+
+    # --- 주소 라벨 텍스트 뽑기 (오프라인) ---
+    if args.labels is not None:
+        only = [s for s in args.labels.split(",")] if args.labels else None
+        out_path = args.labels_out or os.path.join(projects_dir, "_labels.txt")
+        write_labels(projects_dir, out_path, only)
         return
 
     # --- 목록만 보기 ---

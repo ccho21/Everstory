@@ -1091,9 +1091,21 @@
 
   var testConfig = $.global.__EVERSTORY_NAME_INCLUDED_TEST__;
 
-  var inputFolder = (testConfig && testConfig.inputFolder) ?
-    new Folder(testConfig.inputFolder) :
-    Folder.selectDialog("02_cutout 폴더 선택 (_clean.psd + _sil.png 페어)");
+  // 주문 보드(scripts/order_intake/webui.py '시트' 버튼)가 osascript 로 넣는 실행 인자.
+  // consume-once — $.global 은 Illustrator 세션 내내 남으므로, 읽자마자 지워야 다음
+  // 수동 실행이 옛 폴더로 조용히 열리지 않는다.
+  var launchConfig = $.global.__EVERSTORY_LAUNCH__;
+  $.global.__EVERSTORY_LAUNCH__ = undefined;
+
+  var inputFolder;
+  if (testConfig && testConfig.inputFolder) {
+    inputFolder = new Folder(testConfig.inputFolder);
+  } else if (launchConfig && launchConfig.inputFolder &&
+             (new Folder(launchConfig.inputFolder)).exists) {
+    inputFolder = new Folder(launchConfig.inputFolder);
+  } else {
+    inputFolder = Folder.selectDialog("02_cutout 폴더 선택 (_clean.psd + _sil.png 페어)");
+  }
   if (!inputFolder) return;
 
   var pairs = _collectPairs(inputFolder);

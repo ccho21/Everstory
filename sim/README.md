@@ -11,6 +11,30 @@ cd sim && node extract.js ../Everstory_mixed.jsx packer.js && node hoisttest.js 
 ```
 
 `extract.js` 를 먼저 안 돌리면 **낡은 `packer.js` 로 테스트가 통과**한다. 실제로 여러 번 당했다.
+
+`labeltest.js` 만은 예외다 — `Everstory_address_labels.jsx` 를 검증하고, **추출을 자기가 직접**
+임시 폴더에 한다. 저장소에 사본이 남지 않아 낡은 사본으로 통과할 수가 없다. 그냥 `node labeltest.js`.
+
+## node 로 못 보는 것 — Illustrator 실행 검증
+
+여기 하니스는 **순수 계산만** 본다. 실제로 도형이 그려지는지(`textFrames`·`pathItems`·스팟
+색·export)는 Illustrator 를 띄워야 안다. 다이얼로그 없이 돌리는 방법:
+
+각 `.jsx` 는 `$.global.__EVERSTORY_*_TEST__` 훅을 본다 — 이게 있으면 다이얼로그 대신 그
+값을 옵션으로 쓰고, `alert` 대신 `lastMessage` 에 쓴다. 래퍼에서 훅을 세팅하고
+`$.evalFile` 로 본체를 부른 뒤, 그려진 결과를 **실측해서** 기대 격자와 대조한다.
+
+```bash
+osascript -e 'set js to (read POSIX file "/path/wrapper.jsx" as «class utf8»)' \
+          -e 'tell application "Adobe Illustrator" to do javascript js'
+```
+
+- **"에러 안 났다" 로 끝내지 말 것.** `geometricBounds` 를 mm 로 환산해 기대값과 비교해야
+  의미가 있다 (2026-08-24 에 주소 라벨 12칸을 이렇게 0.05mm 오차 내로 확인했다).
+- **크래시는 반환값이 없다.** 죽는 지점을 찾을 땐 단계마다 로그 파일에 쓰고 닫아서
+  (플러시) 마지막 줄을 본다.
+- 한글 경로(`포토샵누끼`)는 NFC/NFD 때문에 `File()` 에서 새는 수가 있다 — 래퍼는
+  ASCII 경로에 복사해 두고 부르면 그 부류를 통째로 피한다.
 그래서 `extract.js` 는 생성 직후 **자기검사**를 해서, 아래 심볼 목록에 빠진 게 있으면 즉시 실패한다.
 
 ```
@@ -38,6 +62,7 @@ cd sim && node extract.js ../Everstory_mixed.jsx packer.js && node hoisttest.js 
 | `ordertest.js` | `_order.json` → 다이얼로그 프리필. `job` 블록 경로와 SKU 폴백 경로가 같은 값을 내는지 **python `build_job` 을 실제로 호출해 교차 검증** (`python3` 필요) | 두 해석기가 갈라져 잘못된 재질·사이즈로 인쇄된다 (재제작 = 원가 100%) |
 | `regress.js` | 단일/전 사이즈 = **바이트 동일**, Package = 변화 방향(컷↑ 잔여↓) | 무관한 배치가 흔들렸다 |
 | `cachetest.js` | 칼선 디스크 캐시 포맷 왕복 + 무효화 + 손상 내성 | 캐시가 깨진 칼선을 재사용한다 |
+| `labeltest.js` | 주소 라벨 격자 — 칸 겹침·시트 밖·급지 선단 여백·부분 인쇄 칸 배정 + `intake.py --labels` 왕복 | 주소가 칼선에 걸리거나 엉뚱한 칸에 찍힌다 |
 | `verify_impl.js` | Package 3버킷 배분층 (레거시 호환·배타성·누락 0) | 디자인이 시트 배분에서 사라진다 |
 | `plugin_bucket_test.js` | UXP 플러그인의 버킷 파싱·NN 카운트 정규식. `plugins/everstory_save/main.js` 에서 실코드를 추출 (UXP 는 node 로 못 돌린다) | Phase A 가 파일명 버킷을 잘못 읽는다 |
 

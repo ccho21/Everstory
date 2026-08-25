@@ -11,11 +11,14 @@ http.server 는 표준 라이브러리라 설치할 게 없고, 렌더링은 브
   python3 webui.py
 """
 
+import glob
 import importlib.util
 import json
 import os
+import re
 import secrets
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -28,6 +31,70 @@ intake = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(intake)
 
 TOKEN = secrets.token_urlsafe(16)   # 다른 로컬 페이지가 이 서버를 두드리지 못하게
+
+# ── 다음 단계 앱으로 넘기는 다리 ─────────────────────────────────
+# 보드는 상태만 보여주는 게 아니라 각 Phase 의 앱을 대상 폴더까지 챙겨서 열어준다.
+# 작업 자체(누끼·다이얼로그 확인·인쇄)는 지금처럼 앱 안에서 수동 — 여는 수고만 없앤다.
+
+REPO_DIR = os.path.abspath(os.path.join(HERE, "..", ".."))
+MIXED_JSX = os.path.join(REPO_DIR, "Everstory_mixed.jsx")
+LABELS_JSX = os.path.join(REPO_DIR, "Everstory_address_labels.jsx")
+
+
+def photoshop_app():
+    """설치된 Photoshop .app 경로. 연도 폴더가 바뀌어도 찾도록 glob."""
+    apps = sorted(glob.glob("/Applications/Adobe Photoshop*/Adobe Photoshop*.app"))
+    if apps:
+        return apps[-1]
+    return None
+
+
+def launch_illustrator(script_path, launch):
+    """Illustrator 에서 .jsx 를 실행한다. 인자(대상 폴더 등)는 `$.global` 로 넘긴다.
+
+    파일 핸드오프를 안 쓰는 이유: 고객명이 든 경로를 디스크에 안 남기고, 실행이
+    실패해도 상한 핸드오프 파일이 남아 다음 수동 실행을 오염시키는 일이 없다
+    (.jsx 쪽은 읽자마자 $.global 을 지운다 — consume-once).
+    이스케이프는 json.dumps 가 맡는다 — 기본 ensure_ascii 라 산출이 ASCII 뿐이고,
+    JSON 문자열 리터럴은 ExtendScript 문자열 리터럴로도 유효하다.
+    다이얼로그가 떠 있는 동안 osascript 가 블록되므로 기다리지 않는다(Popen).
+    """
+    js = "$.global.__EVERSTORY_LAUNCH__ = %s; $.evalFile(new File(%s));" % (
+        json.dumps(launch), json.dumps(script_path))
+    osa = ('with timeout of 86400 seconds\n'
+           'tell application id "com.adobe.illustrator"\n'
+           '  activate\n'
+           '  do javascript "%s"\n'
+           'end tell\n'
+           'end timeout') % js.replace("\\", "\\\\").replace('"', '\\"')
+    subprocess.Popen(["osascript", "-e", osa],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def unpaired_originals(project_dir):
+    """01_original 사진 중 02_cutout 페어가 아직 없는 것들 (누끼 남은 사진).
+
+    원본 순번 NN 과 페어 base 의 NN 을 잇는다. 실폴더에서 확인한 이름 변형:
+      원본   `01_BIG_1-1.jpg` (인테이크) · `1.jpg` (구 폴더 수동)
+      페어   `{폴더명}_01_BIG` (UXP 자동 버튼, 버킷 붙음) · `{폴더명}_01` (버킷 없음)
+    NN 을 못 읽는 원본은 판정 불가라 항상 포함 — 다시 열리는 쪽이 빠뜨리는
+    쪽보다 낫다.
+    """
+    orig_dir = os.path.join(project_dir, "01_original")
+    done = set()
+    for base in intake.cutout_pairs(project_dir):
+        m = re.search(r"_(\d+)(?:_[A-Za-z]+)?$", base)
+        if m:
+            done.add(int(m.group(1)))
+    todo = []
+    for n in sorted(intake._listdir(orig_dir)):
+        if n.rsplit(".", 1)[-1].lower() not in intake.PHOTO_EXTS:
+            continue
+        m = re.match(r"(\d+)[._-]", n)
+        if m and int(m.group(1)) in done:
+            continue
+        todo.append(os.path.join(orig_dir, n))
+    return todo
 
 
 class Args(object):
@@ -235,6 +302,75 @@ def job_refresh():
     STATE.note = summary_note(STATE.rows)
 
 
+def find_folder(name):
+    with STATE.lock:
+        for r in STATE.rows:
+            if r["name"] == name and r["folderPath"]:
+                return r["folderPath"]
+    return None
+
+
+def act_photoshop(name):
+    """행 버튼 '누끼' — 누끼 안 된 원본만 Photoshop 으로 연다. 앱만 열어줄 뿐,
+    누끼·저장(UXP 패널)은 지금처럼 수동."""
+    folder = find_folder(name)
+    if not folder:
+        STATE.emit("⚠ %s — 폴더가 없다 (먼저 주문을 받을 것)." % name)
+        return
+    app = photoshop_app()
+    if not app:
+        STATE.emit("⚠ Photoshop 을 /Applications 에서 못 찾았다.")
+        return
+    todo = unpaired_originals(folder)
+    if not todo:
+        STATE.emit("%s — 누끼 남은 사진 없음 (전부 페어 있음)." % name)
+        return
+    subprocess.Popen(["open", "-a", app] + todo,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    STATE.emit("%s — 사진 %d장을 Photoshop 으로 열었다. 저장은 UXP 패널의 '자동' 버튼."
+               % (name, len(todo)))
+
+
+def act_sheet(name):
+    """행 버튼 '시트' — Everstory_mixed.jsx 를 Illustrator 로 열되 폴더 선택을
+    건너뛰게 대상 02_cutout 을 $.global 로 넘긴다. 이후 다이얼로그는 기존 그대로."""
+    folder = find_folder(name)
+    if not folder:
+        STATE.emit("⚠ %s — 폴더가 없다 (먼저 주문을 받을 것)." % name)
+        return
+    prog = intake.project_progress(folder)
+    if not prog["pairs"]:
+        # 페어 0장으로 Illustrator 를 띄우면 알림만 보고 돌아온다 — 여기서 끊는 게 빠르다.
+        STATE.emit("⚠ %s — 누끼 페어가 없다. 포토샵(누끼 버튼) 먼저." % name)
+        return
+    target = os.path.join(folder, "02_cutout")
+    if not os.path.isdir(target):
+        target = folder
+    launch_illustrator(MIXED_JSX, {"inputFolder": target})
+    STATE.emit("%s — Illustrator 로 넘김 (페어 %d장). 다이얼로그에서 확인만 하면 된다."
+               % (name, prog["pairs"]))
+
+
+def job_labels(names):
+    """툴바 '주소 라벨' — 선택 주문으로 _labels.txt 를 만들고 라벨 스크립트를 연다.
+
+    체크한 표 순서 = 라벨 인쇄 순서 = 시트 칸 순서. 시작 칸은 실물 시트가 곧
+    상태이므로 지금처럼 다이얼로그에서 손 입력한다 (파일로 추적하지 않는다).
+    """
+    args = Args()
+    out = os.path.join(args.projects_dir, "_labels.txt")
+    ready = intake.write_labels(args.projects_dir, out, only=names)
+    if not ready:
+        STATE.note = "만들 라벨이 없음 — 아래 로그 확인"
+        STATE.sticky = True
+        return
+    launch_illustrator(LABELS_JSX, {"labelsFile": out})
+    STATE.emit("")
+    STATE.emit("Illustrator 로 넘김 — '인쇄' 모드에 주소 파일이 채워져 있다.")
+    STATE.emit("시작 칸은 실물 시트에 남은 첫 칸 번호를 보고 입력.")
+    STATE.note = "라벨 %d건 — Illustrator 에서 인쇄" % ready
+
+
 def job_fetch(names):
     args = Args()
     targets = [o for o in STATE.orders if (o.get("name") or "") in names]
@@ -257,7 +393,7 @@ def job_fetch(names):
 
 PAGE = """<!doctype html>
 <html lang="ko"><head><meta charset="utf-8">
-<title>Everstory 주문 받기</title>
+<title>Everstory 주문 보드</title>
 <style>
   :root { color-scheme: light dark; --bg:#fff; --fg:#1a1a1a; --mut:#6b6b6b;
           --line:#e2e2e2; --new:#b34700; --newbg:#fff5ec; --done:#2b7a4b; --lost:#8a8a8a;
@@ -293,6 +429,8 @@ PAGE = """<!doctype html>
   td.prog.wait { color:var(--new); font-weight:650; }
   td.prog.none { color:var(--lost); }
   .folder { color:var(--mut); font-size:12.5px; }
+  td.act { white-space:nowrap; }
+  button.mini { padding:3px 10px; font-size:12px; border-radius:7px; }
   #log { margin:16px 24px 24px; padding:12px 14px; border-radius:10px; background:#141414;
          color:#d6d6d6; font:12.5px/1.55 Menlo,monospace; height:260px; overflow:auto;
          white-space:pre-wrap; }
@@ -302,19 +440,22 @@ PAGE = """<!doctype html>
   @keyframes s { to { transform:rotate(360deg); } }
 </style></head><body>
 <header>
-  <h1>Everstory 주문 받기</h1>
+  <h1>Everstory 주문 보드</h1>
   <div id="note">불러오는 중…<span class="spin"></span></div>
 </header>
 <div class="bar">
   <button class="primary" id="bAll">안 받은 주문 전부 받기</button>
   <button id="bSel">선택한 주문 받기</button>
+  <button id="bLbl" title="선택한 주문의 배송지로 _labels.txt 를 만들고 Everstory_address_labels.jsx 를 연다. 라벨 칸 순서 = 표에 보이는 순서">주소 라벨</button>
   <button id="bRef">새로고침</button>
   <button id="bOpen">폴더 열기</button>
 </div>
 <div class="wrap"><table>
   <thead><tr><th></th><th>주문</th><th>고객</th><th>날짜</th><th>사진</th><th>상태</th>
     <th title="02_cutout 의 _clean.psd + _sil.png 페어 / 01_original 사진">누끼</th>
-    <th title="03_output 의 .ai 시트 수">시트</th><th>폴더</th></tr></thead>
+    <th title="03_output 의 .ai 시트 수">시트</th>
+    <th title="누끼 = 안 된 사진을 Photoshop 으로 · 시트 = Everstory_mixed.jsx 를 폴더까지 골라서 Illustrator 로">작업</th>
+    <th>폴더</th></tr></thead>
   <tbody id="rows"></tbody>
 </table></div>
 <div id="log"></div>
@@ -343,11 +484,19 @@ function render(rows) {
     <td class="num">${r.photos}</td><td class="state">${r.state}</td>
     <td class="prog ${r.cutKind}">${r.cutText}</td>
     <td class="prog ${r.sheetKind}">${r.sheetText}</td>
+    <td class="act">${r.folderPath ? `
+      <button class="mini" data-act="photoshop" data-name="${r.name}">누끼</button>
+      <button class="mini" data-act="sheet" data-name="${r.name}">시트</button>` : ""}</td>
     <td class="folder">${r.folder}</td></tr>`).join("");
 }
+// 표는 폴링마다 다시 그려져 버튼 요소가 바뀐다 — tbody 위임이라 핸들러는 한 번이면 된다.
+$("#rows").onclick = e => {
+  const b = e.target.closest("button[data-act]");
+  if (b) api("/api/" + b.dataset.act, {name: b.dataset.name});
+};
 function setBusy(b) {
   busy = b;
-  for (const id of ["bAll","bSel","bRef"]) $("#"+id).disabled = b;
+  for (const id of ["bAll","bSel","bLbl","bRef"]) $("#"+id).disabled = b;
 }
 async function poll() {
   const s = await api("/api/state", null, {since: since});
@@ -368,6 +517,11 @@ $("#bSel").onclick = () => {
   const n = checked();
   if (!n.length) { alert("표에서 주문을 먼저 선택하세요."); return; }
   api("/api/fetch", {names:n});
+};
+$("#bLbl").onclick = () => {
+  const n = checked();
+  if (!n.length) { alert("표에서 주문을 먼저 선택하세요. (라벨 칸 순서 = 표 순서)"); return; }
+  api("/api/labels", {names:n});
 };
 $("#bOpen").onclick = () => api("/api/open", {names:checked()});
 setInterval(poll, 600); poll();
@@ -438,6 +592,14 @@ class Handler(BaseHTTPRequestHandler):
                 targets = [Args().projects_dir]
             for t in targets[:5]:
                 os.system("open '%s'" % t.replace("'", "'\\''"))
+        elif route == "/api/photoshop":
+            act_photoshop(str(body.get("name") or ""))
+        elif route == "/api/sheet":
+            act_sheet(str(body.get("name") or ""))
+        elif route == "/api/labels":
+            names = [str(n) for n in (body.get("names") or [])]
+            if names:
+                run_job(lambda: job_labels(names), "라벨 %d건 만드는 중…" % len(names))
         else:
             return self._send(404, json.dumps({"error": "not found"}))
         self._send(200, json.dumps({"ok": True}))
