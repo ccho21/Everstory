@@ -104,10 +104,13 @@ t("칼선에서 SAFE_MM 안쪽", r2(box.xMm - cells[0].xMm), r2(L.SAFE_MM));
 t("텍스트 폭", r2(box.wMm), r2(cells[0].wMm - L.SAFE_MM * 2));
 ok("텍스트 영역이 양수", box.wMm > 0 && box.hMm > 0, `${r2(box.wMm)}x${r2(box.hMm)}mm`);
 ok("SAFE_MM 이 재급지 오차(±1mm)보다 넉넉", L.SAFE_MM >= 3, `${L.SAFE_MM}mm`);
-// 캐나다 주소 최장 줄(~40자) 이 들어가나. 10pt sans 평균 자폭 ≈ 0.5em = 1.76mm (근사).
+// 캐나다 주소 최장 줄(~40자) 이 읽을 수 있는 크기로 들어가나. sans 평균 자폭 ≈ 0.5em (근사).
+// 12pt 로 키우면서(2026-08-25, 10pt 는 실물에서 작았다) "축소 0" 단언은 버렸다 —
+// 최장 줄이 살짝 축소되는 건 auto-fit 의 정상 동작이고, 지킬 것은 **유효 크기 하한**이다.
 const approxMm = 40 * L.BODY_SIZE_PT * 0.5 / 2.834645;
-ok("40자 주소 줄이 축소 없이 들어감", box.wMm >= approxMm,
-  `박스 ${r2(box.wMm)}mm vs 추정 ${r2(approxMm)}mm`);
+const effPt = Math.min(L.BODY_SIZE_PT, box.wMm / approxMm * L.BODY_SIZE_PT);
+ok("40자 주소 줄이 10pt 이상으로 들어감", effPt >= 10,
+  `유효 ${r2(effPt)}pt (박스 ${r2(box.wMm)}mm vs 추정 ${r2(approxMm)}mm)`);
 ok("주소 5줄이 세로로 들어감",
   box.hMm >= 5 * L.BODY_SIZE_PT * L.LEADING_RATIO / 2.834645,
   `박스 ${r2(box.hMm)}mm`);

@@ -6,7 +6,7 @@ var cp = require('child_process');
 cp.execSync('node extract_all.js ../Everstory_mixed.jsx packer_full.js', { stdio: 'inherit' });
 global.RGBColor = function () { this.red = 0; this.green = 0; this.blue = 0; };
 var P = require('./packer_full.js');
-var MM = P.MM_TO_PT, binW = 138 * MM, binH = 171 * MM, gap = P.GAP_DEFAULT_MM * MM;
+var MM = P.MM_TO_PT, binW = 142 * MM, binH = 172 * MM, gap = P.GAP_DEFAULT_MM * MM;  // body 142×175 − padding X0/Y1.5
 var ok = [];
 function chk(n, c, x) { ok.push(c); console.log((c ? '✅' : '❌') + ' ' + n + (x ? '   ' + x : '')); }
 

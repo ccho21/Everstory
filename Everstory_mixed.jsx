@@ -32,21 +32,24 @@
   var SCRIPT_VARIANT = "v23 multi-sheet";
   var SCRIPT_TITLE = "Everstory Mixed Sheet (" + SCRIPT_VARIANT + ")";
   var MM_TO_PT = 2.834645;
-  // body 안쪽 상하좌우 최소 여백. Package/전 사이즈 packer 가 빡빡하게 차서
-  // 시트 끝 0mm 으로는 운영자가 손으로 벌리는 일이 많아 2mm 로 강제.
-  var BODY_PADDING_MM = 2;
+  // body 안쪽 최소 여백 — X/Y 분리 (2026-08-25, 구 BODY_PADDING_MM 2 균일).
+  // 좌우는 body 밖 A5 점선 가이드까지 여유가 있어 0mm, 상하는 1.5mm — 밀도 우선 완화.
+  var BODY_PADDING_X_MM = 0;
+  var BODY_PADDING_Y_MM = 1.5;
   // 셀 박스 사이 최소 간격. main flow 가 모든 모드(단일/Package/전 사이즈) 의 packer 에 동일 gap 전달.
-  // cutMargin(기본 0mm) 이 셀 안에서 사진을 인셋 → silhouette 간격 = 셀 gap + 2×cutMargin. 기본 0mm 면 셀 gap(floor 2.5mm)만.
+  // cutMargin(기본 0mm) 이 셀 안에서 사진을 인셋 → silhouette 간격 = 셀 gap + 2×cutMargin. 기본 0mm 면 셀 gap(floor 1.5mm)만.
   // 단일 사이즈는 _uniformGridPack 의 cols/rows 결정 floor 에만 영향 (시각 간격은 자동 균등 분배).
   // Package 는 _packPackage 의 _canAddToShelfRow 검사에 사용.
-  var GAP_DEFAULT_MM = 2.5;
+  // 2.5 → 1.5mm (2026-08-25 밀도 완화). 더 줄이면 Summa 컷이 이웃 칼선을 파고들 위험.
+  var GAP_DEFAULT_MM = 1.5;
   // 단일 사이즈 aspect 밴드 병합 허용비 — 같은 방향 (세로/가로) 에서 가변 변 (세로=cellW,
   // 가로=cellH) 비율이 이 값 이상이면 같은 밴드. 1.0 에 가까울수록 밴드가 잘게 쪼개져
   // 셀 여백은 줄고 밴드 경계 자투리 (부분 반복 행) 는 늘어난다.
   var BAND_CELL_TOL = 0.85;
 
-  // body 142×175mm (template_cutout_v2.ait info > body), BODY_PADDING_MM 2, GAP_DEFAULT_MM 2.5 기준
-  // 사이즈별 슬롯 수 — _uniformGridPack 의 cols×rows floor 식을 정사각(aspect 1) 셀로 산출 (2026-06-12 갱신).
+  // body 142×175mm (template_cutout_v2.ait info > body), padding 좌우 0/상하 1.5, GAP_DEFAULT_MM 1.5 기준
+  // 사이즈별 슬롯 수 — _uniformGridPack 의 cols×rows floor 식을 정사각(aspect 1) 셀로 산출
+  // (2026-08-25 재산출: bin 138×171→142×172 · gap 2.5→1.5 에서도 6개 값 전부 구 기준과 동일).
   // 정사각이 최소 슬롯 케이스 (비정사각 cellBox 는 항상 size×size 이하 → 슬롯 ≥ 표값) → cap ≤ 실제 슬롯 보장.
   // cap > 실제 슬롯이면 초과 디자인이 round-robin 에서 한 번도 안 놓이는 silent drop 발생 (구 148×195
   // baseline 표의 문제) — body/padding/gap 변경 시 이 표를 같은 식으로 반드시 재산출할 것.
@@ -144,19 +147,24 @@
   var TIER_DEFAULT = "S";
   // _sil.png/_clean.psd 접미사 제거 후 이름 끝의 _TIER 토큰. 긴 토큰을 먼저 둬 부분매칭 방지.
   var TIER_TOKEN_RE = /_(XXL|XL|XS|FAM|S|M|L)$/i;
-  // ── Package 디자인당 출력 장수 (min/max, hard max) ─────────────────
+  // ── Package 디자인당 출력 장수 (min/max) ─────────────────
   // 디자인×tier 당 시트 출력 장수 범위 (내부 제작 옵션). min 은 강제 pass(B0) + min 구제
-  // column 으로 보장 시도 — 공간 부족 시 완료 메시지에 min 미달 경고. max 는 hard cap:
-  // 행 pass·column·고아 행 채움 모두 준수, 남는 공간은 justify 가 간격으로 흡수.
+  // column 으로 보장 시도 — 공간 부족 시 완료 메시지에 min 미달 경고.
   // L/M/S min 2 — 쓰임새가 가장 많은 사이즈라 우선 확보 (2026-08-19 사용자 결정).
   // XXL 1/1 은 기존 "XXL 반복 0, 각 1장 고정" 규칙의 표현 (tier 반복 기계에서 계속 제외).
+  // 채움 사이즈(L/M/S/XS) max 폐지 (2026-08-25 사용자 결정 — XS cap 8 로 컬럼이 2단에서
+  // 멈춘 사례). 사이즈 간 비율은 cap 이 아니라 구조가 담당한다: B1 라운드로빈 atomic pass 가
+  // 모든 tier 에 한 바퀴씩 +1 을 주고, 공간이 안 되는 tier 부터 은퇴 → 남는 공간은 작은
+  // 사이즈가 끝까지 채운다. XXL 1 고정·XL 2 상한은 유지 — 시뮬 실측(디자인12): XL 까지 풀면
+  // XL 반복이 면적을 먼저 먹어 총 26→23컷으로 오히려 준다. 대형은 구성 앵커, 채움은 소형
+  // (전 사이즈 모드의 ALLSIZES_FILL_MM 철학과 동일). 999999 = "사실상 무한" (_pkgMax fallback 표기).
   var PKG_COUNT_BY_TIER = {
     XXL: { min: 1, max: 1 },
     XL:  { min: 1, max: 2 },
-    L:   { min: 2, max: 3 },
-    M:   { min: 2, max: 4 },
-    S:   { min: 2, max: 6 },
-    XS:  { min: 1, max: 8 }
+    L:   { min: 2, max: 999999 },
+    M:   { min: 2, max: 999999 },
+    S:   { min: 2, max: 999999 },
+    XS:  { min: 1, max: 999999 }
   };
 
   // ── Package 3버킷 입력 + 다중 시트 (2026-08-22) ────────────────────
@@ -1126,7 +1134,8 @@
     return;
   }
 
-  var padPt = BODY_PADDING_MM * MM_TO_PT;
+  var padXPt = BODY_PADDING_X_MM * MM_TO_PT;
+  var padYPt = BODY_PADDING_Y_MM * MM_TO_PT;
   // 단일 사이즈는 uniform grid 가 시각 간격을 자동 균등 분배하므로 gap 입력 불필요.
   // Package/전 사이즈 packer 가 셀 간 최소 간격으로 사용 — GAP_DEFAULT_MM 고정.
   var gapPt = GAP_DEFAULT_MM * MM_TO_PT;
@@ -1134,7 +1143,7 @@
 
   // 시트1 문서를 먼저 열어 body 치수를 잰다 — 배분층이 binW/binH 를 필요로 하므로 계획보다 선행.
   // 시트 2장째부터는 루프가 같은 방식으로 새 문서를 연다.
-  var firstCtx = _openSheetContext(templateFile, padPt);
+  var firstCtx = _openSheetContext(templateFile, padXPt, padYPt);
   if (firstCtx.error) {
     alert(firstCtx.error);
     return;
@@ -1223,7 +1232,7 @@
     if (sIdx === 0) {
       sctx = firstCtx;
     } else {
-      sctx = _openSheetContext(templateFile, padPt);
+      sctx = _openSheetContext(templateFile, padXPt, padYPt);
       if (sctx.error) { ctxError = sctx.error; break; }
     }
     sheetOutputs.push(_produceSheet(sctx, sheetPlan[sIdx], options, sIdx, sheetPlan.length,
@@ -1396,6 +1405,9 @@
   }
   if (totShortfall > 0) warnLines += "⚠ Package min 미달 (공간 부족): " + totShortfall + "건\n";
   if (totSkipped > 0) warnLines += "⚠ trace 실패로 skip 된 placement: " + totSkipped + "개\n";
+  var totCutFix = 0;
+  for (var cfI = 0; cfI < sheetOutputs.length; cfI++) totCutFix += (sheetOutputs[cfI].cutFixCount || 0);
+  if (totCutFix > 0) warnLines += "ℹ 칼선 셀 초과 보정: " + totCutFix + "장 (사진+칼선 동반 축소, 컷-사진 락 유지)\n";
   // 전 사이즈 보장 실패 / evict 구제는 시트 단위 정보라 시트0 것만 (전 사이즈는 항상 1시트).
   if (sheetOutputs.length > 0) {
     var p0 = sheetOutputs[0].packResult;
@@ -2289,6 +2301,8 @@
     sheetDoc.selection = null;
     // redraw 는 main 이 배치 루프 종료 후 1회만 — 배치당 app.redraw() 는 비용만 큼. GC 는 유지(메모리 안정).
     try { $.gc(); } catch (eGc) {}
+    // 배치 후 칼선 셀 초과 보정 패스가 실측·수정할 수 있게 핸들을 넘긴다.
+    return { emb: embG, cut: dup };
   }
 
   function _traceAndUnite(doc, silFile) {
@@ -4125,7 +4139,7 @@
   // 시트 하나 = 템플릿 문서 하나. _openSheetContext 가 문서를 열어 배치 좌표계를 잡고,
   // _produceSheet 가 그 문서에 pack → 배치 → 저장까지 끝낸다. 문서를 열어둔 채 반환하므로
   // 운영자가 끝나고 모든 시트를 눈으로 확인할 수 있다 (testConfig.closeAfter 만 닫는다).
-  function _openSheetContext(templateFile, padPt) {
+  function _openSheetContext(templateFile, padXPt, padYPt) {
     var doc = _openTemplateDoc(templateFile);
     var bodyPath, headerRightText;
     try {
@@ -4142,17 +4156,17 @@
     }
 
     var gb = bodyPath.geometricBounds;
-    var binW = (gb[2] - gb[0]) - 2 * padPt;
-    var binH = (gb[1] - gb[3]) - 2 * padPt;
+    var binW = (gb[2] - gb[0]) - 2 * padXPt;
+    var binH = (gb[1] - gb[3]) - 2 * padYPt;
     if (binW <= 0 || binH <= 0) {
       try { doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eClose2) {}
-      return { doc: null, error: "info > body 영역이 BODY_PADDING_MM 보다 작습니다." };
+      return { doc: null, error: "info > body 영역이 body padding 보다 작습니다." };
     }
 
     return {
       doc: doc, error: null,
       bodyPath: bodyPath, headerRightText: headerRightText,
-      bL: gb[0], bT: gb[1], padPt: padPt, binW: binW, binH: binH
+      bL: gb[0], bT: gb[1], padXPt: padXPt, padYPt: padYPt, binW: binW, binH: binH
     };
   }
 
@@ -4215,6 +4229,8 @@
     var letterError = "";
     var failedItems = [];
     var skippedPlacements = 0;
+    var cutFixups = [];        // {emb, cut, x, y, w, h} — 배치 후 칼선 셀 초과 보정용
+    var cutFixCount = 0;
     var prevInteraction = app.userInteractionLevel;
     app.userInteractionLevel = UserInteractionLevel.DONTDISPLAYALERTS;
     try {
@@ -4230,8 +4246,8 @@
         var pl = packResult.placed[p];
         if (pl.payload.isLetterBlock) {
           // 사진 파이프라인(trace/embed/심볼)을 전혀 타지 않는다 — 벡터를 그 자리에서 그린다.
-          var aiXL = ctx.bL + ctx.padPt + pl.x;
-          var aiYL = ctx.bT - ctx.padPt - pl.y;
+          var aiXL = ctx.bL + ctx.padXPt + pl.x;
+          var aiYL = ctx.bT - ctx.padYPt - pl.y;
           try {
             var oneInfo;
             if (pl.payload.isAlphabetBlock) {
@@ -4268,10 +4284,11 @@
           skippedPlacements++;
           continue;
         }
-        var aiX = ctx.bL + ctx.padPt + pl.x;
-        var aiY = ctx.bT - ctx.padPt - pl.y;
+        var aiX = ctx.bL + ctx.padXPt + pl.x;
+        var aiY = ctx.bT - ctx.padYPt - pl.y;
         try {
-          _placePhotoSticker(doc, pl.payload, aiX, aiY, pl.w, pl.h, cutMarginPt, printLayer, kissLayer, cutSpot, pl.rotated);
+          var placedRef = _placePhotoSticker(doc, pl.payload, aiX, aiY, pl.w, pl.h, cutMarginPt, printLayer, kissLayer, cutSpot, pl.rotated);
+          cutFixups.push({ emb: placedRef.emb, cut: placedRef.cut, x: aiX, y: aiY, w: pl.w, h: pl.h });
         } catch (ePlace) {
           failedItems.push({
             base: pl.payload.base,
@@ -4281,6 +4298,34 @@
       }
 
       _safeRedrawAndGC();  // 배치당 redraw 제거 보상 — 시트 배치 완료 후 1회
+
+      // ── 칼선 셀 초과 보정 (2026-08-25) ─────────────────────────────
+      // 실측(EVS-1007 PKG): 배치된 칼선이 셀보다 디자인별 +0.7~1.3mm/변 커져 gap 1.5mm 에서
+      // 이웃 칼선이 겹치고 융합됐다 (구 gap 2.5mm 에서는 ~0.5mm 여유로 잠복하던 문제).
+      // 원인은 배치 시점 심볼/embed bounds 의 기준 불안정(전체 캔버스 vs 피사체 트림이 순간마다
+      // 다름 — 정적 재현 불가)이라, 정적 보정 대신 redraw 후 **칼선(PathItem, bounds 항상 정확)
+      // 실측**으로 셀을 넘는 스티커만 사진+칼선을 같은 매트릭스로 축소·셀 중앙 재정렬한다
+      // (동일 매트릭스 = 컷-사진 락 유지). 결과: 다이컷 실물 = 셀 = 명목 사이즈,
+      // 칼선 간 최소 거리 = 셀 gap (+2×cutMargin) 이 실제로 성립한다.
+      for (var cf = 0; cf < cutFixups.length; cf++) {
+        var FX = cutFixups[cf];
+        try {
+          var cb = FX.cut.geometricBounds;
+          var cw = cb[2] - cb[0];
+          var chh = cb[1] - cb[3];
+          var fs = Math.max(cw / FX.w, chh / FX.h);
+          if (fs <= 1.0005) continue;   // 셀 안이면 그대로 (0.05% 허용)
+          var cx = (cb[0] + cb[2]) / 2;
+          var cy = (cb[1] + cb[3]) / 2;
+          var fmat = app.concatenateMatrix(
+            app.concatenateMatrix(app.getTranslationMatrix(-cx, -cy), app.getScaleMatrix(100 / fs, 100 / fs)),
+            app.getTranslationMatrix(FX.x + FX.w / 2, FX.y - FX.h / 2)
+          );
+          FX.emb.transform(fmat, true, true, true, true, false, Transformation.DOCUMENTORIGIN);
+          FX.cut.transform(fmat, true, true, true, true, false, Transformation.DOCUMENTORIGIN);
+          cutFixCount++;
+        } catch (eFix) {}
+      }
     } finally {
       // 헤더는 **배치가 끝난 뒤** 찍는다. 예전에는 패킹 직후에 찍으면서 그 시트에
       // *배정된* 페어 수를 그대로 인쇄했는데, 자리가 없어 한 장도 안 들어간 디자인
@@ -4358,6 +4403,7 @@
       saveError: saveError,
       failedItems: failedItems,
       skippedPlacements: skippedPlacements,
+      cutFixCount: cutFixCount,
       rotatedCount: rotatedCount,
       uniqueCount: uniquePairs.length,
       drawnDesigns: drawnDesigns,      // 실제 그려진 고유 디자인 (배정 수 아님)

@@ -4,7 +4,13 @@
 //  받는사람 주소 라벨. 폴리메일러에 붙인다 (캐리어 배송라벨 아님 —
 //  바코드·4x6 규격 제약 없음).
 //
-//  운영 방식 = **칼선 선(先) 일괄 · 인쇄 후(後) 분할**
+//  기본 모드 = **템플릿 인쇄 (2026-08-25 추가)**: templates/address_label.ait
+//  (OPOS 등록마크 + cut_1~12 칼선, 격자 SOT 는 템플릿)에 주소를 채워
+//  인쇄하고, Summa 가 OPOS 로 마크를 읽어 그 자리를 컷한다. 안 쓴 칸의
+//  칼선은 지워서 인쇄된 라벨만 잘리게 한다. 아래 두 레거시 모드의
+//  재급지 위험·격자 상수는 템플릿 모드와 무관하다.
+//
+//  레거시 운영 방식 = **칼선 선(先) 일괄 · 인쇄 후(後) 분할**
 //   1) CUTLINE 모드로 빈 12분할 칼선만 낸 시트를 만들어 재고로 둔다.
 //   2) 주문이 3건 오면 PRINT 모드로 1~3번 칸에만 인쇄한다.
 //   3) 다음에 2건 오면 같은 시트를 다시 넣어 4~5번 칸에 인쇄한다.
@@ -54,10 +60,17 @@
   var SHEET_NAMES = ["A4", "Letter"];
   var SHEET_DEFAULT_INDEX = 0;
 
-  var BODY_SIZE_PT = 10;
+  var BODY_SIZE_PT = 12;      // 10 은 실물에서 작았다 (2026-08-25). 칸에 안 맞으면 자동 축소
   var BODY_MIN_SIZE_PT = 7;
   var LEADING_RATIO = 1.35;
   var FONT_CANDS = ["Jost-Regular", "Inter-Regular", "HelveticaNeue", "Helvetica", "ArialMT"];
+
+  // OPOS 템플릿 (templates/address_label.ait, 2026-08-24 제작) — Regmark 레이어의
+  // 등록마크 + KissCut 레이어의 cut_N 사각형. 격자 SOT 는 코드 상수가 아니라 **템플릿**이다:
+  // 칸 위치·크기는 cut_N 의 실좌표에서 읽으므로 템플릿을 고치면 스크립트가 따라온다.
+  // 운영 방식이 위의 "칼선 선(先) 일괄" 과 다르다 — 주소+마크를 인쇄한 뒤 Summa 가
+  // OPOS 로 마크를 읽고 그 자리를 컷한다 (재급지 정합을 마크가 해결).
+  var TEMPLATE_REL = "templates/address_label.ait";
 
   var testConfig = $.global.__EVERSTORY_LABELS_TEST__;
 
@@ -79,6 +92,13 @@
       if (f.exists) return f.fsName;
     } catch (ePath) {}
     return "";
+  }
+
+  function templateFile() {
+    try {
+      return new File((new File($.fileName)).parent.fsName + "/" + TEMPLATE_REL);
+    } catch (eTpl) {}
+    return null;
   }
 
   function _fail(m) {
@@ -189,12 +209,14 @@
     return blocks;
   }
 
-  function planSlots(startN, blockCount) {
+  function planSlots(startN, blockCount, totalOverride) {
     // 시작 칸에서 순서대로. 시트를 넘기면 넘친 만큼을 알려준다.
     // 진행 상태를 파일로 들고 있지 않는 이유: **실물 시트가 곧 상태다.**
     // 뗀 자리는 눈으로 바로 보이므로 손 입력이 상태 파일보다 정확하고,
     // 어긋날 수가 없다.
+    // totalOverride: 템플릿 모드가 cut_N 개수를 넘긴다. 안 주면 코드 격자(12칸).
     var total = slotCount();
+    if (totalOverride) total = totalOverride;
     var plan = { used: [], overflow: 0, error: null };
     if (startN < 1 || startN > total) {
       plan.error = "시작 칸은 1~" + total + " 사이여야 한다 (받은 값: " + startN + ")";
@@ -292,6 +314,36 @@
     return cells.length;
   }
 
+  function templateCells(doc) {
+    // KissCut 레이어의 cut_N 사각형에서 칸을 읽는다 — 템플릿이 격자 SOT.
+    // 좌표는 artboardRect 기준 mm 로 환산하므로 문서 원점 규약과 무관하다.
+    var lyr;
+    try {
+      lyr = doc.layers.getByName("KissCut");
+    } catch (eKc) {
+      return { error: "KissCut 레이어가 없다", cells: [] };
+    }
+    var ab = doc.artboards[0].artboardRect;
+    var cells = [];
+    var i;
+    for (i = 0; i < lyr.pageItems.length; i++) {
+      var it = lyr.pageItems[i];
+      var m = String(it.name).match(/^cut_(\d+)$/);
+      if (!m) continue;
+      var b = it.geometricBounds;
+      cells.push({
+        n: parseInt(m[1], 10),
+        item: it,
+        xMm: (b[0] - ab[0]) / MM_TO_PT,
+        yMm: (ab[1] - b[1]) / MM_TO_PT,
+        wMm: (b[2] - b[0]) / MM_TO_PT,
+        hMm: (b[1] - b[3]) / MM_TO_PT
+      });
+    }
+    cells.sort(function (a, b2) { return a.n - b2.n; });
+    return { error: null, cells: cells };
+  }
+
   function drawAddressBlock(targetDoc, lyr, font, cell, lines) {
     var box = textBoxOf(cell);
     var tf = lyr.textFrames.add();
@@ -318,8 +370,12 @@
     if (scale < 1) {
       var newSize = BODY_SIZE_PT * scale;
       if (newSize < BODY_MIN_SIZE_PT) newSize = BODY_MIN_SIZE_PT;
-      attrs.size = newSize;
-      attrs.leading = newSize * LEADING_RATIO;
+      // geometricBounds 를 읽고 나면 위에서 잡아둔 characterAttributes 핸들이
+      // 무효가 된다 — 그대로 쓰면 "illegal text range". 새로 얻어서 쓴다
+      // (2026-08-25 실사고: 긴 줄, 즉 축소 경로에서만 터져서 늦게 발견됐다).
+      var attrsNow = tf.textRange.characterAttributes;
+      attrsNow.size = newSize;
+      attrsNow.leading = newSize * LEADING_RATIO;
     }
 
     // 블록을 칸 중앙에 — 재급지 드리프트를 양쪽으로 분산시킨다.
@@ -353,12 +409,19 @@
     dlg.orientation = "column";
     dlg.alignChildren = "left";
 
+    var tpl = templateFile();
+    var tplExists = !!(tpl && tpl.exists);
+
     var gMode = dlg.add("panel", undefined, "무엇을 만드나");
     gMode.orientation = "column";
     gMode.alignChildren = "left";
+    var rbTpl = gMode.add("radiobutton", undefined,
+      "템플릿 인쇄 — address_label.ait (주소+마크 인쇄 → Summa OPOS 컷)");
     var rbCut = gMode.add("radiobutton", undefined, "칼선 시트 — 빈 12분할 (Summa, 한 번만)");
     var rbPrint = gMode.add("radiobutton", undefined, "인쇄 — 이미 칼선 난 시트에 주소만");
-    rbPrint.value = true;
+    rbTpl.enabled = tplExists;
+    if (tplExists) rbTpl.value = true;
+    else rbPrint.value = true;
 
     var gSheet = dlg.add("group");
     gSheet.add("statictext", undefined, "시트");
@@ -381,10 +444,12 @@
     };
 
     function syncEnabled() {
-      var printing = rbPrint.value;
-      gStart.enabled = printing;
-      gFile.enabled = printing;
+      var addressing = rbPrint.value || rbTpl.value;
+      gStart.enabled = addressing;
+      gFile.enabled = addressing;
+      gSheet.enabled = !rbTpl.value;   // 템플릿 모드는 시트 규격을 템플릿이 정한다
     }
+    rbTpl.onClick = syncEnabled;
     rbCut.onClick = syncEnabled;
     rbPrint.onClick = syncEnabled;
     syncEnabled();
@@ -396,6 +461,7 @@
     if (dlg.show() !== 1) return null;
     var mode = "print";
     if (rbCut.value) mode = "cutline";
+    if (rbTpl.value) mode = "template";
     return {
       mode: mode,
       sheetName: SHEET_NAMES[ddSheet.selection.index],
@@ -406,11 +472,91 @@
 
   // ── 메인 ──────────────────────────────────────────────────────
 
+  function readAddressBlocks(filePath) {
+    // 주소 .txt → 블록 배열. 실패하면 _fail 을 띄우고 null.
+    if (!filePath) { _fail("주소 파일을 골라야 한다."); return null; }
+    var f = new File(filePath);
+    if (!f.exists) { _fail("주소 파일이 없다: " + filePath); return null; }
+    f.encoding = "UTF-8";
+    f.open("r");
+    var text = f.read();
+    f.close();
+    var blocks = parseAddressBlocks(text);
+    if (!blocks.length) { _fail("주소 파일에 라벨이 없다 (빈 줄로 구분된 블록 0개)."); return null; }
+    return blocks;
+  }
+
+  function runTemplateMode(opts) {
+    var tpl = templateFile();
+    if (!tpl || !tpl.exists) { _fail("템플릿이 없다: " + TEMPLATE_REL); return; }
+    var blocks = readAddressBlocks(opts.filePath);
+    if (!blocks) return;
+    var startN = opts.startN;
+    if (isNaN(startN)) { _fail("시작 칸이 숫자가 아니다."); return; }
+
+    // .ait 는 열면 무제 사본이 뜬다 — 원본은 건드리지 않는다.
+    var doc = app.open(tpl);
+    var got = templateCells(doc);
+    if (got.error || !got.cells.length) {
+      doc.close(SaveOptions.DONOTSAVECHANGES);
+      _fail("템플릿에서 칸을 못 읽었다: " + (got.error || "KissCut 에 cut_N 사각형이 0개"));
+      return;
+    }
+    var cells = got.cells;
+    var plan = planSlots(startN, blocks.length, cells.length);
+    if (plan.error) {
+      doc.close(SaveOptions.DONOTSAVECHANGES);
+      _fail(plan.error);
+      return;
+    }
+
+    var font = _resolveFont(FONT_CANDS);
+    var lyr = _ensureLayer(doc, "Print");
+    var used = {};
+    var i, j;
+    for (i = 0; i < plan.used.length; i++) {
+      used[plan.used[i]] = true;
+      for (j = 0; j < cells.length; j++) {
+        if (cells[j].n === plan.used[i]) {
+          drawAddressBlock(doc, lyr, font, cells[j], blocks[i]);
+          break;
+        }
+      }
+    }
+    // 안 쓴 칸의 칼선은 지운다 — Summa 가 빈 라벨까지 잘라내지 않게.
+    // (마크는 Regmark 레이어라 그대로 남아 인쇄된다 — OPOS 가 읽는 대상.)
+    for (i = cells.length - 1; i >= 0; i--) {
+      if (!used[cells[i].n]) {
+        try { cells[i].item.remove(); } catch (eRm) {}
+      }
+    }
+
+    var msg = "주소 " + plan.used.length + "건 · 칸 " + plan.used[0] + "~" +
+              plan.used[plan.used.length - 1] + " (" +
+              cells[0].wMm.toFixed(1) + " x " + cells[0].hMm.toFixed(1) + "mm) · " +
+              BODY_SIZE_PT + "pt";
+    if (plan.overflow > 0) {
+      msg += "\n\n남은 " + plan.overflow + "건은 이 시트에 안 들어간다 — " +
+             "다음 시트에 시작 칸 1 로 다시 돌릴 것.";
+    }
+    msg += "\n\n칸 번호는 템플릿 cut_N 위치를 따른다. 안 쓴 칸 칼선은 지웠다 — " +
+           "Summa 는 인쇄된 라벨만 자른다.\n" +
+           "순서: 인쇄 (실제 크기 100%, 마크 포함) → Summa OPOS 로 마크 읽혀 컷.\n" +
+           "주의: 같은 시트를 재급지해 다시 인쇄하면 마크가 겹쳐 찍혀 OPOS 가 " +
+           "혼동할 수 있다 — 한 시트는 한 번에 쓰는 것을 권장.";
+    _note(msg);
+  }
+
   function main() {
     var opts = null;
     if (testConfig) opts = testConfig.options;
     else opts = askOptions();
     if (!opts) return;
+
+    if (opts.mode === "template") {
+      runTemplateMode(opts);
+      return;
+    }
 
     var sheet = sheetSpec(opts.sheetName);
     if (!sheet) { _fail("모르는 시트 규격: " + opts.sheetName); return; }
@@ -434,16 +580,8 @@
       return;
     }
 
-    if (!opts.filePath) { _fail("주소 파일을 골라야 한다."); return; }
-    var f = new File(opts.filePath);
-    if (!f.exists) { _fail("주소 파일이 없다: " + opts.filePath); return; }
-    f.encoding = "UTF-8";
-    f.open("r");
-    var text = f.read();
-    f.close();
-
-    var blocks = parseAddressBlocks(text);
-    if (!blocks.length) { _fail("주소 파일에 라벨이 없다 (빈 줄로 구분된 블록 0개)."); return; }
+    var blocks = readAddressBlocks(opts.filePath);
+    if (!blocks) return;
 
     var startN = opts.startN;
     if (isNaN(startN)) { _fail("시작 칸이 숫자가 아니다."); return; }

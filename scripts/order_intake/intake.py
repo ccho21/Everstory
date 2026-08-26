@@ -900,8 +900,9 @@ def write_labels(projects_dir, out_path, only=None):
         print("제외 %d건 (위 ⚠ 참조)." % len(blocked))
     if ready:
         print("")
-        print("다음: Illustrator 에서 Everstory_address_labels.jsx 실행 -> '인쇄' 모드 ->")
-        print("      이 파일 선택 -> 시트에 남은 첫 칸 번호를 시작 칸으로.")
+        print("다음: Illustrator 에서 Everstory_address_labels.jsx 실행 (보드의 '주소 라벨'")
+        print("      버튼이면 자동). 템플릿 인쇄 모드에 이 파일이 채워진 채 뜬다 ->")
+        print("      만들기 -> 인쇄(100%) -> Summa OPOS 컷.")
     # 주문 보드(webui.py)가 "만들 라벨이 있어야 Illustrator 를 띄운다" 판단에 쓴다.
     return len(ready)
 

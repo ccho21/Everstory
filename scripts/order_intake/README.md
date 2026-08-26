@@ -36,8 +36,9 @@ x-amz-expiration: expiry-date="...", rule-id="ExpireAllObjectsAfterNinetyDays"
 - **안 받은 주문 전부 받기** = `--all-new`
 - **선택한 주문 받기** = 체크박스로 골라서
 - **주소 라벨** = 체크한 주문으로 `--labels` 를 돌려 `projects/_labels.txt` 를 만들고
-  `Everstory_address_labels.jsx` 를 Illustrator 로 연다 (파일 칸이 채워진 채 뜬다).
-  **라벨 칸 순서 = 표에 보이는 순서.** 시작 칸은 실물 시트를 보고 손 입력 — 파일로 추적하지 않는다
+  `Everstory_address_labels.jsx` 를 Illustrator 로 연다 (파일 칸이 채워진 채, 템플릿 인쇄
+  모드가 기본 선택된 채 뜬다 — 인쇄 후 Summa OPOS 컷). **라벨 칸 순서 = 표에 보이는 순서.**
+  시작 칸은 실물 시트를 보고 손 입력 — 파일로 추적하지 않는다
 - **폴더 열기** = 체크한 주문 폴더를 Finder 로
 - **행별 작업 버튼** — 보드가 다음 단계 앱을 대상까지 챙겨서 열어준다. 작업 자체는 앱 안에서 수동:
   - `누끼` = 그 주문의 **누끼 안 된 원본만** Photoshop 으로 연다 (페어 있는 사진은 건너뜀.

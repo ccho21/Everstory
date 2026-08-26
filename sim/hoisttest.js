@@ -8,7 +8,7 @@ var src=fs.readFileSync((process.env.PROBE||'../Everstory_mixed.jsx'),'utf8').sp
 // 메인 플로우 시작 = 최상위 실행문이 처음 나오는 지점
 var mainAt=-1;
 for (var i=0;i<src.length;i++){
-  if (/^  var padPt = BODY_PADDING_MM/.test(src[i])) { mainAt=i; break; }
+  if (/^  var padXPt = BODY_PADDING_X_MM/.test(src[i])) { mainAt=i; break; }
 }
 if (mainAt<0) { console.log('❌ 메인 플로우 시작점을 못 찾음'); process.exit(1); }
 

@@ -3,7 +3,7 @@
 // 실측 폰트 메트릭에서 나온 치수를 스펙으로 넣어 **부착·패킹만** 검증한다.
 global.RGBColor=function(){};
 var P=require('./packer.js'); var MM=P.MM_TO_PT;
-var binW=138*MM, binH=171*MM, gap=P.GAP_DEFAULT_MM*MM;
+var binW=142*MM, binH=172*MM, gap=P.GAP_DEFAULT_MM*MM;  // body 142×175 − padding X0/Y1.5
 var ok=[]; function chk(n,c,x){ok.push(c);console.log((c?'✅':'❌')+' '+n+(x?'   '+x:''));}
 
 // Bagel Fat One 실측 비율 (잉크 폭/높이)
