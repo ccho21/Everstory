@@ -456,12 +456,18 @@
       var silPath = cleans[i].fsName.replace(/_clean\.psd$/i, "_sil.png");
       var sil = new File(silPath);
       out.push({
-        base: cleans[i].name.replace(/_clean\.psd$/i, ""),
+        // File.name 은 ExtendScript 에서 URI 인코딩(%ED%95%98…)돼 나오고 macOS
+        // 파일명은 NFD 라 자모가 분리된다. 둘 다 풀어야 다이얼로그에서 안 깨진다.
+        base: _decodeName(cleans[i].name.replace(/_clean\.psd$/i, "")),
         clean: cleans[i],
         sil: (sil.exists ? sil : null)
       });
     }
     return out;
+  }
+
+  function _decodeName(s) {
+    try { return _nfcHangul(decodeURI(s)); } catch (e) { return _nfcHangul(s); }
   }
 
   function _resolveOutputFolder(inputFolder) {

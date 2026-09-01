@@ -17,6 +17,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 ├── Everstory_CleanOffsetPath.jsx  # offset/compound path 내부 조각 제거 유틸
 ├── Everstory_address_labels.jsx   # Phase C — 주소 라벨. CUTLINE(빈 12분할 칼선 시트, 한 번만) / PRINT(칸 지정 부분 인쇄). 두 모드가 같은 격자 상수를 읽는다
 ├── SHOPIFY_ORDER_DOWNLOAD.command   # Phase -1 런처 — 더블클릭하면 브라우저에 주문받기 화면. 이름은 바꿔도 됨
+├── scripts/doctor.py              # 읽기 전용 통합 건강검진 — 상품/매니페스트/페어/보존/백업/디스크/테스트
 ├── scripts/order_intake/          # Phase -1 — Shopify 주문 사진 다운로드·리네임 (scripts/order_intake/README.md)
 ├── plugins/everstory_save/        # Phase A — UXP 패널 플러그인 (PS)
 ├── templates/
@@ -74,6 +75,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 각 디렉토리는 역할로 분리한다 — **business**: 사업·전략 / **shopify**: 웹 스토어 운영 문서 (어드민·카피·정책).
 
+- [**Everstory Doctor v1**](docs/doctor.md) — 파일을 바꾸지 않는 단일 운영 건강검진과 판정 기준
 - [**비즈니스**](docs/business/) — 사업·전략 (의존 계층: Fact → Plan → Open)
   - [products.md](docs/business/products.md) — Layer 1 Fact. Launch SKU·Package 규칙·사이즈·가격·사진 QC (상품 SOT)
   - [expenses.md](docs/business/expenses.md) — Layer 1 Fact. 영수증·인보이스·운임·구독 raw (비용 SOT)
