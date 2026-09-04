@@ -113,6 +113,65 @@ try:
     chk("Package", "Package 2시트" in intake.job_label(j1), intake.job_label(j1))
     chk("경고가 있으면 뒤에 붙는다", "⚠" in intake.job_label(j2), intake.job_label(j2))
 
+    # ── 용도 팩 (Planner / Phone & Bottle / Laptop / Full Set) ──────────────
+    # 팩은 버킷을 주문에서 안 받는다 — 사진 상한만 variant 로 갈리고, 인치 배정은
+    # 인테이크 뒤 운영자가 한다. 그래서 여기서 고정하는 건 두 가지다:
+    #   ① 새 SKU 를 읽어 pack/사진수/시트수가 나온다
+    #   ② 업로드 필드 이름이 뭐든 사진으로 인식되고 unknown 경고가 안 뜬다
+    print("\n══ 용도 팩 SKU ══")
+    for sku, want in [
+        ("EVS-FULL-8-WM", ("pack", 2, "FULL", 8)),
+        ("EVS-FULL-4-TR", ("pack", 1, "FULL", 4)),
+        ("EVS-PLAN-1-GD", ("pack", 1, "PLAN", 1)),
+        ("EVS-PHONE-4-SV", ("pack", 1, "PHONE", 4)),
+        ("EVS-LAPTOP-8-WM", ("pack", 2, "LAPTOP", 8)),
+    ]:
+        j = intake.build_job({"order": {"name": "EVS-1010", "customer": "T"},
+                              "line_items": [{"index": 0, "title": "P", "sku": sku, "quantity": 1}],
+                              "options": [], "photos": []})
+        got = (j["mode"], j["sheets"], j["pack"], j["photos_ordered"])
+        chk("SKU %s" % sku, got == want, "%s / %s" % (got, intake.job_label(j)))
+
+    print("\n══ 구 SKU 회귀 (팩 정규식이 안 삼켰나) ══")
+    for sku, want in [
+        ("EVS-PACKAGE-FULL-WM", ("package", None, 2, None)),
+        ("EVS-PACKAGE-MINI-SV", ("package", None, 1, None)),
+        ("EVS-FACE-19-WM", ("single", 19.05, None, None)),
+        ("EVS-FULLBODY-MIX-WM", ("all", None, None, None)),
+    ]:
+        chk("SKU %s 그대로" % sku, intake.size_from_sku(sku) == want, intake.size_from_sku(sku))
+
+    print("\n══ 팩 업로드 필드 — 이름 접미사에 안 묶인다 ══")
+    # Easify 는 최대 파일 수를 필드 단위로만 잡는다 → Photos variant 마다 필드가 따로 있고
+    # property 키가 갈린다. 접미사 형식을 못 박으면 이름을 바꾸는 순간 사진이 조용히 샌다.
+    # property 키 = 옵션의 **내부 이름**(화면 라벨 아님). 라벨만 고치고 내부 이름을 그대로
+    # 두면 Easify 기본값 `File upload-1` 이 키가 된다 — 그것도 사진으로 받아야 한다.
+    for key in ["Your photos", "Your photos (1)", "Your photos (4)", "Your photos (8)",
+                "Your photos 8", "Your photos - 4",
+                "File upload-1", "File upload-2", "File upload"]:
+        norm, _ = intake.split_key(key)
+        bucket, known = intake.bucket_for_key(norm)
+        chk("'%s' = 사진 · 버킷 없음" % key, known and bucket is None, (bucket, known))
+    chk("모르는 키는 여전히 unknown", intake.bucket_for_key("gift wrap") == (None, False))
+
+    order = {"lineItems": {"nodes": [{
+        "title": "Full Set", "sku": "EVS-FULL-8-WM", "quantity": 1,
+        "customAttributes": [
+            {"key": "Your photos (8)", "value": "https://cdn.tigren.com/uploads/a-IMG_1.jpg"},
+            {"key": "Your photos (8)-2", "value": "https://cdn.tigren.com/uploads/a-IMG_2.jpg"},
+            {"key": "Which photo should be biggest? (optional)", "value": "the one with the hat"},
+            {"key": "_tpo_add_by", "value": "x"}]}]}}
+    photos, options, unknown = intake.parse_photos(order)
+    chk("사진 2장 수집", len(photos) == 2, [p["property"] for p in photos])
+    chk("unknown 경고 없음", unknown == [], unknown)
+    chk("버킷·토큰 없음 (운영자가 배정)",
+        all(p["bucket"] is None and p["token"] is None for p in photos))
+    chk("파일명에 토큰 안 붙음",
+        intake.target_filename(photos[0], "jpg") == "01_a-IMG_1.jpg",
+        intake.target_filename(photos[0], "jpg"))
+    chk("노트는 사진이 아니라 옵션으로",
+        any((o["key"] or "").startswith("Which photo") for o in options))
+
 finally:
     shutil.rmtree(root, ignore_errors=True)
 

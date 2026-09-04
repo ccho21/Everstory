@@ -45,6 +45,31 @@ KEY_TO_BUCKET = {
     "photos": None,
 }
 
+# 용도 팩(Planner/Phone & Bottle/Laptop/Full Set)의 업로드 필드.
+# Easify 는 필드 **설정값**을 variant 조건으로 못 바꾼다 — 최대 파일 수는 필드 단위 설정이다.
+# 그래서 상한이 다른 업로드 필드를 Photos variant 수만큼 두고 하나씩 보여준다. 화면 라벨은
+# 셋 다 같아도 되지만 **line item property 키는 필드의 내부 이름을 따라간다** → 키가 갈린다.
+# 접미사 형식을 못 박지 않는다 ("Your photos (4)", "Your photos 4", "Your photos - 8"…):
+# 이름을 바꿀 때마다 사진이 조용히 unknown 으로 빠지면 아카이브가 깨진다.
+#
+# ⚠ property 키는 화면 라벨이 아니라 **옵션의 내부 이름**이다 (Easify 는 둘이 따로다).
+# 라벨을 "Your photos" 로 달아도 내부 이름을 안 고치면 키는 앱 기본값 `File upload-1` 이
+# 된다 (2026-09-04 세트 767342 편집기에서 실측). 그래서 기본값 형태도 같이 받는다.
+PACK_PHOTO_RE = re.compile(r"^(your photos|file upload)\b")
+
+
+def bucket_for_key(key):
+    """정규화된 속성 키 -> (버킷, 아는 키인가).
+
+    버킷 None + 아는 키 = "사진은 맞는데 버킷이 없다" (팩·단일 사이즈 주문).
+    버킷 배정은 인테이크 뒤 운영자가 한다 — 여기서 추측하지 않는다.
+    """
+    if key in KEY_TO_BUCKET:
+        return KEY_TO_BUCKET[key], True
+    if PACK_PHOTO_RE.match(key):
+        return None, True
+    return None, False
+
 BUCKET_ORDER = {"BIG": 0, "MED": 1, "SML": 2}
 
 # 비-Package 상품(Face/Full Body/Shape)은 고객이 **사이즈 하나**를 고르므로 버킷이 없다.
@@ -91,6 +116,18 @@ SKU_MATERIAL = {"WM": "White Matte", "TR": "Translucent", "SV": "Silver", "GD": 
 SKU_PACKAGE_RE = re.compile(r"-PACKAGE-(FULL|MINI)-[A-Z]{2}$", re.I)
 PACKAGE_SHEETS_BY_KIND = {"FULL": 2, "MINI": 1}
 
+# 용도 팩 SKU: EVS-{PLAN|PHONE|LAPTOP|FULL}-{1|4|8}-{WM|SV|GD|TR}.
+# 사이즈 배합은 상품이 정하고, 사진 수가 시트 수를 정한다 (1·4 = 1시트, 8 = 2시트).
+# 구 Package SKU 와 안 겹친다 — 저쪽은 `-PACKAGE-FULL-WM` 으로 가운데에 숫자가 없다.
+SKU_PACK_RE = re.compile(r"-(PLAN|PHONE|LAPTOP|FULL)-(\d+)-[A-Z]{2}$", re.I)
+PACK_SHEETS_BY_PHOTOS = {1: 1, 4: 1, 8: 2}
+PACK_NAMES = {
+    "PLAN": "Planner",
+    "PHONE": "Phone & Bottle",
+    "LAPTOP": "Laptop",
+    "FULL": "Full Set",
+}
+
 
 def material_from_sku(sku):
     """SKU -> 재질 이름. 모르면 None (추측하지 않는다)."""
@@ -101,24 +138,30 @@ def material_from_sku(sku):
 
 
 def size_from_sku(sku):
-    """SKU -> (mode, size_mm, sheets). mode = single | package | all. 모르면 None.
+    """SKU -> (mode, size_mm, sheets, pack). mode = single | package | pack | all. 모르면 None.
 
     일러스트 스크립트의 내부 sentinel(-2/-3) 을 매니페스트에 쓰지 않는다 — 저 숫자는
     Everstory_mixed.jsx 사정이고, 매니페스트는 그 사정을 몰라야 한다.
+    같은 이유로 팩의 인치 사다리도 여기 넣지 않는다. 그건 제작 정책이라 .jsx 가 갖는다.
     """
     if not sku:
         return None
     m = SKU_PACKAGE_RE.search(sku)
     if m:
-        return ("package", None, PACKAGE_SHEETS_BY_KIND.get(m.group(1).upper()))
+        return ("package", None, PACKAGE_SHEETS_BY_KIND.get(m.group(1).upper()), None)
+    m = SKU_PACK_RE.search(sku)
+    if m:
+        pack = m.group(1).upper()
+        photos = int(m.group(2))
+        return ("pack", None, PACK_SHEETS_BY_PHOTOS.get(photos), (pack, photos))
     m = SKU_SIZE_RE.search(sku)
     if not m:
         return None
     code = m.group(1).upper()
     if code == "MIX":
-        return ("all", None, None)          # Mixed 는 전 사이즈 모드로 제작
+        return ("all", None, None, None)    # Mixed 는 전 사이즈 모드로 제작
     mm = SKU_SIZE_MM.get(code)
-    return ("single", mm, None) if mm else None
+    return ("single", mm, None, None) if mm else None
 
 
 def size_from_options(options, line_item_index):
@@ -130,7 +173,7 @@ def size_from_options(options, line_item_index):
         if m:
             mm = SKU_SIZE_MM.get(m.group(1))
             if mm:
-                return ("single", mm, None)
+                return ("single", mm, None, None)
     return None
 
 
@@ -158,6 +201,8 @@ def build_job(manifest):
         "mode": None,
         "size_mm": None,
         "sheets": None,
+        "pack": None,
+        "photos_ordered": None,
         "photos": sum(1 for p in photos if p.get("file")),
         "sticker_name": "",
         "notes": [],
@@ -192,7 +237,9 @@ def build_job(manifest):
         job["notes"].append("재질: line item 마다 다름 (%s)" % " / ".join(materials))
 
     if len(sizes) == 1:
-        job["mode"], job["size_mm"], job["sheets"] = sizes[0]
+        job["mode"], job["size_mm"], job["sheets"], pack = sizes[0]
+        if pack:
+            job["pack"], job["photos_ordered"] = pack
     elif not sizes:
         job["notes"].append("사이즈: SKU 에서 못 읽음")
     else:
@@ -205,7 +252,11 @@ def job_label(job):
     bits = [job["product"] or "?"]
     if job["material"]:
         bits.append(job["material"])
-    if job["mode"] == "package":
+    if job["mode"] == "pack":
+        bits.append("%s 팩 · 사진 %s장 · %s시트" % (
+            PACK_NAMES.get(job.get("pack"), job.get("pack") or "?"),
+            job.get("photos_ordered") or "?", job["sheets"] or "?"))
+    elif job["mode"] == "package":
         bits.append("Package %s시트" % (job["sheets"] or "?"))
     elif job["mode"] == "all":
         bits.append("전 사이즈")
@@ -369,8 +420,8 @@ def parse_photos(order):
                     {"line_item": li_idx, "product": title, "key": raw_key, "value": value}
                 )
                 continue
-            bucket = KEY_TO_BUCKET.get(key)
-            if key not in KEY_TO_BUCKET and key not in unknown:
+            bucket, known = bucket_for_key(key)
+            if not known and key not in unknown:
                 unknown.append(key)
             photos.append(
                 {
