@@ -69,7 +69,9 @@
 //     retro = alphabet_art_v1 + deco_art_v1 (글자마다 칼선, 예전 그대로) · bubble = alphabet_art_v2 + deco_art_v2
 //     (글자를 살짝 겹쳐 쓰고 이름 전체를 흰 테두리 하나로 — _drawNameHalo, 칼선 1개. 옆 장식은 줄 맨 앞·끝 글자만).
 //     bubble 은 이름·데코 박스를 칼선 여백만큼 넓게 잡아, 나중에 칼선을 오프셋해도 이웃과 간격이 남는다.
+//     bubble 글자는 자리마다 색을 돌린다 (LETTER_PAINT_CYCLE_V2 · 색 그룹 'LTR A PINK').
 //     미리보기 그림은 templates/art_preview/<라이브러리>/ (라이브러리를 고치면 다시 뽑는다 — templates/art_preview/README.md).
+//   · **데코 돌리기** (2026-09-17): 스티커 이름마다 다른 데코로 시작하고 다음 시트는 이어서 (_composedDecoStart).
 //
 //  검증: sim/range_layout_test.js · sim/range_name_test.js · sim/range_output_test.js · sim/range_composed_test.js.
 //  Illustrator 실행은 테스트 시트로.
@@ -321,6 +323,41 @@
     Y: { core: { aw: 0.8033, bl: 0.9950, fh: 1.0136 } },
     Z: { core: { aw: 0.8763, bl: 0.9948, fh: 0.9652 }, R: { aw: 1.2442, bl: 0.9948, fh: 0.9778 } }
   };
+  // 버블 글자 색 (2026-09-17 사용자 — 레퍼런스처럼 자리마다 색을 돌린다). 글자마다 칠할 수 있는 색이고 첫 색 = 라이브러리 원래
+  // 그룹('LTR A'), 나머지 = 바탕(FACE)만 그 색으로 바꾼 그룹('LTR A PINK'). 글자 안 장식과 같은 색은 없다 — A 는 노란 하트가 있어
+  // 노랑이 없고, N(하늘 줄무늬)·O·Q(흰 속구멍)·D(흰 꽃)는 흰색이 없다. 라이브러리를 다시 만들면 도구가 이 표도 다시 만들어 비교한다.
+  var LETTER_ART_PAINTS_V2 = {
+    A: ["WHITE", "PINK", "SKY"],
+    B: ["YELLOW", "WHITE", "PINK", "SKY"],
+    C: ["WHITE", "PINK", "YELLOW", "SKY"],
+    D: ["SKY", "PINK"],
+    E: ["WHITE", "PINK", "YELLOW", "SKY"],
+    F: ["PINK", "WHITE", "YELLOW", "SKY"],
+    G: ["WHITE", "PINK", "YELLOW", "SKY"],
+    H: ["WHITE", "PINK", "YELLOW", "SKY"],
+    I: ["YELLOW", "WHITE", "SKY"],
+    J: ["WHITE", "PINK", "YELLOW", "SKY"],
+    K: ["PINK", "WHITE", "YELLOW", "SKY"],
+    L: ["WHITE", "PINK", "YELLOW", "SKY"],
+    M: ["YELLOW", "WHITE", "PINK", "SKY"],
+    N: ["SKY", "PINK", "YELLOW"],
+    O: ["PINK", "YELLOW", "SKY"],
+    P: ["WHITE", "PINK", "SKY"],
+    Q: ["YELLOW", "PINK", "SKY"],
+    R: ["WHITE", "PINK", "YELLOW", "SKY"],
+    S: ["SKY", "WHITE", "PINK", "YELLOW"],
+    T: ["WHITE", "PINK", "YELLOW", "SKY"],
+    U: ["YELLOW", "WHITE", "PINK", "SKY"],
+    V: ["WHITE", "PINK", "YELLOW", "SKY"],
+    W: ["SKY", "WHITE", "PINK", "YELLOW"],
+    X: ["WHITE", "PINK", "YELLOW", "SKY"],
+    Y: ["YELLOW", "WHITE", "PINK", "SKY"],
+    Z: ["PINK", "WHITE", "SKY"]
+  };
+  // 이름 글자는 자리 순서대로 이 순서를 돈다 — 그 글자에 없는 색 · 바로 앞 글자와 같은 색은 건너뛴다 (줄이 바뀌어도 이어서 돈다).
+  // 흰색이 대략 세 칸에 하나 = 레퍼런스(assets/style_refs/2026-09-11_bubble-alphabet_names.png) 비율. 흔한 이름 102개 시뮬:
+  // 흰 글자 56% → 38%, 옆 글자끼리 같은 색 185곳 → 0 (2026-09-17).
+  var LETTER_PAINT_CYCLE_V2 = ["WHITE", "PINK", "YELLOW", "WHITE", "SKY", "PINK", "WHITE", "YELLOW", "SKY"];
   // 두들 27종 중 데코로 쓰는 것 (시트당 앞에서부터 COMPOSED_DECO_MAX 개). 뺀 것 — LOVE(<3)·LUCKY 는 글자뿐이라 작으면 안 읽히고,
   // SPARKLES·DOTS·BURSTPINK·BURSTGOLD·SWOOSH·ARROW 는 조각·긴 선이라 정사각 칸에서 너무 작아진다 (라이브러리에는 있다).
   var DECO_ORDER_V2 = [
@@ -334,13 +371,14 @@
   // halo = 이름 전체 흰 테두리 (인쇄 + 칼선). rimBox = 칼선 여백만큼 이름 박스를 넓히고 데코는 박스 안쪽으로 줄여 그린다 —
   // 나중에 칼선을 여백만큼 바깥으로 오프셋해도 이웃 사진 칼선과 간격이 남게 (retro 는 예전 배치를 지키려고 끈 채로 둔다).
   // 데코 박스 자체는 retro 와 같은 크기 (12.7 / 10mm) — 키웠더니 빈틈에 들어가는 데코가 평균 5.4 → 3.9개로 줄었다.
+  // paints / paintCycle = 글자 색 돌리기 (없으면 라이브러리 원래 색 그대로 — retro).
   var COMPOSED_NAME_STYLES = [
     { key: "retro", label: "레트로", whole: false, letterLib: LETTER_ART_LIB_NAME, decoLib: DECO_ART_LIB_NAME,
       metrics: LETTER_ART_METRICS, decoOrder: DECO_ORDER, decoBigOnly: [], unitMm: RANGE_HERO_UNIT_MM,
-      gap: LETTER_GAP_RATIO, lineGap: LETTER_GAP_RATIO, halo: 0, rimBox: false },
+      gap: LETTER_GAP_RATIO, lineGap: LETTER_GAP_RATIO, halo: 0, rimBox: false, paints: null, paintCycle: null },
     { key: "bubble", label: "버블", whole: true, letterLib: "alphabet_art_v2.ai", decoLib: "deco_art_v2.ai",
       metrics: LETTER_ART_METRICS_V2, decoOrder: DECO_ORDER_V2, decoBigOnly: DECO_BIG_ONLY_V2, unitMm: 13,
-      gap: -0.03, lineGap: 0.1, halo: 0.08, rimBox: true }
+      gap: -0.03, lineGap: 0.1, halo: 0.08, rimBox: true, paints: LETTER_ART_PAINTS_V2, paintCycle: LETTER_PAINT_CYCLE_V2 }
   ];
   var ART_LIB_DOCS = {};                   // 라이브러리 파일 이름 → 이번 실행에서 열어 둔 문서 (_closeArtLibs 가 닫는다)
 
@@ -824,15 +862,18 @@
   }
 
   // 이름 블록 안 글자 자리 — 그리기와 주문 보드 미리보기 공용 (순수 계산).
-  // pt, 블록 좌상단 원점, y 아래로. [{ ch, variant, line, x, y, w, h, missing }] — w×h 가 글자 틀 (라이브러리 그룹 geometricBounds).
-  // variant: bubble 은 "core" | "L" | "R" (옆 장식), retro 는 "". 표에 없는 글자는 missing (자리를 차지하지 않는다).
+  // pt, 블록 좌상단 원점, y 아래로. [{ ch, variant, paint, group, line, x, y, w, h, missing }] — w×h 가 글자 틀 (라이브러리 그룹 geometricBounds).
+  // variant: bubble 은 "core" | "L" | "R" (옆 장식), retro 는 "". paint = 바꿔 칠한 색 (라이브러리 원래 색이면 "", retro 는 늘 ""),
+  // group = 꺼낼 라이브러리 그룹 ('LTR A' · 'LTR A PINK'). 표에 없는 글자는 missing (자리를 차지하지 않는다).
   // 줄마다 폭을 먼저 재서 가운데 정렬하고, 모든 글자가 그 줄의 baseline(블록 위에서 baselinePt 아래)에 선다.
   function _artLetterBoxes(block) {
     var style = block.whole ? _nameStyle(block.nameStyle) : null;
     var halo = block.halo ? block.halo : 0, out = [], ln, ci, line, lineW, m, fh, cur, baseY, first, last;
+    var paintPtr = 0, prevPaint, pick, paint;
     var lineStep = block.unit + (style ? block.lineGap : block.innerGap);
     for (ln = 0; ln < block.lines.length; ln++) {
       line = block.lines[ln];
+      prevPaint = null;
       lineW = (line.length - 1) * block.innerGap;
       for (ci = 0; ci < line.length; ci++) {
         if (style) {
@@ -851,16 +892,41 @@
         m = style ? _artLetterMetric(style, line[ci], first, last) : LETTER_ART_METRICS[line[ci]];
         if (!m) {
           // 라이브러리에 글자가 없다 — 그리기가 missingGlyphs 로 보고한다 (조용히 건너뛰면 이름에 구멍이 난다).
-          out.push({ ch: line[ci], variant: "", line: ln, x: cur, y: baseY, w: 0, h: 0, missing: true });
+          out.push({ ch: line[ci], variant: "", paint: "", group: "", line: ln, x: cur, y: baseY, w: 0, h: 0, missing: true });
           continue;
         }
         fh = style ? block.capPt * m.fh : block.capPt / m.cap;
+        paint = "";
+        if (style && style.paints) {
+          pick = _artLetterPaint(style, line[ci], prevPaint, paintPtr);
+          if (pick) {
+            paintPtr = pick.next;
+            prevPaint = pick.paint;
+            if (pick.paint !== style.paints[line[ci]][0]) paint = pick.paint;
+          }
+        }
         out.push({ ch: line[ci], variant: style ? _artLetterVariant(style.metrics[line[ci]], first, last) : "",
+                   paint: paint, group: "LTR " + line[ci] + (paint ? " " + paint : ""),
                    line: ln, x: cur, y: baseY - m.bl * fh, w: m.aw * fh, h: fh, missing: false });
         cur += m.aw * fh + block.innerGap;
       }
     }
     return out;
+  }
+
+  // 글자 색 — 돌림 순서(style.paintCycle)의 ptr 자리부터 보며, 그 글자가 가진 색(style.paints) 중 앞 글자 색(prev)과 다른 첫 색.
+  // 반환 { paint, next } (next = 다음 글자가 볼 자리). 표에 없는 글자면 null (라이브러리 원래 색으로 그린다).
+  function _artLetterPaint(style, ch, prev, ptr) {
+    var can = style.paints[ch], cyc = style.paintCycle, k, j, c;
+    if (!can || !can.length || !cyc || !cyc.length) return null;
+    for (k = 0; k < cyc.length; k++) {
+      c = cyc[(ptr + k) % cyc.length];
+      if (c === prev) continue;
+      for (j = 0; j < can.length; j++) {
+        if (can[j] === c) return { paint: c, next: (ptr + k + 1) % cyc.length };
+      }
+    }
+    return { paint: can[0], next: ptr };
   }
 
   // 라이브러리 글자 복제본에서 이 자리에 안 쓰는 옆 장식(SIDE L / SIDE R)을 뺀다 — 남은 그룹 경계 = 치수표의 틀.
@@ -989,11 +1055,12 @@
       b = boxes[i];
       src = null;
       if (!b.missing) {
-        try { src = lib.groupItems.getByName("LTR " + b.ch); } catch (eName) { src = null; }
+        try { src = lib.groupItems.getByName(b.group); } catch (eName) { src = null; }
       }
       if (!src) {
-        // 라이브러리에 글자가 없다 — 조용히 건너뛰면 이름에 구멍이 난다.
-        missing.push(b.ch);
+        // 라이브러리에 글자(또는 그 색 그룹)가 없다 — 조용히 건너뛰면 이름에 구멍이 난다.
+        // 색 그룹이 없으면 라이브러리가 색 돌리기 전 것이다 → scripts/art_library 로 다시 만든다.
+        missing.push(b.paint ? b.group : b.ch);
         continue;
       }
       dup = src.duplicate(printL, ElementPlacement.PLACEATEND);
@@ -2081,7 +2148,8 @@
   // 주문 보드 "변형" 줄 — 한 스타일의 기본 · 좌우 바꿈 · 섞기. 이름은 모두 visiblePos 에 보인다.
   // 섞기는 번호 1~COMPOSED_VARIANT_TRIES 를 돌려, 기본보다 스티커가 COMPOSED_VARIANT_DROP 장 넘게 줄었거나 이미 나온
   // 배치와 같은 판은 버리고 COMPOSED_VARIANT_KEEP 개까지. 반환 [{ kind: "base"|"mirror"|"shuffle", layout, res }] (실패한 판은 뺀다).
-  function _composedVariants(pairsArg, mainIndex, binW, binH, gap, heroSpec, rimPt, style, visiblePos) {
+  // sheetIndex = 몇 번째 시트인지 (0부터 — 데코 시작 자리가 달라진다).
+  function _composedVariants(pairsArg, mainIndex, binW, binH, gap, heroSpec, rimPt, style, visiblePos, sheetIndex) {
     var out = [], seen = {}, specs = [], i, k, sp, res, baseCount = -1, shuffles = 0;
     specs.push({ kind: "base", layout: { style: style, namePos: visiblePos, mirror: false, seed: 0 } });
     specs.push({ kind: "mirror", layout: _composedMirrorSpec(style, visiblePos, 0) });
@@ -2092,7 +2160,7 @@
       sp = specs[k];
       if (sp.kind === "shuffle" && shuffles >= COMPOSED_VARIANT_KEEP) break;
       try {
-        res = _packComposed(pairsArg, mainIndex, binW, binH, gap, _composedPackExtras(heroSpec, rimPt, sp.layout));
+        res = _packComposed(pairsArg, mainIndex, binW, binH, gap, _composedPackExtras(heroSpec, rimPt, sp.layout, sheetIndex));
       } catch (eVar) {
         continue;
       }
@@ -2311,13 +2379,15 @@
     return ctx;
   }
 
-  // 데코 모양 — 스타일 순서대로 아직 안 쓴 것 (다 쓰면 처음부터). decoBigOnly(글씨 두들)는 큰 칸에만.
-  // sizeMm = 데코 박스 한 변. 큰 칸만 받는 모양뿐이면 순서 첫 모양. retro 는 예전의 order[k % n] 과 같은 결과.
-  function _composedDecoMotif(style, used, sizeMm) {
-    var order = style.decoOrder, big = sizeMm >= COMPOSED_DECO_SIZES_MM[0] - 0.001, pass, i, j, n, bigOnly;
+  // 데코 모양 — 스타일 순서를 start 자리부터 돌며 아직 안 쓴 것 (다 쓰면 처음부터). decoBigOnly(글씨 두들)는 큰 칸에만.
+  // sizeMm = 데코 박스 한 변. start = 시작 자리 (_composedDecoStart, 없으면 0). 큰 칸만 받는 모양뿐이면 시작 자리 모양.
+  // start 0 이면 예전 결과 그대로 (retro 는 order[k % n]).
+  function _composedDecoMotif(style, used, sizeMm, start) {
+    var order = style.decoOrder, len = order.length, big = sizeMm >= COMPOSED_DECO_SIZES_MM[0] - 0.001, pass, i, j, n, bigOnly;
+    var s0 = (start > 0) ? Math.floor(start) % len : 0;
     for (pass = 0; pass < 2; pass++) {
-      for (i = 0; i < order.length; i++) {
-        n = order[i];
+      for (i = 0; i < len; i++) {
+        n = order[(s0 + i) % len];
         if (used["$" + n]) continue;
         bigOnly = false;
         for (j = 0; j < style.decoBigOnly.length; j++) if (style.decoBigOnly[j] === n) bigOnly = true;
@@ -2325,9 +2395,37 @@
         used["$" + n] = true;
         return n;
       }
-      for (i = 0; i < order.length; i++) used["$" + order[i]] = false;   // 한 바퀴 다 썼다 — 다시 처음부터
+      for (i = 0; i < len; i++) used["$" + order[i]] = false;   // 한 바퀴 다 썼다 — 다시 처음부터
     }
-    return order[0];
+    return order[s0];
+  }
+
+  // 데코 시작 자리 (2026-09-17 사용자) — 스티커 이름마다 다른 데코로 시작하고, 다음 시트는 앞 시트 구간(_composedDecoSpan)
+  // 바로 뒤에서 이어 간다 → 두 장까지는 시트끼리 데코가 겹치지 않는다 (순서가 모자라면 셋째 장부터 다시 돈다).
+  // 예전에는 시트마다 순서 맨 앞에서 시작해 버블 두들 19종 중 앞 8종·레트로 12종 중 앞 6종만 나왔고, 여러 장 주문은 시트마다
+  // 데코가 같았다. 이름 글자(대문자)와 시트 번호(0부터)만 쓴다 — 배치와 상관없이 미리보기와 Illustrator 가 같은 값을 얻는다.
+  function _composedDecoStart(heroSpec, sheetIndex) {
+    var style = heroSpec ? _nameStyle(heroSpec.nameStyle) : null, h = 0, i, s, k, len;
+    if (!style || !heroSpec.chars) return 0;
+    len = style.decoOrder.length;
+    s = heroSpec.chars.join("");
+    for (i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 65521;
+    h = h % len;
+    for (k = 0; k < sheetIndex; k++) h = (h + _composedDecoSpan(style, h)) % len;
+    return h;
+  }
+
+  // start 자리부터 데코 COMPOSED_DECO_MAX 개가 다 나오는 순서 구간의 길이 = 글씨 두들이 아닌 모양이 COMPOSED_DECO_MAX 개 들어가는
+  // 가장 짧은 구간. 작은 칸은 글씨 두들을 건너뛰고 큰 칸은 안 쓴 첫 모양을 쓰므로 한 시트의 데코는 늘 이 구간 안에서 나온다.
+  function _composedDecoSpan(style, start) {
+    var order = style.decoOrder, len = order.length, plain = 0, i, j, n, bigOnly;
+    for (i = 0; i < len; i++) {
+      n = order[(start + i) % len];
+      bigOnly = false;
+      for (j = 0; j < style.decoBigOnly.length; j++) if (style.decoBigOnly[j] === n) bigOnly = true;
+      if (!bigOnly && ++plain >= COMPOSED_DECO_MAX) return i + 1;
+    }
+    return len;
   }
 
   // 남은 빈 곳 중 가장 큰 정사각형의 한 변(mm, 1mm 격자). 클수록 시트에 죽은 공간이 있다는 뜻.
@@ -2508,6 +2606,7 @@
     // 데코 박스는 크기 그대로 — 둘 다 그리기가 이만큼 안쪽에 그린다.
     var namePad = (hero && extras.hero.pad > 0) ? extras.hero.pad : 0;
     var decoPad = (hero && extras.decoPad > 0) ? extras.decoPad : 0;
+    var decoStart = (extras.decoStart > 0 && isFinite(extras.decoStart)) ? Math.floor(extras.decoStart) : 0;
     var input = { W: binW / MM_TO_PT, H: binH / MM_TO_PT, gap: gap / MM_TO_PT, rim: rimMm, photos: photos,
                   mainIndex: mainIndex, name: hero, decoWant: decoWant, layout: layout };
     // 계획한 조각이 다 안 들어가면(빠진 슬롯) 먼저 ④에서 마지막에 넣은 조각을 1~2장 빼고 다시 돌린다 —
@@ -2546,7 +2645,7 @@
       } else if (p.kind === "deco") {
         decos.push({ x: box.x, y: box.y, w: box.w, h: box.h,
                      payload: { base: "__DECO_" + (decos.length + 1) + "__", isDeco: true,
-                                deco: _composedDecoMotif(nameStyle, decoUsed, p.w),
+                                deco: _composedDecoMotif(nameStyle, decoUsed, p.w, decoStart),
                                 style: nameStyle.key, pad: decoPad } });
       } else if (p.kind === "name") {
         nameBox = box;
@@ -2561,7 +2660,7 @@
                 fill: area / (binW * binH), extras: extraCount, missing: st.missing, skipped: st.skipped,
                 gradeCounts: st.gradeCounts, types: types, windows: windows, ranges: ranges, evaluation: ev, ops: opsAll,
                 runs: runs, spreadCount: st.spreadCount, layout: layout, nameStyle: nameStyle.key, namePad: namePad,
-                mainIndex: mainIndex, method: "composed", ms: new Date().getTime() - start };
+                decoStart: decoStart, mainIndex: mainIndex, method: "composed", ms: new Date().getTime() - start };
     var error = _composedValidate(res, pairsArg, binW, binH, gap);
     if (error) throw new Error("Composed 배치 검증 실패: " + error);
     res.sig = _composedLayoutSig(res);
@@ -3008,7 +3107,7 @@
     var nameSkipped = hero.skipped, heroSpec = hero.spec;
     // 배치 선택은 주문 보드가 시트마다 넘긴다 (대화창 실행이면 없음 = 기본 배치).
     var layout = (options.layouts && sIdx < options.layouts.length) ? options.layouts[sIdx] : null;
-    var packExtras = _composedPackExtras(heroSpec, cutMarginPt, layout), decoWant = packExtras.decoWant;
+    var packExtras = _composedPackExtras(heroSpec, cutMarginPt, layout, sIdx), decoWant = packExtras.decoWant;
     var printLayer = doc.layers.add();
     printLayer.name = "PrintData";
     var kissLayer = doc.layers.add();
@@ -3434,7 +3533,8 @@
       if (notes && notes.preview && notes.preview.length > 0) {
         msg += "⚠ 주문 보드 미리보기와 다름 — " + notes.preview.join(" / ") + "\n";
       } else {
-        msg += "주문 보드 미리보기와 같음 (시트 나눔·스티커 수" + (options.preview.sigs ? "·자리" : "") + ")\n";
+        msg += "주문 보드 미리보기와 같음 (시트 나눔·스티커 수" + (options.preview.sigs ? "·자리" : "") +
+          (options.preview.decos ? "·데코" : "") + ")\n";
       }
     }
     if (notes && notes.body) msg += "⚠ " + notes.body + "\n";
@@ -3653,12 +3753,15 @@
         break;
       }
     }
-    var planned = [], sigs = [];
+    var planned = [], sigs = [], decoNames = [], dn;
     for (s = 0; s < outs.length; s++) {
       planned.push(outs[s].packResult.placed.length);
       sigs.push(outs[s].packResult.sig);
+      dn = [];
+      for (i = 0; i < outs[s].packResult.decos.length; i++) dn.push(outs[s].packResult.decos[i].payload.deco);
+      decoNames.push(dn);
     }
-    notes.preview = _composedPreviewDiff(options.preview, plan, planned, layoutPairs, sigs);
+    notes.preview = _composedPreviewDiff(options.preview, plan, planned, layoutPairs, sigs, decoNames);
     msgText = _composedMessage(options, layoutPairs, plan, outs, err, probe, notes);
     if (testConfig) {
       testConfig.lastMessage = msgText;
@@ -3709,13 +3812,14 @@
 
   // _packComposed 의 extras (시트 생성·미리보기 공용) — 데코는 이름이 있을 때만. layout = 배치 선택 (없으면 기본).
   // 이름 스타일은 heroSpec 에서 온다. rimBox 스타일(bubble)은 이름·데코 박스를 칼선 여백(rimPt)만큼 넓히고 그 안쪽에 그린다 (pad).
-  function _composedPackExtras(heroSpec, rimPt, layout) {
+  // sheetIndex = 몇 번째 시트인지 (0부터, 없으면 0) — 데코 시작 자리 (_composedDecoStart).
+  function _composedPackExtras(heroSpec, rimPt, layout, sheetIndex) {
     var style = heroSpec ? _nameStyle(heroSpec.nameStyle) : null;
     var pad = (style && style.rimBox && rimPt > 0) ? rimPt : 0;
     return { hero: heroSpec ? { w: pad ? heroSpec.cellW + 2 * pad : heroSpec.cellW,
                                 h: pad ? heroSpec.cellH + 2 * pad : heroSpec.cellH, pad: pad } : null,
              decoWant: heroSpec ? COMPOSED_DECO_MAX : 0, rimPt: rimPt, layout: layout ? layout : null,
-             nameStyle: style ? style.key : null, decoPad: pad };
+             nameStyle: style ? style.key : null, decoPad: pad, decoStart: _composedDecoStart(heroSpec, sheetIndex) };
   }
 
   // 주문 보드 미리보기가 넘긴 값 → 대화창 options (2026-09-16). 사진은 base 로 찾는다 — 한글 NFD/NFC 차이는 _nfcHangul 로 맞춘다.
@@ -3801,9 +3905,10 @@
   }
 
   // 미리보기가 예상한 시트 나눔·스티커 수·자리 → 실제와 다른 점 (없으면 빈 배열). 이유는 짐작하지 않고 차이만 적는다.
-  // expect = { sheets: [[base…]…], stickers: [n…], sigs: [지문…] }, plan = _composedDeal 결과,
+  // expect = { sheets: [[base…]…], stickers: [n…], sigs: [지문…], decos: [[모양…]…] }, plan = _composedDeal 결과,
   // counts = 시트별 계획 스티커 수, sigs = 시트별 배치 지문 (_composedLayoutSig). 수가 다르면 자리는 따로 적지 않는다.
-  function _composedPreviewDiff(expect, plan, counts, layoutPairs, sigs) {
+  // decos = 시트별 데코 모양 이름 목록 — expect.decos 가 있으면(새 보드) 자리가 같을 때 모양까지 비교한다.
+  function _composedPreviewDiff(expect, plan, counts, layoutPairs, sigs, decos) {
     var notes = [], s, i, want, got;
     if (!expect) return notes;
     if (expect.sheets && expect.sheets.length !== plan.length) {
@@ -3822,6 +3927,9 @@
       } else if (expect.sigs && sigs && s < sigs.length && typeof expect.sigs[s] === "string" && expect.sigs[s] !== "" &&
                  expect.sigs[s] !== sigs[s]) {
         notes.push("시트 " + (s + 1) + ": 스티커 자리가 미리보기와 다름");
+      } else if (expect.decos && decos && s < decos.length && expect.decos[s] instanceof Array &&
+                 expect.decos[s].join(",") !== decos[s].join(",")) {
+        notes.push("시트 " + (s + 1) + ": 데코 모양이 미리보기와 다름");
       }
     }
     return notes;

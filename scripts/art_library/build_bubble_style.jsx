@@ -4,14 +4,15 @@
 //  원본 두 파일(shopify_assets/assets)
 //    · 알파벳 샘플_6.ai    → templates/alphabet_art_v2.ai  (그룹 'LTR A'~'LTR Z')
 //    · sticker sample 4.ai → templates/deco_art_v2.ai      (그룹 'DECO SMILE' … 27종)
-//  과 주문 보드 미리보기 그림(templates/art_preview/…/*.png), 글자 치수표를 만든다.
+//  과 주문 보드 미리보기 그림(templates/art_preview/…/*.png), 글자 치수표·색 표를 만든다.
 //  원본 파일은 사본으로만 연다 (저장·수정 안 함). 결과는 먼저 임시 폴더에 만들고, 확인 창에서 "예"를 눌러야
-//  templates 에 덮어쓴다. 치수표가 Everstory_range.jsx 의 LETTER_ART_METRICS_V2 와 다르면 완료 창에 알린다 —
-//  그때는 새 표(작업 폴더의 LETTER_ART_METRICS_V2.txt)로 range.jsx 를 고치고 테스트를 돌린다 (README.md).
+//  templates 에 덮어쓴다. 치수표·색 표가 Everstory_range.jsx 의 LETTER_ART_METRICS_V2 · LETTER_ART_PAINTS_V2 와 다르면
+//  완료 창에 알린다 — 그때는 새 표(작업 폴더의 .txt)로 range.jsx 를 고치고 테스트를 돌린다 (README.md).
 //
 //  라이브러리 규칙 (range.jsx 가 기대하는 모양 — 바꾸면 range.jsx 도 같이):
-//   · 글자 그룹 = 글자 몸통('BODY' = 검정 테두리 컴파운드) + 안쪽 장식 + 맨 아래 'SIL'(합집합 바깥 윤곽, 흰색).
+//   · 글자 그룹 = 글자 몸통('BODY' = 검정 테두리 컴파운드) + 안쪽 장식·바탕('FACE') + 맨 아래 'SIL'(합집합 바깥 윤곽, 흰색).
 //     몸통 밖으로 튀어나온 조각은 'SIDE L' / 'SIDE R' 묶음(안에도 'SIL') — 이름 줄의 맨 앞 / 맨 끝 글자에서만 쓴다.
+//   · 색 그룹 'LTR A PINK' = 글자 그룹 복제 + 바탕(FACE)만 그 색 (2026-09-17 — 이름 글자 색 돌리기). 글자 안 장식과 같은 색은 안 만든다.
 //   · 데코 그룹 = 두들 + 맨 아래 'SIL' = 흰 테두리(최대 변의 6% 부터, 한 장으로 이어질 때까지 키움) = 칼선.
 //   · 원본의 흰(크림) 채우기는 여러 글자에 걸친 컴파운드 하나라 풀어서 글자별로 다시 묶는다.
 //   · 두들 자리 = DOODLE_ITEMS 상자 (원본 좌표). 원본에서 두들을 옮기거나 더하면 상자를 고친다.
@@ -32,6 +33,14 @@
   var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   var HALO_STEPS = [0.06, 0.08, 0.10, 0.12, 0.15, 0.18];   // 데코 흰 테두리 = 최대 변 × 이 값 (한 장이 될 때까지)
   var LETTER_PX = 240, DECO_PX = 200;                      // 미리보기 그림 높이 (px)
+  // 글자 색 (range.jsx LETTER_ART_PAINTS_V2 의 이름) = 원본 알파벳의 바탕 색 그대로. 여기 없는 바탕 색이 나오면 멈춘다.
+  var PAINTS = [
+    { key: "WHITE", rgb: "244,244,244" },
+    { key: "PINK", rgb: "250,174,176" },
+    { key: "YELLOW", rgb: "251,213,63" },
+    { key: "SKY", rgb: "176,205,235" }
+  ];
+  var FACE_MIN = 0.2;                                      // 바탕 = 채우기(FILL) 넓이의 이 비율 이상인 색 조각
   // 원본 sticker sample 4 의 두들 자리 (pt, [left, top, right, bottom]) — 2026-09-17 원본 기준
   var DOODLE_ITEMS = [
     { name: "SMILE", b: [-78.419, 1032.954, 132.582, 829.030] },
@@ -251,9 +260,92 @@
     doc.saveAs(new File(path), o);
   }
 
+  // ── 글자 색 ──────────────────────────────────────────────────
+  function paintKey(rgbText) {
+    for (var i = 0; i < PAINTS.length; i++) if (PAINTS[i].rgb === rgbText) return PAINTS[i].key;
+    return null;
+  }
+
+  function paintColor(key) {
+    for (var i = 0; i < PAINTS.length; i++) {
+      if (PAINTS[i].key === key) {
+        var v = PAINTS[i].rgb.split(",");
+        return rgb(Number(v[0]), Number(v[1]), Number(v[2]));
+      }
+    }
+    throw new Error("모르는 글자 색: " + key);
+  }
+
+  // 글자 바탕 찾기 + 칠할 수 있는 색. 바탕 = 흰색이 아닌 팔레트 색 중 조각 넓이 합이 FILL 의 FACE_MIN 이상인 색의 조각 전부
+  // (N 은 하늘 줄무늬 조각들), 없으면 가장 넓은 흰 조각 하나 (흰 글자). 바탕 조각에 이름 'FACE' 를 붙인다.
+  // 그 밖의 팔레트 색 조각(옆 장식 묶음 안 포함) = 장식 → 그 색은 뺀다 (A 의 노란 하트 → 노랑 없음 · O 의 흰 속구멍 → 흰색 없음).
+  // 흰 글자의 흰 조각(R 속구멍)은 바탕과 같은 색이라 빼지 않는다. 반환 = 색 목록, 첫 색 = 원래 색.
+  function paintLetter(g, ch) {
+    var fillA = 0, parts = [], tot = {}, deco = {}, faces = [], seen = [], base = null, best = 0, i, j, it, key, a, big = null, faceA = 0;
+    for (i = 0; i < g.pageItems.length; i++) {
+      it = g.pageItems[i];
+      if (it.name === "FILL") { fillA = areaOf(it); continue; }
+      if (it.name === "BODY" || it.name === "SIL") continue;
+      if (it.typename === "GroupItem") {
+        for (j = 0; j < it.pageItems.length; j++) {
+          if (it.pageItems[j].name === "FILL" || it.pageItems[j].name === "SIL") continue;
+          key = paintKey(fillKey(it.pageItems[j]));
+          if (key) deco[key] = true;
+        }
+        continue;
+      }
+      key = paintKey(fillKey(it));
+      a = areaOf(it);
+      parts.push({ it: it, key: key, area: a });
+      seen.push(fillKey(it));
+      if (key) tot[key] = (tot[key] || 0) + a;
+    }
+    if (!(fillA > 0)) throw new Error("글자 " + ch + " 에 FILL 이 없습니다");
+    for (key in tot) {
+      if (tot.hasOwnProperty(key) && key !== "WHITE" && tot[key] >= FACE_MIN * fillA && tot[key] > best) { best = tot[key]; base = key; }
+    }
+    if (base) {
+      for (i = 0; i < parts.length; i++) if (parts[i].key === base) faces.push(parts[i]);
+    } else {
+      base = "WHITE";
+      for (i = 0; i < parts.length; i++) if (parts[i].key === "WHITE" && (!big || parts[i].area > big.area)) big = parts[i];
+      if (big) faces.push(big);
+    }
+    for (i = 0; i < faces.length; i++) faceA += faces[i].area;
+    if (faceA < FACE_MIN * fillA) {
+      throw new Error("글자 " + ch + " 의 바탕 색을 모릅니다 (조각 색 " + seen.join(" / ") +
+        ") — 원본에서 바탕 색을 바꿨다면 스크립트의 PAINTS 표에 그 색을 더하세요");
+    }
+    for (i = 0; i < parts.length; i++) {
+      var isFace = false;
+      for (j = 0; j < faces.length; j++) if (faces[j] === parts[i]) isFace = true;
+      if (isFace) parts[i].it.name = "FACE";
+      else if (parts[i].key && parts[i].key !== base) deco[parts[i].key] = true;
+    }
+    var out = [base];
+    for (i = 0; i < PAINTS.length; i++) if (PAINTS[i].key !== base && !deco[PAINTS[i].key]) out.push(PAINTS[i].key);
+    return out;
+  }
+
+  // 색 그룹 — 글자 그룹을 복제해 바탕(FACE)만 칠한다 ('LTR A PINK'). 첫 색(원래 색)은 원래 그룹 그대로라 만들지 않는다.
+  function makePaintGroups(L, g, ch, paints) {
+    var made = 0, k, i, v, faces;
+    for (k = 1; k < paints.length; k++) {
+      v = g.duplicate(L, ElementPlacement.PLACEATEND);
+      v.name = "LTR " + ch + " " + paints[k];
+      faces = 0;
+      for (i = 0; i < v.pageItems.length; i++) {
+        if (v.pageItems[i].name === "FACE") { setFill(v.pageItems[i], paintColor(paints[k])); faces++; }
+      }
+      if (!faces) throw new Error(v.name + " 에 바탕(FACE) 조각이 없습니다");
+      made++;
+    }
+    return made;
+  }
+
   // ── 알파벳 ───────────────────────────────────────────────────
   function buildAlphabet(srcPath, outPath) {
-    var rep = { letters: [] }, doc = app.open(new File(srcPath)), i, j, k;
+    var rep = { letters: [], paintGroups: 0 }, doc = app.open(new File(srcPath)), i, j, k;
     try {
       var L = doc.layers[0];
       var items = releaseBigFill(doc, L, flattenLayer(L));
@@ -352,6 +444,12 @@
         rep.letters.push(rec);
       }
       tmpL.remove();
+      // 글자 색 — 모든 글자 그룹이 다 만들어진 뒤에 복제한다 (복제본에도 SIL · SIDE 가 그대로 들어간다).
+      for (i = 0; i < 26; i++) {
+        var c3 = LETTERS.charAt(i);
+        rep.letters[i].paints = paintLetter(groups[c3], c3);
+        rep.paintGroups += makePaintGroups(L, groups[c3], c3, rep.letters[i].paints);
+      }
       saveAi(doc, outPath);
     } finally {
       doc.close(SaveOptions.DONOTSAVECHANGES);
@@ -409,7 +507,9 @@
   }
 
   // ── 미리보기 그림 + 치수 ───────────────────────────────────────
-  // 그룹마다 투명 PNG (높이 px). 옆 장식이 있는 글자는 LTR_C_R 처럼 장식을 넣은 그림도. measure 면 틀·몸통 경계를 돌려준다.
+  // 그룹마다 투명 PNG (높이 px) — 파일 이름 = 그룹 이름의 공백을 밑줄로 ('LTR A PINK' → LTR_A_PINK.png).
+  // 옆 장식이 있는 글자는 LTR_C_R · LTR_C_PINK_R 처럼 장식을 넣은 그림도. measure 면 원래 글자 그룹의 틀·몸통 경계를 돌려준다
+  // (색 그룹은 모양이 같아 재지 않는다).
   function exportPreviews(libPath, prefix, px, outDir, measure) {
     var tmp = app.documents.add(DocumentColorSpace.RGB, 1000, 1000), lib = null, out = { files: 0, metrics: {} };
     function one(src, keep, path) {
@@ -441,11 +541,11 @@
       for (var gi = 0; gi < LL.groupItems.length; gi++) {
         var g = LL.groupItems[gi];
         if (g.name.indexOf(prefix) !== 0) continue;
-        var key = g.name.substring(prefix.length), fname = prefix.replace(" ", "_") + key, sides = [], s, variants = {};
+        var key = g.name.substring(prefix.length), fname = (prefix + key).replace(/ /g, "_"), sides = [], s, variants = {};
         for (s = 0; s < g.groupItems.length; s++) if (g.groupItems[s].name.indexOf("SIDE ") === 0) sides.push(g.groupItems[s].name.charAt(5));
         variants.core = one(g, "", dir.fsName + "/" + fname + ".png");
         for (s = 0; s < sides.length; s++) variants[sides[s]] = one(g, sides[s], dir.fsName + "/" + fname + "_" + sides[s] + ".png");
-        if (measure) {
+        if (measure && key.indexOf(" ") < 0) {
           var body = null;
           for (var q = 0; q < g.pageItems.length; q++) if (g.pageItems[q].name === "BODY") body = g.pageItems[q];
           if (!body) throw new Error(g.name + " 에 BODY 가 없습니다");
@@ -489,14 +589,35 @@
     return { lines: lines, href: href };
   }
 
-  function currentMetricsLines() {
+  // range.jsx 의 여러 줄 표 (var NAME = { … }) 안쪽 줄들. 못 찾으면 null.
+  function currentTableLines(name) {
     var f = new File(REPO.fsName + "/Everstory_range.jsx");
     f.encoding = "UTF-8";
     if (!f.open("r")) return null;
     var text = f.read();
     f.close();
-    var m = text.replace(/\r\n?/g, "\n").match(/var LETTER_ART_METRICS_V2 = \{\n([\s\S]*?)\n  \};/);
+    var m = text.replace(/\r\n?/g, "\n").match(new RegExp("var " + name + " = \\{\\n([\\s\\S]*?)\\n  \\};"));
     return m ? m[1].split("\n") : null;
+  }
+
+  // 색 표 줄 (range.jsx LETTER_ART_PAINTS_V2 와 같은 모양) — 글자마다 칠할 수 있는 색, 첫 색 = 원래 색.
+  function paintLines(letters) {
+    var lines = [], i, k, q;
+    for (i = 0; i < letters.length; i++) {
+      q = [];
+      for (k = 0; k < letters[i].paints.length; k++) q.push('"' + letters[i].paints[k] + '"');
+      lines.push("    " + letters[i].ch + ": [" + q.join(", ") + "]" + (i < letters.length - 1 ? "," : ""));
+    }
+    return lines;
+  }
+
+  // 색 표는 글자 그대로 비교한다 — 다른 줄 목록.
+  function paintDiff(curLines, newLines) {
+    var out = [], i;
+    if (!curLines) return ["range.jsx 에서 LETTER_ART_PAINTS_V2 를 못 찾음"];
+    if (curLines.length !== newLines.length) return ["줄 수 " + curLines.length + " → " + newLines.length];
+    for (i = 0; i < newLines.length; i++) if (curLines[i] !== newLines[i]) out.push(newLines[i]);
+    return out;
   }
 
   // 두 치수표가 같은가 — 글자·틀 이름은 그대로, 숫자는 반올림 경계 차이(0.0001)까지 같은 것으로 본다. 다른 줄 목록을 돌려준다.
@@ -563,7 +684,7 @@
       var r = ra.letters[i];
       if (r.sideL || r.sideR) sided.push(r.ch + (r.sideL ? " 왼쪽" : "") + (r.sideR ? " 오른쪽" : ""));
     }
-    report.push("알파벳 26자 · 옆 장식: " + (sided.join(", ") || "없음"));
+    report.push("알파벳 26자 · 색 그룹 " + ra.paintGroups + "개 · 옆 장식: " + (sided.join(", ") || "없음"));
     var rd = buildDoodles(doodleCopy, work.fsName + "/deco_art_v2.ai");
     var thick = [];
     for (i = 0; i < rd.items.length; i++) if (rd.items[i].halo > HALO_STEPS[0]) thick.push(rd.items[i].name + " " + rd.items[i].halo);
@@ -579,10 +700,20 @@
     mf.open("w");
     mf.write("  // 기준 높이 " + mt.href + "pt\n  var LETTER_ART_METRICS_V2 = {\n" + mt.lines.join("\n") + "\n  };\n");
     mf.close();
-    var diff = metricsDiff(currentMetricsLines(), mt.lines);
+    var diff = metricsDiff(currentTableLines("LETTER_ART_METRICS_V2"), mt.lines);
     report.push(diff.length === 0 ? "치수표: range.jsx 와 같음 (반올림 0.0001 차이까지)"
       : "⚠ 치수표가 range.jsx 와 다름 (" + diff.length + "줄) — " + mf.fsName + " 로 LETTER_ART_METRICS_V2 를 바꾸고 테스트를 돌리세요");
     for (i = 0; i < diff.length && i < 5; i++) LOG("치수표 다름: " + diff[i]);
+    var pl = paintLines(ra.letters), pf = new File(work.fsName + "/LETTER_ART_PAINTS_V2.txt");
+    pf.encoding = "UTF-8";
+    pf.lineFeed = "Unix";
+    pf.open("w");
+    pf.write("  var LETTER_ART_PAINTS_V2 = {\n" + pl.join("\n") + "\n  };\n");
+    pf.close();
+    var pdiff = paintDiff(currentTableLines("LETTER_ART_PAINTS_V2"), pl);
+    report.push(pdiff.length === 0 ? "색 표: range.jsx 와 같음"
+      : "⚠ 색 표가 range.jsx 와 다름 (" + pdiff.length + "줄) — " + pf.fsName + " 로 LETTER_ART_PAINTS_V2 를 바꾸고 테스트를 돌리세요");
+    for (i = 0; i < pdiff.length && i < 5; i++) LOG("색 표 다름: " + pdiff[i]);
     if (prevDoc) { try { app.activeDocument = prevDoc; } catch (eAct) {} }
     app.userInteractionLevel = prevUI;
 

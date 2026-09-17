@@ -45,7 +45,9 @@ FEATURES = ("layouts", "sizes", "nameStyles")
 # 이름 글자·데코 미리보기 그림 (라이브러리 그룹을 투명 PNG 로 뽑은 것 — templates/art_preview/README.md).
 ART_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "templates", "art_preview"))
 ART_LIB_RE = re.compile(r"^(alphabet|deco)_art_v\d{1,3}$")
-ART_NAME_RE = re.compile(r"^(LTR_[A-Z](_[LR])?|DECO_[A-Z0-9]{1,24})$")
+# LTR_A · LTR_C_R(옆 장식) · LTR_A_PINK(색 그룹) · LTR_C_PINK_R · DECO_SMILE (templates/art_preview/README.md)
+ART_NAME_RE = re.compile(r"^(LTR_[A-Z](_[A-Z]{3,12})?(_[LR])?|DECO_[A-Z0-9]{1,24})$")
+DECO_NAME_RE = re.compile(r"[A-Z0-9]{1,24}")
 
 THUMB_PX = 320
 CACHE_DIR = os.path.join(os.path.expanduser("~"), "Library", "Caches", "EverstoryBoard")
@@ -503,6 +505,14 @@ def build_launch(projects_dir, body):
         for sig in (raw_expect.get("sigs") or [])[:len(picked)]:
             ok = isinstance(sig, str) and re.match(r"^[0-9a-f]{1,16}$", sig)
             expect["sigs"].append(sig if ok else "")
+        # 데코 모양 이름 (시트마다, 2026-09-17) — 자리가 같으면 모양까지 비교한다. 모양이 이상한 시트는 None (비교 안 함).
+        decos = raw_expect.get("decos")
+        if isinstance(decos, list):
+            expect["decos"] = []
+            for row in decos[:len(picked)]:
+                ok = isinstance(row, list) and len(row) <= 24 and all(
+                    isinstance(x, str) and DECO_NAME_RE.fullmatch(x) for x in row)
+                expect["decos"].append(list(row) if ok else None)
     composed = {
         "bases": picked,
         "mainBase": main,

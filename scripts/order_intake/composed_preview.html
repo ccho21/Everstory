@@ -494,7 +494,7 @@ function compute() {
       if (hasLayouts()) pickLayout(item, s);
       if (!item.r) {
         try {
-          item.r = E._packComposed(item.eng, item.main, binW, binH, gapPt, E._composedPackExtras(S.hero.spec, S.rim * M, item.layout));
+          item.r = E._packComposed(item.eng, item.main, binW, binH, gapPt, E._composedPackExtras(S.hero.spec, S.rim * M, item.layout, s));
           item.layout = item.r.layout;
         } catch (e) { item.error = e.message; blockers.push("시트 " + (s + 1) + " 계산 실패: " + e.message); }
       }
@@ -538,6 +538,7 @@ function compute() {
 }
 
 // 시트 s 의 배치 — 고른 스타일의 변형 줄(기본·좌우 바꿈·섞기)을 계산하고 고른 판을 큰 미리보기로 쓴다.
+// 시트 번호도 넘긴다 — 데코 모양이 시트마다 이어서 돈다 (Illustrator 도 같은 번호).
 // 고른 판이 이번 줄에 없으면(사진이 바뀌어 섞기 판이 빠짐) 기본으로 돌아간다. 기본이 안 되면 item.r 없음 → 오류 경로.
 function pickLayout(item, s) {
   const g = S.geo;
@@ -545,7 +546,7 @@ function pickLayout(item, s) {
   if (!c || E._composedStyleIndex(c.style) < 0) c = { style: E.COMPOSED_STYLES[0].key, kind: "base", seed: 0 };
   item.style = c.style;
   const pos = E._composedResolveNamePos(c.style, S.namePos);
-  const vs = E._composedVariants(item.eng, item.main, g.binW, g.binH, g.gapPt, g.hero, g.rimPt, c.style, pos);
+  const vs = E._composedVariants(item.eng, item.main, g.binW, g.binH, g.gapPt, g.hero, g.rimPt, c.style, pos, s);
   if (!vs.some(v => v.kind === "base")) return;
   item.variants = vs;
   let v = vs.find(x => x.kind === c.kind && (c.kind !== "shuffle" || x.layout.seed === c.seed));
@@ -577,7 +578,7 @@ function scheduleStyles() {
         const g = S.geo;
         const lay = { style: cell.key, namePos: E._composedResolveNamePos(cell.key, S.namePos), mirror: false, seed: 0 };
         try {
-          cell.res = E._packComposed(x.eng, x.main, g.binW, g.binH, g.gapPt, E._composedPackExtras(g.hero, g.rimPt, lay));
+          cell.res = E._packComposed(x.eng, x.main, g.binW, g.binH, g.gapPt, E._composedPackExtras(g.hero, g.rimPt, lay, s));
           cell.layout = cell.res.layout;
         } catch (e) { cell.error = e.message; }
       }
@@ -660,6 +661,7 @@ function picksHtml(x, s) {
 }
 
 // 이름 스티커 — 엔진이 정한 글자 자리(_artLetterBoxes)에 그 스타일 라이브러리 그림을 놓는다.
+// 그림 이름 = 엔진이 고른 라이브러리 그룹(버블은 자리마다 색이 돈다 — 'LTR A PINK' → LTR_A_PINK) + 옆 장식(_L/_R).
 // 통짜(bubble)는 이름 전체 흰 테두리 + 칼선(분홍)을 SVG 필터로, 레트로는 글자마다 칼선. 그림이 없으면 색 타일.
 // s = 시트 번호 (필터 id), k = px/mm, px = mm → "Npx".
 function nameBlockHtml(spec, r, s, k, px) {
@@ -669,7 +671,7 @@ function nameBlockHtml(spec, r, s, k, px) {
   let body = "", tiles = false;
   E._artLetterBoxes(spec).forEach((b, i) => {
     if (b.missing) return;
-    const src = artUrl(lib, "LTR_" + b.ch + (b.variant === "L" || b.variant === "R" ? "_" + b.variant : ""));
+    const src = artUrl(lib, artName(b.group) + (b.variant === "L" || b.variant === "R" ? "_" + b.variant : ""));
     const at = `left:${px(b.x / M)};top:${px(b.y / M)};width:${px(b.w / M)};height:${px(b.h / M)}`;
     if (src) {
       body += `<img src="${src}" alt="" style="${at}">`;
@@ -685,6 +687,11 @@ function nameBlockHtml(spec, r, s, k, px) {
   return (spec.whole ? haloFilter(id, spec.halo / M * k) : "") +
     `<div class="nameblk ${spec.whole ? "whole" : "cut"}" style="left:${px(left)};top:${px(top)};width:${px(spec.cellW / M)};` +
     `height:${px(spec.cellH / M)}${spec.whole ? `;filter:url(#${id})` : ""}" title="${esc(title)}">${body}</div>`;
+}
+
+// 라이브러리 그룹 이름 → 미리보기 그림 이름 ('LTR A PINK' → LTR_A_PINK, templates/art_preview README).
+function artName(group) {
+  return String(group || "").replace(/ /g, "_");
 }
 
 // 흰 테두리 흉내: 글자 알파를 흐린 뒤 문턱으로 자르면 둥글게 r px 부푼 모양 (Offset Path 라운드와 비슷) → 흰색,
@@ -711,7 +718,8 @@ function decoHtml(d, px) {
     `${DECO_EMOJI[d.payload.deco] || "✨"}</div>`;
 }
 
-// 이름 스타일 버튼 — 스티커 이름의 앞 글자(없으면 ABC)를 그 스타일 그림으로 보여 준다. 이름이 비었거나 A–Z 가 아니면 흐리게.
+// 이름 스타일 버튼 — 스티커 이름의 앞 글자(없으면 ABC)를 그 스타일 그림으로 보여 준다 (버블은 이름 블록과 같은 색 돌리기,
+// 옆 장식은 뺀다). 이름이 비었거나 A–Z 가 아니면 흐리게.
 function paintNameStyle(sticker) {
   const box = $("#fNameStyle");
   if (!hasNameStyles()) return;
@@ -724,8 +732,9 @@ function paintNameStyle(sticker) {
   box.classList.toggle("off", !art);
   box.title = art ? "" : "스티커 이름이 A–Z 일 때만 이름 스티커가 들어가요";
   box.innerHTML = E.COMPOSED_NAME_STYLES.map(st => {
-    const lib = libStem(st.letterLib);
-    const imgs = letters.map(c => artUrl(lib, "LTR_" + c)).filter(Boolean).map(src => `<img src="${src}" alt="">`).join("");
+    const lib = libStem(st.letterLib), spec = E._letterBlockSpec(letters.join(""), st.unitMm, "SAMPLE", st.key);
+    const groups = spec ? E._artLetterBoxes(spec).filter(b => !b.missing).map(b => b.group) : letters.map(c => "LTR " + c);
+    const imgs = groups.map(g => artUrl(lib, artName(g))).filter(Boolean).map(src => `<img src="${src}" alt="">`).join("");
     const tip = st.label + (st.whole ? " — 글자를 붙여 쓰고 이름 전체를 흰 테두리 하나로 (칼선 1개) · 두들 데코"
       : " — 글자마다 따로 떼는 스티커 · 레트로 데코");
     return `<button type="button" data-nstyle="${esc(st.key)}" class="${st.key === S.nameStyle ? "on" : ""}" title="${esc(tip)}">` +
@@ -819,7 +828,8 @@ async function make() {
     folder: S.folder, bases: S.sel.map(p => p.base), mainBase: S.main || "",
     nameText: f.name, stickerName: f.sticker, orderNumber: f.order, material: f.material, orderDate: f.date,
     cutMarginMm: S.rim, shotTypes,
-    expect: { sheets: S.results.map(x => x.pairs.map(p => p.base)), stickers: S.results.map(x => x.r ? x.r.placed.length : -1) },
+    expect: { sheets: S.results.map(x => x.pairs.map(p => p.base)), stickers: S.results.map(x => x.r ? x.r.placed.length : -1),
+              decos: S.results.map(x => x.r ? x.r.decos.map(d => d.payload.deco) : []) },
   };
   if (hasSizes()) body.sizeRanges = sizeRanges;
   if (hasNameStyles()) body.nameStyle = S.nameStyle;

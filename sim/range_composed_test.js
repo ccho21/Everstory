@@ -775,10 +775,16 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
     return P._packComposed(tallSet, 0, W, H, G, P._composedPackExtras(h.spec, RIM, null));
   };
   const r0 = retroPack(''), r1 = retroPack('retro');
-  chk('레트로 배치 = 작업 전 판 (지문 af6aae65 · 데코 순서 · 박스 안쪽 여백 0)',
+  // 데코 모양은 2026-09-17 부터 스티커 이름 자리에서 시작한다 (_composedDecoStart) — 자리·크기(지문)는 작업 전 그대로.
+  const rotated = (order, start, n) => Array.from({ length: n }, (_, k) => order[(start + k) % order.length]).join();
+  const sanviSpec = P._composedHero('SANVI', W, G).spec, sanviStart = P._composedDecoStart(sanviSpec, 0);
+  chk('레트로 배치 = 작업 전 판 (지문 af6aae65 · 데코는 이름 자리부터 같은 순서 · 박스 안쪽 여백 0)',
       r0.sig === 'af6aae65' && r1.sig === r0.sig && r0.nameStyle === 'retro' && r0.namePad === 0 &&
-      r0.decos.map(d => d.payload.deco).join() === 'HEART,FLOWER,STAR,CAMERA,BOW' &&
-      r0.decos.every(d => d.payload.style === 'retro' && d.payload.pad === 0), r0.sig);
+      r0.decoStart === sanviStart && r0.decos.map(d => d.payload.deco).join() === rotated(P.DECO_ORDER, sanviStart, r0.decos.length) &&
+      r0.decos.every(d => d.payload.style === 'retro' && d.payload.pad === 0), r0.sig + ' · 시작 ' + sanviStart);
+  const r00 = P._packComposed(tallSet, 0, W, H, G, { ...P._composedPackExtras(sanviSpec, RIM, null), decoStart: 0 });
+  chk('데코 시작 자리 0 = 작업 전 데코 순서 그대로', r00.sig === 'af6aae65' && r00.decoStart === 0 &&
+      r00.decos.map(d => d.payload.deco).join() === 'HEART,FLOWER,STAR,CAMERA,BOW', r00.decos.map(d => d.payload.deco).join());
 
   // 버블 이름 스펙
   const bs = P._composedHero('Vivian', W, G, 'bubble').spec;
@@ -847,33 +853,44 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
       Math.abs(b1.nameBox.w - (sb.cellW + 2 * RIM)) < 1e-9 && Math.abs(b1.nameBox.h - (sb.cellH + 2 * RIM)) < 1e-9 &&
       b1.namePad === RIM && b0.namePad === 0 && Math.abs(b0.nameBox.w - sb.cellW) < 1e-9 && b1.nameStyle === 'bubble',
       `${(b1.nameBox.w / M).toFixed(2)} × ${(b1.nameBox.h / M).toFixed(2)}mm`);
-  // 기대 모양: 순서대로 안 쓴 것, 글씨 두들은 큰 칸(12.7)에만 (따로 구현해 대조)
-  const expectMotifs = sizes => {
-    const used = new Set(), out = [];
+  // 기대 모양: 시작 자리부터 돈 순서에서 안 쓴 것, 글씨 두들은 큰 칸(12.7)에만 (따로 구현해 대조)
+  const expectMotifs = (sizes, start) => {
+    const used = new Set(), out = [], n = P.DECO_ORDER_V2.length;
+    const order = P.DECO_ORDER_V2.map((_, k) => P.DECO_ORDER_V2[(start + k) % n]);
     for (const s of sizes) {
-      const pick = P.DECO_ORDER_V2.find(n => !used.has(n) && (s >= 12.7 - 1e-6 || P.DECO_BIG_ONLY_V2.indexOf(n) < 0));
+      const pick = order.find(m => !used.has(m) && (s >= 12.7 - 1e-6 || P.DECO_BIG_ONLY_V2.indexOf(m) < 0));
       used.add(pick);
       out.push(pick);
     }
     return out.join();
   };
   const b1sizes = b1.decos.map(d => d.w / M);
-  chk('버블 데코 = 두들 순서 (글씨 두들은 큰 칸만) · 스타일 · 안쪽 여백 · 박스 크기는 레트로와 같은 12.7 / 10mm',
-      b1.decos.length > 0 && b1.decos.map(d => d.payload.deco).join() === expectMotifs(b1sizes) &&
+  chk('버블 데코 = 이름 자리부터 두들 순서 (글씨 두들은 큰 칸만) · 스타일 · 안쪽 여백 · 박스 크기는 레트로와 같은 12.7 / 10mm',
+      b1.decos.length > 0 && b1.decoStart === P._composedDecoStart(sb, 0) &&
+      b1.decos.map(d => d.payload.deco).join() === expectMotifs(b1sizes, b1.decoStart) &&
       b1.decos.every(d => d.payload.style === 'bubble' && d.payload.pad === RIM &&
         P.COMPOSED_DECO_SIZES_MM.some(s => Math.abs(d.w / M - s) < 1e-9 && Math.abs(d.h / M - s) < 1e-9)) &&
       b1.decos.every(d => d.w / M >= 12.7 - 1e-6 || P.DECO_BIG_ONLY_V2.indexOf(d.payload.deco) < 0),
       b1.decos.map(d => d.payload.deco + ' ' + (d.w / M).toFixed(1)).join(', '));
-  const motif = (sizes, st) => { const used = {}; return sizes.map(s => P._composedDecoMotif(P._nameStyle(st), used, s)).join(); };
-  chk('데코 모양 고르기: 작은 칸만 있어도 글씨 두들을 건너뛴다 · 한 바퀴 돌면 처음부터 · 레트로는 예전 순서',
+  const motif = (sizes, st, start) => { const used = {}; return sizes.map(s => P._composedDecoMotif(P._nameStyle(st), used, s, start)).join(); };
+  chk('데코 모양 고르기: 작은 칸만 있어도 글씨 두들을 건너뛴다 · 한 바퀴 돌면 처음부터 · 시작 자리 없으면 예전 순서',
       motif([10, 10, 10], 'bubble') === 'SMILE,HEART,DAISY' &&
       motif(Array(20).fill(12.7), 'bubble').split(',').slice(18).join() === 'XOXO,SMILE' &&
       motif(Array(14).fill(10), 'retro') === P.DECO_ORDER.concat(P.DECO_ORDER.slice(0, 2)).join(),
       motif([10, 10, 10], 'bubble'));
+  chk('데코 모양 고르기: 시작 자리부터 돌고 끝에서 처음으로 이어진다 (글씨 두들 건너뛰기 · 시작 자리 = 순서 길이로 나눈 나머지)',
+      motif([10, 10, 10], 'bubble', 1) === 'HEART,DAISY,CHERRY' && motif([10, 10], 'bubble', 18) === 'SMILE,HEART' &&
+      motif([12.7, 12.7], 'bubble', 18) === 'XOXO,SMILE' && motif([10, 10], 'retro', 11) === 'CLOUD,HEART' &&
+      motif([10, 10], 'retro', 23) === 'CLOUD,HEART' && motif(Array(13).fill(10), 'retro', 5).split(',').slice(11).join() === 'BOW,BONE',
+      motif([10, 10, 10], 'bubble', 1));
   chk('버블 판도 검증기 통과 · 지문이 레트로와 다르다', P._composedValidate(b1, tallSet, W, H, G) === '' && b1.sig !== r0.sig, b1.sig);
   const vars = P._composedVariants(tallSet, 0, W, H, G, sb, RIM, 'sides', 'center');
   chk('배치 변형 줄도 이름 스타일을 따라간다', vars.length > 1 && vars.every(v => v.res.nameStyle === 'bubble' &&
       v.res.decos.every(d => d.payload.style === 'bubble')), vars.map(v => v.kind).join(' '));
+  const vars2 = P._composedVariants(tallSet, 0, W, H, G, sb, RIM, 'sides', 'center', 2);
+  chk('배치 변형 줄도 시트 번호의 데코 시작 자리를 쓴다', vars2.length === vars.length &&
+      vars2.every(v => v.res.decoStart === P._composedDecoStart(sb, 2)) && vars.every(v => v.res.decoStart === P._composedDecoStart(sb, 0)) &&
+      vars2.every((v, i) => v.res.sig === vars[i].res.sig), `시트1 ${vars[0].res.decoStart} · 시트3 ${vars2[0].res.decoStart}`);
   let threw2 = '';
   try { P._packComposed(tallSet, 0, W, H, G, { hero: heroBox, decoWant: 6, rimPt: RIM, nameStyle: 'gothic' }); } catch (e) { threw2 = e.message; }
   chk('배치 입구도 모르는 이름 스타일은 막는다', /알 수 없는 이름 스타일/.test(threw2), threw2);
@@ -887,6 +904,134 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
   const badStyle = [[{ ...lcfg, nameStyle: 'gothic' }, '이름 스타일'], [{ ...lcfg, nameStyle: 7 }, '이름 스타일'], [{ ...lcfg, nameStyle: ['bubble'] }, '이름 스타일']];
   chk('모르는 이름 스타일이면 만들지 않는다', badStyle.every(([c, w]) => (P._composedLaunchOptions(c, lp).error || '').includes(w)),
       badStyle.map(([c]) => P._composedLaunchOptions(c, lp).error).join(' / '));
+}
+
+console.log('\n══ 버블 글자 색 돌리기 (2026-09-17) ══');
+{
+  const PAL = ['WHITE', 'PINK', 'YELLOW', 'SKY'], T = P.LETTER_ART_PAINTS_V2, CYC = P.LETTER_PAINT_CYCLE_V2;
+  const bubble = P._nameStyle('bubble'), retro = P._nameStyle('retro');
+  let tabOk = Object.keys(T).join('') === 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', why = '';
+  for (const [ch, can] of Object.entries(T)) {
+    if (!(can instanceof Array) || can.length < 2 || new Set(can).size !== can.length || !can.every(c => PAL.indexOf(c) >= 0)) {
+      tabOk = false; why = ch + ' ' + JSON.stringify(can);
+    }
+  }
+  chk('색 표: 26자 · 글자마다 팔레트 색 2개 이상 · 겹치지 않음', tabOk, why || Object.entries(T).filter(([, c]) => c.length < 4).map(([k, c]) => k + ' ' + c.length).join(' '));
+  chk('장식과 같은 색은 없다 (A 노란 하트 · I 분홍 하트 · P 노란 꽃 · Z 노란 별 · D 노란 꽃심 · N·O·Q·D 흰 조각)',
+      T.A.indexOf('YELLOW') < 0 && T.I.indexOf('PINK') < 0 && T.P.indexOf('YELLOW') < 0 && T.Z.indexOf('YELLOW') < 0 &&
+      T.D.indexOf('YELLOW') < 0 && ['N', 'O', 'Q', 'D'].every(c => T[c].indexOf('WHITE') < 0));
+  chk('원래 색(첫 색) = 라이브러리 바탕 색 (흰 글자 12자 · 색 글자 14자)',
+      'ACEGHJLPRTVX'.split('').every(c => T[c][0] === 'WHITE') && 'BIMQUY'.split('').every(c => T[c][0] === 'YELLOW') &&
+      'FKOZ'.split('').every(c => T[c][0] === 'PINK') && 'DNSW'.split('').every(c => T[c][0] === 'SKY'));
+  chk('돌림 순서: 네 색 모두 · 이웃(끝→처음 포함)끼리 다른 색 · 흰색 3칸에 1칸',
+      PAL.every(c => CYC.indexOf(c) >= 0) && CYC.every((c, i) => c !== CYC[(i + 1) % CYC.length]) &&
+      CYC.filter(c => c === 'WHITE').length * 3 === CYC.length, CYC.join(' '));
+  chk('스타일 표: 버블만 색을 돌린다', bubble.paints === T && bubble.paintCycle === CYC && retro.paints === null && retro.paintCycle === null);
+
+  const NAMES = ('Olivia Emma Charlotte Amelia Sophia Mia Isabella Ava Evelyn Luna Harper Sofia Scarlett Elizabeth Eleanor ' +
+    'Emily Chloe Mila Violet Penelope Gianna Aria Abigail Ella Avery Hazel Nora Layla Lily Aurora Nova Ellie Madison Grace ' +
+    'Liam Noah Oliver James Elijah William Henry Lucas Benjamin Theodore Mateo Levi Sebastian Daniel Jack Michael Alexander ' +
+    'Owen Asher Samuel Ethan Leo Jackson Mason Ezra John Hudson Luca Aiden Joseph David Jacob Logan Luke Julian Gabriel ' +
+    'Heather Harin Charles Christopher Terry Jennifer Vivian Jimmy Yumi Anna Hannah Jessica Addison Abby Bobby Sanvi Zoe ' +
+    'Minjun Seoyeon Jiwoo Yuna Doyun Haeun Siwoo Jiho Seojun Chaewon Mimi Kim Lee Park Choi').split(' ')
+    .concat(['Vivian Liz', 'Anne Marie Kim', 'Mary Jane Watson', 'Maximilianwolfgang', 'V', 'Z', 'QQQQ', 'DDDD', 'NNOO']);
+  const colorsOf = boxes => boxes.map(b => b.paint || T[b.ch][0]);
+  let adj = 0, bad = '', white = 0, total = 0, groupOk = true, lineOk = true, detOk = true;
+  for (const n of NAMES) {
+    const spec = P._composedHero(n, W, G, 'bubble').spec, boxes = P._artLetterBoxes(spec), cols = colorsOf(boxes);
+    const again = colorsOf(P._artLetterBoxes(P._composedHero(n, W, G, 'bubble').spec));
+    if (again.join() !== cols.join()) detOk = false;
+    boxes.forEach((b, i) => {
+      total++;
+      if (cols[i] === 'WHITE') white++;
+      if (T[b.ch].indexOf(cols[i]) < 0) { groupOk = false; bad = n + ' ' + b.ch + ' ' + cols[i]; }
+      if (b.paint === T[b.ch][0]) groupOk = false;                       // 원래 색이면 paint 는 "" (원래 그룹)
+      if (b.group !== 'LTR ' + b.ch + (b.paint ? ' ' + b.paint : '')) groupOk = false;
+      if (i && boxes[i - 1].line === b.line && cols[i - 1] === cols[i]) { adj++; bad = n + ' ' + boxes[i - 1].ch + b.ch; }
+    });
+    if (boxes.length !== spec.chars.length) lineOk = false;
+  }
+  chk(`흔한 이름·긴 이름·반복 글자 ${NAMES.length}개: 옆 글자끼리 같은 색 0 · 그 글자에 있는 색만 · 그룹 이름 규칙 · 같은 이름 = 같은 색`,
+      adj === 0 && groupOk && lineOk && detOk, bad);
+  chk('흰 글자 비율 30~45% (레퍼런스 ≈ 35%, 원래 색이면 56%)', white / total > 0.3 && white / total < 0.45,
+      `${(100 * white / total).toFixed(0)}% (${white}/${total})`);
+  const seq = n => colorsOf(P._artLetterBoxes(P._composedHero(n, W, G, 'bubble').spec)).map(c => c.charAt(0)).join('');
+  chk('자리 순서 색 (2026-09-17 결정 고정): HEATHER · CHARLES · TERRY · EMMA · JIMMY · YUMI',
+      seq('Heather') === 'WPWSPWY' && seq('Charles') === 'WPWSPWY' && seq('Terry') === 'WPYWS' && seq('Emma') === 'WPYW' &&
+      seq('Jimmy') === 'WYWSP' && seq('Yumi') === 'WPYW', ['Heather', 'Charles', 'Terry', 'Emma', 'Jimmy', 'Yumi'].map(seq).join(' '));
+  const two = P._artLetterBoxes(P._composedHero('Vivian Liz', W, G, 'bubble').spec);
+  chk('줄이 바뀌어도 순서를 이어서 돈다 (둘째 줄 첫 글자는 앞 글자 색과 달라도 된다)',
+      seq('Vivian Liz') === seq('Vivian') + 'SWP' && two.filter(b => b.line === 1).length === 3, seq('Vivian Liz'));
+  const rb = P._artLetterBoxes(P._composedHero('Heather Liz', W, G, 'retro').spec);
+  chk('레트로는 색을 안 바꾼다 (paint "" · 그룹 = LTR 글자)', rb.every(b => b.paint === '' && b.group === 'LTR ' + b.ch));
+  const pick = (ch, prev, ptr) => JSON.stringify(P._artLetterPaint(bubble, ch, prev, ptr));
+  chk('색 고르기: 없는 색·앞 글자 색은 건너뛰고 다음 자리를 돌려준다 · 표에 없는 글자는 null',
+      pick('A', null, 2) === '{"paint":"WHITE","next":4}' && pick('E', 'WHITE', 0) === '{"paint":"PINK","next":2}' &&
+      pick('D', 'SKY', 4) === '{"paint":"PINK","next":6}' && pick('N', null, 0) === '{"paint":"PINK","next":2}' &&
+      P._artLetterPaint(bubble, '9', null, 0) === null && P._artLetterPaint({ paints: T, paintCycle: [] }, 'A', null, 0) === null,
+      [pick('A', null, 2), pick('D', 'SKY', 4)].join(' '));
+}
+
+console.log('\n══ 데코 돌리기 — 이름마다 시작 자리 · 다음 시트는 이어서 (2026-09-17) ══');
+{
+  const spec = n => P._composedHero(n, W, G, 'bubble').spec, rspec = n => P._composedHero(n, W, G, 'retro').spec;
+  const len = P.DECO_ORDER_V2.length, rlen = P.DECO_ORDER.length;
+  chk('이름이 없으면 시작 자리 0', P._composedDecoStart(null, 0) === 0 && P._composedDecoStart(null, 3) === 0 &&
+      P._composedPackExtras(null, RIM, null, 2).decoStart === 0);
+  const bubble = P._nameStyle('bubble'), retro = P._nameStyle('retro');
+  const span = (style, s) => P._composedDecoSpan(style, s);
+  chk('구간 길이: 레트로 = 시트당 데코 수 · 버블 = 글씨 두들이 아닌 모양 6개가 드는 가장 짧은 구간 (예: SMILE~BOW 8칸)',
+      [0, 3, 11].every(k => span(retro, k) === P.COMPOSED_DECO_MAX) && span(bubble, 0) === 8 && span(bubble, 8) === 9 &&
+      P.DECO_ORDER_V2.every((_, k) => span(bubble, k) >= P.COMPOSED_DECO_MAX && span(bubble, k) <= 9) &&
+      span({ decoOrder: ['A', 'B', 'C'], decoBigOnly: ['B'] }, 0) === 3, P.DECO_ORDER_V2.map((_, k) => span(bubble, k)).join(''));
+  const st = P._composedDecoStart(spec('Vivian'), 0), st1 = (st + span(bubble, st)) % len;
+  chk('시작 자리: 순서 안 · 같은 이름 = 같은 값 · 다음 시트 = 앞 시트 구간 바로 뒤 · 대소문자 상관없음 · 시트 번호 없으면 첫 시트',
+      st >= 0 && st < len && P._composedDecoStart(spec('Vivian'), 0) === st &&
+      P._composedDecoStart(spec('Vivian'), 1) === st1 &&
+      P._composedDecoStart(spec('Vivian'), 2) === (st1 + span(bubble, st1)) % len &&
+      P._composedDecoStart(rspec('Vivian'), 3) === (P._composedDecoStart(rspec('Vivian'), 0) + 18) % rlen &&
+      P._composedDecoStart(spec('VIVIAN'), 0) === st && P._composedDecoStart(spec('vivian'), 0) === st &&
+      P._composedDecoStart(spec('Vivian'), undefined) === st && P._composedDecoStart(spec('Vivian'), -1) === st &&
+      P._composedPackExtras(spec('Vivian'), RIM, null, 1).decoStart === st1,
+      `Vivian ${st} → 시트2 ${st1}`);
+  const names = ['Vivian', 'Heather', 'Harin', 'Sanvi', 'Emma', 'Liam', 'Olivia', 'Noah', 'Charles', 'Terry', 'Yumi', 'Zoe'];
+  const starts = new Set(names.map(n => P._composedDecoStart(spec(n), 0)));
+  const rstarts = new Set(names.map(n => P._composedDecoStart(rspec(n), 0)));
+  chk('이름마다 시작 자리가 흩어진다 (12명)', starts.size >= 7 && rstarts.size >= 6 && [...rstarts].every(v => v < rlen),
+      `버블 ${[...starts].join(',')} · 레트로 ${[...rstarts].join(',')}`);
+  // 여러 이름 × 시트 3장 × 사진 조합 — 모든 두들이 나오고, 같은 주문의 시트끼리 데코가 겹치지 않는다(가능할 때)
+  const sets = [[0.38, 0.78, 0.66, 0.85, 0.79, 0.89], [0.75, 0.8, 1.2, 0.9], [1.0, 0.7], [0.66, 0.66, 0.9, 1.1, 0.8]];
+  const seen = { bubble: new Set(), retro: new Set() };
+  let overlap = 0, sheetsTotal = 0, smallText = 0;
+  for (const st2 of ['bubble', 'retro']) {
+    for (const n of names) {
+      const h = P._composedHero(n, W, G, st2).spec;
+      for (const aspects of sets) {
+        const got = [0, 1, 2].map(s => P._packComposed(pairsOf(aspects), 0, W, H, G, P._composedPackExtras(h, RIM, null, s)).decos.map(d => {
+          seen[st2].add(d.payload.deco);
+          if (P.DECO_BIG_ONLY_V2.indexOf(d.payload.deco) >= 0 && d.w / M < 12.7 - 1e-6) smallText++;
+          return d.payload.deco;
+        }));
+        sheetsTotal += 3;
+        if (st2 === 'bubble' && got[0].some(d => got[1].indexOf(d) >= 0)) overlap++;
+      }
+    }
+  }
+  chk(`모든 두들이 데코로 나온다 (${sheetsTotal}시트 · 버블 ${P.DECO_ORDER_V2.length}종 · 레트로 ${P.DECO_ORDER.length}종)`,
+      seen.bubble.size === P.DECO_ORDER_V2.length && seen.retro.size === P.DECO_ORDER.length,
+      `버블 ${seen.bubble.size} · 레트로 ${seen.retro.size}`);
+  chk('버블: 첫 시트와 둘째 시트 데코가 겹치지 않는다 · 글씨 두들은 여전히 큰 칸만', overlap === 0 && smallText === 0,
+      `겹침 ${overlap} · 작은 칸 글씨 ${smallText}`);
+  // 미리보기 비교 — 데코 모양 (자리가 같을 때만 따로 적는다)
+  const planC = P._composedDeal([2, 2], 0), pairsC = [{ base: 'A_01' }, { base: 'A_02' }];
+  const ex = { stickers: [10], sigs: ['abc'], decos: [['SMILE', 'HEART']] };
+  const sameD = P._composedPreviewDiff(ex, planC, [10], pairsC, ['abc'], [['SMILE', 'HEART']]);
+  const diffD = P._composedPreviewDiff(ex, planC, [10], pairsC, ['abc'], [['HEART', 'SMILE']]);
+  const movedD = P._composedPreviewDiff(ex, planC, [10], pairsC, ['999'], [['HEART', 'SMILE']]);
+  const oldBoard = P._composedPreviewDiff({ stickers: [10], sigs: ['abc'] }, planC, [10], pairsC, ['abc'], [['HEART']]);
+  chk('미리보기 비교: 데코 모양이 다르면 적는다 · 자리가 다르면 자리만 · 옛 보드(모양 없음)는 비교 안 함',
+      sameD.length === 0 && diffD.length === 1 && diffD[0].indexOf('데코 모양') >= 0 &&
+      movedD.length === 1 && movedD[0].indexOf('자리') >= 0 && oldBoard.length === 0, [diffD, movedD].map(x => x.join()).join(' | '));
 }
 
 console.log('\n══ 결정론 · 보고 일치 · 입력 불변 ══');

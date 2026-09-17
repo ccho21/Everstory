@@ -119,7 +119,8 @@ try:
     names_py = [n.split(":")[0] for n in names_py]
     need = ["_packComposed", "_composedDeal", "_composedHero", "_composedPackExtras", "_composedNameType",
             "_composedCutAspect", "_composedClassify", "_composedParseProbe", "_traceSignature",
-            "_nameStyle", "_artLetterBoxes", "COMPOSED_NAME_STYLES", "LETTER_ART_METRICS_V2", "DECO_ORDER_V2",
+            "_nameStyle", "_artLetterBoxes", "_artLetterPaint", "_letterBlockSpec", "_composedDecoStart", "_composedVariants",
+            "COMPOSED_NAME_STYLES", "LETTER_ART_METRICS_V2", "LETTER_ART_PAINTS_V2", "DECO_ORDER_V2",
             "COMPOSED_PREVIEW_BODY_MM", "COMPOSED_SHOT_TYPES", "MATERIAL_OPTIONS", "CUT_MARGIN_VALUES", "TRACE_OPTS"]
     chk("미리보기에 필요한 함수·상수가 다 들어 있다", all(n in names_py for n in need),
         ", ".join(n for n in need if n not in names_py) or "%d 심볼" % len(names_py))
@@ -175,13 +176,23 @@ function run3(X) {
   const r = X._packComposed(pairs.slice(0, 5), 0, 142 * M, 172 * M, 1.5 * M, X._composedPackExtras(hero.spec, 1 * M));
   return { sig: r.sig, style: r.nameStyle, pad: r.namePad, name: r.nameBox,
            decos: r.decos.map(dd => [dd.payload.deco, dd.payload.style, dd.payload.pad]),
-           letters: X._artLetterBoxes(hero.spec).map(b => [b.ch, b.variant, +b.x.toFixed(4), +b.y.toFixed(4), +b.w.toFixed(4)]) };
+           letters: X._artLetterBoxes(hero.spec).map(b => [b.ch, b.variant, +b.x.toFixed(4), +b.y.toFixed(4), +b.w.toFixed(4), b.group]) };
 }
 const e3 = run3(E), p3 = run3(P);
+// 여러 시트 — 시트 번호마다 데코 시작 자리가 달라지고(변형 줄 포함) 두 추출본이 같은 모양을 고른다
+function run4(X) {
+  const hero = X._composedHero('Harin', 142 * M, 1.5 * M, 'bubble');
+  return [0, 1, 2].map(s => {
+    const vs = X._composedVariants(pairs.slice(s, s + 4), 0, 142 * M, 172 * M, 1.5 * M, hero.spec, 1 * M, 'center', 'center', s);
+    return vs.map(v => [v.kind, v.res.sig, v.res.decoStart, v.res.decos.map(dd => dd.payload.deco).join(' ')]);
+  });
+}
+const e4 = run4(E), p4 = run4(P);
 console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), sheets: a.length,
   stickers: a.map(s => s.placed.length), sig: E._traceSignature(), body: E.COMPOSED_PREVIEW_BODY_MM,
   sameLayouts: JSON.stringify(c) === JSON.stringify(d), sigs: c.map(s => s.sig),
-  sameBubble: JSON.stringify(e3) === JSON.stringify(p3), bubble: e3 }));
+  sameBubble: JSON.stringify(e3) === JSON.stringify(p3), bubble: e3,
+  sameSheets: JSON.stringify(e4) === JSON.stringify(p4), sheetDecos: e4.map(vs => vs[0]) }));
 """)
         out = subprocess.run([NODE, probe, eng, node_mod], capture_output=True, text=True)
         res = json.loads(out.stdout.strip().splitlines()[-1]) if out.returncode == 0 and out.stdout.strip() else {}
@@ -195,6 +206,14 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
             all(dd[1] == "bubble" and dd[2] > 0 for dd in bub.get("decos") or [["?", "", 0]]) and
             [x[0] + x[1] for x in bub.get("letters") or []][:3] == ["VL", "Icore", "Vcore"],
             "데코 %s · 글자 %s" % ([dd[0] for dd in bub.get("decos") or []], [x[0] + x[1] for x in bub.get("letters") or []]))
+        chk("버블 글자 색 그룹도 두 추출본이 같다 (VIVIAN LIZ = 흰·노랑·흰·하늘·분홍·노랑 / 하늘·흰·분홍)",
+            [x[5] for x in bub.get("letters") or []] == ["LTR V", "LTR I", "LTR V", "LTR I SKY", "LTR A PINK", "LTR N YELLOW",
+                                                        "LTR L SKY", "LTR I WHITE", "LTR Z"],
+            [x[5] for x in bub.get("letters") or []])
+        sd = res.get("sheetDecos") or []
+        chk("여러 시트 — 시트마다 데코 시작 자리가 다르고 두 추출본이 같은 모양 (변형 줄 포함)",
+            res.get("sameSheets") is True and len(sd) == 3 and len(set(x[2] for x in sd)) == 3 and
+            not set(sd[0][3].split()) & set(sd[1][3].split()), [(x[2], x[3]) for x in sd])
         sig = res.get("sig")
         chk("미리보기 body 상수 = 템플릿 실측 142 × 175mm", res.get("body") == [142, 175], res.get("body"))
     else:
@@ -235,6 +254,19 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
             nm = "LTR_" + ch + ("" if part == "core" else "_" + part)
             if nm not in idx.get("alphabet_art_v2", {}):
                 missing.append(nm)
+    # 색 그룹 (첫 색 = 원래 그룹이라 그림 이름에 색이 안 붙는다) × 옆 장식
+    paints = re.search(r"var LETTER_ART_PAINTS_V2 = \{(.*?)\n  \};", src, re.S).group(1)
+    sides = dict((ch, re.findall(r"\b(L|R): \{", body)) for ch, body in re.findall(r"^    ([A-Z]): \{ (.*) \},?$", v2, re.M))
+    painted = 0
+    for ch, cols in re.findall(r'^    ([A-Z]): \[(.*)\],?$', paints, re.M):
+        for col in re.findall(r'"(\w+)"', cols)[1:]:
+            for side in [""] + sides.get(ch, []):
+                nm = "LTR_%s_%s%s" % (ch, col, "_" + side if side else "")
+                painted += 1
+                if nm not in idx.get("alphabet_art_v2", {}):
+                    missing.append(nm)
+    chk("색 표의 색 그룹마다 그림이 있다 (옆 장식 포함 %d장)" % painted, painted == 77 and not [m for m in missing if "_" in m[6:]],
+        ", ".join(missing[:8]))
     for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
         if "LTR_" + ch not in idx.get("alphabet_art_v1", {}):
             missing.append("v1 LTR_" + ch)
@@ -258,8 +290,15 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
         os.path.join(art_tmp, "deco_art_v9", "DECO_SUN.png")) and cp.art_file("deco_art_v9", "DECO_MOON", art_tmp) is None)
     odd = [("../deco_art_v9", "DECO_SUN"), ("deco_art_v9", "../../secret"), ("deco_art_v9", "deco_sun"),
            ("fonts_v1", "LTR_A"), ("deco_art_v9", "DECO_SUN.png"), ("deco_art_v9", ""), (None, "DECO_SUN"),
-           ("deco_art_v9", ["DECO_SUN"]), ("alphabet_art_v1", "LTR_a"), ("alphabet_art_v1", "LTR_A_X")]
+           ("deco_art_v9", ["DECO_SUN"]), ("alphabet_art_v1", "LTR_a"), ("alphabet_art_v1", "LTR_A_X"),
+           ("alphabet_art_v2", "LTR_A_PI"), ("alphabet_art_v2", "LTR_A_pink"), ("alphabet_art_v2", "LTR_A_PINK_X"),
+           ("alphabet_art_v2", "LTR_C_R_PINK"), ("alphabet_art_v2", "LTR_A_PINK\n"), ("alphabet_art_v2", "LTR_A_PINKPINKPINKX")]
     chk("그림 경로 — 이상한 이름 %d가지는 None" % len(odd), all(cp.art_file(l, n, art_tmp) is None for l, n in odd))
+    os.makedirs(os.path.join(art_tmp, "alphabet_art_v2"))
+    for n in ("LTR_A_PINK", "LTR_C_PINK_R", "LTR_C_R"):
+        write(os.path.join(art_tmp, "alphabet_art_v2", n + ".png"), png_bytes(4, 4, (0, 0, 4, 4)))
+    chk("그림 경로 — 색 그룹·옆 장식 이름", all(cp.art_file("alphabet_art_v2", n, art_tmp) for n in ("LTR_A_PINK", "LTR_C_PINK_R", "LTR_C_R")) and
+        sorted(cp.art_index(art_tmp)["alphabet_art_v2"]) == ["LTR_A_PINK", "LTR_C_PINK_R", "LTR_C_R"])
     os.symlink(os.path.join(root, "secret.png"), os.path.join(art_tmp, "deco_art_v9", "DECO_LINK.png"))
     chk("그림 경로 — 폴더 밖을 가리키는 링크는 None", cp.art_file("deco_art_v9", "DECO_LINK", art_tmp) is None)
 
@@ -414,12 +453,18 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     chk("요약 한 줄", summary == "사진 2장 · 시트 1장 예상", summary)
     picked2 = dict(good, layouts=[{"style": "sides", "namePos": "center", "mirror": True, "seed": 3}],
                    sizeRanges={"Order A EVS-1_01_BIG": [0.75, 2.5], "Order A EVS-1_03": [1, 1], "Order A EVS-1_02_SML": [2, 2.5]},
-                   expect=dict(good["expect"], sigs=["1bdd211", "NOT-HEX", 7]))
+                   expect=dict(good["expect"], sigs=["1bdd211", "NOT-HEX", 7],
+                               decos=[["SMILE", "HEART"], ["smile"], "SUN"]))
     c2 = cp.build_launch(projects, picked2)[0]["composed"]
     chk("배치 선택·크기 직접은 그대로 싣고, 안 고른 사진의 크기는 버린다 · 이상한 지문 칸은 빈 값 · 사진 수보다 긴 지문은 자른다",
         c2["layouts"] == [{"style": "sides", "namePos": "center", "mirror": True, "seed": 3}] and
         c2["sizeRanges"] == {"Order A EVS-1_01_BIG": [0.75, 2.5], "Order A EVS-1_03": [1, 1]} and
         c2["expect"]["sigs"] == ["1bdd211", ""], c2)
+    bad_decos = [["DECO\nX"], [7], ["A" * 25], ["SUN"] * 25, [None]]
+    c3 = cp.build_launch(projects, dict(good, expect=dict(good["expect"], decos=bad_decos)))[0]["composed"]
+    chk("데코 모양 이름은 시트마다 그대로 싣고, 모양이 이상한 시트는 None (비교 안 함) · 사진 수보다 긴 목록은 자른다",
+        c2["expect"]["decos"] == [["SMILE", "HEART"], None] and c3["expect"]["decos"] == [None, None] and
+        "decos" not in c["expect"], (c2["expect"].get("decos"), c3["expect"].get("decos")))
     lh, _ = cp.build_launch(projects, dict(good, folder=NFD_HARIN, bases=[NFD_HARIN + "_02"], mainBase="",
                                            shotTypes={NFD_HARIN + "_02": "upper"}, expect={}))
     chk("한글 NFD 이름 → NFC 로 보낸다 (.jsx 도 NFC 로 비교)",
