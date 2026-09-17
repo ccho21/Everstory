@@ -153,4 +153,63 @@ for(const range of ['small','large']) for(const n of [1,4,8]) for(const aspects 
     sheets++;
   }
 }
+// Art cut lines (2026-09-17): some retro decos' largest shape is the black border ring, a compound of the outer
+// contour and an inner hole. The cut keeps contours wound like the largest one (holes go, islands stay); print art is untouched.
+function fakeShape(typename, areas) {
+  const s = {typename, pathItems: [], geometricBounds: [0, 308, 313, 0]};
+  for (const a of areas) {
+    const p = {typename: 'PathItem', area: a, remove() { s.pathItems.splice(s.pathItems.indexOf(p), 1); }};
+    s.pathItems.push(p);
+  }
+  if (typename === 'PathItem') s.area = areas[0];
+  s.duplicate = (layer) => { const d = fakeShape(typename, s.pathItems.map(p => p.area)); d.layer = layer; return d; };
+  return s;
+}
+{
+  const ring = fakeShape('CompoundPathItem', [-65460, 71168]);
+  assert.strictEqual(P._artCutOuterOnly(ring), ring);
+  assert.deepEqual(ring.pathItems.map(p => p.area), [71168], 'ring cut keeps only the outer contour');
+  const islands = fakeShape('CompoundPathItem', [900, -300, 1200]);
+  P._artCutOuterOnly(islands);
+  assert.deepEqual(islands.pathItems.map(p => p.area), [900, 1200], 'islands wound like the largest stay');
+  const negative = fakeShape('CompoundPathItem', [-71167, 500]);
+  P._artCutOuterOnly(negative);
+  assert.deepEqual(negative.pathItems.map(p => p.area), [-71167], 'sign follows the largest contour');
+  const one = fakeShape('CompoundPathItem', [-5]);
+  P._artCutOuterOnly(one);
+  assert.equal(one.pathItems.length, 1);
+  const plain = fakeShape('PathItem', [-75259]);
+  assert.strictEqual(P._artCutOuterOnly(plain), plain);
+  checks++;
+}
+{
+  // _drawDecoSticker end to end with fake Illustrator objects: ring first (as in deco_art_v1.ai), white silhouette below.
+  const sb = load();
+  const cuts = [];
+  sb.fakeShape = fakeShape;
+  sb.cuts = cuts;
+  vm.runInContext(`
+    var app = {}, ElementPlacement = {PLACEATEND: 1};
+    var printDup = null;
+    function fakeDeco() {
+      var kids = [fakeShape('CompoundPathItem', [-65460, 71168]), fakeShape('PathItem', [-71167])];
+      return {typename: 'GroupItem', pageItems: kids, geometricBounds: [0, 308, 313, 0],
+        resize: function() {}, translate: function() {},
+        duplicate: function() { printDup = fakeDeco(); return printDup; }};
+    }
+    _artLibDoc = function() { return {groupItems: {getByName: function() { return fakeDeco(); }}}; };
+    _forceCutContourStroke = function(cut) { cuts.push(cut); };
+    _drawDecoSticker({}, {deco: 'HEART', style: 'retro'}, 0, 0, 36, 36, 'print', 'kiss', {});
+  `, sb);
+  assert.equal(cuts.length, 1);
+  assert.equal(cuts[0].layer, 'kiss');
+  assert.equal(cuts[0].name, 'Cutline_HEART');
+  assert.deepEqual(cuts[0].pathItems.map(p => p.area), [71168], 'deco cut = outer contour only');
+  assert.deepEqual(sb.printDup.pageItems[0].pathItems.map(p => p.area), [-65460, 71168], 'printed ring keeps its inner line');
+  checks++;
+}
+// Every art cut goes through the filter (decos and retro letters).
+assert.equal((source.match(/outline\.duplicate\(kissL/g) || []).length, 2);
+assert.equal((source.match(/_artCutOuterOnly\(outline\.duplicate\(kissL, ElementPlacement\.PLACEATEND\)\)/g) || []).length, 2);
+checks++;
 console.log(`PASS: ${checks} output/cut checks; ${sheets} representative packing sheets; fresh source syntax. No Illustrator execution.`);

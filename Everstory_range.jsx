@@ -859,7 +859,7 @@
       throw new Error("데코 '" + payload.deco + "' 의 칼선을 못 만들었습니다 — " +
         "라이브러리에 바깥 실루엣 도형 1개가 있어야 합니다");
     }
-    var cut = outline.duplicate(kissL, ElementPlacement.PLACEATEND);
+    var cut = _artCutOuterOnly(outline.duplicate(kissL, ElementPlacement.PLACEATEND));
     try { cut.name = "Cutline_" + payload.deco; } catch (eCn) {}
     _forceCutContourStroke(cut, cutSpot);
     return dup;
@@ -889,6 +889,22 @@
       if (a > bestA) { bestA = a; best = shapes[i]; }
     }
     return best;
+  }
+
+  // 칼선 복제본에서 구멍 윤곽을 지운다 — 가장 큰 하위 패스와 감긴 방향이 반대인 것 (_drawNameHalo 와 같은 규칙).
+  // 레트로 데코 HEART · CUPCAKE · BONE · CAMERA · RAINBOW · FLOWER 는 가장 큰 도형이 검정 테두리 고리(바깥선 + 라이브러리 약 6pt,
+  // 시트 약 0.2mm 안쪽 선)라 그대로 쓰면 칼선이 두 줄이 된다 (2026-09-17 실제 시트에서 확인). 같은 방향의 섬은 남긴다.
+  function _artCutOuterOnly(cut) {
+    if (cut.typename !== "CompoundPathItem" || cut.pathItems.length < 2) return cut;
+    var big = null, sign, i;
+    for (i = 0; i < cut.pathItems.length; i++) {
+      if (!big || Math.abs(cut.pathItems[i].area) > Math.abs(big.area)) big = cut.pathItems[i];
+    }
+    sign = big.area >= 0 ? 1 : -1;
+    for (i = cut.pathItems.length - 1; i >= 0; i--) {
+      if ((cut.pathItems[i].area >= 0 ? 1 : -1) !== sign) cut.pathItems[i].remove();
+    }
+    return cut;
   }
 
   // 이름 블록 안 글자 자리 — 그리기와 주문 보드 미리보기 공용 (순수 계산).
@@ -1109,7 +1125,7 @@
       // 칼선 — 인쇄 실루엣과 같은 기하를 KissCut 에 복제한다 (여백 0, 오프셋은 나중에 수동).
       var outline = _artOutlinePath(dup);
       if (outline) {
-        var cut = outline.duplicate(kissL, ElementPlacement.PLACEATEND);
+        var cut = _artCutOuterOnly(outline.duplicate(kissL, ElementPlacement.PLACEATEND));
         try { cut.name = "Cutline_" + b.ch + "_" + _pad2(i); } catch (eC) {}
         _forceCutContourStroke(cut, cutSpot);
       } else {
