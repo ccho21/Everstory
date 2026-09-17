@@ -124,6 +124,8 @@ assert.throws(()=>P._packRange([{base:'D0',aspect:1}],'small',10*M,10*M,G,{}),/�
 assert(before.equals(fs.readFileSync(SOURCE)),'Source changed during test');
 console.log('PASS: '+checks+' checks; area-class cells, balance, coverage, gaps, row baseline/justify, decos, hero, determinism, invalid-plan rejection.');
 if(process.argv.includes('--report')){
-  const out=path.join(ROOT,'docs/reports/range-block-implementation-2026-09-08');fs.mkdirSync(out,{recursive:true});
-  fs.writeFileSync(path.join(out,'results_v3.json'),JSON.stringify({checks,table},null,2)+'\n');
+  // 보고서는 임시 폴더에 — 예전 docs/reports/range-block-implementation 폴더는 2026-09-16 정리로 없앴다
+  const outFile=path.join(os.tmpdir(),'range_layout_results_v3.json');
+  fs.writeFileSync(outFile,JSON.stringify({checks,table},null,2)+'\n');
+  console.log('report: '+outFile);
 }

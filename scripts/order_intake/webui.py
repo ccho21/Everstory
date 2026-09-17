@@ -26,9 +26,17 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-_spec = importlib.util.spec_from_file_location("intake", os.path.join(HERE, "intake.py"))
-intake = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(intake)
+
+
+def _load_sibling(name):
+    spec = importlib.util.spec_from_file_location(name, os.path.join(HERE, name + ".py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+intake = _load_sibling("intake")
+composed = _load_sibling("composed_preview")   # '구성' 화면 (Composed 미리보기) — composed_preview.py
 
 TOKEN = secrets.token_urlsafe(16)   # 다른 로컬 페이지가 이 서버를 두드리지 못하게
 
@@ -38,7 +46,13 @@ TOKEN = secrets.token_urlsafe(16)   # 다른 로컬 페이지가 이 서버를 �
 
 REPO_DIR = os.path.abspath(os.path.join(HERE, "..", ".."))
 MIXED_JSX = os.path.join(REPO_DIR, "Everstory_mixed.jsx")
+RANGE_JSX = os.path.join(REPO_DIR, "Everstory_range.jsx")
 LABELS_JSX = os.path.join(REPO_DIR, "Everstory_address_labels.jsx")
+# 주문 폴더 위치. main() 의 --projects 로만 바꾼다 (개발·테스트용).
+PROJECTS_DIR = os.path.join(REPO_DIR, "projects")
+# '구성' 화면에서 같은 요청을 연달아 누르면 한 번만 보낸다 (Illustrator 시트가 두 벌 생기지 않게).
+COMPOSED_REPEAT_SEC = 8.0
+_LAST_MAKE = {"key": None, "at": 0.0}
 
 
 def photoshop_app():
@@ -101,7 +115,7 @@ class Args(object):
     def __init__(self, **kw):
         self.shop = os.environ.get("SHOPIFY_SHOP", intake.DEFAULT_SHOP)
         self.api_version = os.environ.get("SHOPIFY_API_VERSION", intake.DEFAULT_API_VERSION)
-        self.projects_dir = os.path.abspath(os.path.join(HERE, "..", "..", "projects"))
+        self.projects_dir = PROJECTS_DIR
         self.folder = None
         self.dry_run = False
         self.force = False
@@ -351,6 +365,27 @@ def act_sheet(name):
                % (name, prog["pairs"]))
 
 
+def act_composed_make(body):
+    """'구성' 화면의 'Illustrator 에서 만들기' → (HTTP 코드, 응답). 값 검사는 composed.build_launch.
+
+    Everstory_range.jsx 가 대화창 없이 미리보기에서 고른 그대로 만든다. 같은 요청을 COMPOSED_REPEAT_SEC 안에
+    또 누르면 보내지 않는다 — Illustrator 가 뜨는 몇 초 동안 한 번 더 누르면 시트가 두 벌 생긴다.
+    """
+    try:
+        launch, summary = composed.build_launch(PROJECTS_DIR, body)
+    except ValueError as e:
+        return 400, {"error": str(e)}
+    key = json.dumps(launch, sort_keys=True)
+    now = time.time()
+    if _LAST_MAKE["key"] == key and now - _LAST_MAKE["at"] < COMPOSED_REPEAT_SEC:
+        return 200, {"ok": True, "duplicate": True, "summary": summary}
+    _LAST_MAKE["key"], _LAST_MAKE["at"] = key, now
+    launch_illustrator(RANGE_JSX, launch)
+    STATE.emit("%s — 구성 미리보기에서 Illustrator 로 넘김 (%s)."
+               % (composed.nfc(str(body.get("folder") or "")), summary))
+    return 200, {"ok": True, "duplicate": False, "summary": summary}
+
+
 def job_labels(names):
     """툴바 '주소 라벨' — 선택 주문으로 _labels.txt 를 만들고 라벨 스크립트를 연다.
 
@@ -449,12 +484,13 @@ PAGE = """<!doctype html>
   <button id="bLbl" title="선택한 주문의 배송지로 _labels.txt 를 만들고 Everstory_address_labels.jsx 를 연다. 라벨 칸 순서 = 표에 보이는 순서">주소 라벨</button>
   <button id="bRef">새로고침</button>
   <button id="bOpen">폴더 열기</button>
+  <button id="bCmp" title="누끼 페어로 Composed 시트를 미리 보고 Everstory_range.jsx 로 만든다 (주문 폴더는 화면에서 고른다)">구성 미리보기</button>
 </div>
 <div class="wrap"><table>
   <thead><tr><th></th><th>주문</th><th>고객</th><th>날짜</th><th>사진</th><th>상태</th>
     <th title="02_cutout 의 _clean.psd + _sil.png 페어 / 01_original 사진">누끼</th>
     <th title="03_output 의 .ai 시트 수">시트</th>
-    <th title="누끼 = 안 된 사진을 Photoshop 으로 · 시트 = Everstory_mixed.jsx 를 폴더까지 골라서 Illustrator 로">작업</th>
+    <th title="누끼 = 안 된 사진을 Photoshop 으로 · 시트 = Everstory_mixed.jsx 를 폴더까지 골라서 Illustrator 로 · 구성 = Composed 미리보기 후 Everstory_range.jsx 로">작업</th>
     <th>폴더</th></tr></thead>
   <tbody id="rows"></tbody>
 </table></div>
@@ -463,6 +499,7 @@ PAGE = """<!doctype html>
 const T = new URLSearchParams(location.search).get("t");
 let since = 0, busy = false;
 const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 async function api(path, body, extra) {
   const qs = new URLSearchParams({t: T});
@@ -486,13 +523,27 @@ function render(rows) {
     <td class="prog ${r.sheetKind}">${r.sheetText}</td>
     <td class="act">${r.folderPath ? `
       <button class="mini" data-act="photoshop" data-name="${r.name}">누끼</button>
-      <button class="mini" data-act="sheet" data-name="${r.name}">시트</button>` : ""}</td>
+      <button class="mini" data-act="sheet" data-name="${r.name}">시트</button>
+      <button class="mini" data-act="composed" data-folder="${esc(r.folder)}" ${r.pairs ? "" : "disabled"}
+        title="Composed 미리보기 — 누끼 페어가 있어야 한다">구성</button>` : ""}</td>
     <td class="folder">${r.folder}</td></tr>`).join("");
 }
 // 표는 폴링마다 다시 그려져 버튼 요소가 바뀐다 — tbody 위임이라 핸들러는 한 번이면 된다.
+let leaving = false;
+addEventListener("pageshow", e => { if (e.persisted) leaving = false; });   // 브라우저 뒤로 가기로 돌아온 경우
+function openComposed(folder) {
+  // 앱 창(WKWebView)은 진행 중인 이동이 새 이동에 취소되면(-999) 보드를 오류 화면으로 바꾼다 — 두 번 눌러도 한 번만.
+  if (leaving) return;
+  leaving = true;
+  const q = new URLSearchParams({t: T});
+  if (folder) q.set("folder", folder);
+  location.href = "/composed?" + q.toString();   // 같은 창에서 연다 (앱 창은 새 창·alert 를 못 띄운다)
+}
 $("#rows").onclick = e => {
   const b = e.target.closest("button[data-act]");
-  if (b) api("/api/" + b.dataset.act, {name: b.dataset.name});
+  if (!b) return;
+  if (b.dataset.act === "composed") openComposed(b.dataset.folder);
+  else api("/api/" + b.dataset.act, {name: b.dataset.name});
 };
 function setBusy(b) {
   busy = b;
@@ -524,6 +575,7 @@ $("#bLbl").onclick = () => {
   api("/api/labels", {names:n});
 };
 $("#bOpen").onclick = () => api("/api/open", {names:checked()});
+$("#bCmp").onclick = () => openComposed("");
 setInterval(poll, 600); poll();
 </script></body></html>
 """
@@ -541,14 +593,80 @@ class Handler(BaseHTTPRequestHandler):
         got = self._query().get("t") or []
         return bool(got) and secrets.compare_digest(got[0], TOKEN)
 
-    def _send(self, code, body, ctype="application/json; charset=utf-8"):
+    def _q1(self, key):
+        got = self._query().get(key) or [""]
+        return got[0]
+
+    def _send(self, code, body, ctype="application/json; charset=utf-8", cache=None):
         raw = body.encode("utf-8") if isinstance(body, str) else body
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(raw)))
-        self.send_header("Cache-Control", "no-store")
+        # 썸네일만 캐시한다 — URL 에 파일 지문(v=)이 붙어 있어 파일이 바뀌면 주소가 바뀐다.
+        self.send_header("Cache-Control", cache or "no-store")
         self.end_headers()
         self.wfile.write(raw)
+
+    def _json(self, code, obj):
+        self._send(code, json.dumps(obj, ensure_ascii=False))
+
+    def _composed_get(self, route):
+        """'구성' 화면 (Composed 미리보기). 응답을 보냈으면 True — 토큰 확인은 부르는 쪽이 한다."""
+        if route == "/composed":
+            try:
+                self._send(200, composed.page_html(), "text/html; charset=utf-8")
+            except OSError as e:
+                self._send(500, "화면 파일을 못 읽었습니다: %s" % e, "text/plain; charset=utf-8")
+            return True
+        if route == "/composed/engine.js":
+            try:
+                self._send(200, composed.engine_js(RANGE_JSX), "text/javascript; charset=utf-8")
+            except OSError as e:
+                self._send(500, "/* Everstory_range.jsx 를 못 읽었습니다: %s */" % e,
+                           "text/javascript; charset=utf-8")
+            return True
+        if route == "/api/composed/folders":
+            self._json(200, {"folders": composed.list_folders(PROJECTS_DIR)})
+            return True
+        if route == "/api/composed/pairs":
+            try:
+                self._json(200, composed.pairs_payload(PROJECTS_DIR, self._q1("folder")))
+            except LookupError as e:
+                self._json(404, {"error": str(e)})
+            return True
+        if route in ("/api/composed/thumb", "/api/composed/sil"):
+            folder = composed.resolve_folder(PROJECTS_DIR, self._q1("folder"))
+            path = composed.pair_file(folder, self._q1("base"), "psd" if route.endswith("thumb") else "sil")
+            if path and route.endswith("thumb"):
+                path = composed.thumbnail(path)
+            data = None
+            if path:
+                try:
+                    with open(path, "rb") as f:
+                        data = f.read()
+                except OSError:
+                    data = None
+            if data is None:
+                self._json(404, {"error": "사진을 못 찾았어요"})
+            else:
+                self._send(200, data, "image/png", cache="private, max-age=86400")
+            return True
+        if route == "/api/composed/art":
+            # 이름 글자·데코 미리보기 그림 (templates/art_preview) — URL 에 파일 시각(v=)이 붙는다.
+            path = composed.art_file(self._q1("lib"), self._q1("name"))
+            data = None
+            if path:
+                try:
+                    with open(path, "rb") as f:
+                        data = f.read()
+                except OSError:
+                    data = None
+            if data is None:
+                self._json(404, {"error": "그림을 못 찾았어요"})
+            else:
+                self._send(200, data, "image/png", cache="private, max-age=86400")
+            return True
+        return False
 
     def do_GET(self):
         route = self.path.split("?", 1)[0]
@@ -556,6 +674,12 @@ class Handler(BaseHTTPRequestHandler):
             if not self._auth():
                 return self._send(403, "잘못된 접근입니다.", "text/plain; charset=utf-8")
             return self._send(200, PAGE, "text/html; charset=utf-8")
+        if route == "/composed" or route.startswith("/composed/") or route.startswith("/api/composed/"):
+            if not self._auth():
+                return self._send(403, "잘못된 접근입니다.", "text/plain; charset=utf-8")
+            if not self._composed_get(route):
+                self._json(404, {"error": "not found"})
+            return None
         if route == "/api/state":
             if not self._auth():
                 return self._send(403, json.dumps({"error": "forbidden"}))
@@ -600,6 +724,8 @@ class Handler(BaseHTTPRequestHandler):
             names = [str(n) for n in (body.get("names") or [])]
             if names:
                 run_job(lambda: job_labels(names), "라벨 %d건 만드는 중…" % len(names))
+        elif route == "/api/composed/make":
+            return self._json(*act_composed_make(body))
         else:
             return self._send(404, json.dumps({"error": "not found"}))
         self._send(200, json.dumps({"ok": True}))
@@ -613,16 +739,31 @@ def free_port():
     return p
 
 
-def main():
-    port = free_port()
+def main(argv=None):
+    import argparse
+    ap = argparse.ArgumentParser(description="Everstory 주문 보드 (브라우저). 옵션 없이 쓰는 게 기본이다.")
+    ap.add_argument("--port", type=int, default=0, help="고정 포트 (기본: 빈 포트 아무거나)")
+    ap.add_argument("--token", default="", help="고정 토큰 — 개발용 (기본: 실행마다 임의)")
+    ap.add_argument("--projects", default="", help="주문 폴더 위치 — 개발·테스트용 (기본: 포토샵누끼/projects)")
+    ap.add_argument("--no-browser", action="store_true", help="브라우저를 열지 않는다")
+    ap.add_argument("--no-refresh", action="store_true", help="시작할 때 Shopify 주문을 불러오지 않는다 (네트워크 없음)")
+    a = ap.parse_args(argv)
+    global TOKEN, PROJECTS_DIR
+    if a.token:
+        TOKEN = a.token
+    if a.projects:
+        PROJECTS_DIR = os.path.abspath(a.projects)
+    port = a.port or free_port()
     srv = HTTPServer(("127.0.0.1", port), Handler)   # 로컬에서만 접근 가능
     url = "http://127.0.0.1:%d/?t=%s" % (port, TOKEN)
-    run_job(job_refresh, "주문 목록 불러오는 중…")
+    if not a.no_refresh:
+        run_job(job_refresh, "주문 목록 불러오는 중…")
     # 파이프로 넘길 때 버퍼링돼서 URL 이 안 보이는 일이 없게 즉시 내보낸다.
     print("Everstory 주문 받기", flush=True)
     print("  브라우저에서 열림: %s" % url, flush=True)
     print("  이 창을 닫거나 Ctrl+C 를 누르면 종료됩니다.", flush=True)
-    threading.Timer(0.4, lambda: webbrowser.open(url)).start()
+    if not a.no_browser:
+        threading.Timer(0.4, lambda: webbrowser.open(url)).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

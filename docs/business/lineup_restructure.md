@@ -58,6 +58,45 @@
 
 경계 문제면 원형, 피사체 문제면 교체. 원형 폴백이 발생한 주문은 발송 시 한 줄 통보(승인 대기 없음).
 
+## ⚠ 2026-09-04 방향 전환 — 용도 팩 폐기, 상품 2종
+
+사용자 결정: **"디자인 개수와 재질만 고르게 하고, 사이즈는 우리가 정한다."**
+
+용도 팩(Planner / Phone & Bottle / Laptop)은 **이 원칙과 모순되어 폐기**한다. Planner 냐 Laptop 이냐를 고르는 것은 결국 사이즈를 고르는 것이고, 이름만 바꿔 입힌 것이기 때문이다. 위 §라인업(안) 표는 이 절로 대체된다.
+
+### 확정 구조
+
+| 상품 | 옵션 | 사이즈 |
+|---|---|---|
+| **Photo Sticker Sheet** (앞) | `Designs` 1 / 4 / 8 × `Material` 4종 | **전 범위 자동 혼합** (0.75–2.5″) |
+| **Custom Size Sheet** (링크로만) | `Size` 7택 × `Material` 4종 | 고객이 선택 |
+
+- 구매 박스에 남는 결정은 **둘 뿐**: 디자인 개수, 재질. 그 다음은 업로드.
+- variant 값은 `1 design · 1 sheet` / `4 designs · 1 sheet` / `8 designs · 2 sheets` — 시트 수를 같이 보여준다(8장=2시트가 값어치라서, 사용자 결정).
+- **1개 티어 유지** ($18.99 진입가, 사용자 결정).
+- 옵션 이름은 `Photos` → **`Designs`**.
+
+### 리뷰 (사용자 수용)
+
+상품이 2종이 되므로 Package Mini(1) · Full Body(1) **리뷰 2건은 묻힌다.** 9건 중 7건은 사람들이 실제로 도착하는 두 상품에 남는다.
+
+| 기존 상품 (리뷰) | → |
+|---|---|
+| Package Full (6) | Photo Sticker Sheet |
+| Face Sticker (1) | Custom Size Sheet |
+| Package Mini (1) · Full Body (1) | Draft 로 내림, 리뷰 묻힘 |
+
+### 이번에 실행한 것 (2026-09-04)
+
+- Full Set 쌍둥이 → **Photo Sticker Sheet** 로 개명, 옵션·값·카피·SEO 전부 교체.
+- Planner / Phone & Bottle / Laptop 쌍둥이 **ARCHIVED** (`superseded` 태그).
+- `es-pack-note.liquid` 가 `Designs` 옵션과 `N designs` 값을 읽도록 수정.
+
+### 남은 것
+
+- **Easify 조건 갱신 필수** — 지금 `1 photo` / `4 photos` / `8 photos` 를 CONTAIN 으로 보고 있다. 값이 바뀌었으므로 `1 design` / `4 designs` / `8 designs` 로 고쳐야 업로드 칸이 뜬다.
+- Custom Size Sheet 는 컷오버 때 Face Sticker 를 제자리 변환해서 만든다.
+
 ## 샌드박스 현실 — 복사 테마가 격리하는 것과 못 하는 것
 
 | 대상 | 복사 테마(`Copy of everstory-theme/main`, ID 165897306368, /t/7)로 격리되나 | 안전한 작업 방식 |

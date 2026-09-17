@@ -53,6 +53,9 @@
 
 "고르고, 올리고, 받는다." 지금은 이 흐름이 페이지 곳곳에 흩어져 있다. 구매 박스 바로 아래 한 블록으로 모은다.
 
+✅ **완료 (2026-09-04)** — `snippets/es-how-to-order.liquid`, product.json 의 `es_required_gate` 바로 뒤. 01 Choose / 02 Upload / 03 We make it. 1번만 상품에 따라 갈린다(팩 = "The sheet sets the sizes — {pack_sizes}", 그 외 = "Pick your size, your material, and how many photos"). 번호를 쓴 이유는 실제 순서이기 때문 — 장식이 아니다. 색은 주변 텍스트에서 상속받아 라이트/다크 모두 따라간다.
+- 함정: `{%- if -%}` 가 `</strong>` 뒤 공백까지 지워 "Choose.Pick" 으로 붙었다. HTML 은 공백을 접으므로 **분기 태그는 dash 없이** 쓴다.
+
 ## 표면별 수정 목록
 
 | 표면 | 저장 위치 | 지금 | 바꿀 방향 |
@@ -127,7 +130,10 @@
 
 1. ✅ **완료 (2026-09-04)** 카드 부제 4종 metafield 반영 (Draft 4종. Custom Sheet 는 아직 상품이 없어 컷오버 때).
 2. ✅ **완료 (2026-09-04)** 팩 4종 `product_intro` 재작성 반영. 첫 줄이 스펙이 아니라 결과("A full A5 sheet of your photos, cut and ready to peel"). Full Set story 의 "Send up to eight photos" → "Send your photos" 로 교정 (1·4 variant 와 모순이었다).
-3. ⬜ 사이즈 비교 이미지 4종 크롭 → Files 업로드 → Sizes 아코디언에서 링크
+3. ✅ **완료 (2026-09-04)** 팩 PDP 에 **Sizes 섹션 신설**. 팩은 원래 이 섹션이 통째로 숨겨져 있어 크기 감이 전혀 없었다. `custom.pack_size_codes`(예 `0.75,1.00`)로 그 팩의 사이즈만 카드로 렌더하고, 이미지는 **기존 Files 의 `{sheet_prefix}_{code}in.png` 를 재사용**한다(4종 모두 `sheet_prefix=face`). 새 촬영·업로드 없음.
+   - 캡션에서 **"About N stickers per sheet" 를 뺐다** — 그 숫자는 단일 사이즈 시트 기준이라 팩에 쓰면 거짓이 된다. 용도 설명만 남겼다.
+   - sub 문장이 "각 미리보기는 그 사이즈만으로 채운 시트이고, 실제 시트는 두 사이즈가 섞인다"를 명시한다.
+   - 회귀 확인: Package Full(팩 코드 없음) 섹션 미출력·오류 없음, Face Sticker 기존 6카드 그대로.
 4. ⬜ 테스트 시트 4장 출력해 스티커 개수 실측 → 카피 첫 줄에 숫자 반영
 5. ⬜ Planner / Full Set 사용 장면 촬영
 6. ✅ **완료 (2026-09-04)** 공용 스니펫 교정 — "The number of stickers can change with the photo's ratio." → "The number of stickers changes with each photo's shape. A tall photo fits fewer per row." 복사 테마 푸시 완료.

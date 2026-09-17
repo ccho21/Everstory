@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>Composed 미리보기 — Everstory</title>
+<!--
+  주문 보드 '구성' 화면. 배치는 Everstory_range.jsx 의 엔진을 그대로 돌린다 (/composed/engine.js — .jsx 에서 자동 추출).
+  그래서 여기서 보이는 시트 나눔·크기·자리가 Illustrator 가 만드는 것과 같다. 이름 글자·데코는 라이브러리 그림
+  (templates/art_preview, /api/composed/art) 을 엔진이 정한 자리에 놓는다 — 그림이 없으면 대략 모양(타일·이모지).
+  버블(통짜) 이름의 흰 테두리·칼선은 SVG 필터로 흉내 낸다 (실제는 Illustrator Offset Path).
+  앱 창(WKWebView)은 alert·새 창을 못 띄운다 — 알림은 화면 위 한 줄(#msg)로만.
+-->
+<style>
+  :root { color-scheme: light dark; --bg:#fff; --fg:#1a1a1a; --mut:#6b6b6b; --line:#e2e2e2; --soft:#f4f3f0;
+          --acc:#a9503c; --accfg:#fff; --warn:#b34700; --warnbg:#fff5ec; --err:#b3261e; --errbg:#fdecea;
+          --ok:#2b7a4b; --okbg:#eaf6ee; --sel:#2b6fff; --big:#f3c1b3; --med:#f6e2a8; --sml:#cfe6cf; --old:#e4e0f5; --none:#e6e6e6; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#161616; --fg:#ececec; --mut:#9a9a9a; --line:#2e2e2e; --soft:#1e1e1e;
+            --warn:#ff9d5c; --warnbg:#2a1d12; --err:#ff8a80; --errbg:#2c1715; --ok:#6fd39a; --okbg:#15251b;
+            --sel:#7aa7ff; --big:#6b3a2e; --med:#5f5023; --sml:#2f4a2f; --old:#3b3552; --none:#333; } }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; font:14px/1.45 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+         background:var(--bg); color:var(--fg); display:flex; flex-direction:column; }
+  header { display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--line); flex:none; }
+  a.back { color:var(--mut); text-decoration:none; font-size:13px; white-space:nowrap; }
+  a.back:hover { color:var(--fg); }
+  h1 { font-size:16px; margin:0; font-weight:650; white-space:nowrap; letter-spacing:-.01em; }
+  select, input { font:inherit; font-size:13.5px; color:var(--fg); background:var(--bg);
+                  border:1px solid var(--line); border-radius:7px; padding:5px 8px; min-width:0; }
+  #folder { width:230px; }
+  #sum { color:var(--mut); font-size:13px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  button { font:inherit; font-size:13px; padding:6px 12px; border-radius:8px; border:1px solid var(--line);
+           background:transparent; color:var(--fg); cursor:pointer; white-space:nowrap; }
+  button.primary { background:var(--acc); border-color:var(--acc); color:var(--accfg); font-weight:600; padding:7px 16px; }
+  button:disabled { opacity:.45; cursor:default; }
+  #msg:empty { display:none; }
+  #msg { flex:none; padding:8px 16px; font-size:13px; border-bottom:1px solid var(--line); }
+  #msg.ok { color:var(--ok); background:var(--okbg); }
+  #msg.err { color:var(--err); background:var(--errbg); }
+  main { flex:1; min-height:0; display:flex; }
+  aside { width:400px; flex:none; overflow:auto; border-right:1px solid var(--line); padding:12px 14px 24px; }
+  .sec { margin-bottom:14px; }
+  .sec h2 { font-size:12px; color:var(--mut); font-weight:600; margin:0 0 8px; display:flex; align-items:center; gap:6px; }
+  .form { display:grid; grid-template-columns:74px 1fr; gap:6px 10px; align-items:center; }
+  .form label { font-size:12.5px; color:var(--mut); }
+  .form input, .form select { width:100%; }
+  .seg { display:flex; gap:4px; }
+  .seg button { padding:3px 9px; font-size:12.5px; }
+  .seg button.on { background:var(--fg); color:var(--bg); border-color:var(--fg); }
+  .hint { font-size:12px; color:var(--mut); margin:6px 0 0; }
+  .hint.warn { color:var(--warn); }
+  .tools { margin-left:auto; display:flex; gap:4px; }
+  .tools button { padding:2px 8px; font-size:12px; }
+  .plist { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:7px; }
+  .ph { position:relative; border:1.5px solid var(--line); border-radius:10px; padding:4px 5px 6px; cursor:pointer;
+        background:var(--bg); user-select:none; -webkit-user-select:none; min-width:0; }
+  .ph.sel { border-color:var(--sel); box-shadow:inset 0 0 0 1px var(--sel); }
+  .ph:not(.sel) .thumb { opacity:.3; }
+  .ph.hl { background:var(--soft); }
+  .thumb { height:84px; background:center/contain no-repeat; }
+  .star { position:absolute; top:2px; left:3px; border:0; padding:0 3px; font-size:16px; line-height:1.2;
+          color:#c9c9c9; background:transparent; }
+  .star.on { color:#e8a500; }
+  .badge { position:absolute; top:5px; right:5px; font-size:10px; font-weight:700; padding:1px 5px; border-radius:5px;
+           background:var(--none); color:var(--fg); }
+  .badge.BIG { background:var(--big); } .badge.MED { background:var(--med); } .badge.SML { background:var(--sml); }
+  .badge.old { background:var(--old); }
+  .ph .nm { font-size:12px; font-weight:650; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ph .kind, .ph .where { font-size:11px; color:var(--mut); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ph .where b { color:var(--fg); font-weight:600; }
+  .ph select { width:100%; margin-top:3px; font-size:11.5px; padding:2px 3px; }
+  .ph select.need { border-color:var(--warn); color:var(--warn); }
+  .ph .flag { font-size:10.5px; color:var(--warn); }
+  .ph .flag.err { color:var(--err); }
+  .ph .size { display:flex; align-items:center; gap:2px; margin-top:3px; }
+  /* 카드가 좁아 기본 화살표를 빼야 "1.25" 가 다 보인다 */
+  .ph .size select { -webkit-appearance:none; appearance:none; width:auto; flex:1; min-width:0; margin:0; padding:2px 0;
+                     font-size:11px; text-align:center; text-align-last:center; cursor:pointer; background:var(--soft); }
+  .ph .size span { font-size:11px; color:var(--mut); }
+  .ph .size.custom select { border-color:var(--acc); color:var(--acc); font-weight:650; }
+  .ph .size button { border:0; padding:0 1px; font-size:12px; color:var(--acc); background:transparent; }
+  .ph .size:not(.custom) button { display:none; }
+  .sizetools { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--mut); margin:0 0 7px; }
+  .sizetools button { padding:2px 8px; font-size:12px; }
+  #view { flex:1; min-width:0; overflow:auto; padding:12px 16px 24px; background:var(--soft); }
+  #notes:empty { display:none; }
+  #notes { list-style:none; margin:0 0 12px; padding:8px 12px; border-radius:8px; background:var(--bg);
+           border:1px solid var(--line); font-size:12.5px; }
+  #notes li { margin:2px 0; padding-left:18px; text-indent:-18px; }
+  #notes li.err { color:var(--err); } #notes li.warn { color:var(--warn); } #notes li.info { color:var(--mut); }
+  #sheets { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; }
+  .sheet { flex:none; }
+  .paper { position:relative; background:#fff; color:#222; border-radius:3px; box-shadow:0 1px 4px rgba(0,0,0,.18); overflow:hidden; }
+  .paper .hdr { position:absolute; display:flex; justify-content:space-between; align-items:flex-end; border-bottom:1.5px solid #222; }
+  .paper .logo { font-weight:300; letter-spacing:.2em; line-height:1; }
+  .paper .info { text-align:right; line-height:1.3; color:#333; white-space:pre; }
+  .paper .body { position:absolute; outline:1px dashed #f0a0a0; }
+  .st { position:absolute; }
+  .st i { position:absolute; background-size:100% 100%; background-repeat:no-repeat;
+          filter:drop-shadow(0 0 .5px #d6336c) drop-shadow(0 0 .5px #d6336c); }
+  .st.approx i { filter:drop-shadow(0 0 .5px #e8a500) drop-shadow(0 0 .5px #e8a500); }
+  .st.hl { outline:2px solid var(--sel); outline-offset:1px; border-radius:2px; }
+  .nameblk { position:absolute; }
+  .nameblk span { position:absolute; display:flex; align-items:center; justify-content:center; font-weight:900;
+                  border-radius:24%; font-family:"Arial Rounded MT Bold","Helvetica Neue",sans-serif; }
+  .nameblk img { position:absolute; display:block; }
+  /* 글자마다 칼선 (레트로) — 사진과 같은 분홍 윤곽 */
+  .nameblk.cut img { filter:drop-shadow(0 0 .5px #d6336c) drop-shadow(0 0 .5px #d6336c); }
+  .fdefs { position:absolute; width:0; height:0; overflow:hidden; }
+  .deco { position:absolute; display:flex; align-items:center; justify-content:center; line-height:1; }
+  .deco img { width:100%; height:100%; object-fit:contain; display:block;
+              filter:drop-shadow(0 0 .5px #d6336c) drop-shadow(0 0 .5px #d6336c); }
+  /* 이름 스타일 고르기 — 버튼마다 그 스타일 글자 그림 */
+  .nsty { display:flex; gap:5px; flex-wrap:wrap; }
+  .nsty button { display:flex; align-items:center; gap:6px; padding:3px 9px 3px 5px; font-size:12.5px; }
+  .nsty button.on { border-color:var(--sel); box-shadow:inset 0 0 0 1px var(--sel); font-weight:650; }
+  .nsamp { display:flex; align-items:flex-end; height:20px; background:#fff; border-radius:4px; padding:1px 3px; }
+  .nsamp img { height:17px; margin-right:-1px; }
+  .nsty.off button { opacity:.55; }
+  .stats { font-size:12px; color:var(--mut); margin-top:6px; }
+  .stats b { color:var(--fg); font-weight:600; }
+  .stats .miss { color:var(--err); }
+  .empty { color:var(--mut); padding:48px 12px; text-align:center; }
+  /* 배치 고르기 — 시트 오른쪽 세로 칸 (위에 두면 큰 미리보기가 작아진다) */
+  .sheetrow { display:flex; gap:14px; align-items:flex-start; }
+  .picks { flex:none; width:var(--pickw); }
+  .plab { font-size:11.5px; color:var(--mut); font-weight:600; margin:0 0 5px; display:flex; align-items:center; gap:6px; }
+  .plab + .pgrid { margin-bottom:12px; }
+  .allst { padding:1px 6px; font-size:11px; font-weight:400; }
+  .pgrid { display:grid; grid-template-columns:repeat(2, max-content); gap:6px; }
+  .mini { cursor:pointer; border:1.5px solid var(--line); border-radius:7px; padding:3px; background:var(--bg); }
+  .mini:hover { border-color:var(--mut); }
+  .mini.on { border-color:var(--sel); box-shadow:inset 0 0 0 1px var(--sel); }
+  .mini .mb { position:relative; background:#fff; overflow:hidden; border-radius:2px; }
+  .mini.wait .mb { background:var(--soft); }
+  .mst, .mnm, .mdc { position:absolute; }
+  .mst i { position:absolute; background-size:100% 100%; background-repeat:no-repeat; }
+  .mnm { background:#444; border-radius:2px; }
+  .mdc { background:#f2c94c; border-radius:50%; }
+  .mini .cap { font-size:10.5px; line-height:1.3; margin-top:2px; text-align:center; white-space:nowrap; }
+  .mini .cap b { font-weight:650; }
+  .mini .cap span { color:var(--mut); }
+</style></head><body>
+<header>
+  <a class="back" id="back" href="#">← 주문 보드</a>
+  <h1>Composed 미리보기</h1>
+  <select id="folder" title="주문 폴더 — 02_cutout 에 누끼 페어가 있는 폴더, 최근 것부터"></select>
+  <button id="reload" title="폴더를 다시 읽는다 (Photoshop 에서 누끼를 새로 저장했을 때)">새로고침</button>
+  <span id="sum"></span>
+  <button class="primary" id="make" disabled>Illustrator 에서 만들기</button>
+</header>
+<div id="msg"></div>
+<main>
+  <aside>
+    <div class="sec">
+      <h2>시트 정보</h2>
+      <div class="form">
+        <label for="fName">고객 이름</label><input id="fName" autocomplete="off" spellcheck="false">
+        <label for="fSticker">스티커 이름</label><input id="fSticker" autocomplete="off" spellcheck="false" placeholder="비우면 이름·데코 없음">
+        <label id="fNameStyleLab" hidden>이름 스타일</label><div class="nsty" id="fNameStyle" hidden></div>
+        <label for="fOrder">주문번호</label><input id="fOrder" autocomplete="off" spellcheck="false">
+        <label for="fMat">재질</label><select id="fMat"></select>
+        <label for="fDate">날짜</label><input id="fDate" autocomplete="off" spellcheck="false" placeholder="2026-09-16">
+        <label>흰 테두리</label><div class="seg" id="fRim"></div>
+      </div>
+      <p class="hint" id="formHint"></p>
+    </div>
+    <div class="sec" id="layoutSec" hidden>
+      <h2>배치</h2>
+      <div class="form">
+        <label>이름 위치</label><div class="seg" id="fNamePos"></div>
+      </div>
+      <p class="hint">시트 오른쪽의 작은 그림을 누르면 그 배치로 바뀌어요 — <b>스타일</b>(큰 사진을 어디에 둘지)과
+        그 스타일의 <b>변형</b>(좌우 바꿈·섞기). 크기 규칙은 어느 배치든 같고, Illustrator 가 고른 배치 그대로 만들어요.</p>
+    </div>
+    <div class="sec">
+      <h2>사진 <span id="pcount"></span>
+        <span class="tools">
+          <button type="button" data-pick="first" id="pickFirst">앞 6장</button>
+          <button type="button" data-pick="all">전체</button>
+          <button type="button" data-pick="none">해제</button>
+        </span></h2>
+      <div class="sizetools" id="sizeTools" hidden>크기 범위
+        <button type="button" data-size="type" title="직접 정한 크기를 모두 지우고 파일명 표시·종류대로">종류대로</button>
+        <button type="button" data-size="all" title="모든 사진을 0.75~2.5″ 어느 크기든 되게">모두 0.75~2.5″</button></div>
+      <div class="plist" id="plist"></div>
+      <p class="hint">클릭 = 넣기·빼기 · ★ = 메인 (첫 시트에서 가장 크게). 크기 범위는 파일명 표시가 정해요 —
+        BIG 전신 1.25–2.5″ · MED 상반신 1–2″ · SML 얼굴 0.75–1.5″. 표시 없는 사진은 종류를 고르세요.
+        <span id="sizeHint" hidden>카드의 <b>최소~최대</b>를 바꾸면 그 사진만 그 범위로 만들어요 (↺ = 되돌리기).</span></p>
+    </div>
+  </aside>
+  <section id="view">
+    <ul id="notes"></ul>
+    <div id="sheets"><div class="empty">불러오는 중…</div></div>
+  </section>
+</main>
+<script>
+"use strict";
+const T = new URLSearchParams(location.search).get("t") || "";
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const url = (path, q) => path + "?" + new URLSearchParams(Object.assign({t: T}, q || {})).toString();
+const nfc = s => String(s || "").normalize("NFC");
+const OLD_TOKENS = { XS: 1, S: 1, M: 1, L: 1, XL: 1, XXL: 1, FAM: 1 };
+const DECO_EMOJI = { HEART: "❤️", FLOWER: "🌼", STAR: "⭐", CAMERA: "📷", BOW: "🎀", BONE: "🦴", CHERRY: "🍒",
+                     SMILE: "😊", RAINBOW: "🌈", CUPCAKE: "🧁", GIFT: "🎁", CLOUD: "☁️" };
+const TILE_BG = ["#e9a0b8", "#6ab0c8", "#f3d9a8", "#f06b8b", "#f4a3c1", "#9fd6a0"];
+const TILE_FG = ["#2f7a33", "#c2185b", "#2f5fb3", "#e89f1a", "#fff6e5", "#7b3fb0"];
+// 종이 틀 (mm): body 는 템플릿 실측(엔진 상수), 위에 머리글 자리.
+const PAPER = { pad: 4, head: 20 };
+
+let E = null;                 // 배치 엔진 (Everstory_range.jsx 에서 추출)
+// 앱 창(WKWebView)은 진행 중인 이동이 새 이동에 취소되면(-999) 보드를 오류 화면으로 바꾼다 — 두 번 눌러도 한 번만 이동.
+let leaving = false;
+const S = { folder: "", data: null, pairs: [], main: "", rim: 1, sel: [], results: [], hero: null,
+            blockers: [], busy: false, timer: 0, hot: -1,
+            features: [], namePos: "auto", choice: [], geo: null, gen: 0, nameStyle: "", art: {} };
+// 배치 고르기는 서버가 그 값을 받을 때만 (예전 서버는 배치 선택을 버린다 — 그러면 미리보기와 다른 시트가 나온다).
+const hasLayouts = () => S.features.indexOf("layouts") >= 0;
+const hasSizes = () => S.features.indexOf("sizes") >= 0;
+const hasNameStyles = () => S.features.indexOf("nameStyles") >= 0;
+const NAME_STYLE_KEY = "everstory.composed.nameStyle";   // 이 화면에서 마지막으로 고른 이름 스타일 (보는 사람 브라우저에만)
+const libStem = f => String(f || "").replace(/\.ai$/i, "");
+// 미리보기 그림 주소 — 서버 목록(S.art)에 있을 때만 (없으면 "" → 대략 모양으로 그린다).
+function artUrl(lib, name) {
+  const v = (S.art[lib] || {})[name];
+  return v ? url("/api/composed/art", { lib, name, v }) : "";
+}
+const NAME_POS_CHOICES = [["auto", "자동"], ["left", "왼쪽"], ["center", "가운데"], ["right", "오른쪽"]];
+const MINI_W = 66;            // 배치 고르기 작은 그림 폭 (px)
+const PICKS_W = 2 * (MINI_W + 9) + 6;
+
+function say(text, kind) { const m = $("#msg"); m.textContent = text || ""; m.className = text ? (kind || "") : ""; }
+
+async function getJSON(path, q) {
+  const r = await fetch(url(path, q));
+  const j = await r.json().catch(() => ({ error: "응답을 읽지 못했어요 (" + r.status + ")" }));
+  if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+  return j;
+}
+
+function loadEngine() {
+  return new Promise((ok, bad) => {
+    const s = document.createElement("script");
+    s.src = url("/composed/engine.js");
+    s.onload = () => window.EverstoryComposed ? ok(window.EverstoryComposed) : bad(new Error("배치 엔진을 못 읽었어요"));
+    s.onerror = () => bad(new Error("배치 엔진을 못 불러왔어요"));
+    document.head.appendChild(s);
+  });
+}
+
+// ── 사진 ──────────────────────────────────────────────────────
+function shortName(label) {
+  const m = /_(\d+)(?:_([A-Za-z]+))?$/.exec(label);
+  return m ? m[1] : label;
+}
+
+function preparePair(raw, keep) {
+  const nt = E._composedNameType(raw.base);
+  const canvasAspect = raw.canvas ? raw.canvas[0] / raw.canvas[1] : 0;
+  let cutInfo = null, cutState = "none";          // ok · stale(칼선 새로 딴다) · bad(손상) · none(캐시 없음)
+  if (raw.cut) {
+    if (raw.cut.bad) cutState = raw.cut.srcOk && raw.cut.sig === E._traceSignature() ? "bad" : "stale";
+    else if (!(raw.cut.srcOk && raw.cut.sig === E._traceSignature())) cutState = "stale";
+    else {
+      const info = { relL: raw.cut.rel[0], relT: raw.cut.rel[1], relW: raw.cut.rel[2], relH: raw.cut.rel[3] };
+      if (canvasAspect > 0 && E._composedCutAspect(canvasAspect, info) > 0) { cutInfo = info; cutState = "ok"; }
+      else cutState = "bad";
+    }
+  }
+  let guess = null;
+  if (!nt && raw.face) {
+    if (raw.face.type) guess = { key: raw.face.type, note: "전에 고른 종류", confirm: false };
+    else {
+      const rec = E._composedParseProbe(raw.face.probe);
+      if (rec) {
+        const g = E._composedClassify(rec, cutInfo ? cutInfo.relH : 1);
+        guess = { key: g.key === E.COMPOSED_TYPE_NONE ? "" : g.key, note: "자동 " + g.note, confirm: g.confirm };
+      }
+    }
+  }
+  const prev = keep && keep.get(raw.base);
+  return {
+    base: raw.base, label: raw.label, nn: shortName(raw.label), v: raw.v,
+    canvasAspect, cutInfo, cutState, est: prev ? prev.est : null,
+    nameType: nt, guess,
+    userType: prev ? prev.userType : (nt ? "" : (guess ? guess.key : "")),
+    selected: prev ? prev.selected : false,
+    sizeMin: prev ? prev.sizeMin : null,        // 직접 고른 크기 범위 (null = 종류대로)
+    sizeMax: prev ? prev.sizeMax : null,
+  };
+}
+
+const typeOf = p => p.nameType ? p.nameType.key : (p.userType || E.COMPOSED_TYPE_NONE);
+const customSize = p => hasSizes() && p.sizeMin != null;
+function typeRange(key) {
+  const t = E.COMPOSED_SHOT_TYPES[E._composedTypeIndex(key)];
+  const lad = E.COMPOSED_GRADES_IN;
+  return t ? [t.minIn, t.maxIn] : [Math.min(...lad), Math.max(...lad)];
+}
+const rangeOf = p => customSize(p) ? [p.sizeMin, p.sizeMax] : typeRange(typeOf(p));
+const relOf = p => p.cutInfo || p.est || { relL: 0, relT: 0, relW: 1, relH: 1 };
+function cutAspectOf(p) {
+  const info = p.cutInfo || p.est;
+  const a = info ? E._composedCutAspect(p.canvasAspect, info) : 0;
+  return a > 0 ? a : p.canvasAspect;
+}
+const thumbUrl = p => url("/api/composed/thumb", { folder: S.folder, base: p.base, v: p.v });
+
+// 칼선 캐시를 못 쓰는 사진 — 실루엣(_sil.png)의 불투명 영역으로 칼선 박스를 어림한다.
+async function estimateFromSil(p) {
+  const img = new Image();
+  img.src = url("/api/composed/sil", { folder: S.folder, base: p.base, v: p.v });
+  try { await img.decode(); } catch (e) { return; }
+  const k = Math.min(1, 480 / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d");
+  g.drawImage(img, 0, 0, w, h);
+  const d = g.getImageData(0, 0, w, h).data;
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (d[(y * w + x) * 4 + 3] > 24) {
+        if (x < x0) x0 = x; if (x > x1) x1 = x;
+        if (y < y0) y0 = y; if (y > y1) y1 = y;
+      }
+    }
+  }
+  if (x1 < 0) return;
+  p.est = { relL: x0 / w, relT: y0 / h, relW: (x1 - x0 + 1) / w, relH: (y1 - y0 + 1) / h };
+}
+
+// ── 폴더 ──────────────────────────────────────────────────────
+async function loadFolders(want) {
+  let folders = [];
+  try { folders = (await getJSON("/api/composed/folders")).folders; }
+  catch (e) { say("주문 폴더 목록을 못 읽었어요: " + e.message, "err"); }
+  const sel = $("#folder");
+  sel.innerHTML = folders.map(f => `<option value="${esc(f.name)}">${esc(f.label)} · 페어 ${f.pairs}</option>`).join("");
+  if (!folders.length) {
+    $("#sheets").innerHTML = '<div class="empty">누끼 페어(_clean.psd + _sil.png)가 있는 주문 폴더가 없어요.</div>';
+    return null;
+  }
+  if (want && !folders.some(f => f.name === want)) {
+    say("이 주문에는 아직 누끼 페어가 없어요 — Photoshop 에서 누끼를 먼저 저장하세요. 다른 폴더를 보여 줄게요.", "err");
+    want = "";
+  }
+  return want || folders[0].name;
+}
+
+async function loadFolder(name, fresh) {
+  let d;
+  try { d = await getJSON("/api/composed/pairs", { folder: name }); }
+  catch (e) { say(e.message, "err"); return; }
+  const keep = fresh ? null : new Map(S.pairs.map(p => [p.base, p]));
+  S.folder = name;
+  S.data = d;
+  S.features = Array.isArray(d.features) ? d.features : [];
+  S.art = (d.art && typeof d.art === "object") ? d.art : {};
+  $("#layoutSec").hidden = !hasLayouts();
+  $("#sizeTools").hidden = $("#sizeHint").hidden = !hasSizes();
+  $("#fNameStyle").hidden = $("#fNameStyleLab").hidden = !hasNameStyles();
+  $("#folder").value = name;
+  history.replaceState(null, "", url("/composed", { folder: name }));
+  S.pairs = d.pairs.map(raw => preparePair(raw, keep));
+  if (fresh) {
+    S.pairs.forEach((p, i) => { p.selected = i < E.COMPOSED_DEFAULT_SELECT; });
+    S.main = "";
+    S.rim = E.COMPOSED_RIM_MM;
+    S.namePos = "auto";
+    S.choice = [];
+    paintNamePos();
+    const f = d.prefill || {};
+    $("#fName").value = f.nameText || "";
+    $("#fSticker").value = f.stickerName || "";
+    $("#fOrder").value = f.orderNumber || "";
+    $("#fMat").value = f.material || E.MATERIAL_OPTIONS[0];
+    $("#fDate").value = d.today || "";
+    const memo = (f.notes && f.notes.length) ? "주문 메모: " + f.notes.join(" / ") : "";
+    const from = f.orderFrom === "folder" ? "주문번호는 폴더 이름에서 읽었어요 (_order.json 에 없음)." : "";
+    $("#formHint").textContent = [memo, from].filter(Boolean).join(" · ");
+    $("#formHint").className = "hint" + (memo ? " warn" : "");
+    say("");
+  } else if (S.main && !S.pairs.some(p => p.base === S.main)) {
+    S.main = "";
+  }
+  buildList();
+  compute();
+  // 칼선 캐시를 못 쓰는 사진은 실루엣으로 어림한 뒤 다시 계산한다.
+  const todo = S.pairs.filter(p => p.cutState !== "ok" && p.cutState !== "bad" && !p.est && p.canvasAspect > 0);
+  for (const p of todo) estimateFromSil(p).then(() => { if (S.folder === name) schedule(); });
+}
+
+// ── 목록 ──────────────────────────────────────────────────────
+function typeOptions(p) {
+  const opts = ['<option value="">종류 고르기…</option>'];
+  for (const t of E.COMPOSED_SHOT_TYPES) {
+    opts.push(`<option value="${t.key}" ${p.userType === t.key ? "selected" : ""}>${esc(E._composedTypeLabel(t.key))}</option>`);
+  }
+  opts.push(`<option value="${E.COMPOSED_TYPE_NONE}" ${p.userType === E.COMPOSED_TYPE_NONE ? "selected" : ""}>미분류 — 크기 제한 없음</option>`);
+  return opts.join("");
+}
+
+function sizeOptions() {
+  return E.COMPOSED_GRADES_IN.slice().sort((a, b) => a - b).map(v => `<option value="${v}">${v}</option>`).join("");
+}
+
+function buildList() {
+  $("#plist").innerHTML = S.pairs.map((p, i) => {
+    const tok = p.nameType ? p.nameType.token : "";
+    const badge = tok ? `<span class="badge ${OLD_TOKENS[tok] ? "old" : tok}" title="${OLD_TOKENS[tok] ? "옛 표시" : "파일명 표시"}">${tok}</span>`
+                      : `<span class="badge" title="파일명에 크기 표시가 없어요">표시 없음</span>`;
+    const kind = p.nameType ? `<div class="kind">${esc(E._composedTypeLabel(p.nameType.key))}</div>`
+                            : `<select data-i="${i}" title="이 사진의 종류 = 크기 범위">${typeOptions(p)}</select>`;
+    const size = hasSizes() ? `<div class="size" title="크기 범위 (긴 변 인치) — 바꾸면 이 사진만 이 범위로 만든다">` +
+      `<select data-min="${i}" aria-label="최소 크기 (인치)">${sizeOptions()}</select><span>~</span>` +
+      `<select data-max="${i}" aria-label="최대 크기 (인치)">${sizeOptions()}</select><span>″</span>` +
+      `<button type="button" data-reset="${i}" title="종류대로 되돌리기">↺</button></div>` : "";
+    return `<div class="ph" data-i="${i}" title="${esc(p.label)}">
+      <div class="thumb" style="background-image:url('${thumbUrl(p)}')"></div>
+      <button type="button" class="star" data-star="${i}" title="메인 사진 (첫 시트에서 가장 크게)">★</button>${badge}
+      <div class="nm">${esc(p.nn)}</div>${kind}${size}
+      <div class="where"></div><div class="flag"></div></div>`;
+  }).join("") || '<div class="empty">페어가 없어요</div>';
+  $("#pickFirst").textContent = "앞 " + E.COMPOSED_DEFAULT_SELECT + "장";
+}
+
+function updateList() {
+  const where = new Map();
+  S.results.forEach((x, s) => x.pairs.forEach((p, k) => {
+    const n = x.r ? x.r.counts[k] : 0;
+    where.set(p.base, `시트 <b>${s + 1}</b>` + (x.r ? ` · ${n}장` : ""));
+  }));
+  const sel = S.sel.length;
+  document.querySelectorAll("#plist .ph").forEach(el => {
+    const p = S.pairs[+el.dataset.i];
+    el.classList.toggle("sel", p.selected);
+    el.querySelector(".star").classList.toggle("on", S.main === p.base || (!S.main && sel && S.sel[0] === p));
+    el.querySelector(".where").innerHTML = p.selected ? (where.get(p.base) || "") : "빠짐";
+    const dd = el.querySelector("select[data-i]");
+    if (dd) dd.classList.toggle("need", p.selected && !p.userType && !customSize(p));
+    const sz = el.querySelector(".size");
+    if (sz) {
+      const [lo, hi] = rangeOf(p);
+      sz.querySelector("[data-min]").value = String(lo);
+      sz.querySelector("[data-max]").value = String(hi);
+      sz.classList.toggle("custom", customSize(p));
+    }
+    const fl = el.querySelector(".flag");
+    let flag = "", bad = false;
+    if (!p.canvasAspect) { flag = "실루엣을 못 읽음"; bad = true; }
+    else if (p.cutState === "bad") { flag = "칼선 캐시 손상"; bad = true; }
+    else if (p.cutState !== "ok") flag = p.est ? "칼선 어림" : "칼선 재는 중…";
+    else if (!p.nameType && p.guess && p.guess.confirm && p.userType === p.guess.key) flag = p.guess.note + " — 확인";
+    fl.textContent = flag;
+    fl.classList.toggle("err", bad);
+  });
+  $("#pcount").textContent = `${S.pairs.length}장 중 ${sel}장`;
+}
+
+// ── 계산 ──────────────────────────────────────────────────────
+function form() {
+  return { name: $("#fName").value.trim(), sticker: $("#fSticker").value.trim(), order: $("#fOrder").value.trim(),
+           material: $("#fMat").value, date: $("#fDate").value.trim() };
+}
+
+function schedule() { clearTimeout(S.timer); S.timer = setTimeout(compute, 90); }
+
+function compute() {
+  const f = form(), M = E.MM_TO_PT;
+  paintNameStyle(f.sticker);
+  const sel = S.pairs.filter(p => p.selected);
+  S.sel = sel;
+  S.results = [];
+  S.hero = null;
+  const notes = [], blockers = [];
+  if (sel.length) {
+    let mainIdx = S.main ? sel.findIndex(p => p.base === S.main) : 0;
+    if (mainIdx < 0) { S.main = ""; mainIdx = 0; }
+    const eng = sel.map(p => ({ base: p.base, aspect: p.canvasAspect, cutAspect: cutAspectOf(p), shotType: typeOf(p),
+                                sizeRange: customSize(p) ? [p.sizeMin, p.sizeMax] : null }));
+    const bin = E._composedPreviewBin();          // Illustrator 도 같은 식 — 같은 판·같은 지문
+    const binW = bin.w, binH = bin.h;
+    const gapPt = E.GAP_DEFAULT_MM * M;
+    // 이름 스타일은 스펙에 실려 데코·지문까지 따라간다 (예전 서버면 넘기지 않는다 = retro).
+    S.hero = hasNameStyles() ? E._composedHero(f.sticker, binW, gapPt, S.nameStyle) : E._composedHero(f.sticker, binW, gapPt);
+    S.geo = { binW, binH, gapPt, rimPt: S.rim * M, hero: S.hero.spec };
+    const plan = E._composedDeal(eng.map(p => E._composedPairMaxIn(p)), mainIdx);
+    plan.forEach((sh, s) => {
+      const item = { sheet: sh, pairs: sh.photos.map(i => sel[i]), r: null, error: "",
+                     eng: sh.photos.map(i => eng[i]), main: sh.photos.indexOf(sh.main),
+                     layout: null, style: "center", variants: [], styles: null };
+      if (hasLayouts()) pickLayout(item, s);
+      if (!item.r) {
+        try {
+          item.r = E._packComposed(item.eng, item.main, binW, binH, gapPt, E._composedPackExtras(S.hero.spec, S.rim * M, item.layout));
+          item.layout = item.r.layout;
+        } catch (e) { item.error = e.message; blockers.push("시트 " + (s + 1) + " 계산 실패: " + e.message); }
+      }
+      S.results.push(item);
+    });
+    if (S.hero.skipped) notes.push(["warn", "스티커 이름: " + S.hero.skipped]);
+  }
+  // 막는 것 (Illustrator 로 보내면 멈추거나 대화창이 뜬다)
+  if (!sel.length) blockers.push("사진을 한 장 이상 고르세요.");
+  if (!f.name) blockers.push("고객 이름을 적어 주세요.");
+  if (f.date && !/^\d{4}-\d{2}-\d{2}$/.test(f.date)) blockers.push("날짜는 2026-09-16 같은 모양으로 적어 주세요.");
+  const noType = sel.filter(p => !p.nameType && !p.userType && !customSize(p));
+  if (noType.length) blockers.push("종류를 고르세요 (파일명 표시 없음" + (hasSizes() ? " — 크기를 직접 정해도 돼요" : "") + "): " +
+    noType.map(p => p.nn).join(", "));
+  const badCut = sel.filter(p => p.cutState === "bad");
+  if (badCut.length) blockers.push("칼선 캐시가 손상된 사진: " + badCut.map(p => p.nn).join(", ") +
+    " — 02_cutout/_cutcache 의 해당 .evcut 을 지우고 새로고침하세요 (Illustrator 가 칼선을 다시 딴다).");
+  const noCanvas = sel.filter(p => !p.canvasAspect);
+  if (noCanvas.length) blockers.push("실루엣(_sil.png)을 못 읽은 사진: " + noCanvas.map(p => p.nn).join(", "));
+  // 알리기만 하는 것
+  const approx = sel.filter(p => p.cutState === "none" || p.cutState === "stale");
+  if (approx.length) notes.push(["warn", `칼선 캐시가 없거나 오래된 사진 ${approx.length}장(${approx.map(p => p.nn).join(", ")}) — 실루엣으로 크기를 어림했어요. ` +
+    "Illustrator 는 칼선을 새로 따므로 스티커 수가 조금 다를 수 있어요 (완료 창에 비교가 나와요)."]);
+  const unsure = sel.filter(p => !p.nameType && p.guess && p.guess.confirm && p.userType === p.guess.key);
+  if (unsure.length) notes.push(["warn", "자동 판별이 불확실한 사진: " + unsure.map(p => p.nn + " (" + p.guess.note + ")").join(", ") + " — 종류를 확인하세요."]);
+  const custom = sel.filter(customSize);
+  if (custom.length) notes.push(["info", `크기를 직접 정한 사진 ${custom.length}장 — ` +
+    custom.map(p => `${p.nn} ${p.sizeMin}~${p.sizeMax}″`).join(", ") + " (종류 범위 대신 이 범위로 만들어요)"]);
+  const old = sel.filter(p => p.nameType && OLD_TOKENS[p.nameType.token]);
+  if (old.length) notes.push(["info", `옛 표시(XS~XXL·FAM) ${old.length}장은 같은 묶음으로 읽어요 — 고객이 고른 값이면 종류와 다를 수 있어요.`]);
+  S.results.forEach((x, s) => {
+    if (x.r && x.r.missing.length) notes.push(["warn", `시트 ${s + 1}: 자리가 없어 못 넣은 조각 ${x.r.missing.join(", ")} (크기를 줄여 넣지 않아요)`]);
+  });
+  S.blockers = blockers;
+  $("#notes").innerHTML = blockers.map(t => `<li class="err">⛔ ${esc(t)}</li>`).join("") +
+    notes.map(([k, t]) => `<li class="${k}">${k === "info" ? "ℹ︎" : "⚠︎"} ${esc(t)}</li>`).join("");
+  updateList();
+  renderSheets();
+  renderSummary();
+  scheduleStyles();
+}
+
+// 시트 s 의 배치 — 고른 스타일의 변형 줄(기본·좌우 바꿈·섞기)을 계산하고 고른 판을 큰 미리보기로 쓴다.
+// 고른 판이 이번 줄에 없으면(사진이 바뀌어 섞기 판이 빠짐) 기본으로 돌아간다. 기본이 안 되면 item.r 없음 → 오류 경로.
+function pickLayout(item, s) {
+  const g = S.geo;
+  let c = S.choice[s];
+  if (!c || E._composedStyleIndex(c.style) < 0) c = { style: E.COMPOSED_STYLES[0].key, kind: "base", seed: 0 };
+  item.style = c.style;
+  const pos = E._composedResolveNamePos(c.style, S.namePos);
+  const vs = E._composedVariants(item.eng, item.main, g.binW, g.binH, g.gapPt, g.hero, g.rimPt, c.style, pos);
+  if (!vs.some(v => v.kind === "base")) return;
+  item.variants = vs;
+  let v = vs.find(x => x.kind === c.kind && (c.kind !== "shuffle" || x.layout.seed === c.seed));
+  if (!v) {
+    v = vs[0];
+    S.choice[s] = { style: c.style, kind: "base", seed: 0 };
+  }
+  item.r = v.res;
+  item.layout = v.layout;
+}
+
+// 스타일 줄 — 스타일마다 기본 판 하나. 조금 걸리므로 화면을 먼저 그린 뒤 나눠서 계산한다 (새 계산이 시작되면 그만둔다).
+function scheduleStyles() {
+  const gen = ++S.gen;
+  if (!hasLayouts()) return;
+  let s = 0, k = 0;
+  const step = () => {
+    if (gen !== S.gen) return;
+    const t0 = performance.now();
+    while (s < S.results.length && performance.now() - t0 < 12) {
+      const x = S.results[s];
+      if (!x.r || !x.variants.length) { s++; k = 0; continue; }
+      if (!x.styles) x.styles = E.COMPOSED_STYLES.map(st => ({ key: st.key, label: st.label, res: null, layout: null, error: "" }));
+      const cell = x.styles[k];
+      if (cell.key === x.style) {
+        cell.res = x.variants[0].res;
+        cell.layout = x.variants[0].layout;
+      } else {
+        const g = S.geo;
+        const lay = { style: cell.key, namePos: E._composedResolveNamePos(cell.key, S.namePos), mirror: false, seed: 0 };
+        try {
+          cell.res = E._packComposed(x.eng, x.main, g.binW, g.binH, g.gapPt, E._composedPackExtras(g.hero, g.rimPt, lay));
+          cell.layout = cell.res.layout;
+        } catch (e) { cell.error = e.message; }
+      }
+      if (++k >= x.styles.length) {
+        const box = document.getElementById("stRow" + s);
+        if (box) box.innerHTML = styleMinis(x, s);
+        s++;
+        k = 0;
+      }
+    }
+    if (s < S.results.length) setTimeout(step, 0);
+  };
+  setTimeout(step, 0);
+}
+
+// ── 그리기 ────────────────────────────────────────────────────
+function scaleFor(n) {
+  const v = $("#view");
+  const bodyW = E.COMPOSED_PREVIEW_BODY_MM[0], bodyH = E.COMPOSED_PREVIEW_BODY_MM[1];
+  const pw = bodyW + 2 * PAPER.pad, ph = bodyH + PAPER.head + 2 * PAPER.pad;
+  const side = hasLayouts() ? PICKS_W + 14 : 0;        // 시트 오른쪽 배치 고르기 칸
+  const W = v.clientWidth - 32, H = v.clientHeight - ($("#notes").offsetHeight || 0) - 60;
+  const per = n > 1 && W >= 2 * (pw * 2.1 + side) + 16 ? 2 : 1;
+  const k = Math.min((W - (per - 1) * 16 - per * side) / per / pw, H / ph);
+  return Math.max(1.8, Math.min(k, 4.5));
+}
+
+// 배치 고르기 작은 그림 한 칸. r = _packComposed 결과 (없으면 계산 중·안 됨).
+function miniHtml(x, r, attrs, label, title, on, err) {
+  const M = E.MM_TO_PT, bodyW = E.COMPOSED_PREVIEW_BODY_MM[0], bodyH = E.COMPOSED_PREVIEW_BODY_MM[1];
+  const k = MINI_W / bodyW, px = mm => (mm * k).toFixed(2) + "px";
+  const padX = E.BODY_PADDING_X_MM, padY = E.BODY_PADDING_Y_MM;
+  const items = [];
+  if (r) {
+    for (const a of r.placed) {
+      const p = x.pairs[a.photo], rel = relOf(p), rim = (a.w - a.artW) / 2 / M;
+      const ax = padX + a.x / M + rim, ay = padY + a.y / M + rim, aw = a.artW / M, ah = a.artH / M;
+      const iw = aw / rel.relW, ih = ah / rel.relH;
+      items.push(`<div class="mst" style="left:${px(ax)};top:${px(ay)};width:${px(aw)};height:${px(ah)}">` +
+        `<i style="left:${px(-rel.relL * iw)};top:${px(-rel.relT * ih)};width:${px(iw)};height:${px(ih)};background-image:url('${thumbUrl(p)}')"></i></div>`);
+    }
+    if (r.nameBox) {
+      const nb = r.nameBox;
+      items.push(`<div class="mnm" style="left:${px(padX + nb.x / M)};top:${px(padY + nb.y / M)};width:${px(nb.w / M)};height:${px(nb.h / M)}"></div>`);
+    }
+    for (const d of r.decos) {
+      items.push(`<div class="mdc" style="left:${px(padX + d.x / M)};top:${px(padY + d.y / M)};width:${px(d.w / M)};height:${px(d.h / M)}"></div>`);
+    }
+  }
+  const count = r ? `${r.placed.length}장` + (r.missing.length ? " ⚠" : "") : (err ? "안 됨" : "…");
+  return `<div class="mini${on ? " on" : ""}${r ? "" : " wait"}" ${attrs} title="${esc(title + (err ? " — " + err : ""))}">` +
+    `<div class="mb" style="width:${MINI_W}px;height:${(MINI_W * bodyH / bodyW).toFixed(1)}px">${items.join("")}</div>` +
+    `<div class="cap"><b>${esc(label)}</b> <span>${esc(count)}</span></div></div>`;
+}
+
+function styleMinis(x, s) {
+  const cells = x.styles || E.COMPOSED_STYLES.map(st => ({ key: st.key, label: st.label, res: null, layout: null, error: "" }));
+  return cells.map(c => miniHtml(x, c.res, `data-s="${s}" data-style="${c.key}"`, c.label,
+    "스타일: " + c.label + (c.layout ? " (" + E._composedLayoutLabel(c.layout) + ")" : ""), c.key === x.style, c.error)).join("");
+}
+
+function variantLabel(v) {
+  if (v.kind === "mirror") return "좌우 바꿈";
+  if (v.kind === "shuffle") return "섞기 " + v.layout.seed;
+  return "기본";
+}
+
+function variantMinis(x, s) {
+  return x.variants.map(v => miniHtml(x, v.res, `data-s="${s}" data-kind="${v.kind}" data-seed="${v.layout.seed}"`,
+    variantLabel(v), E._composedLayoutLabel(v.layout), v.layout === x.layout, "")).join("");
+}
+
+function picksHtml(x, s) {
+  if (!hasLayouts() || !x.variants.length) return "";
+  const all = S.results.length > 1
+    ? `<button type="button" class="allst" data-allstyle="${s}" title="이 시트의 스타일을 모든 시트에 (각 시트는 기본 판)">모든 시트에</button>` : "";
+  return `<div class="picks" style="--pickw:${PICKS_W}px">` +
+    `<div class="plab">스타일 ${all}</div><div class="pgrid" id="stRow${s}">${styleMinis(x, s)}</div>` +
+    `<div class="plab">변형</div><div class="pgrid">${variantMinis(x, s)}</div></div>`;
+}
+
+// 이름 스티커 — 엔진이 정한 글자 자리(_artLetterBoxes)에 그 스타일 라이브러리 그림을 놓는다.
+// 통짜(bubble)는 이름 전체 흰 테두리 + 칼선(분홍)을 SVG 필터로, 레트로는 글자마다 칼선. 그림이 없으면 색 타일.
+// s = 시트 번호 (필터 id), k = px/mm, px = mm → "Npx".
+function nameBlockHtml(spec, r, s, k, px) {
+  const M = E.MM_TO_PT, st = E._nameStyle(spec.nameStyle), lib = libStem(st.letterLib);
+  const pad = (r.namePad || 0) / M, nb = r.nameBox;
+  const left = E.BODY_PADDING_X_MM + nb.x / M + pad, top = E.BODY_PADDING_Y_MM + nb.y / M + pad;
+  let body = "", tiles = false;
+  E._artLetterBoxes(spec).forEach((b, i) => {
+    if (b.missing) return;
+    const src = artUrl(lib, "LTR_" + b.ch + (b.variant === "L" || b.variant === "R" ? "_" + b.variant : ""));
+    const at = `left:${px(b.x / M)};top:${px(b.y / M)};width:${px(b.w / M)};height:${px(b.h / M)}`;
+    if (src) {
+      body += `<img src="${src}" alt="" style="${at}">`;
+    } else {
+      tiles = true;
+      body += `<span style="${at};background:${TILE_BG[i % TILE_BG.length]};color:${TILE_FG[i % TILE_FG.length]};` +
+        `font-size:${px(b.h / M * 0.7)}">${esc(b.ch)}</span>`;
+    }
+  });
+  const title = "이름 스티커 · " + st.label + (spec.whole ? " (이름 통짜 · 흰 테두리 포함 · 칼선 1개)" : " (글자마다 칼선)") +
+    (tiles ? " — 그림이 없어 모양은 대략" : "");
+  const id = "nh" + s;
+  return (spec.whole ? haloFilter(id, spec.halo / M * k) : "") +
+    `<div class="nameblk ${spec.whole ? "whole" : "cut"}" style="left:${px(left)};top:${px(top)};width:${px(spec.cellW / M)};` +
+    `height:${px(spec.cellH / M)}${spec.whole ? `;filter:url(#${id})` : ""}" title="${esc(title)}">${body}</div>`;
+}
+
+// 흰 테두리 흉내: 글자 알파를 흐린 뒤 문턱으로 자르면 둥글게 r px 부푼 모양 (Offset Path 라운드와 비슷) → 흰색,
+// 그보다 0.7px 바깥 = 칼선 분홍. 실제 두께는 Illustrator 의 Offset Path 가 정한다.
+function haloFilter(id, r) {
+  const sd = Math.max(0.3, r / 2.05);
+  return `<svg class="fdefs" aria-hidden="true"><filter id="${id}" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">` +
+    `<feGaussianBlur in="SourceAlpha" stdDeviation="${sd.toFixed(2)}" result="b"/>` +
+    `<feComponentTransfer in="b" result="d"><feFuncA type="linear" slope="40" intercept="-0.8"/></feComponentTransfer>` +
+    `<feMorphology in="d" operator="dilate" radius="0.7" result="d2"/>` +
+    `<feFlood flood-color="#d6336c"/><feComposite in2="d2" operator="in" result="edge"/>` +
+    `<feFlood flood-color="#ffffff"/><feComposite in2="d" operator="in" result="white"/>` +
+    `<feMerge><feMergeNode in="edge"/><feMergeNode in="white"/><feMergeNode in="SourceGraphic"/></feMerge></filter></svg>`;
+}
+
+// 데코 — 박스 안쪽 여백(pad, 버블)만큼 줄여 가운데에 맞춘다 (range.jsx _drawDecoSticker 와 같은 규칙).
+function decoHtml(d, px) {
+  const M = E.MM_TO_PT, st = E._nameStyle(d.payload.style), pad = (d.payload.pad || 0) / M;
+  const src = st ? artUrl(libStem(st.decoLib), "DECO_" + d.payload.deco) : "";
+  const w = d.w / M - 2 * pad, h = d.h / M - 2 * pad;
+  const at = `left:${px(E.BODY_PADDING_X_MM + d.x / M + pad)};top:${px(E.BODY_PADDING_Y_MM + d.y / M + pad)};width:${px(w)};height:${px(h)}`;
+  if (src) return `<div class="deco" style="${at}" title="데코 ${esc(d.payload.deco)}"><img src="${src}" alt=""></div>`;
+  return `<div class="deco" style="${at};font-size:${px(Math.min(w, h) * 0.78)}" title="데코 ${esc(d.payload.deco)} (모양은 대략)">` +
+    `${DECO_EMOJI[d.payload.deco] || "✨"}</div>`;
+}
+
+// 이름 스타일 버튼 — 스티커 이름의 앞 글자(없으면 ABC)를 그 스타일 그림으로 보여 준다. 이름이 비었거나 A–Z 가 아니면 흐리게.
+function paintNameStyle(sticker) {
+  const box = $("#fNameStyle");
+  if (!hasNameStyles()) return;
+  const word = String(sticker || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5);
+  const letters = (word || "ABC").split("");
+  const art = /^[A-Za-z\s]+$/.test(String(sticker || "").trim());
+  const key = letters.join("") + "|" + S.nameStyle + "|" + art + "|" + Object.keys(S.art).join(",");
+  if (box.dataset.key === key) return;            // 입력 중 매번 그림을 다시 만들지 않게
+  box.dataset.key = key;
+  box.classList.toggle("off", !art);
+  box.title = art ? "" : "스티커 이름이 A–Z 일 때만 이름 스티커가 들어가요";
+  box.innerHTML = E.COMPOSED_NAME_STYLES.map(st => {
+    const lib = libStem(st.letterLib);
+    const imgs = letters.map(c => artUrl(lib, "LTR_" + c)).filter(Boolean).map(src => `<img src="${src}" alt="">`).join("");
+    const tip = st.label + (st.whole ? " — 글자를 붙여 쓰고 이름 전체를 흰 테두리 하나로 (칼선 1개) · 두들 데코"
+      : " — 글자마다 따로 떼는 스티커 · 레트로 데코");
+    return `<button type="button" data-nstyle="${esc(st.key)}" class="${st.key === S.nameStyle ? "on" : ""}" title="${esc(tip)}">` +
+      (imgs ? `<span class="nsamp">${imgs}</span>` : "") + `${esc(st.label)}</button>`;
+  }).join("");
+}
+
+function renderSheets() {
+  const box = $("#sheets");
+  if (!S.results.length) {
+    box.innerHTML = `<div class="empty">${S.pairs.length ? "왼쪽에서 사진을 고르면 시트가 여기에 보여요." : ""}</div>`;
+    return;
+  }
+  const f = form(), M = E.MM_TO_PT, k = scaleFor(S.results.length);
+  const bodyW = E.COMPOSED_PREVIEW_BODY_MM[0], bodyH = E.COMPOSED_PREVIEW_BODY_MM[1];
+  const padX = E.BODY_PADDING_X_MM, padY = E.BODY_PADDING_Y_MM;
+  const px = mm => (mm * k).toFixed(2) + "px";
+  const html = S.results.map((x, s) => {
+    const parts = [];
+    const bx = PAPER.pad, by = PAPER.pad + PAPER.head;
+    parts.push(`<div class="hdr" style="left:${px(bx)};top:${px(PAPER.pad)};width:${px(bodyW)};height:${px(PAPER.head - 2)}">` +
+      `<span class="logo" style="font-size:${px(7)}">everstory</span>` +
+      `<span class="info" style="font-size:${px(2.6)}">${esc(nfc(f.name))} • ${esc(E.RANGE_LABELS.composed)} • ${esc(f.material)}\n` +
+      `${x.pairs.length} design(s)${S.results.length > 1 ? ` • sheet ${s + 1}/${S.results.length}` : ""}\n` +
+      `Order: ${esc(f.order || "—")} | date: ${esc(f.date)}</span></div>`);
+    const items = [];
+    if (x.r) {
+      for (const a of x.r.placed) {
+        const p = x.pairs[a.photo], rel = relOf(p), rim = (a.w - a.artW) / 2 / M;
+        const ax = padX + a.x / M + rim, ay = padY + a.y / M + rim, aw = a.artW / M, ah = a.artH / M;
+        const iw = aw / rel.relW, ih = ah / rel.relH;
+        items.push(`<div class="st${p.cutInfo ? "" : " approx"}" data-b="${S.pairs.indexOf(p)}" ` +
+          `style="left:${px(ax)};top:${px(ay)};width:${px(aw)};height:${px(ah)}" title="${esc(p.nn)} · ${a.inch}″${a.extra ? " · 빈틈 추가" : ""}">` +
+          `<i style="left:${px(-rel.relL * iw)};top:${px(-rel.relT * ih)};width:${px(iw)};height:${px(ih)};background-image:url('${thumbUrl(p)}')"></i></div>`);
+      }
+      if (x.r.nameBox && S.hero && S.hero.spec) items.push(nameBlockHtml(S.hero.spec, x.r, s, k, px));
+      for (const d of x.r.decos) items.push(decoHtml(d, px));
+    }
+    parts.push(`<div class="body" style="left:${px(bx)};top:${px(by)};width:${px(bodyW)};height:${px(bodyH)}">${items.join("")}</div>`);
+    const paper = `<div class="paper" style="width:${px(bodyW + 2 * PAPER.pad)};height:${px(bodyH + PAPER.head + 2 * PAPER.pad)}">${parts.join("")}</div>`;
+    let stats;
+    if (x.r) {
+      const by2 = {};
+      x.r.placed.forEach(a => { by2[a.inch] = (by2[a.inch] || 0) + 1; });
+      const ladder = E.COMPOSED_GRADES_IN.filter(g => by2[g]).map(g => `${g}″×${by2[g]}`).join(" · ");
+      stats = `<b>시트 ${s + 1}/${S.results.length}</b> · 사진 ${x.pairs.length}장 · 스티커 <b>${x.r.placed.length}장</b>` +
+        (x.r.extras ? ` (빈틈 추가 ${x.r.extras})` : "") + ` · 사진 면적 ${(x.r.evaluation.artFill * 100).toFixed(0)}%<br>${ladder}` +
+        (x.r.missing.length ? ` · <span class="miss">못 넣음 ${esc(x.r.missing.join(", "))}</span>` : "") +
+        (hasLayouts() && x.layout ? `<br>배치 ${esc(E._composedLayoutLabel(x.layout))}` : "") +
+        (x.r.nameBox && S.hero && S.hero.spec ? `<br>이름 ${esc(E._nameStyle(S.hero.spec.nameStyle).label)} ` +
+          `${(S.hero.spec.cellW / M).toFixed(1)}×${(S.hero.spec.cellH / M).toFixed(1)}mm · 데코 ${x.r.decos.length}개` : "");
+    } else {
+      stats = `<b>시트 ${s + 1}</b> · <span class="miss">${esc(x.error)}</span>`;
+    }
+    const main = `<div style="width:${px(bodyW + 2 * PAPER.pad)}">${paper}<div class="stats">${stats}</div></div>`;
+    return `<article class="sheet"><div class="sheetrow">${main}${picksHtml(x, s)}</div></article>`;
+  }).join("");
+  box.innerHTML = html;
+  if (S.hot >= 0) highlight(S.hot, true);
+}
+
+function renderSummary() {
+  const n = S.results.reduce((t, x) => t + (x.r ? x.r.placed.length : 0), 0);
+  $("#sum").textContent = S.sel.length
+    ? `사진 ${S.pairs.length}장 중 ${S.sel.length}장 → 시트 ${S.results.length}장 · 스티커 ${n}장` +
+      (S.data && S.data.sheets ? ` · 이미 만든 시트 ${S.data.sheets}개` : "")
+    : "";
+  $("#make").disabled = S.busy || S.blockers.length > 0;
+  $("#make").title = S.blockers.length ? S.blockers.join("\n")
+    : "Everstory_range.jsx 가 이 미리보기 그대로" + (hasLayouts() ? " (고른 배치까지)" : "") + " 시트를 만든다 (대화창 없음)";
+}
+
+function highlight(i, on) {
+  S.hot = on ? i : -1;
+  document.querySelectorAll(".ph.hl, .st.hl").forEach(el => el.classList.remove("hl"));
+  if (!on || i < 0) return;
+  const card = document.querySelector(`.ph[data-i="${i}"]`);
+  if (card) card.classList.add("hl");
+  document.querySelectorAll(`.st[data-b="${i}"]`).forEach(el => el.classList.add("hl"));
+}
+
+// ── 만들기 ────────────────────────────────────────────────────
+async function make() {
+  if (S.busy || S.blockers.length) return;
+  const f = form();
+  const shotTypes = {}, sizeRanges = {};
+  // 종류 없이 크기만 정한 사진은 "미분류"로 보낸다 (크기는 sizeRanges 가 정한다).
+  S.sel.filter(p => !p.nameType).forEach(p => { shotTypes[p.base] = p.userType || E.COMPOSED_TYPE_NONE; });
+  S.sel.filter(customSize).forEach(p => { sizeRanges[p.base] = [p.sizeMin, p.sizeMax]; });
+  const body = {
+    folder: S.folder, bases: S.sel.map(p => p.base), mainBase: S.main || "",
+    nameText: f.name, stickerName: f.sticker, orderNumber: f.order, material: f.material, orderDate: f.date,
+    cutMarginMm: S.rim, shotTypes,
+    expect: { sheets: S.results.map(x => x.pairs.map(p => p.base)), stickers: S.results.map(x => x.r ? x.r.placed.length : -1) },
+  };
+  if (hasSizes()) body.sizeRanges = sizeRanges;
+  if (hasNameStyles()) body.nameStyle = S.nameStyle;
+  if (hasLayouts()) {
+    // 시트마다 고른 배치 + 배치 지문 — Illustrator 가 같은 자리에 만들었는지 완료 창에서 확인한다.
+    body.layouts = S.results.map(x => x.layout);
+    body.expect.sigs = S.results.map(x => x.r ? x.r.sig : "");
+  }
+  S.busy = true;
+  renderSummary();
+  try {
+    const r = await fetch(url("/api/composed/make"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j.error || ("HTTP " + r.status));
+    say(j.duplicate ? "방금 같은 내용을 보냈어요 — 다시 보내지 않았어요."
+      : `Illustrator 로 넘겼어요 (${j.summary}). 다 되면 Illustrator 에 완료 창이 뜨고, 미리보기와 다르면 거기에 적혀요.`, "ok");
+  } catch (e) {
+    say("Illustrator 로 못 넘겼어요: " + e.message, "err");
+  }
+  setTimeout(() => { S.busy = false; renderSummary(); }, 4000);
+}
+
+// ── 이벤트 ────────────────────────────────────────────────────
+function wire() {
+  $("#plist").addEventListener("click", e => {
+    if (e.target.closest("select")) return;
+    const reset = e.target.closest("[data-reset]");
+    if (reset) {
+      const p = S.pairs[+reset.dataset.reset];
+      p.sizeMin = p.sizeMax = null;
+      compute();
+      return;
+    }
+    if (e.target.closest(".size")) return;
+    const star = e.target.closest("[data-star]");
+    const card = e.target.closest(".ph");
+    if (!card) return;
+    const p = S.pairs[+card.dataset.i];
+    if (star) {
+      S.main = S.main === p.base ? "" : p.base;
+      p.selected = true;
+    } else {
+      p.selected = !p.selected;
+      if (!p.selected && S.main === p.base) S.main = "";
+    }
+    compute();
+  });
+  $("#plist").addEventListener("change", e => {
+    const dd = e.target.closest("select[data-i]");
+    if (dd) {
+      S.pairs[+dd.dataset.i].userType = dd.value;
+      compute();
+      return;
+    }
+    const sz = e.target.closest("select[data-min], select[data-max]");
+    if (!sz) return;
+    // 최소를 최대보다 크게 고르면 최대도 따라 올라간다 (반대도 마찬가지). 한 번 정하면 ↺ 전까지 직접 범위.
+    const isMin = sz.dataset.min !== undefined;
+    const p = S.pairs[+(isMin ? sz.dataset.min : sz.dataset.max)];
+    let [lo, hi] = rangeOf(p);
+    const v = +sz.value;
+    if (isMin) { lo = v; if (hi < lo) hi = lo; }
+    else { hi = v; if (lo > hi) lo = hi; }
+    p.sizeMin = lo;
+    p.sizeMax = hi;
+    compute();
+  });
+  $("#sizeTools").addEventListener("click", e => {
+    const b = e.target.closest("[data-size]");
+    if (!b) return;
+    const lad = E.COMPOSED_GRADES_IN;
+    S.pairs.forEach(p => {
+      if (b.dataset.size === "all") { p.sizeMin = Math.min(...lad); p.sizeMax = Math.max(...lad); }
+      else { p.sizeMin = p.sizeMax = null; }
+    });
+    compute();
+  });
+  $("#plist").addEventListener("mouseover", e => {
+    const card = e.target.closest(".ph");
+    if (card) highlight(+card.dataset.i, true);
+  });
+  $("#plist").addEventListener("mouseleave", () => highlight(-1, false));
+  $("#sheets").addEventListener("mouseover", e => {
+    const st = e.target.closest(".st");
+    highlight(st ? +st.dataset.b : -1, !!st);
+  });
+  $("#sheets").addEventListener("mouseleave", () => highlight(-1, false));
+  $("#sheets").addEventListener("click", e => {
+    const all = e.target.closest("[data-allstyle]");
+    if (all) {
+      const style = S.results[+all.dataset.allstyle].style;
+      S.choice = S.results.map(() => ({ style, kind: "base", seed: 0 }));
+      compute();
+      return;
+    }
+    const m = e.target.closest(".mini[data-s]");
+    if (!m) return;
+    const s = +m.dataset.s, x = S.results[s];
+    if (!x) return;
+    if (m.dataset.style) {
+      if (m.classList.contains("wait")) return;         // 아직 계산 중이거나 안 되는 스타일
+      S.choice[s] = { style: m.dataset.style, kind: "base", seed: 0 };
+    } else {
+      S.choice[s] = { style: x.style, kind: m.dataset.kind, seed: +m.dataset.seed || 0 };
+    }
+    compute();
+  });
+  $("#fNamePos").addEventListener("click", e => {
+    const b = e.target.closest("[data-pos]");
+    if (!b) return;
+    S.namePos = b.dataset.pos;
+    paintNamePos();
+    compute();
+  });
+  $("#fNameStyle").addEventListener("click", e => {
+    const b = e.target.closest("[data-nstyle]");
+    if (!b || b.dataset.nstyle === S.nameStyle) return;
+    S.nameStyle = b.dataset.nstyle;
+    try { localStorage.setItem(NAME_STYLE_KEY, S.nameStyle); } catch (err) { /* 저장 못 해도 이번 화면에서는 쓴다 */ }
+    compute();
+  });
+  document.querySelectorAll("[data-pick]").forEach(b => b.addEventListener("click", () => {
+    const how = b.dataset.pick;
+    S.pairs.forEach((p, i) => { p.selected = how === "all" || (how === "first" && i < E.COMPOSED_DEFAULT_SELECT); });
+    if (S.main && !S.pairs.some(p => p.selected && p.base === S.main)) S.main = "";
+    compute();
+  }));
+  ["#fName", "#fSticker", "#fOrder", "#fDate"].forEach(id => $(id).addEventListener("input", schedule));
+  $("#fMat").addEventListener("change", compute);
+  $("#fRim").addEventListener("click", e => {
+    const b = e.target.closest("[data-rim]");
+    if (!b) return;
+    S.rim = +b.dataset.rim;
+    paintRim();
+    compute();
+  });
+  $("#folder").addEventListener("change", () => loadFolder($("#folder").value, true));
+  $("#reload").addEventListener("click", () => loadFolder(S.folder, false));
+  $("#make").addEventListener("click", make);
+  window.addEventListener("resize", () => { if (S.results.length) renderSheets(); });
+}
+
+function paintRim() {
+  document.querySelectorAll("#fRim [data-rim]").forEach(b => b.classList.toggle("on", +b.dataset.rim === S.rim));
+}
+
+function paintNamePos() {
+  document.querySelectorAll("#fNamePos [data-pos]").forEach(b => b.classList.toggle("on", b.dataset.pos === S.namePos));
+}
+
+async function init() {
+  $("#back").href = url("/");
+  $("#back").addEventListener("click", e => { if (leaving) e.preventDefault(); leaving = true; });
+  addEventListener("pageshow", e => { if (e.persisted) leaving = false; });   // 브라우저 뒤로 가기로 돌아온 경우
+  try { E = await loadEngine(); }
+  catch (e) { say(e.message + " — 보드를 다시 켜 보세요.", "err"); $("#sheets").innerHTML = ""; return; }
+  $("#fMat").innerHTML = E.MATERIAL_OPTIONS.map(m => `<option>${esc(m)}</option>`).join("");
+  $("#fRim").innerHTML = E.CUT_MARGIN_VALUES.map(v => `<button type="button" data-rim="${v}">${v}mm</button>`).join("");
+  $("#fNamePos").innerHTML = NAME_POS_CHOICES.map(([v, t]) =>
+    `<button type="button" data-pos="${v}" title="${v === "auto" ? "스타일마다 어울리는 자리 (가운데 스타일은 왼쪽)" : "스티커 이름을 " + t + "에"}">${t}</button>`).join("");
+  S.rim = E.COMPOSED_RIM_MM;
+  // 이름 스타일 — 지난번에 고른 것 (엔진이 모르는 값이면 첫 번째 = 레트로).
+  const styleKeys = (E.COMPOSED_NAME_STYLES || []).map(st => st.key);
+  let saved = "";
+  try { saved = localStorage.getItem(NAME_STYLE_KEY) || ""; } catch (err) { saved = ""; }
+  S.nameStyle = styleKeys.indexOf(saved) >= 0 ? saved : (styleKeys[0] || "");
+  paintRim();
+  paintNamePos();
+  wire();
+  const name = await loadFolders(new URLSearchParams(location.search).get("folder") || "");
+  if (name) {
+    await loadFolder(name, true);
+    paintRim();
+  }
+}
+init();
+</script>
+</body></html>

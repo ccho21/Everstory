@@ -7,7 +7,7 @@ Illustrator 를 켜지 않고 **배치 로직만** node 로 돌려본다.
 ## .jsx 를 고쳤으면 이것부터
 
 ```bash
-cd sim && node extract.js ../Everstory_mixed.jsx packer.js && node hoisttest.js && node nametest.js && node decotest.js && node modetest.js && node ordertest.js && node regress.js
+cd sim && node extract.js ../Everstory_mixed.jsx packer.js && node hoisttest.js && node nametest.js && node modetest.js && node ordertest.js && node regress.js
 ```
 
 `extract.js` 를 먼저 안 돌리면 **낡은 `packer.js` 로 테스트가 통과**한다. 실제로 여러 번 당했다.
@@ -141,29 +141,117 @@ Node 실측(2026-09-13, Sanvi 4장): Small 이름 있음 = 사진 18(3/5/5/5) + 
 **Large 는 1.5″²/2″² 셀이 142mm 폭에 비해 커서 4디자인이면 8~12장, 두 등급을 다 못 넣는 사진이 생긴다** — Large 규칙(면적 등급 축소 / 두 등급 포기 / 2시트)은 미결.
 블록 조판·랩 dense 이식·비율 가중 맞바꿈·작은 이름 격자·칸 비우는 데코(`_rangeDecorate`)는 전부 뺐다 (백업: `~/.Trash/everstory-cleanup-2026-09-12/backup-2026-09-13/Everstory_range_v2_blocks.jsx`).
 
-## 디자인 랩 (Small/Large 시안 러너) — 운영 테스트와 별개
-
-`prototypes/Everstory_layout_test.jsx` 는 실제 템플릿 위에 masonry/dense 배치 + 큰 레터 이름 + 작은 이름 + 데코 + KissCut 까지 만드는 **시안용 러너**다.
-운영 경로가 아니다 — 여기서 확정한 규칙을 `Everstory_range.jsx` 로 옮기는 것이 순서다.
-
-| 파일 | 역할 |
-|---|---|
-| `export_illustrator_layout_test.js` | 엔진 4개 + `illustrator_layout_test.template.jsx` + `layout_test_workflow.js` 를 묶어 러너 `.jsx` 재생성. 엔진을 고쳤으면 이걸 먼저 |
-| `large_layout_engine.js` · `large_ratio_layout_engine.js` · `large_dense_layout_engine.js` · `large_masonry_layout_engine.js` · `large_photo_geometry.js` | 비율 기반 크기 배정 · 균등 반복 · masonry / 두 구간 dense 배치 (ES3) |
-| `large_*_layout_test.js` · `layout_engine_test.js` · `layout_test_workflow_test.js` · `layout_kisscut_test.js` | 위 엔진·워크플로·칼선 프리플라이트 검사 |
-| `run_large_dense_test.jsx` · `run_layout_kisscut_test.jsx` | Illustrator 실행 배치 (dense 3종 / KissCut 통합) |
-| `update_large_dense_review.js` | `docs/reports/template-layout-build-2026-09-08/large-layout-review.html` 갱신 |
-
 ## 정리 기록 (2026-09-12)
 
 기준: "받았을 때 예쁘고 완성도 높은 시트" 에 안 맞는 것 — 채움률·개수 연구(09-06 `package_*`, 09-07 `range_ordered_preview`·`range_fill_test`·`baseline/range-before-blocks.jsx`, 09-08 `range_block_review`·`range_deco_preview`), 고정 격자 컨셉 C(`business_*`·`sheet_layout_concepts.py`·`run_business_layout_in_illustrator.jsx`), 1.5/1.75″ 연구(`large_two_size_analysis.js`), 구 러너 배치(`run_large_layout_test`·`run_large_ratio_test`·`run_large_masonry_test`·`update_large_layout_review`) —
-를 `~/.Trash/everstory-cleanup-2026-09-12/sim/` 로 옮겼다(원경로 미러, 휴지통 비우기 전 복구 가능). 결론은 `docs/reports/range-block-implementation-2026-09-08/` 와 이 문서의 "시뮬로 확정한 것" 에 남아 있다.
+를 `~/.Trash/everstory-cleanup-2026-09-12/sim/` 로 옮겼다(원경로 미러, 휴지통 비우기 전 복구 가능). 결론은 이 문서의 "시뮬로 확정한 것" 에 남아 있다 (당시 결과 폴더 `docs/reports/range-block-implementation-2026-09-08/` 는 2026-09-16 정리 때 휴지통으로).
 
-## Composed — 사진 6장 구성 시트 (v2, 2026-09-16)
+## 정리 기록 (2026-09-16)
 
-`Everstory_range.jsx` 의 세 번째 옵션(다이얼로그 기본값). 순수 엔진은 `node sim/range_composed_test.js` 로 검증한다 —
+사용자 결정: "다 필요 없다, 새롭게 간다" — Composed(`Everstory_range.jsx`)로 간다.
+- **디자인 랩 통째로** (09-08~09 Small/Large 시안 러너 — 운영 코드가 쓰지 않았다): `sim/` 의 `large_*` 9개 · `layout_*` 4개 ·
+  `export_illustrator_layout_test.js` · `illustrator_layout_test.template.jsx` · `run_large_dense_test.jsx` · `run_layout_kisscut_test.jsx` ·
+  `update_large_dense_review.js` · `render_range_blocks.py`, `prototypes/` 의 러너·엔진·메모 7개, `docs/reports/template-layout-build-2026-09-08/`.
+- **mixed.jsx 미커밋 작업분**(09-11~12 알파벳 아트·데코 엔진 +621줄)과 짝 테스트(`extract.js`·`nametest.js` 수정분, `decotest.js`)는
+  HEAD 로 되돌렸다. 되돌리기 전 상태는 `mixed_wip/mixed_wip.patch` 와 파일 사본으로 남겼다 — 되살리려면 `git apply` 그 패치.
+  (range.jsx 는 그 엔진을 **복사해 들고 있어** mixed 를 되돌려도 영향이 없다.)
+- 자동 생성물 `packer*.js` 4개도 함께 — 테스트를 돌리면 다시 생긴다.
+- 옛 블록 배치 결과 `docs/reports/range-block-implementation-2026-09-08/` 와 조사 메모 `docs/reports/sheet-composition-research-2026-09-08.md`.
+  `range_layout_test.js --report` 는 이제 결과를 임시 폴더에 쓴다.
+전부 `~/.Trash/everstory-cleanup-2026-09-16/` 로 옮겼다(원경로 미러, 휴지통 비우기 전 복구 가능).
+
+## Composed — 사진 구성 시트 (v2, 2026-09-16)
+
+`Everstory_range.jsx` 대화창의 유일한 모드. 순수 엔진은 `node sim/range_composed_test.js` 로 검증한다 —
 인치 사다리의 긴 변(2.5·2·1.5·1.25·1·0.75″)·짧은 변 하한·면적 배분 장수·슬롯 라운드로빈·칼선 비율 산출·손상 캐시 거부·
-셀 = 사진 + 2×rim·간격 1.5mm·결정론·입력 불변·검증기 음성 케이스를 실제 주문 5건과 합성 4종으로 돌린다 (45 검사).
+셀 = 사진 + 2×rim·간격 1.5mm·결정론·입력 불변·검증기 음성 케이스를 실제 주문 5건과 합성 4종으로 돌린다
+(160 검사 — 아래 사진 종류·파일명 표시·시트 나누기·주문 보드 미리보기·배치 선택·크기 직접 고르기·이름 스타일 포함).
+
+### 사진 수 제한 없음 · 대화창 정리 (2026-09-16 사용자)
+
+- **대화창**: "크기 범위"(Small/Large/Composed)·"배치 후보" 패널을 뺐다 — Composed 만 (Small/Large 엔진은 테스트 훅으로만).
+  두 열(왼쪽 이름·헤더·칼선 여백 / 오른쪽 사진·메인)이라 버튼이 화면 밖으로 안 나간다.
+  실측: 예전 창 662×932pt (쓸 수 있는 화면 높이 872pt 를 넘어 생성 버튼이 잘렸다) → 784×625pt.
+  **`$.screens` 는 Retina 에서 절반 값**(1512×872 → 756×436)이라 600 미만이면 두 배로 본다 (대화창 크기는 실제 pt).
+  사진이 많을 때 종류 확인 창은 표시 없는 사진만 최대 3열로(45장 1412×609pt), 완료 메시지는 스크롤 창(alert 는 넘친다).
+- **사진 수**: 기본 앞 6장 선택, 더 골라도 된다. 시트당 최대 6장(`COMPOSED_PER_SHEET`) — `_composedDeal` 이 시트 수
+  ceil(n/6), 장수 차이 ≤ 1 로 나누되 **범위 상한이 큰 사진부터 돌아가며** 준다(파일명 순서 BIG→MED→SML 로 앞에서 자르면
+  큰 사진이 한 시트에 몰린다). 고른 메인은 첫 시트, 나머지 시트는 처음 받은 사진(= 가장 큰 종류)이 메인. 저장 `_sheet01`, `_sheet02` · 헤더 "sheet 1/2".
+- **사진이 적은 시트**: 사진당 같은 등급 상한을 6/n 배, 같은 사진 거리 기준(40·30·45mm)을 n/6 배로 푼다. 없으면 1장 시트가
+  비었다(전신 1장 8장·사진 면적 21% → 19장·52%, 얼굴 1장 11 → 24장). 6장 시트는 그대로다(배율 1).
+- **최소 크기**: 종류 범위보다 작게 줄이지 않는다 — 자리가 없으면 누락으로 보고한다 (검증기가 범위 밖 크기를 막는다).
+- Illustrator 실측: Jennifer 11장 → 6+5 두 시트(18장·16장, BIG 한 장씩, 고른 메인 SML 은 1번 시트), 칼선 오차 0.000mm, 간격 3.50mm ·
+  Sanvi 1장 → 11장(2.5/2/1.5/1.25). 헤더·파일명 시트 번호 확인.
+
+### 주문 보드 미리보기 (2026-09-16)
+
+주문 보드의 `구성` 화면(`scripts/order_intake/composed_preview.*`)이 이 엔진을 **브라우저에서 그대로** 돌린다 —
+`composed_preview.extract_engine` 이 `extract_all.js` 와 같은 규칙으로 .jsx 에서 함수·상수를 뽑으므로 엔진 사본이 없다
+(`composed_preview_test.py` 가 node 로 두 추출본의 배치가 같은지 비교). 미리보기와 시트 생성이 같이 쓰는 순수 함수:
+`_composedHero`(스티커 이름 스펙) · `_composedPackExtras` · `_composedDeal`. body 크기는 템플릿을 못 읽으니
+`COMPOSED_PREVIEW_BODY_MM`(142 × 175, 실측) — 실제 템플릿과 다르면 완료 창이 경고한다.
+- `Illustrator 에서 만들기` → `__EVERSTORY_LAUNCH__.composed` → `_composedLaunchOptions`(사진은 NFC 로 비교해 찾고,
+  없으면 만들지 않음) → 대화창 없이 `_runComposed`. 보드에서 고른 종류(`shotTypes`)는 표시 없는 사진의 측정·확인 창을 건너뛴다.
+- 완료 창: `_composedPreviewDiff` 가 미리보기의 시트 나눔·스티커 수와 실제를 비교한다 ("미리보기와 같음" 또는 차이).
+- 실측: Jennifer 11장(메인 05) 미리보기 18·16장 → 보드에서 만들기 → Illustrator 18·16장, 완료 창 "미리보기와 같음",
+  헤더 sheet 1/2·2/2. 하린(표시 없음 4장, `.evface` 자동 판별 미리 선택) 17장 = 앞선 Illustrator 실행과 같음.
+
+### 배치 선택 · 크기 직접 고르기 (2026-09-16 사용자 — 주문 보드에서만)
+
+- **스타일** (`COMPOSED_STYLES`): 큰 조각(앞 `COMPOSED_SPREAD_COUNT` 장)이 끌리는 자리만 바꾼다. 크기·장수 계획은 그대로.
+  가운데(예전 배치) · 양옆(끌림 45 — 좌우 기둥) · 모으기(가운데에 붙여 한 덩어리 · 모서리 반발 없음) ·
+  가장자리(끌림 45 · 모서리 반발 없음) · 아래쪽(끌림 90). 실주문 8건 시뮬에서 **위쪽·대각선은 가운데와 거의 같아 뺐다**
+  (끌림 90 으로도 가장 큰 사진이 가운데에 남았다). 스티커 합은 가운데 140 대비 142~150 (이름 있음 9건).
+  큰 사진뿐인 주문(커플만·강아지)은 자리가 모자라 분산 없이 다시 계산되므로 스타일 차이가 안 보인다 (정상).
+- **이름 위치** 왼쪽·가운데·오른쪽 (자동 = 스타일 자리). **좌우 바꿈** = 반대편에 이름을 두고 계산한 뒤 거울 —
+  이름은 고른 쪽에 남고 판은 새로 나온다. **섞기** = 자리 점수에 정수 해시 흔들림(큰 조각 10 · 채움 3) — 결정적.
+  보드의 변형 줄 = 기본 · 좌우 바꿈 · 섞기 1~8 중 스티커가 기본보다 2장 넘게 줄지 않은 서로 다른 판 3개 (`_composedVariants`).
+- **크기 직접** (`pair.sizeRange` = [최소, 최대] 인치): 종류 범위 대신 쓴다 — 시트 나누기(`_composedPairMaxIn`)·배치·검사기 모두.
+  한 크기로 고정하면 큰 크기는 시트당 사진별 상한(2.5·2″ 1장) 때문에 1장만 들어갈 수 있다.
+- **같은 자리 확인**: `_packComposed` 결과에 배치 지문(`res.sig`, 0.1mm 칸 해시)을 싣고 완료 창이 미리보기 지문과 비교한다
+  ("시트 나눔·스티커 수·자리"). 함정 두 가지를 실측으로 막았다 —
+  ① 템플릿 body 는 72/25.4 로 저장돼 `MM_TO_PT`(2.834645) 상수보다 1e-4pt 넓다 → 허용 오차 안이면 Illustrator 도
+  `_composedPreviewBin()` 값으로 계산한다. ② 좌표가 대개 0.05mm 배수라 반올림 경계(.x5)에 딱 걸린다 → 칸 경계를 0.025mm 옮겼다.
+  칼선 비율(`_composedCutAspect`)은 백만분의 1 로 맞춘다 (.evcut 을 두 쪽이 따로 읽어도 같은 값).
+- 기본 선택(선택 없음) = 예전 배치 그대로: 수정 전 엔진과 243가지(이름 유무·테두리 0/1/2·주문 10세트·메인 3)에서 좌표 완전 일치.
+- Illustrator 실측: Jennifer 11장 "모으기·이름 오른쪽·섞기 3"(17장) + "가장자리·좌우 바꿈"(20장),
+  하린 "양옆·이름 가운데·좌우 바꿈 + 02 1.5~2.5″·04 0.75″"(15장) — 칼선 중심이 미리보기와 0.000~0.001mm,
+  완료 창 "미리보기와 같음 (시트 나눔·스티커 수·자리)".
+
+### 이름 스타일 — 레트로 · 버블 통짜 (2026-09-17 사용자 — 주문 보드에서만)
+
+`COMPOSED_NAME_STYLES` — 스티커 이름 스펙(`_composedHero(name, binW, gap, nameStyle)`)에 스타일이 실려 데코·그리기까지 따라간다.
+대화창 실행·스타일 생략 = 첫 번째(레트로).
+
+| | 레트로 (`retro`) | 버블 (`bubble`) |
+|---|---|---|
+| 라이브러리 | `alphabet_art_v1.ai` · `deco_art_v1.ai` | `alphabet_art_v2.ai`(알파벳 샘플_6) · `deco_art_v2.ai`(sticker sample 4) |
+| 이름 | 글자마다 칼선 (여백 0) · 간격 유닛×0.35 | 글자를 유닛×0.03 겹쳐 쓰고 **이름 전체 흰 테두리 하나**(유닛×0.08) = 칼선 1개 · 줄 간격 유닛×0.1 |
+| 글자 크기 | 글자마다 cap 높이를 맞춤 (`LETTER_ART_METRICS`) | **모두 같은 배율** — 틀 높이 = capPt × `fh` (`LETTER_ART_METRICS_V2`, 기준 = 몸통 높이 중앙값 198.3pt) |
+| 큰 이름 유닛 | 16mm | 13mm (긴 이름은 흰 테두리까지 비례로 줄여 폭 110mm 에 맞춤) |
+| 이름 박스 | 스펙 그대로 | 스펙 + 2×칼선 여백 (그리기는 여백만큼 안쪽 — `res.namePad`) |
+| 데코 | 12종 순서대로 · 박스 = 그림 | 두들 19종 순서(`DECO_ORDER_V2`) · 박스 크기는 같고 그림은 칼선 여백만큼 작게(`payload.pad`) · 글씨 두들(`DECO_BIG_ONLY_V2`)은 12.7mm 칸에만 |
+
+- **옆 장식** (라이브러리 `SIDE L` / `SIDE R`): V 왼쪽 선 · C 오른쪽 선 3개 · Z 별과 선. 이름 가운데에 오면 글자 사이가 벌어져서
+  **줄의 맨 앞 글자는 L, 맨 끝 글자는 R** 틀만 쓴다 (`_artLetterVariant`). 한 글자 줄은 가진 쪽. 치수표에 core·L·R 틀이 따로 있다.
+- **글자 자리** `_artLetterBoxes(spec)` 는 그리기(`_drawArtLetterBlock`)와 보드 미리보기가 같이 쓴다 — 레트로는 예전 그리기 계산식 그대로
+  (테스트가 식을 따로 구현해 대조). 줄 폭을 먼저 재서 가운데 정렬, 모든 글자가 그 줄 바닥선(몸통 아래)에 선다.
+- **흰 테두리** `_drawNameHalo`: 글자 복제본의 `SIL`(글자+장식 합집합 바깥 윤곽)을 단색으로 복사 → Offset Path 라이브 이펙트
+  (jntp 0 = 라운드) → 확장 → 단색 복사 → Pathfinder 더하기 → 감긴 방향이 가장 큰 윤곽과 반대인 구멍은 버림 → 흰색, 글자 밑.
+  칼선은 같은 도형의 복제라 정합 오차 0. 조각이 2개 이상이면 완료 창 ⚠ (26×26 글자 쌍 목업은 유닛×0.06 에서도 전부 한 조각).
+- **데코 박스는 키우지 않는다**: 칼선 여백만큼 박스를 키웠더니 빈틈에 들어가는 데코가 평균 5.4 → 3.9개로 줄었다(16판).
+  박스는 그대로 두고 그림을 줄이자 90 대 92개로 레트로와 같아졌다. 10mm 칸은 그림이 8mm 라 글씨 두들이 안 읽혀서 큰 칸에만 둔다.
+- **레트로 = 작업 전 그대로**: 이름 치수(비트 단위)·배치 지문 `af6aae65`·데코 순서를 테스트가 스냅숏과 대조한다.
+- Illustrator 실측 (Jennifer 6장 + "Vivian Liz" 버블, 보드 요청 그대로): 완료 창 "미리보기와 같음 (시트 나눔·스티커 수·자리)",
+  글자 9 · 흰 테두리 1조각 = 글자 경계 + 1.04mm (차이 0.000~0.001mm) · 칼선 = 흰 테두리 (0mm) · 이름 박스 안쪽 여백 정확히 1mm ·
+  데코 6개 박스 안 가운데 · KissCut 24 = 사진 17 + 이름 1 + 데코 6. 같은 주문 레트로도 정상(글자별 칼선 · v1 데코).
+- 속도: 빈 문서에서 버블 이름 글자 0.3~0.5초 + 흰 테두리 0.8초. 이날 밤 실행은 버블·레트로 모두 시트 한 장 6분(문서 닫기 4분)이었다 —
+  스타일과 무관한 Illustrator 상태(화면 잠김 추정)라 코드 문제로 보지 않았다.
+- 함정: ① 원본 두 파일은 흰(크림) 채우기가 **여러 글자·두들에 걸친 컴파운드 하나**라 풀어서(`noCompoundPath`) 조각마다 배정 —
+  푼 직후 경계는 `app.redraw()` 뒤에 읽어야 맞다(안 그러면 34000pt 밖 좌표가 나왔다). ② 선 장식 밑에도 흰 조각이 있다(조각 수 2배).
+  ③ C 의 윗선은 몸통 폭 안이라 "폭 밖" 규칙으로는 몸통에 남았다 → 경계 밖으로 조금이라도 나가면 옆 장식, 좌우는 중심으로.
+  ④ `exportFile` 은 **활성 문서**를 내보낸다 — 임시 문서를 활성으로 안 바꾸면 라이브러리 전체가 PNG 에 찍힌다.
+  라이브러리를 다시 만드는 방법은 `scripts/art_library/README.md`.
 
 **v1 에서 바뀐 것과 이유** (첫 실물 시트를 재서 나온 것들 — 되돌리지 말 것):
 
@@ -185,7 +273,15 @@ Illustrator 실측(Sanvi 6장, rim 1mm): 2.5″=24.2×63.5 · 2″=39.8×50.8 ·
 (전신은 처음 1.5″ 부터였는데 1.5″ 에 몰려 같은 크기 인물만 늘어서서 1.25″ 로 내렸다. 커플·단체는 드물어 손대지 않는다.)
 근거는 인쇄된 얼굴 높이 실측이다 — 얼굴 누끼는 2″ 에서 얼굴이 26~34mm 로 튀고, 전신은 0.75″ 에서 1.4~3.2mm 로 안 보인다.
 
-- **판별**: `scripts/face_probe` 앱(macOS Vision)을 Illustrator 가 `File.execute()` 로 띄운다. 얼굴 높이 ÷ 칼선 높이 ≥ 40% 얼굴 ·
+- **파일명 표시가 먼저** (`COMPOSED_NAME_TYPES`, 2026-09-16 사용자 결정): 누끼 저장 때 스튜디오가 사진을 보고 누른 버킷 —
+  `_SML` 얼굴 · `_MED` 상반신 · `_BIG` 전신 (옛 `_XS`·`_S` → 얼굴, `_M`·`_L` → 상반신, `_XL`·`_XXL` → 전신, `_FAM` → 커플·단체).
+  표시가 있는 사진은 측정도 확인 창도 없고, 여섯 장 모두 표시면 확인 창이 안 뜬다. 표시가 운영자의 확정값(`.evface`)보다 이긴다.
+  종류대로 붙이면 종류를 직접 준 판과 **똑같다**(테스트 고정). 주의: 옛 Package 주문 폴더의 버킷은 고객이 3칸에 나눠 올린 값이라
+  종류와 20장 중 7장만 맞는다 — 그대로 두면 강아지 얼굴 2″ · 액자 상반신 0.75″ 가 나온다. 틀리면 파일명 표시를 고친다.
+  mixed 식 좁은 범위(BIG 2~2.5″ 만)는 사진당 크기가 둘뿐이라 장수가 줄거나(Sanvi 9장) 0.75″ 가 몰려(하린 12장) 채택하지 않았다.
+  Illustrator 실측(09-16): 전부 표시인 Sanvi·누리 = 측정 앱 안 뜸 · 확인 창 없음(21장 · 19장), 표시 2 + 없음 4 인 하린 = 4장만 측정(0.5s)
+  · `.evface` 도 그 4장만 · 확인 창은 표시 2행이 글자, 4행이 선택 목록 (17장). 칼선 오차 0.000mm, 칼선 간격 3.50mm.
+- **판별** (표시가 없는 사진만): `scripts/face_probe` 앱(macOS Vision)을 Illustrator 가 `File.execute()` 로 띄운다. 얼굴 높이 ÷ 칼선 높이 ≥ 40% 얼굴 ·
   20~40% 상반신 · 20% 미만 전신, 얼굴·사람 박스가 2개 이상이면 커플·단체. 실주문 사람 사진 24장이 전부 맞게 갈린다(테스트에 고정).
   반려동물·얼굴 없는 사진은 확인 창에서 운영자가 고른다. 결과와 확정값은 `_cutcache/*.evface`.
 - **장수 계획** (`_composedPlanSlots`): ① 메인 = 자기 범위의 최대 등급 ② 시트 최대 등급이 더 크면 다른 사진에 1장
@@ -205,7 +301,7 @@ Illustrator 실측(Sanvi 6장, rim 1mm): 2.5″=24.2×63.5 · 2″=39.8×50.8 ·
   같은 사진 최소 34~35mm. 처음 판별(캐시 없음)은 0.49~0.62s(PSD 복사 포함).
 - **여기까지 자동, 나머지는 사람 손** (2026-09-16 정리): 사진·칼선에 같은 이름표(`Photo_A03_1.5in` / `Cutline_A03_1.5in`)를 붙여
   손으로 옮기거나 크기를 바꿀 때 짝을 찾게 했다. 완료 메시지 끝에 "함께 옮기기 · 칼선 3.5mm · 마지막 1mm 오프셋" 안내가 나온다.
-  확인 창(종류)·빈 곳 다듬기·말풍선·실물 인쇄 확인은 운영자 몫.
+  누끼 저장 때 버킷 고르기 · 표시 없는 사진의 확인 창 · 빈 곳 다듬기 · 말풍선 · 실물 인쇄 확인은 운영자 몫.
 
 Small/Large(v3 행 조판) 경로와 `_produceRangeSheet` 는 건드리지 않았다. Composed 가 들어오기 전 스냅샷은
 `sim/baseline/range_v3_before_composed.jsx` (v1 엔진 자체의 스냅샷은 남기지 않았다 — 위 표가 폐기 이유의 기록이다).

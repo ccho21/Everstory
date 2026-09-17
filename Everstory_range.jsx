@@ -1,5 +1,13 @@
 // ═══════════════════════════════════════════════════════════════
-//  Everstory Range 시트 — Small / Large 면적 등급 자동 배정 (테스트용 별도 파일)
+//  Everstory Range 시트 — 스튜디오 구성 시트 (Composed). Small / Large 면적 등급 엔진은 코드에만 남아 있다.
+//
+//  2026-09-16 대화창 정리 (사용자): Composed 만 — "크기 범위"·"배치 후보" 선택을 뺐고, 사진 수 제한이 없다
+//  (기본 6장 선택, 더 고르면 시트당 최대 6장으로 나눠 여러 시트). 창은 두 열이라 버튼이 화면 밖으로 안 나간다.
+//  아래 Small/Large 설명은 그 엔진의 기록이다 (테스트 훅으로만 실행).
+//  주문 보드 '구성' 화면(scripts/order_intake/composed_preview.*)이 이 파일의 Composed 엔진을 브라우저에서 그대로 돌려
+//  미리 보여주고, "Illustrator 에서 만들기" 는 $.global.__EVERSTORY_LAUNCH__.composed 로 값을 넘겨 대화창 없이 만든다
+//  (_composedLaunchOptions). 미리보기와 공유하는 순수 함수(_composedHero · _composedPackExtras · _composedDeal)를 고치면
+//  미리보기도 같이 바뀐다 — 최상위 함수·대문자 상수 규약(두 칸 들여쓰기)을 지킬 것 (추출기가 그 모양만 읽는다).
 //
 //  Everstory_mixed.jsx 를 건드리지 않고 같은 입력(02_cutout 페어) · 같은 템플릿 ·
 //  같은 출력(03_output .ai) 규약으로 새 배치 방식을 시험한다. 결과가 좋으면
@@ -26,24 +34,42 @@
 //  글자 그대로 복사한 것이다. TRACE_OPTS / CUT_CACHE_* 가 같아야 02_cutout/_cutcache 의
 //  .evcut 을 **공유**한다 (이미 트레이스한 디자인은 여기서도 트레이스 0회).
 //
-//  ── Composed (사진 6장 구성 시트, v2 2026-09-16 · 다이얼로그 기본값) ──────────────────────────
-//   · 사진 정확히 6장. 메인 기본은 선택 목록 첫 사진, 다이얼로그에서 바꿀 수 있다 — 메인이 가장 큰 등급을 갖는다.
+//  ── Composed (사진 구성 시트, v2 2026-09-16 · 대화창의 유일한 모드) ──────────────────────────
+//   · 사진 수 제한 없음. 시트당 1~6장 (COMPOSED_PER_SHEET) — 더 많으면 _composedDeal 이 시트를 늘리고 범위 상한이 큰
+//     사진부터 돌아가며 나눈다 (8 → 4+4, 7 → 4+3). 사진이 적은 시트는 사진당 장수 상한·같은 사진 거리 기준을 비례로 푼다.
+//   · 메인 기본은 선택 목록 첫 사진, 대화창에서 바꿀 수 있다 — 메인이 가장 큰 등급을 갖는다. 메인이 없는 시트는
+//     그 시트가 처음 받은 사진(= 가장 큰 종류)이 메인.
+//   · 종류 범위(최소·최대)는 지킨다 — 자리가 모자라도 크기를 줄여 넣지 않고 누락으로 보고한다.
 //   · 크기 = **인치 사다리의 긴 변** 2.5·2·1.5·1.25·1·0.75″ (mixed.jsx TIER_SIZE_MM 과 같은 값, `_tierBox` 와 같은 규약).
 //     짧은 변은 **실제 칼선 비율**로 따라온다. 2.5″ 는 언제나 63.5mm — 예외는 짧은 변 하한(10mm)에 걸릴 때뿐.
 //     v1 의 역할×등급 목표 면적(refAspect 0.73)은 폐기: 비율 0.38 짜리 전신에서 긴 변이 88mm 까지 갔다.
 //   · **사진 종류가 크기 범위를 정한다** (COMPOSED_SHOT_TYPES, 2026-09-16 사용자 확정):
 //     얼굴 0.75~1.5″ · 상반신 1~2″ · 전신 1.25~2.5″ · 커플·단체 2~2.5″ · 반려동물 얼굴 0.75~1.25″ · 반려동물 전신 1.25~2.5″.
-//     종류는 scripts/face_probe 앱(macOS Vision)이 얼굴 높이 ÷ 칼선 높이와 얼굴·사람 수로 자동 판별하고,
+//     종류는 **파일명 표시가 먼저** 정한다 (COMPOSED_NAME_TYPES): 누끼 저장 때 붙인 _SML 얼굴 · _MED 상반신 ·
+//     _BIG 전신 (옛 _XS~_XXL · _FAM 도 읽음). 표시가 있는 사진은 측정도 확인 창도 없다.
+//     표시가 없는 사진만 scripts/face_probe 앱(macOS Vision)이 얼굴 높이 ÷ 칼선 높이와 얼굴·사람 수로 자동 판별하고,
 //     확인 창에서 운영자가 고친다. 반려동물·얼굴 없는 사진은 운영자가 고른다. 확정값은 _cutcache/*.evface.
 //   · 등급별 장수는 고정이 아니라 **면적 배분**으로 뽑는다 (COMPOSED_GRADE_SHARE = 레퍼런스 목업 실측).
 //     그 등급을 쓸 수 있는 사진만 센다 — 얼굴만 있는 주문엔 2″·2.5″ 가 없고, 그 몫은 다른 등급으로 간다.
 //   · 배치 = **큰 것부터**. 앞 6장은 서로(+이름·시트 모서리) 가장 먼 자리로 분산하고, 나머지는 빈틈에 밀착한다.
 //     사각형(셀) 충돌 + 간격 1.5mm. 격자·행 구조 없음, 같은 사진은 떨어뜨린다. 결정적(난수도 변형 탐색도 없다).
+//   · **배치 선택** (2026-09-16 사용자 — 주문 보드에서 그림으로 보고 고른다. 대화창에는 없다):
+//     스타일(COMPOSED_STYLES: 가운데·양옆·모으기·가장자리·아래쪽) · 이름 위치(왼쪽·가운데·오른쪽) · 좌우 바꿈 · 섞기 번호.
+//     스타일은 큰 조각이 끌리는 자리만 바꾸고 크기·장수 계획은 그대로다. 섞기도 정수 해시라 결정적이다 —
+//     같은 선택이면 미리보기와 Illustrator 가 같은 자리를 낸다 (완료 창이 _composedLayoutSig 로 확인).
+//     선택이 없으면(대화창 실행) 가운데 · 이름 왼쪽 = 예전 배치 그대로.
+//   · **크기 직접** (2026-09-16 사용자, 주문 보드): 사진마다 [최소, 최대] 인치(pair.sizeRange)를 고르면 종류 범위 대신 쓴다 —
+//     시트 나누기·배치·검사기 모두. 고르지 않은 사진은 종류 범위 그대로.
 //   · **셀 = 사진 + 2×흰 테두리(rim)**. rim = 다이얼로그 "칼선 여백"(Composed 기본 1mm). 칼선은 사진 윤곽에 맞추므로
 //     나중에 칼선을 rim 만큼 바깥으로 오프셋해도 이웃 칼선과 1.5mm 가 남는다. rim 을 0 으로 고르면 그 여유가 없다.
 //   · **칼선을 배치보다 먼저** 준비한다 (_produceComposedSheet ①) — 크기가 칼선 비율에서 나오기 때문. 캐시 히트면 트레이스 0회.
 //   · 사진 배치도 칼선 기준(_placeComposedSticker) — 투명 캔버스 여백이 스티커를 줄이지 않는다. Small/Large 는 기존 경로 그대로.
 //   · 이름·데코는 기존 엔진 그대로 쓰고 자리만 정한다. 말풍선은 아트가 없어 아직 안 그린다.
+//   · **이름 스타일** (2026-09-17 사용자, 주문 보드에서 고른다 · 대화창 실행은 retro): COMPOSED_NAME_STYLES —
+//     retro = alphabet_art_v1 + deco_art_v1 (글자마다 칼선, 예전 그대로) · bubble = alphabet_art_v2 + deco_art_v2
+//     (글자를 살짝 겹쳐 쓰고 이름 전체를 흰 테두리 하나로 — _drawNameHalo, 칼선 1개. 옆 장식은 줄 맨 앞·끝 글자만).
+//     bubble 은 이름·데코 박스를 칼선 여백만큼 넓게 잡아, 나중에 칼선을 오프셋해도 이웃과 간격이 남는다.
+//     미리보기 그림은 templates/art_preview/<라이브러리>/ (라이브러리를 고치면 다시 뽑는다 — templates/art_preview/README.md).
 //
 //  검증: sim/range_layout_test.js · sim/range_name_test.js · sim/range_output_test.js · sim/range_composed_test.js.
 //  Illustrator 실행은 테스트 시트로.
@@ -56,8 +82,8 @@
 (function () {
   "use strict";
 
-  var SCRIPT_VARIANT = "range v3 area (test)";
-  var SCRIPT_TITLE = "Everstory Range Sheet (" + SCRIPT_VARIANT + ")";
+  var SCRIPT_VARIANT = "range composed (2026-09-16)";
+  var SCRIPT_TITLE = "Everstory Composed Sheet";
   var MM_TO_PT = 2.834645;
 
   // ── 시트 (Everstory_mixed.jsx 2026-08-25 운영 상수와 동일) ─────
@@ -66,17 +92,12 @@
   var GAP_DEFAULT_MM = 1.5;
 
   // ── 범위 ─────────────────────────────────────────────────────
-  var RANGE_KEYS = ["small", "large", "composed"];
-  var RANGE_OPTIONS = [
-    "Small — 1\"² / 1.25\"² (정사각 환산 · 전신은 최장 2\")",
-    "Large — 1.5\"² / 2\"² (정사각 환산 · 최장 3\")",
-    "Composed — 사진 6장 · 인치 사다리 2.5~0.75\" (긴 변) · 큰 것부터 배치 (2026-09-16)"
-  ];
-  var RANGE_DEFAULT_INDEX = 2;       // Composed 가 기본 (2026-09-15 사용자: range.jsx 를 composed 방향으로)
+  // 대화창은 Composed 만 고른다 (2026-09-16 사용자: "크기 범위 선택은 빼고 한 가지로", "배치 후보도 뺀다").
+  // Small/Large 엔진은 지우지 않았다 — 테스트 훅(options.range = "small"/"large")으로만 돈다.
   // 2026-09-12 사용자: Small 은 1 / 1.25″ 두 크기만 (0.5·0.75 제외 — "너무 많고 별로"), Large 는 1.5 / 2″ 유지.
   // 2026-09-13 부터 이 값은 **면적 등급의 한 변**(정사각 환산). 셀 크기는 _rangeCell 이 비율대로 계산한다.
   var RANGE_SIZES_MM = { small: [25.4, 31.75], large: [38.1, 50.8] };
-  var RANGE_LABELS = { small: "Small 1-1.25\"", large: "Large 1.5-2\"", composed: "Composed 6 photos" };
+  var RANGE_LABELS = { small: "Small 1-1.25\"", large: "Large 1.5-2\"", composed: "Composed" };
   var RANGE_TAGS = { small: "SMALL", large: "LARGE", composed: "COMPOSED" };   // 03_output 파일명 토큰
   // 사진 1 · 4~6개 → 1시트, 8개 → 2시트(4+4). 상품 SKU 는 1/4/8 그대로, 5·6은 시트 구성 유연성.
   var RANGE_DESIGN_COUNTS = [1, 4, 5, 6, 8];
@@ -109,7 +130,14 @@
   // v1 의 역할×등급 목표 면적(refAspect 0.73)은 폐기 — 세로로 긴 사진에서 긴 변이 88mm 까지 갔다.
   // 아래 숫자는 전부 튜닝 파라미터. 등급별 장수 배분은 레퍼런스 목업 실측값이다.
   var COMPOSED_KEY = "composed";
-  var COMPOSED_PHOTO_COUNT = 6;
+  // 사진 수 제한 없음 (2026-09-16 사용자). 시트당 최대 COMPOSED_PER_SHEET 장 — 넘치면 시트를 늘려 종류가 고르게 나눈다
+  // (7장 → 4+3, 8장 → 4+4). 사진이 적은 시트는 사진당 장수 상한·같은 사진 거리 기준을 장수에 맞춰 푼다.
+  var COMPOSED_PER_SHEET = 6;
+  var COMPOSED_DEFAULT_SELECT = 6;         // 대화창 기본 선택 장수 (폴더에 그보다 적으면 전부). 더 골라도 된다
+  var COMPOSED_DIALOG_ROWS = 12;           // 종류 확인 창 한 열의 행 수 — 넘치면 열을 늘린다 (창이 화면을 넘지 않게)
+  // 주문 보드 미리보기가 쓰는 시트 body 크기 — template_cutout_v2.ait 의 info > body 실측 (2026-09-16, 142 × 175mm).
+  // 시트 생성은 템플릿에서 잰 값을 쓰고, 이 값과 다르면 완료 창에 알린다 (미리보기가 틀어졌다는 뜻 — 이 값을 고칠 것).
+  var COMPOSED_PREVIEW_BODY_MM = [142, 175];
   var COMPOSED_GRADES_IN = [2.5, 2, 1.5, 1.25, 1, 0.75];   // 긴 변 인치 — mixed.jsx TIER_SIZE_MM 사다리와 같은 값
   // 장수는 고정이 아니라 **면적 배분**으로 뽑는다. 고정 개수(1·1·4·2·6·10)를 그대로 쓰면 정사각에 가까운
   // 사진에서 큰 등급이 면적을 다 먹어 작은 등급이 통째로 빠진다 (하린 6장 시뮬: 24 중 11 누락).
@@ -131,12 +159,32 @@
   var COMPOSED_DUP_MIN_MM = 45;            // 같은 사진 중심 거리 — 이보다 가까우면 벌점
   var COMPOSED_SAMEGRADE_MM = 14;          // 같은 등급끼리 이보다 가까우면 벌점 (크기 리듬)
   var COMPOSED_WEIGHTS = { contact: 26, align: 4, dup: 4, sameGrade: 8, spreadContact: 3 };   // dup 2→4: 붙임 보상(최대 26)이 같은 사진 7mm 부족을 못 이기게
-  var COMPOSED_PER_PHOTO_MAX = [1, 1, 2, 2, 3, 4];   // 한 사진이 같은 등급에 들어가는 최대 장수 (등급 순서 = COMPOSED_GRADES_IN)
+  var COMPOSED_PER_PHOTO_MAX = [1, 1, 2, 2, 3, 4];   // 한 사진이 같은 등급에 들어가는 최대 장수 (사진 6장 기준, 등급 순서 = COMPOSED_GRADES_IN)
+  // 배치 선택 (2026-09-16 사용자: 주문 보드에서 배치 종류를 바꿔 보고 고른다). 크기·장수 계획은 스타일과 무관하다
+  // (종류 범위·최소 장수 그대로) — 스타일은 큰 조각(분산 대상)이 끌리는 자리만 바꾼다. pull = 끌림 세기(mm 거리와 같은 눈금),
+  // namePos = 이름 위치를 "자동"으로 둘 때의 자리. 실주문 8건 시뮬(2026-09-16): 위쪽·대각선은 가운데와 거의 같아 뺐다.
+  var COMPOSED_STYLES = [
+    { key: "center",  label: "가운데",   namePos: "left",   pull: 0 },    // 예전 배치 — 가장 큰 사진이 가운데
+    { key: "sides",   label: "양옆",     namePos: "center", pull: 45 },   // 큰 사진이 좌우 기둥, 가운데는 작은 사진
+    { key: "cluster", label: "모으기",   namePos: "center", pull: 0 },    // 큰 사진을 가운데에 붙여 한 덩어리 (모서리 반발 없음)
+    { key: "frame",   label: "가장자리", namePos: "left",   pull: 45 },   // 큰 사진이 가장자리·모서리 (모서리 반발 없음)
+    { key: "bottom",  label: "아래쪽",   namePos: "center", pull: 90 }    // 큰 사진이 아래, 이름 쪽은 작은 사진
+  ];
+  var COMPOSED_NAME_POSITIONS = ["left", "center", "right"];
+  var COMPOSED_NAME_POS_LABELS = { left: "왼쪽", center: "가운데", right: "오른쪽" };
+  var COMPOSED_SHUFFLE_MAX = 999;          // 섞기 번호 상한 (0 = 섞지 않음)
+  var COMPOSED_SHUFFLE_SPREAD = 10;        // 섞기: 큰 조각 자리 점수 흔들기 폭 (mm 눈금)
+  var COMPOSED_SHUFFLE_FILL = 3;           // 섞기: 채움 조각 자리 점수 흔들기 폭 (붙임 보상 최대 26 눈금)
+  var COMPOSED_CLUSTER_CONTACT = 6;        // 모으기: 가운데까지 거리(mm) 대비 붙임 보상
+  var COMPOSED_VARIANT_TRIES = 8;          // 주문 보드 "변형" 줄 — 섞기 번호를 이만큼 돌려 보고
+  var COMPOSED_VARIANT_KEEP = 3;           //   서로 다른 배치를 이만큼까지 보여 준다
+  var COMPOSED_VARIANT_DROP = 2;           //   기본보다 스티커가 이보다 많이 줄면 버린다
 
   // ── 사진 종류 → 크기 범위 (2026-09-16 사용자 확정) ────────────────────
   // 긴 변 인치, 양끝 포함. 사진마다 자기 종류의 범위 안 등급만 쓴다 — 0.75″ 전신·2″ 얼굴처럼
   // 스티커 크기는 맞는데 얼굴이 너무 작거나 큰 경우를 막는다 (인쇄 얼굴 높이 실측이 근거).
-  // 종류는 사진을 Vision 으로 재서 자동 판별하고(사람), 확인 창에서 운영자가 고친다. 반려동물은 운영자가 고른다.
+  // 종류는 파일명 표시가 먼저 정하고(아래 COMPOSED_NAME_TYPES), 표시가 없는 사진만 Vision 으로 재서
+  // 자동 판별한 뒤(사람) 확인 창에서 운영자가 고친다. 반려동물은 운영자가 고른다.
   var COMPOSED_SHOT_TYPES = [
     { key: "face",    label: "얼굴",          minIn: 0.75, maxIn: 1.5 },
     { key: "upper",   label: "상반신",        minIn: 1,    maxIn: 2 },
@@ -146,6 +194,17 @@
     { key: "petBody", label: "반려동물 전신", minIn: 1.25, maxIn: 2.5 }
   ];
   var COMPOSED_TYPE_NONE = "none";          // 미분류 = 범위 제한 없음 (자동 판별이 안 됐고 운영자도 안 골랐을 때)
+  // 파일명 끝 크기 표시 → 종류 (2026-09-16 사용자). 표시는 누끼 저장 때 스튜디오가 사진을 보고 붙인다
+  // (저장 플러그인 버튼 SML 얼굴 · MED 상반신 · BIG 전신). 표시가 있으면 그대로 쓰고 측정·확인 창을 건너뛴다.
+  // 옛 6티어 표시는 mixed.jsx TIER_TO_BUCKET 과 같은 묶음으로 읽고, FAM 은 커플·단체.
+  // 옛 Package 주문 폴더의 표시는 고객이 3칸에 나눠 올린 값이라 종류와 다를 수 있다 — 틀리면 파일명 표시를 고친다.
+  var COMPOSED_NAME_TOKEN_RE = /_(BIG|MED|SML|FAM|XXL|XL|XS|S|M|L)$/i;
+  var COMPOSED_NAME_TYPES = {
+    SML: "face", XS: "face", S: "face",
+    MED: "upper", M: "upper", L: "upper",
+    BIG: "full", XL: "full", XXL: "full",
+    FAM: "group"
+  };
   // 자동 판별 기준 — 얼굴 높이 ÷ 칼선 높이. 실주문 사람 사진 24장 전부 맞게 갈린 값 (얼굴 53~66% · 상반신 21~39% · 전신 7~19%).
   var COMPOSED_TYPE_FACE_MIN = 0.40;
   var COMPOSED_TYPE_UPPER_MIN = 0.20;
@@ -217,14 +276,73 @@
     Y: { aw: 0.7594, cap: 0.7318, gw: 0.5473, bl: 0.8647, lsb: 0.1047, rsb: 0.1074 },
     Z: { aw: 0.8740, cap: 0.7857, gw: 0.6279, bl: 0.8934, lsb: 0.1231, rsb: 0.1230 }
   };
-  var LETTER_ART_DOC = null;
   var DECO_ART_LIB_NAME = "deco_art_v1.ai";
   var DECO_EXTRA = 2;
   var DECO_ORDER = [
     "HEART", "FLOWER", "STAR", "CAMERA", "BOW", "BONE",
     "CHERRY", "SMILE", "RAINBOW", "CUPCAKE", "GIFT", "CLOUD"
   ];
-  var DECO_ART_DOC = null;
+
+  // ── 이름 스타일 (2026-09-17 사용자: 주문 보드에서 두 스타일 중 고른다) ─────────────────
+  // retro  = alphabet_art_v1 + deco_art_v1. 글자마다 따로 떼는 스티커 — 예전 그대로이고 대화창 실행도 이것.
+  // bubble = alphabet_art_v2 (shopify_assets "알파벳 샘플_6") + deco_art_v2 ("sticker sample 4").
+  //          글자를 살짝 겹쳐 쓰고 이름 전체를 흰 테두리 하나로 묶은 **통짜 스티커** (칼선 1개) —
+  //          레퍼런스 assets/style_refs/2026-09-11_bubble-alphabet_names.png. 데코 두들도 흰 테두리가 아트에 들어 있다.
+  // bubble 글자는 모두 **같은 배율**로 줄인다 (그린 크기 차이를 살린다): 틀 높이 = capPt × fh,
+  // fh = 그 글자 틀 높이 ÷ 기준 높이 (몸통 높이 중앙값 198.3pt). aw = 틀 폭 ÷ 틀 높이, bl = 틀 위 → 몸통 바닥(글자 바닥선) ÷ 틀 높이.
+  // 옆 장식(V 왼쪽 선 · C 오른쪽 선 · Z 별)은 라이브러리에서 SIDE L / SIDE R 묶음이고 **줄의 맨 앞 / 맨 끝 글자만** 쓴다 —
+  // 이름 가운데에 오면 글자 사이가 벌어진다. core = 옆 장식을 뺀 틀, L / R = 그 장식을 넣은 틀.
+  // 라이브러리를 다시 만들면 이 표도 다시 잰다 (틀 = 그룹 geometricBounds, 몸통 = 그룹 안 BODY).
+  var LETTER_ART_METRICS_V2 = {
+    A: { core: { aw: 0.8055, bl: 0.9949, fh: 0.9979 } },
+    B: { core: { aw: 0.6959, bl: 0.9951, fh: 1.0211 } },
+    C: { core: { aw: 0.8010, bl: 0.9946, fh: 0.9415 }, R: { aw: 0.7704, bl: 0.9951, fh: 1.0232 } },
+    D: { core: { aw: 0.7619, bl: 0.9951, fh: 1.0267 } },
+    E: { core: { aw: 0.6728, bl: 0.9951, fh: 1.0230 } },
+    F: { core: { aw: 0.6362, bl: 0.9951, fh: 1.0288 } },
+    G: { core: { aw: 0.8030, bl: 0.9951, fh: 1.0357 } },
+    H: { core: { aw: 0.7349, bl: 0.9949, fh: 0.9920 } },
+    I: { core: { aw: 0.3514, bl: 0.9954, fh: 1.0874 } },
+    J: { core: { aw: 0.7148, bl: 0.9951, fh: 1.0306 } },
+    K: { core: { aw: 0.7895, bl: 0.9948, fh: 0.9767 } },
+    L: { core: { aw: 0.6491, bl: 0.9949, fh: 0.9906 } },
+    M: { core: { aw: 0.9555, bl: 0.9948, fh: 0.9662 } },
+    N: { core: { aw: 0.8018, bl: 0.9950, fh: 1.0024 } },
+    O: { core: { aw: 0.8867, bl: 0.9947, fh: 0.9536 } },
+    P: { core: { aw: 0.7008, bl: 0.9949, fh: 0.9959 } },
+    Q: { core: { aw: 0.8354, bl: 0.9950, fh: 1.0070 } },
+    R: { core: { aw: 0.7092, bl: 0.9951, fh: 1.0320 } },
+    S: { core: { aw: 0.6777, bl: 0.9951, fh: 1.0369 } },
+    T: { core: { aw: 0.7490, bl: 0.9950, fh: 1.0052 } },
+    U: { core: { aw: 0.8612, bl: 0.9947, fh: 0.9596 } },
+    V: { core: { aw: 0.8885, bl: 0.9947, fh: 0.9523 }, L: { aw: 1.0408, bl: 0.9947, fh: 0.9523 } },
+    W: { core: { aw: 1.1434, bl: 0.9944, fh: 0.8983 } },
+    X: { core: { aw: 0.9262, bl: 0.9949, fh: 0.9885 } },
+    Y: { core: { aw: 0.8033, bl: 0.9950, fh: 1.0136 } },
+    Z: { core: { aw: 0.8763, bl: 0.9948, fh: 0.9652 }, R: { aw: 1.2442, bl: 0.9948, fh: 0.9778 } }
+  };
+  // 두들 27종 중 데코로 쓰는 것 (시트당 앞에서부터 COMPOSED_DECO_MAX 개). 뺀 것 — LOVE(<3)·LUCKY 는 글자뿐이라 작으면 안 읽히고,
+  // SPARKLES·DOTS·BURSTPINK·BURSTGOLD·SWOOSH·ARROW 는 조각·긴 선이라 정사각 칸에서 너무 작아진다 (라이브러리에는 있다).
+  var DECO_ORDER_V2 = [
+    "SMILE", "HEART", "YAY", "DAISY", "CHERRY", "BESTDAY",
+    "STAR", "BOW", "CLOVER", "FOREVER", "SUN", "CLOUD",
+    "YOUME", "FLOWER", "SPARKLE", "MYFAVE", "BOLT", "MINIHEART", "XOXO"
+  ];
+  // 글씨 두들은 큰 칸(COMPOSED_DECO_SIZES_MM[0])에만 — 작은 칸에서 칼선 여백을 빼면 글씨가 1.5mm 안팎이라 안 읽힌다.
+  var DECO_BIG_ONLY_V2 = ["YAY", "BESTDAY", "FOREVER", "YOUME", "MYFAVE", "XOXO"];
+  // unitMm = 큰 이름 한 줄 높이. gap · lineGap · halo = 한 줄 높이 비율 (gap 음수 = 글자 틀이 살짝 겹침 → 테두리 선이 붙는다).
+  // halo = 이름 전체 흰 테두리 (인쇄 + 칼선). rimBox = 칼선 여백만큼 이름 박스를 넓히고 데코는 박스 안쪽으로 줄여 그린다 —
+  // 나중에 칼선을 여백만큼 바깥으로 오프셋해도 이웃 사진 칼선과 간격이 남게 (retro 는 예전 배치를 지키려고 끈 채로 둔다).
+  // 데코 박스 자체는 retro 와 같은 크기 (12.7 / 10mm) — 키웠더니 빈틈에 들어가는 데코가 평균 5.4 → 3.9개로 줄었다.
+  var COMPOSED_NAME_STYLES = [
+    { key: "retro", label: "레트로", whole: false, letterLib: LETTER_ART_LIB_NAME, decoLib: DECO_ART_LIB_NAME,
+      metrics: LETTER_ART_METRICS, decoOrder: DECO_ORDER, decoBigOnly: [], unitMm: RANGE_HERO_UNIT_MM,
+      gap: LETTER_GAP_RATIO, lineGap: LETTER_GAP_RATIO, halo: 0, rimBox: false },
+    { key: "bubble", label: "버블", whole: true, letterLib: "alphabet_art_v2.ai", decoLib: "deco_art_v2.ai",
+      metrics: LETTER_ART_METRICS_V2, decoOrder: DECO_ORDER_V2, decoBigOnly: DECO_BIG_ONLY_V2, unitMm: 13,
+      gap: -0.03, lineGap: 0.1, halo: 0.08, rimBox: true }
+  ];
+  var ART_LIB_DOCS = {};                   // 라이브러리 파일 이름 → 이번 실행에서 열어 둔 문서 (_closeArtLibs 가 닫는다)
 
   // ═════════════════════════════════════════════════════════
   //  MAIN FLOW  (var 상수는 전부 이 위에 — ExtendScript 는 함수만 호이스팅한다)
@@ -253,9 +371,20 @@
     return;
   }
 
-  var options = (testConfig && testConfig.options)
-    ? testConfig.options
-    : _showDialog(pairs, _deriveDefaultCustomerName(inputFolder));
+  var options;
+  if (testConfig && testConfig.options) {
+    options = testConfig.options;
+  } else if (launchConfig && launchConfig.composed) {
+    // 주문 보드 미리보기의 "Illustrator 에서 만들기" — 대화창 없이 미리보기에서 고른 그대로 만든다.
+    var launched = _composedLaunchOptions(launchConfig.composed, pairs);
+    if (launched.error) {
+      if (testConfig) { testConfig.lastMessage = launched.error; } else { alert(launched.error); }
+      return;
+    }
+    options = launched.options;
+  } else {
+    options = _showDialog(pairs, _deriveDefaultCustomerName(inputFolder));
+  }
   if (!options) return;
 
   // Composed(사진 6장 구성 시트) 는 흐름이 다르다 — **칼선을 배치보다 먼저** 준비한다.
@@ -396,9 +525,22 @@
   }
 
   // 1·4 → 1시트, 8 → 2시트 (listbox 순서대로 앞 4장 / 뒤 4장).
-  // ══ 엔진 — Everstory_mixed.jsx 2026-09-12 판 그대로 (이름 아트 알파벳 · 데코) ═══════
-  function _letterBlockSpec(nameText, unitMm, tag) {
+  // ══ 엔진 — Everstory_mixed.jsx 2026-09-12 판에서 복사 (이름 아트 알파벳 · 데코) ═══════
+  // 2026-09-17: 이름 스타일(COMPOSED_NAME_STYLES)을 받는다 — retro 는 복사 당시 계산 그대로, bubble 은 통짜 분기.
+
+  // 이름 스타일 표 — 키가 비었으면 첫 번째(retro). 모르는 키면 null (호출부가 막는다).
+  function _nameStyle(key) {
+    if (key === undefined || key === null || key === "") return COMPOSED_NAME_STYLES[0];
+    for (var i = 0; i < COMPOSED_NAME_STYLES.length; i++) {
+      if (COMPOSED_NAME_STYLES[i].key === String(key)) return COMPOSED_NAME_STYLES[i];
+    }
+    return null;
+  }
+
+  function _letterBlockSpec(nameText, unitMm, tag, styleKey) {
     if (!nameText) return null;
+    var style = _nameStyle(styleKey);
+    if (!style) throw new Error("알 수 없는 이름 스타일: " + styleKey);
     // **NFC 합성 필수.** macOS 는 한글을 NFD(자모 분해)로 주는 경우가 많고, 그러면
     // "하린" 이 ᄒ/ᅡ/ᄅ/ᅵ/ᆫ 5 코드포인트로 쪼개진다. Bagel Fat One 은 한글 **음절**
     // (U+AC00~)은 가졌지만 **자모**(U+1100~)는 없어서 한 글자도 안 그려진다
@@ -447,14 +589,63 @@
       lines: lines,      // 단어별 글자 배열 — 그리기·치수 계산의 기준
       chars: all,        // 전체 글자 (조각 수·글리프 보고용)
       maxLen: maxLen,    // 가장 긴 줄의 글자 수 = 폰트 모드의 블록 폭을 정한다
-      isArt: isArt,      // true = alphabet_art_v1.ai 에서 꺼내 그린다
+      isArt: isArt,      // true = 스타일의 아트 알파벳 라이브러리에서 꺼내 그린다
+      nameStyle: style.key,
+      whole: !!(style.whole && isArt),   // true = 이름 전체를 흰 테두리 하나로 (칼선 1개)
       aspect: 1
     };
     return _letterBlockResize(spec, unitMm);
   }
 
+  // 글자 틀 치수. retro 는 표 그대로({aw, cap, bl, …}), bubble 은 자리에 맞는 틀({aw, bl, fh}) — 줄 맨 앞은 L, 맨 끝은 R.
+  function _artLetterMetric(style, ch, first, last) {
+    var t = style.metrics[ch];
+    if (!t) return null;
+    if (!style.whole) return t;
+    return t[_artLetterVariant(t, first, last)];
+  }
+
+  // 한 글자 줄은 가진 쪽 장식을 쓴다 (L 과 R 을 둘 다 가진 글자는 지금 없다 — 생기면 L 만 쓴다).
+  function _artLetterVariant(t, first, last) {
+    if (first && t.L) return "L";
+    if (last && t.R) return "R";
+    return "core";
+  }
+
+  // bubble 폭 계수 — retro(_letterArtWCoef 아래 본문)와 같은 뜻: 블록 폭 = unit × 계수, cap = unit / artHCoef.
+  // 틀 높이가 capPt × fh 라 줄 위·아래로 나가는 양도 fh 를 곱해 잰다.
+  function _letterArtWCoefWhole(spec, style) {
+    var i, j, m, line, sum, coef, above = 0, below = 0, best = 0;
+    for (i = 0; i < spec.lines.length; i++) {
+      line = spec.lines[i];
+      for (j = 0; j < line.length; j++) {
+        m = _artLetterMetric(style, line[j], j === 0, j === line.length - 1);
+        if (!m) return null;
+        if (m.bl * m.fh > above) above = m.bl * m.fh;
+        if ((1 - m.bl) * m.fh > below) below = (1 - m.bl) * m.fh;
+      }
+    }
+    var hCoef = above + below;
+    if (hCoef <= 0) return null;
+    for (i = 0; i < spec.lines.length; i++) {
+      line = spec.lines[i];
+      sum = 0;
+      for (j = 0; j < line.length; j++) {
+        m = _artLetterMetric(style, line[j], j === 0, j === line.length - 1);
+        sum += m.aw * m.fh;
+      }
+      coef = sum / hCoef + (line.length - 1) * style.gap;
+      if (coef > best) best = coef;
+    }
+    spec.artHCoef = hCoef;
+    spec.artAboveCoef = above;
+    spec.artWCoef = best;
+    return best;
+  }
+
   function _letterArtWCoef(spec) {
     if (typeof spec.artWCoef === "number") return spec.artWCoef;
+    if (spec.whole) return _letterArtWCoefWhole(spec, _nameStyle(spec.nameStyle));
     var i, j, m;
     var above = 0, below = 0;
     for (i = 0; i < spec.chars.length; i++) {
@@ -485,10 +676,13 @@
 
   function _letterBlockResize(spec, unitMm) {
     var unit = unitMm * MM_TO_PT;
-    var gap = unit * LETTER_GAP_RATIO;
+    var style = spec.whole ? _nameStyle(spec.nameStyle) : null;
+    var gap = unit * (style ? style.gap : LETTER_GAP_RATIO);
     spec.unitMm = unitMm;
     spec.unit = unit;
     spec.innerGap = gap;
+    spec.lineGap = style ? unit * style.lineGap : gap;   // 줄 사이 (retro 는 글자 간격과 같다)
+    spec.halo = style ? unit * style.halo : 0;          // 통짜 흰 테두리 두께 (블록 치수에 들어 있다)
     var artCoef = null;
     if (spec.isArt) artCoef = _letterArtWCoef(spec);
     if (artCoef !== null) {
@@ -496,18 +690,20 @@
       // I 에도 M 폭을 줘서 블록이 20퍼센트쯤 헛되이 넓어진다 (HARIN 60.8 → 46.4mm).
       spec.capPt = unit / spec.artHCoef;          // 목표 cap height
       spec.baselinePt = spec.capPt * spec.artAboveCoef;  // 행 위 → baseline 깊이
-      spec.cellW = unit * artCoef;
+      spec.cellW = style ? unit * artCoef + 2 * spec.halo : unit * artCoef;
     } else {
       spec.cellW = spec.maxLen * unit + (spec.maxLen - 1) * gap;
     }
     // 높이는 두 모드가 같다 — 아트도 가장 불리한 글자의 프레임이 딱 unit 이다.
-    spec.cellH = spec.lines.length * unit + (spec.lines.length - 1) * gap;
+    if (style) spec.cellH = spec.lines.length * unit + (spec.lines.length - 1) * spec.lineGap + 2 * spec.halo;
+    else spec.cellH = spec.lines.length * unit + (spec.lines.length - 1) * gap;
     return spec;
   }
 
   function _letterUnitToFit(block, wPt) {
     var denom = null;
     if (block.isArt) denom = _letterArtWCoef(block);
+    if (denom !== null && block.whole) denom += 2 * _nameStyle(block.nameStyle).halo;   // 흰 테두리도 unit 에 비례
     if (denom === null) {
       var n = block.maxLen;
       denom = n + (n - 1) * LETTER_GAP_RATIO;
@@ -537,63 +733,53 @@
     return doc;
   }
 
-  function _letterArtLib() {
-    if (LETTER_ART_DOC) {
+  // 아트 라이브러리 문서 (이번 실행에서 한 번만 연다). what = 오류 문구용 이름.
+  function _artLibDoc(fileName, what) {
+    var d = ART_LIB_DOCS["$" + fileName];
+    if (d) {
       // 운영자가 손으로 닫았을 수 있다 — 건드려 보고 죽었으면 다시 연다.
-      try { var probe = LETTER_ART_DOC.name; return LETTER_ART_DOC; }
-      catch (eDead) { LETTER_ART_DOC = null; }
+      try { var probe = d.name; return d; }
+      catch (eDead) { d = null; }
     }
-    var f = _artLibFile(LETTER_ART_LIB_NAME);
+    var f = _artLibFile(fileName);
     if (!f) {
-      throw new Error("아트 알파벳 라이브러리가 없습니다 — templates/" + LETTER_ART_LIB_NAME +
-        " (26자 그룹 이름은 'LTR A' ~ 'LTR Z', 밑줄 아님)");
+      throw new Error(what + " 라이브러리가 없습니다 — templates/" + fileName +
+        " (그룹 이름은 'LTR A' · 'DECO HEART' 처럼, 밑줄 아님)");
     }
-    LETTER_ART_DOC = _openArtLibDoc(f);
-    return LETTER_ART_DOC;
+    d = _openArtLibDoc(f);
+    ART_LIB_DOCS["$" + fileName] = d;
+    return d;
   }
 
-  function _closeLetterArtLib() {
-    if (!LETTER_ART_DOC) return;
-    try { LETTER_ART_DOC.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
-    LETTER_ART_DOC = null;
-  }
-
-  function _decoArtLib() {
-    if (DECO_ART_DOC) {
-      try { var probe2 = DECO_ART_DOC.name; return DECO_ART_DOC; }
-      catch (eDead2) { DECO_ART_DOC = null; }
+  // 열어 둔 라이브러리를 모두 닫는다 — 시트마다 finally 에서 부른다 (예외가 나도 열린 채 남기지 않는다).
+  function _closeArtLibs() {
+    for (var k in ART_LIB_DOCS) {
+      if (!ART_LIB_DOCS.hasOwnProperty(k) || !ART_LIB_DOCS[k]) continue;
+      try { ART_LIB_DOCS[k].close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
+      ART_LIB_DOCS[k] = null;
     }
-    var f2 = _artLibFile(DECO_ART_LIB_NAME);
-    if (!f2) {
-      throw new Error("데코 라이브러리가 없습니다 — templates/" + DECO_ART_LIB_NAME +
-        " (12종 그룹 이름은 'DECO HEART' 처럼, 밑줄 아님)");
-    }
-    DECO_ART_DOC = _openArtLibDoc(f2);
-    return DECO_ART_DOC;
   }
 
-  function _closeDecoArtLib() {
-    if (!DECO_ART_DOC) return;
-    try { DECO_ART_DOC.close(SaveOptions.DONOTSAVECHANGES); } catch (eC2) {}
-    DECO_ART_DOC = null;
-  }
-
+  // payload = { deco, style (없으면 retro), pad (pt — bubble 은 칼선 여백만큼 박스 안쪽에 그린다) }
   function _drawDecoSticker(sheetDoc, payload, x, y, w, h, printL, kissL, cutSpot) {
-    var lib = _decoArtLib();
+    var style = _nameStyle(payload.style);
+    if (!style) throw new Error("알 수 없는 이름 스타일: " + payload.style);
+    var lib = _artLibDoc(style.decoLib, "데코");
     app.activeDocument = sheetDoc;
     sheetDoc.activeLayer = printL;
     var src;
     try { src = lib.groupItems.getByName("DECO " + payload.deco); }
     catch (eN) {
-      throw new Error("데코 '" + payload.deco + "' 가 라이브러리에 없습니다 (DECO " +
+      throw new Error("데코 '" + payload.deco + "' 가 라이브러리에 없습니다 (" + style.decoLib + " · DECO " +
         payload.deco + ")");
     }
+    var pad = (payload.pad > 0) ? payload.pad : 0;
     var dup = src.duplicate(printL, ElementPlacement.PLACEATEND);
     var gb = dup.geometricBounds;
     var sw = gb[2] - gb[0], sh = gb[1] - gb[3];
     if (sw > 0 && sh > 0) {
-      var s = w / sw;
-      if (h / sh < s) s = h / sh;
+      var s = (w - 2 * pad) / sw;
+      if ((h - 2 * pad) / sh < s) s = (h - 2 * pad) / sh;
       dup.resize(s * 100, s * 100);
     }
     gb = dup.geometricBounds;     // resize 후 반드시 다시 읽는다
@@ -637,76 +823,217 @@
     return best;
   }
 
+  // 이름 블록 안 글자 자리 — 그리기와 주문 보드 미리보기 공용 (순수 계산).
+  // pt, 블록 좌상단 원점, y 아래로. [{ ch, variant, line, x, y, w, h, missing }] — w×h 가 글자 틀 (라이브러리 그룹 geometricBounds).
+  // variant: bubble 은 "core" | "L" | "R" (옆 장식), retro 는 "". 표에 없는 글자는 missing (자리를 차지하지 않는다).
+  // 줄마다 폭을 먼저 재서 가운데 정렬하고, 모든 글자가 그 줄의 baseline(블록 위에서 baselinePt 아래)에 선다.
+  function _artLetterBoxes(block) {
+    var style = block.whole ? _nameStyle(block.nameStyle) : null;
+    var halo = block.halo ? block.halo : 0, out = [], ln, ci, line, lineW, m, fh, cur, baseY, first, last;
+    var lineStep = block.unit + (style ? block.lineGap : block.innerGap);
+    for (ln = 0; ln < block.lines.length; ln++) {
+      line = block.lines[ln];
+      lineW = (line.length - 1) * block.innerGap;
+      for (ci = 0; ci < line.length; ci++) {
+        if (style) {
+          m = _artLetterMetric(style, line[ci], ci === 0, ci === line.length - 1);
+          if (m) lineW += m.aw * block.capPt * m.fh;
+        } else {
+          m = LETTER_ART_METRICS[line[ci]];
+          if (m) lineW += m.aw * block.capPt / m.cap;
+        }
+      }
+      cur = style ? halo + (block.cellW - 2 * halo - lineW) / 2 : (block.cellW - lineW) / 2;
+      baseY = style ? halo + ln * lineStep + block.baselinePt : ln * lineStep + block.baselinePt;
+      for (ci = 0; ci < line.length; ci++) {
+        first = ci === 0;
+        last = ci === line.length - 1;
+        m = style ? _artLetterMetric(style, line[ci], first, last) : LETTER_ART_METRICS[line[ci]];
+        if (!m) {
+          // 라이브러리에 글자가 없다 — 그리기가 missingGlyphs 로 보고한다 (조용히 건너뛰면 이름에 구멍이 난다).
+          out.push({ ch: line[ci], variant: "", line: ln, x: cur, y: baseY, w: 0, h: 0, missing: true });
+          continue;
+        }
+        fh = style ? block.capPt * m.fh : block.capPt / m.cap;
+        out.push({ ch: line[ci], variant: style ? _artLetterVariant(style.metrics[line[ci]], first, last) : "",
+                   line: ln, x: cur, y: baseY - m.bl * fh, w: m.aw * fh, h: fh, missing: false });
+        cur += m.aw * fh + block.innerGap;
+      }
+    }
+    return out;
+  }
+
+  // 라이브러리 글자 복제본에서 이 자리에 안 쓰는 옆 장식(SIDE L / SIDE R)을 뺀다 — 남은 그룹 경계 = 치수표의 틀.
+  function _artKeepSides(group, variant) {
+    for (var i = group.groupItems.length - 1; i >= 0; i--) {
+      var g = group.groupItems[i];
+      if ((g.name === "SIDE L" && variant !== "L") || (g.name === "SIDE R" && variant !== "R")) g.remove();
+    }
+  }
+
+  // 이름이 "SIL" 인 도형 (글자 + 안쪽 장식의 바깥 윤곽 · 옆 장식 묶음 안에도 하나) 을 모은다.
+  function _artSilhouettes(item, out) {
+    if (!item) return;
+    try {
+      if (item.name === "SIL" && (item.typename === "PathItem" || item.typename === "CompoundPathItem")) {
+        out.push(item);
+        return;
+      }
+      if (item.typename === "GroupItem") {
+        for (var i = 0; i < item.pageItems.length; i++) _artSilhouettes(item.pageItems[i], out);
+      }
+    } catch (e) {}
+  }
+
+  // 도형을 dest 그룹에 단색으로 복사 (컴파운드는 하위 패스를 풀어서) — Pathfinder 는 칠 없는 패스에서 빈 결과를 낸다.
+  function _artCopySolid(item, dest) {
+    var black = new RGBColor(), i, d;
+    black.red = 0; black.green = 0; black.blue = 0;
+    if (item.typename === "PathItem") {
+      d = item.duplicate(dest, ElementPlacement.PLACEATEND);
+      d.stroked = false; d.filled = true; d.fillColor = black;
+    } else if (item.typename === "CompoundPathItem") {
+      for (i = 0; i < item.pathItems.length; i++) {
+        d = item.pathItems[i].duplicate(dest, ElementPlacement.PLACEATEND);
+        d.stroked = false; d.filled = true; d.fillColor = black;
+      }
+    } else if (item.typename === "GroupItem") {
+      for (i = 0; i < item.pageItems.length; i++) _artCopySolid(item.pageItems[i], dest);
+    }
+  }
+
+  function _artGatherPaths(item, out) {
+    if (!item) return;
+    if (item.typename === "PathItem") out.push(item);
+    else if (item.typename === "CompoundPathItem") { for (var j = 0; j < item.pathItems.length; j++) out.push(item.pathItems[j]); }
+    else if (item.typename === "GroupItem") { for (var i = 0; i < item.pageItems.length; i++) _artGatherPaths(item.pageItems[i], out); }
+  }
+
+  // 버블 이름 흰 테두리 = 글자 실루엣(SIL)을 haloPt 만큼 부풀려 합친 바깥 윤곽. 인쇄(흰색, 글자 아래)와 칼선이 **같은 도형**이라
+  // 정합 오차가 없다. Offset Path 라이브 이펙트(jntp 0 = 라운드) → 확장 → 단색 복사 → Pathfinder 더하기 → 구멍 버림
+  // (Everstory_calligraphy.jsx _offsetShape 와 같은 방식 — 굵은 획 + expandStyle 은 여백이 사라진다). 반환 { shape, cut, pieces }.
+  function _drawNameHalo(sheetDoc, dups, haloPt, printL, kissL, cutSpot) {
+    var sils = [], i, sel, expanded, united, paths, big, sign, outer, shape, white;
+    for (i = 0; i < dups.length; i++) _artSilhouettes(dups[i], sils);
+    if (!sils.length) throw new Error("버블 글자에 SIL(바깥 윤곽) 도형이 없습니다 — 라이브러리 구조가 바뀌었는지 확인");
+    var src = printL.groupItems.add();
+    for (i = 0; i < sils.length; i++) _artCopySolid(sils[i], src);
+    src.applyEffect('<LiveEffect name="Adobe Offset Path"><Dict data="R mlim 4 R ofst ' + haloPt + ' I jntp 0 "/></LiveEffect>');
+    sheetDoc.selection = null;
+    src.selected = true;
+    app.executeMenuCommand("expandStyle");
+    sel = sheetDoc.selection;
+    if (!sel || sel.length === 0) throw new Error("흰 테두리 확장 실패 (Offset Path)");
+    expanded = sel[0];
+    sheetDoc.selection = null;
+    var solid = printL.groupItems.add();
+    _artCopySolid(expanded, solid);
+    try { expanded.remove(); } catch (eEx) {}
+    solid.selected = true;
+    app.executeMenuCommand("group");
+    app.executeMenuCommand("Live Pathfinder Add");
+    app.executeMenuCommand("expandStyle");
+    sel = sheetDoc.selection;
+    if (!sel || sel.length === 0) throw new Error("흰 테두리 합치기 실패 (Pathfinder)");
+    united = sel[0];
+    sheetDoc.selection = null;
+    paths = [];
+    _artGatherPaths(united, paths);
+    big = null;
+    for (i = 0; i < paths.length; i++) if (!big || Math.abs(paths[i].area) > Math.abs(big.area)) big = paths[i];
+    if (!big) throw new Error("흰 테두리 결과가 비었습니다");
+    // 구멍(감긴 방향이 가장 큰 윤곽과 반대)은 버린다 — 칼선은 바깥만 딴다.
+    sign = big.area >= 0 ? 1 : -1;
+    outer = [];
+    for (i = 0; i < paths.length; i++) {
+      if ((paths[i].area >= 0 ? 1 : -1) === sign) outer.push(paths[i].duplicate(printL, ElementPlacement.PLACEATEND));
+    }
+    try { united.remove(); } catch (eUn) {}
+    if (outer.length === 1) {
+      shape = outer[0];
+    } else {
+      for (i = 0; i < outer.length; i++) outer[i].selected = true;
+      app.executeMenuCommand("compoundPath");
+      shape = sheetDoc.selection[0];
+      sheetDoc.selection = null;
+    }
+    white = new RGBColor();
+    white.red = 255; white.green = 255; white.blue = 255;
+    if (shape.typename === "CompoundPathItem") {
+      for (i = 0; i < shape.pathItems.length; i++) {
+        shape.pathItems[i].stroked = false; shape.pathItems[i].filled = true; shape.pathItems[i].fillColor = white;
+      }
+    } else {
+      shape.stroked = false; shape.filled = true; shape.fillColor = white;
+    }
+    shape.move(printL, ElementPlacement.PLACEATEND);   // 맨 아래 = 글자 밑
+    try { shape.name = "NameHalo"; } catch (eNm) {}
+    var cut = shape.duplicate(kissL, ElementPlacement.PLACEATEND);
+    try { cut.name = "Cutline_name"; } catch (eCn) {}
+    _forceCutContourStroke(cut, cutSpot);
+    return { shape: shape, cut: cut, pieces: outer.length };
+  }
+
+  // 이름 블록 그리기. (x, y) = 블록 좌상단 (Illustrator 좌표, y 위로).
+  // retro = 글자마다 칼선 (바깥 실루엣 복제, 여백 0 — 오프셋은 나중에 수동).
+  // bubble = 글자는 칼선 없이 그리고, 이름 전체 흰 테두리(_drawNameHalo) 하나가 칼선.
   function _drawArtLetterBlock(sheetDoc, block, x, y, printL, kissL, cutSpot) {
-    var lib = _letterArtLib();
+    var style = _nameStyle(block.nameStyle);
+    if (!style) throw new Error("알 수 없는 이름 스타일: " + block.nameStyle);
+    var lib = _artLibDoc(style.letterLib, "아트 알파벳");
     app.activeDocument = sheetDoc;
     sheetDoc.activeLayer = printL;
     sheetDoc.selection = null;
-    var missing = [];
-    var noCut = [];
-    var gi = 0;
-    for (var ln = 0; ln < block.lines.length; ln++) {
-      var lineChars = block.lines[ln];
-      // 줄 폭을 먼저 재서 가운데 정렬한다 — 줄마다 글자 수도 폭도 다르다.
-      var lineW = (lineChars.length - 1) * block.innerGap;
-      var wi, mw;
-      for (wi = 0; wi < lineChars.length; wi++) {
-        mw = LETTER_ART_METRICS[lineChars[wi]];
-        if (mw) lineW += mw.aw * block.capPt / mw.cap;
+    var boxes = _artLetterBoxes(block), missing = [], noCut = [], dups = [], halo = null, i, b, src, dup, gb, s;
+    for (i = 0; i < boxes.length; i++) {
+      b = boxes[i];
+      src = null;
+      if (!b.missing) {
+        try { src = lib.groupItems.getByName("LTR " + b.ch); } catch (eName) { src = null; }
       }
-      var cur = x + (block.cellW - lineW) / 2;
-      // 이 줄의 baseline. 행 위에서 baselinePt 만큼 내려온 자리 — 모든 글자가 여기 선다.
-      var baseY = y - ln * (block.unit + block.innerGap) - block.baselinePt;
-      for (var ci = 0; ci < lineChars.length; ci++, gi++) {
-        var ch = lineChars[ci];
-        var m = LETTER_ART_METRICS[ch];
-        var src = null;
-        if (m) {
-          try { src = lib.groupItems.getByName("LTR " + ch); } catch (eName) { src = null; }
-        }
-        if (!src) {
-          // 라이브러리에 글자가 없다 — 조용히 건너뛰면 이름에 구멍이 난다.
-          missing.push(ch);
-          continue;
-        }
-        var frameH = block.capPt / m.cap;
-        var dup = src.duplicate(printL, ElementPlacement.PLACEATEND);
-        var gb = dup.geometricBounds;
-        var srcH = gb[1] - gb[3];
-        if (srcH > 0) {
-          var s = (frameH / srcH) * 100;
-          dup.resize(s, s);
-        }
-        // resize 후 bounds 는 **다시 읽어야 한다** — 앵커가 문서 기준이라 위치가 같이 변한다.
-        gb = dup.geometricBounds;
-        var frameTopY = baseY + m.bl * frameH;   // baseline 에서 위로 bl×h 가 프레임 위
-        dup.translate(cur - gb[0], frameTopY - gb[1]);
-        try { dup.name = "Letter_" + ch + "_" + _pad2(gi); } catch (eL) {}
-        // 칼선 — 인쇄 실루엣과 같은 기하를 KissCut 에 복제한다 (여백 0, 오프셋은 나중에 수동).
-        var outline = _artOutlinePath(dup);
-        if (outline) {
-          var cut = outline.duplicate(kissL, ElementPlacement.PLACEATEND);
-          try { cut.name = "Cutline_" + ch + "_" + _pad2(gi); } catch (eC) {}
-          _forceCutContourStroke(cut, cutSpot);
-        } else {
-          noCut.push(ch);
-        }
-        cur += m.aw * frameH + block.innerGap;
+      if (!src) {
+        // 라이브러리에 글자가 없다 — 조용히 건너뛰면 이름에 구멍이 난다.
+        missing.push(b.ch);
+        continue;
+      }
+      dup = src.duplicate(printL, ElementPlacement.PLACEATEND);
+      if (block.whole) _artKeepSides(dup, b.variant);
+      gb = dup.geometricBounds;
+      if (gb[1] - gb[3] > 0) {
+        s = (b.h / (gb[1] - gb[3])) * 100;
+        dup.resize(s, s);
+      }
+      // resize 후 bounds 는 **다시 읽어야 한다** — 앵커가 문서 기준이라 위치가 같이 변한다.
+      gb = dup.geometricBounds;
+      dup.translate((x + b.x) - gb[0], (y - b.y) - gb[1]);
+      try { dup.name = "Letter_" + b.ch + "_" + _pad2(i); } catch (eL) {}
+      dups.push(dup);
+      if (block.whole) continue;
+      // 칼선 — 인쇄 실루엣과 같은 기하를 KissCut 에 복제한다 (여백 0, 오프셋은 나중에 수동).
+      var outline = _artOutlinePath(dup);
+      if (outline) {
+        var cut = outline.duplicate(kissL, ElementPlacement.PLACEATEND);
+        try { cut.name = "Cutline_" + b.ch + "_" + _pad2(i); } catch (eC) {}
+        _forceCutContourStroke(cut, cutSpot);
+      } else {
+        noCut.push(b.ch);
       }
     }
+    // **칼선 없는 이름은 절대 조용히 넘기지 않는다.** 인쇄는 멀쩡한데 안 잘리는 시트가
+    // 나가면 실물을 보기 전엔 모른다. 글자는 다 그려 놓고(눈으로 확인 가능) 여기서 터뜨린다.
+    if (block.whole && dups.length > 0) halo = _drawNameHalo(sheetDoc, dups, block.halo, printL, kissL, cutSpot);
     sheetDoc.selection = null;
     try { $.gc(); } catch (eGc) {}
-    // **칼선 없는 글자는 절대 조용히 넘기지 않는다.** 인쇄는 멀쩡한데 안 잘리는 시트가
-    // 나가면 실물을 보기 전엔 모른다. 글자는 다 그려 놓고(눈으로 확인 가능) 여기서 터뜨린다.
     if (noCut.length > 0) {
       throw new Error("아트 글자 " + noCut.join(",") + " 의 칼선을 못 만들었습니다 — " +
         "라이브러리 글자 구조가 바뀌었는지 확인 (바깥 실루엣 도형 1개가 있어야 함)");
     }
     return {
       count: block.chars.length,
-      pieces: block.chars.length,
-      piecesAreLetters: true,
+      pieces: halo ? halo.pieces : block.chars.length,
+      piecesAreLetters: !block.whole,
       missingGlyphs: missing,
+      style: style.key,
       // 아트는 글자 속구멍이 아니라 그림 디테일(체커보드·줄무늬)이 최소 도형이라
       // _minCounterPt 를 태우면 0.35mm 위험선에 늘 걸린다 — 의미 없는 경고라 안 잰다.
       minCounterPt: null
@@ -716,9 +1043,9 @@
   // ══ 이름 스펙 — Range 전용 (2026-09-12) ═══════════════════════════
   //   · 큰 레터 이름은 엔진(v3)이 위 가운데에 놓고 양옆 세로 셀·데코 자리까지 함께 짠다.
   //   · 아트는 대문자 A–Z 뿐 — 한글·숫자 이름은 이름 스티커를 건너뛰고 보고한다 (그 시트는 데코도 없다).
-  function _rangeNameSpec(stickerName, binW, gapPt) {
+  function _rangeNameSpec(stickerName, binW, gapPt, styleKey) {
     if (!stickerName) return null;
-    var spec = _letterBlockSpec(stickerName, LETTER_UNIT_MM, "ALPHA");
+    var spec = _letterBlockSpec(stickerName, LETTER_UNIT_MM, "ALPHA", styleKey);
     if (!spec) return null;
     if (!spec.isArt) {
       // 이 파일엔 폰트+프레임 엔진이 없다 — 한글·숫자 이름은 이름 스티커를 건너뛰고 보고한다.
@@ -748,9 +1075,11 @@
     return sheets;
   }
 
-  // 큰 레터 이름 스펙 — 아트 알파벳 16mm 유닛, 폭 상한 안으로 유닛을 낮춘다. null = 이름 없음/아트 불가.
-  function _rangeHeroSpec(stickerName, maxWPt) {
-    var spec = _letterBlockSpec(stickerName, RANGE_HERO_UNIT_MM, "ALPHA_HERO");
+  // 큰 레터 이름 스펙 — 아트 알파벳 유닛(retro 16mm · 스타일 표 unitMm), 폭 상한 안으로 유닛을 낮춘다. null = 이름 없음/아트 불가.
+  function _rangeHeroSpec(stickerName, maxWPt, styleKey) {
+    var style = _nameStyle(styleKey);
+    if (!style) throw new Error("알 수 없는 이름 스타일: " + styleKey);
+    var spec = _letterBlockSpec(stickerName, style.unitMm, "ALPHA_HERO", styleKey);
     if (!spec || !spec.isArt) return null;
     if (spec.cellW > maxWPt) {
       var fitMm = _letterUnitToFit(spec, maxWPt);
@@ -1242,6 +1571,14 @@
     return COMPOSED_SHOT_TYPES[t].label + " " + COMPOSED_SHOT_TYPES[t].minIn + "~" + COMPOSED_SHOT_TYPES[t].maxIn + "\"";
   }
 
+  // 페어 이름(…_01_SML) 끝의 크기 표시 → { token, key }. 표시가 없으면 null — 그 사진은 자동 판별로 간다.
+  function _composedNameType(base) {
+    var m = String(base || "").match(COMPOSED_NAME_TOKEN_RE);
+    if (!m) return null;
+    var token = m[1].toUpperCase();
+    return COMPOSED_NAME_TYPES[token] ? { token: token, key: COMPOSED_NAME_TYPES[token] } : null;
+  }
+
   // 얼굴 측정 앱의 결과 한 줄 "ok|얼굴수|x,y,w,h|사람수|동물수" → 객체. 형식이 틀리면 null.
   function _composedParseProbe(s) {
     if (!s) return null;
@@ -1301,6 +1638,81 @@
     return out;
   }
 
+  // 사진당 같은 등급 상한 — 표는 6장 기준이라, 사진이 적은 시트는 그만큼 늘려야 시트가 찬다 (1장이면 6배).
+  // 시트 전체 등급 상한(GRADE_MAX)은 그대로라 한 크기로 몰리지는 않는다.
+  function _composedPerPhotoMax(n) {
+    var k = COMPOSED_PER_SHEET / Math.max(1, Math.min(n, COMPOSED_PER_SHEET)), out = [], g;
+    for (g = 0; g < COMPOSED_PER_PHOTO_MAX.length; g++) out.push(Math.ceil(COMPOSED_PER_PHOTO_MAX[g] * k - 1e-9));
+    return out;
+  }
+
+  // 같은 사진 거리 기준(추가 40 · 채움 30 · 벌점 45mm)의 배율 — 사진이 적으면 같은 사진이 이웃하는 게 당연하다.
+  function _composedSameScale(n) {
+    return Math.max(1, Math.min(n, COMPOSED_PER_SHEET)) / COMPOSED_PER_SHEET;
+  }
+
+  // 종류 범위의 가장 큰 인치 (미분류 = 사다리 최대).
+  function _composedTypeMax(key) {
+    var w = _composedTypeWindow(key);
+    for (var g = 0; g < COMPOSED_GRADES_IN.length; g++) if (w[g]) return COMPOSED_GRADES_IN[g];
+    return COMPOSED_GRADES_IN[0];
+  }
+
+  // 크기 직접 고르기 (2026-09-16 사용자: 주문 보드에서 사진마다 0.75~2.5″ 안의 최소·최대를 보면서 정한다).
+  // pair.sizeRange = [최소, 최대] 인치가 있으면 종류 범위 대신 쓴다 (시트 나누기·배치·검사 모두). 없으면 종류 범위.
+  // [최소, 최대] → 정리된 값. 둘 다 사다리 값이고 최소 ≤ 최대여야 한다. 아니면 null.
+  function _composedSizeRange(raw) {
+    var lo = -1, hi = -1, g;
+    if (!raw || !(raw instanceof Array) || raw.length !== 2) return null;
+    if (typeof raw[0] !== "number" || typeof raw[1] !== "number") return null;
+    for (g = 0; g < COMPOSED_GRADES_IN.length; g++) {
+      if (COMPOSED_GRADES_IN[g] === raw[0]) lo = raw[0];
+      if (COMPOSED_GRADES_IN[g] === raw[1]) hi = raw[1];
+    }
+    if (lo < 0 || hi < 0 || lo > hi) return null;
+    return [lo, hi];
+  }
+
+  // [최소, 최대] → 등급별 쓸 수 있음 (종류 창과 같은 모양).
+  function _composedRangeWindow(range) {
+    var w = [];
+    for (var g = 0; g < COMPOSED_GRADES_IN.length; g++) w.push(COMPOSED_GRADES_IN[g] >= range[0] && COMPOSED_GRADES_IN[g] <= range[1]);
+    return w;
+  }
+
+  // 사진의 가장 큰 인치 (시트 나누기용) — 직접 고른 범위가 있으면 그 최대.
+  function _composedPairMaxIn(pair) {
+    var r = pair.sizeRange ? _composedSizeRange(pair.sizeRange) : null;
+    return r ? r[1] : _composedTypeMax(pair.shotType || COMPOSED_TYPE_NONE);
+  }
+
+  // [0.75, 2.5] → 0.75~2.5"
+  function _composedRangeLabel(range) {
+    return range[0] + "~" + range[1] + "\"";
+  }
+
+  // 선택한 사진 n 장 → 시트들 [{ photos: [선택 index…], main: 선택 index }].
+  // 시트 수 = ceil(n / COMPOSED_PER_SHEET), 시트마다 장수 차이 ≤ 1. 메인을 맨 앞에 두고 나머지는 범위 상한이 큰 사진부터
+  // (같으면 선택 순서) **돌아가며** 나눈다 — 앞에서부터 자르면 파일명 순서(BIG → MED → SML)대로 큰 사진이 한 시트에 몰린다.
+  // 각 시트의 메인 = 그 시트가 처음 받은 사진 (0번 시트는 운영자가 고른 메인). 시트 안의 사진은 선택 순서.
+  function _composedDeal(maxIns, mainIndex) {
+    var n = maxIns.length, order = [], i, j, tmp, sheets = [], k, count;
+    if (n < 1) return sheets;
+    count = Math.ceil(n / COMPOSED_PER_SHEET);
+    for (i = 0; i < n; i++) if (i !== mainIndex) order.push(i);
+    for (i = 1; i < order.length; i++) {
+      tmp = order[i];
+      j = i - 1;
+      while (j >= 0 && maxIns[order[j]] < maxIns[tmp]) { order[j + 1] = order[j]; j--; }
+      order[j + 1] = tmp;
+    }
+    if (mainIndex >= 0 && mainIndex < n) order.unshift(mainIndex);
+    for (k = 0; k < count; k++) sheets.push({ photos: [], main: order[k] });
+    for (i = 0; i < n; i++) sheets[i % count].photos.push(order[i]);
+    for (k = 0; k < count; k++) sheets[k].photos.sort(function (a, b) { return a - b; });
+    return sheets;
+  }
+
   // 장수 계획 → 슬롯 목록 (큰 것부터). 네 단계, 매 장마다 셀 합이 시트 예산(PACK_BUDGET)을 넘지 않는지 본다.
   //  ① 메인 = 자기 범위의 가장 큰 등급 1장.
   //  ② 시트에서 쓸 수 있는 가장 큰 등급이 메인보다 크면(메인이 얼굴) 그 등급을 쓸 수 있는 첫 사진에게 1장 — 시트의 중심.
@@ -1313,7 +1725,7 @@
   // 사진당 같은 등급 상한(PER_PHOTO_MAX)과 등급 상한(GRADE_MAX ÷ 쓸 수 있는 비중)을 지킨다.
   // 반환 { slots[], counts[] (등급별 장수) }.
   function _composedPlanSlots(photos, mainIndex, usableMm2, rim, spreadCount, dropCount) {
-    var G = COMPOSED_GRADES_IN.length, n = photos.length, g, i, k, r;
+    var G = COMPOSED_GRADES_IN.length, n = photos.length, g, i, k, r, perMax = _composedPerPhotoMax(n);
     var cells = [], elig = [], w = [], wSum = 0, target = [], gradeCap = [], avgArt = [];
     for (i = 0; i < n; i++) {
       cells.push([]);
@@ -1338,14 +1750,14 @@
     for (g = 0; g < G; g++) {
       target.push(wSum > 0 ? w[g] / wSum * artBudget : 0);
       gradeCap.push(wSum > 0 ? Math.min(Math.ceil(COMPOSED_GRADE_MAX[g] * (w[g] / wSum) / COMPOSED_GRADE_SHARE[g] - 1e-9),
-                                        elig[g] * COMPOSED_PER_PHOTO_MAX[g]) : 0);
+                                        elig[g] * perMax[g]) : 0);
     }
     var slots = [], copies = [], per = [], counts = [], artByGrade = [], cellSum = 0, artSum = 0, fillPhase = false;
     for (i = 0; i < n; i++) { copies.push(0); per.push([]); for (g = 0; g < G; g++) per[i].push(0); }
     for (g = 0; g < G; g++) { counts.push(0); artByGrade.push(0); }
     function canAdd(p, gg) {
       var c = cells[p][gg];
-      return photos[p].window[gg] && per[p][gg] < COMPOSED_PER_PHOTO_MAX[gg] && counts[gg] < gradeCap[gg] &&
+      return photos[p].window[gg] && per[p][gg] < perMax[gg] && counts[gg] < gradeCap[gg] &&
              cellSum + c.w * c.h <= cap + 1e-9;
     }
     function add(p, gg) {
@@ -1362,7 +1774,7 @@
     function fewest(gg) {
       var best = -1, low = -1, p;
       for (p = 0; p < n; p++) {
-        if (!photos[p].window[gg] || per[p][gg] >= COMPOSED_PER_PHOTO_MAX[gg]) continue;
+        if (!photos[p].window[gg] || per[p][gg] >= perMax[gg]) continue;
         if (low < 0 || copies[p] < low) low = copies[p];
       }
       for (p = 0; p < n; p++) {
@@ -1549,13 +1961,165 @@
     }
   }
 
+  // ── 배치 선택 (스타일 · 이름 위치 · 좌우 바꿈 · 섞기) — 주문 보드 미리보기와 공용 ─────────
+  function _composedStyleIndex(key) {
+    for (var i = 0; i < COMPOSED_STYLES.length; i++) if (COMPOSED_STYLES[i].key === key) return i;
+    return -1;
+  }
+
+  function _composedFlipNamePos(pos) {
+    if (pos === "left") return "right";
+    if (pos === "right") return "left";
+    return pos;
+  }
+
+  // 배치 선택 → { style, namePos, mirror, seed }. 비어 있으면 기본 (가운데 · 이름 왼쪽 = 예전 배치).
+  // namePos 는 **계산할 때** 이름 자리 — mirror 면 결과에서는 반대편에 보인다 (_composedVisibleNamePos).
+  // 값이 하나라도 이상하면 null — 호출부가 막는다 (추측해서 기본으로 바꾸지 않는다).
+  function _composedLayoutSpec(raw) {
+    var style = COMPOSED_STYLES[0].key, namePos = "", mirror = false, seed = 0, i, ok;
+    if (raw !== undefined && raw !== null) {
+      if (typeof raw !== "object") return null;
+      if (raw.style !== undefined && raw.style !== null && raw.style !== "") {
+        if (_composedStyleIndex(String(raw.style)) < 0) return null;
+        style = String(raw.style);
+      }
+      if (raw.namePos !== undefined && raw.namePos !== null && raw.namePos !== "") {
+        ok = false;
+        for (i = 0; i < COMPOSED_NAME_POSITIONS.length; i++) if (COMPOSED_NAME_POSITIONS[i] === String(raw.namePos)) ok = true;
+        if (!ok) return null;
+        namePos = String(raw.namePos);
+      }
+      if (raw.mirror !== undefined && raw.mirror !== null) {
+        if (raw.mirror !== true && raw.mirror !== false) return null;
+        mirror = raw.mirror;
+      }
+      if (raw.seed !== undefined && raw.seed !== null) {
+        if (typeof raw.seed !== "number") return null;
+        seed = raw.seed;
+        if (isNaN(seed) || seed < 0 || seed > COMPOSED_SHUFFLE_MAX || Math.floor(seed) !== seed) return null;
+      }
+    }
+    if (!namePos) namePos = COMPOSED_STYLES[_composedStyleIndex(style)].namePos;
+    return { style: style, namePos: namePos, mirror: mirror, seed: seed };
+  }
+
+  // 이름 위치 고르기 — "auto"(또는 모르는 값)면 스타일이 정한 자리.
+  function _composedResolveNamePos(style, choice) {
+    for (var i = 0; i < COMPOSED_NAME_POSITIONS.length; i++) if (COMPOSED_NAME_POSITIONS[i] === choice) return choice;
+    var si = _composedStyleIndex(style);
+    return COMPOSED_STYLES[si < 0 ? 0 : si].namePos;
+  }
+
+  // 결과에서 이름이 보이는 쪽.
+  function _composedVisibleNamePos(spec) {
+    return spec.mirror ? _composedFlipNamePos(spec.namePos) : spec.namePos;
+  }
+
+  // 보이는 이름 자리를 지키며 좌우를 바꾼 판 = 반대편에 이름을 두고 계산한 뒤 뒤집는다 (그냥 뒤집은 것과 다른 판이 나온다).
+  function _composedMirrorSpec(style, visiblePos, seed) {
+    return { style: style, namePos: _composedFlipNamePos(visiblePos), mirror: true, seed: seed ? seed : 0 };
+  }
+
+  // "양옆 · 이름 가운데 · 좌우 바꿈 · 섞기 3" (완료 창 표시용)
+  function _composedLayoutLabel(spec) {
+    var si = _composedStyleIndex(spec.style);
+    var s = (si < 0 ? spec.style : COMPOSED_STYLES[si].label) + " · 이름 " + COMPOSED_NAME_POS_LABELS[_composedVisibleNamePos(spec)];
+    if (spec.mirror) s += " · 좌우 바꿈";
+    if (spec.seed) s += " · 섞기 " + spec.seed;
+    return s;
+  }
+
+  // 스타일 끌림 — 큰 조각 자리 점수에 더한다 (작을수록 좋다). u, v = 조각 중심의 시트 안 상대 위치 (0~1).
+  function _composedStylePull(style, pull, u, v) {
+    if (!pull) return 0;
+    if (style === "sides") return pull * (1 - Math.abs(2 * u - 1));
+    if (style === "bottom") return pull * (1 - v);
+    if (style === "frame") return pull * 2 * Math.min(Math.min(u, 1 - u), Math.min(v, 1 - v));
+    return 0;
+  }
+
+  // 섞기 — 자리 점수에 더하는 흔들림 [0, amp). 정수 연산만 써서 Illustrator·브라우저·node 가 같은 값을 낸다.
+  function _composedShuffle(seed, x, y, photo, grade, amp) {
+    if (!seed || !amp) return 0;
+    var h = (Math.round(x * 4) * 131 + Math.round(y * 4) * 31 + photo * 17 + grade * 5) % 65521;
+    h = (h * (seed * 2 + 1) + seed * 7919) % 65537;
+    h = (h * 75 + 74) % 65537;
+    h = (h * 75 + 74) % 65537;
+    return amp * h / 65537;
+  }
+
+  // 박스 좌우 뒤집기 (pt, 제자리). 간격·시트 안 조건은 그대로 지켜진다.
+  function _composedMirrorBoxes(list, binW) {
+    for (var i = 0; i < list.length; i++) list[i].x = binW - list[i].x - list[i].w;
+  }
+
+  // 배치 지문 — 미리보기와 Illustrator 결과가 같은 자리인지 본다. 박스를 0.1mm 로 반올림한 목록의 해시 (16진).
+  function _composedLayoutSig(res) {
+    var parts = [], i, a, s, h = 5381;
+    for (i = 0; i < res.placed.length; i++) {
+      a = res.placed[i];
+      parts.push("p" + a.photo + ":" + a.inch + "@" + _composedSigBox(a));
+    }
+    for (i = 0; i < res.decos.length; i++) parts.push("d@" + _composedSigBox(res.decos[i]));
+    if (res.nameBox) parts.push("n@" + _composedSigBox(res.nameBox));
+    s = parts.join(";");
+    for (i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) % 4294967291;
+    return h.toString(16);
+  }
+
+  // 0.1mm 칸. 좌표는 대개 0.05mm 의 배수(인치·테두리·간격의 합)라 보통 반올림 경계(.x5)에 딱 걸린다 —
+  // 경계를 0.025mm 옮겨 두 계산기의 아주 작은 오차로 지문이 뒤집히지 않게 한다.
+  function _composedSigBox(b) {
+    return _composedSigMm(b.x) + "," + _composedSigMm(b.y) + "," + _composedSigMm(b.w) + "," + _composedSigMm(b.h);
+  }
+
+  function _composedSigMm(pt) {
+    return Math.round(pt / MM_TO_PT * 10 + 0.25);
+  }
+
+  // 주문 보드 "변형" 줄 — 한 스타일의 기본 · 좌우 바꿈 · 섞기. 이름은 모두 visiblePos 에 보인다.
+  // 섞기는 번호 1~COMPOSED_VARIANT_TRIES 를 돌려, 기본보다 스티커가 COMPOSED_VARIANT_DROP 장 넘게 줄었거나 이미 나온
+  // 배치와 같은 판은 버리고 COMPOSED_VARIANT_KEEP 개까지. 반환 [{ kind: "base"|"mirror"|"shuffle", layout, res }] (실패한 판은 뺀다).
+  function _composedVariants(pairsArg, mainIndex, binW, binH, gap, heroSpec, rimPt, style, visiblePos) {
+    var out = [], seen = {}, specs = [], i, k, sp, res, baseCount = -1, shuffles = 0;
+    specs.push({ kind: "base", layout: { style: style, namePos: visiblePos, mirror: false, seed: 0 } });
+    specs.push({ kind: "mirror", layout: _composedMirrorSpec(style, visiblePos, 0) });
+    for (i = 1; i <= COMPOSED_VARIANT_TRIES; i++) {
+      specs.push({ kind: "shuffle", layout: { style: style, namePos: visiblePos, mirror: false, seed: i } });
+    }
+    for (k = 0; k < specs.length; k++) {
+      sp = specs[k];
+      if (sp.kind === "shuffle" && shuffles >= COMPOSED_VARIANT_KEEP) break;
+      try {
+        res = _packComposed(pairsArg, mainIndex, binW, binH, gap, _composedPackExtras(heroSpec, rimPt, sp.layout));
+      } catch (eVar) {
+        continue;
+      }
+      if (sp.kind === "base") baseCount = res.placed.length;
+      if (sp.kind === "shuffle" && baseCount >= 0 && res.placed.length < baseCount - COMPOSED_VARIANT_DROP) continue;
+      if (seen["$" + res.sig]) continue;
+      seen["$" + res.sig] = true;
+      if (sp.kind === "shuffle") shuffles++;
+      out.push({ kind: sp.kind, layout: res.layout, res: res });
+    }
+    return out;
+  }
+
   // 후보 자리 점수 (작을수록 좋다).
   //  · 큰 조각(spread) = 이미 놓인 큰 조각·이름·시트 모서리에서 **가장 먼** 자리. 모서리를 반발점으로
   //    넣지 않으면 "가장 먼 자리"가 늘 구석이라 큰 조각이 네 귀퉁이로 몰린다 (시뮬 실측).
   //  · 채움 조각 = 빈틈에 꼭 맞는(둘레가 많이 닿는) 자리. 같은 사진이 가깝거나 같은 등급이
   //    붙거나 격자처럼 줄이 맞으면 벌점.
+  //  · 스타일 — 모으기는 "멀리" 대신 가운데(이름 아래 남은 높이의 중심)에 가깝게 · 이미 놓인 조각에 붙게.
+  //    양옆·가장자리·아래쪽은 끌림(_composedStylePull)을 더한다. 섞기는 모든 조각에 작은 흔들림을 더한다.
   function _composedScoreSpot(ctx, slot, x, y, w, h) {
     var sc, i, p, d, mind;
+    if (slot.spread && ctx.style === "cluster") {
+      return _composedDist(x + w / 2, y + h / 2, ctx.W / 2, (ctx.nameBottom + ctx.H) / 2) -
+        COMPOSED_CLUSTER_CONTACT * _composedContact(x, y, w, h, ctx.placed, ctx.W, ctx.H, ctx.gap) +
+        _composedShuffle(ctx.seed, x, y, slot.photo, slot.grade, COMPOSED_SHUFFLE_SPREAD);
+    }
     if (slot.spread) {
       mind = -1;
       for (i = 0; i < ctx.repel.length; i++) {
@@ -1563,7 +2127,9 @@
         if (mind < 0 || d < mind) mind = d;
       }
       if (mind < 0) mind = 0;
-      return -mind - COMPOSED_WEIGHTS.spreadContact * _composedContact(x, y, w, h, ctx.placed, ctx.W, ctx.H, ctx.gap);
+      return -mind - COMPOSED_WEIGHTS.spreadContact * _composedContact(x, y, w, h, ctx.placed, ctx.W, ctx.H, ctx.gap) +
+        _composedStylePull(ctx.style, ctx.pull, (x + w / 2) / ctx.W, (y + h / 2) / ctx.H) +
+        _composedShuffle(ctx.seed, x, y, slot.photo, slot.grade, COMPOSED_SHUFFLE_SPREAD);
     }
     sc = -COMPOSED_WEIGHTS.contact * _composedContact(x, y, w, h, ctx.placed, ctx.W, ctx.H, ctx.gap);
     sc += COMPOSED_WEIGHTS.align * _composedAlignHits(x, y, w, h, ctx.placed);
@@ -1572,11 +2138,11 @@
       if (p.kind !== "photo") continue;
       if (p.photo === slot.photo) {
         d = _composedDist(x + w / 2, y + h / 2, p.x + p.w / 2, p.y + p.h / 2);
-        if (d < COMPOSED_DUP_MIN_MM) sc += COMPOSED_WEIGHTS.dup * (COMPOSED_DUP_MIN_MM - d);
+        if (d < ctx.dupMin) sc += COMPOSED_WEIGHTS.dup * (ctx.dupMin - d);
       }
       if (p.grade === slot.grade && _composedEdgeDist(x, y, w, h, p) < COMPOSED_SAMEGRADE_MM) sc += COMPOSED_WEIGHTS.sameGrade;
     }
-    return sc;
+    return sc + _composedShuffle(ctx.seed, x, y, slot.photo, slot.grade, COMPOSED_SHUFFLE_FILL);
   }
 
   // 같은 사진 중 가장 가까운 것의 중심 거리 (없으면 아주 큰 값)
@@ -1634,7 +2200,7 @@
         for (gi = COMPOSED_GRADES_IN.length - 1; gi >= 0; gi--) { if (ph.window[gi]) break; }
         if (gi < 0) continue;
         cell = _composedCell(ph.aspect, COMPOSED_GRADES_IN[gi], ctx.rim);
-        slot = { grade: gi, inch: COMPOSED_GRADES_IN[gi], photo: ph.index, spread: false, minSame: COMPOSED_EXTRA_SAME_MIN_MM };
+        slot = { grade: gi, inch: COMPOSED_GRADES_IN[gi], photo: ph.index, spread: false, minSame: COMPOSED_EXTRA_SAME_MIN_MM * ctx.sameScale };
         spot = _composedBestSpot(ctx, slot, cell.w, cell.h);
         if (!spot) continue;
         if (_composedContact(spot.x, spot.y, cell.w, cell.h, ctx.placed, ctx.W, ctx.H, ctx.gap) < COMPOSED_EXTRA_MIN_CONTACT) continue;
@@ -1651,6 +2217,7 @@
 
   // 사진이 못 들어갈 만큼 작은 틈에만 데코를 넣는다 (스티커 가장자리 COMPOSED_DECO_NEAR_MM 안).
   // 격자 후보까지 보는 이유: 데코는 이웃에 딱 붙지 않고 틈 가운데 떠 있는 자리가 더 자연스럽다.
+  // 박스 크기는 스타일과 무관하다 — bubble 은 박스 안쪽 칼선 여백(payload.pad)만큼 작게 그린다 (박스를 키우면 데코가 덜 들어갔다).
   function _composedPlaceDecos(ctx, want) {
     var n = 0, best, zi, sz, xs, ys, xi, yi, x, y, cx, cy, near, decoD, i, p, gain, gx, gy;
     while (n < want) {
@@ -1690,22 +2257,34 @@
     return n;
   }
 
-  // 배치 한 판 — 결정적, 변형 탐색 없음.
-  // 순서 = 이름(좌상 고정) → 등급 내림차순 슬롯(큰 것부터) → 빈틈 추가 사진 → 데코.
+  // 배치 한 판 — 결정적. input.layout = _composedLayoutSpec 결과 (스타일 · 이름 위치 · 섞기. 뒤집기는 _packComposed 가 한다).
+  // 순서 = 이름(위 · 왼쪽/가운데/오른쪽) → 등급 내림차순 슬롯(큰 것부터) → 빈틈 추가 사진 → 데코.
   function _composedLayout(input) {
+    var spec = input.layout ? input.layout : _composedLayoutSpec(null);
+    var si = _composedStyleIndex(spec.style);
     var ctx = { W: input.W, H: input.H, gap: input.gap, rim: input.rim, photos: input.photos,
-                placed: [], copies: [], area: [], repel: [], missing: [], skipped: [], ops: 0 };
-    var i, nm, usable, slots, s, ph, cell, spot, cx4, cy4;
+                placed: [], copies: [], area: [], repel: [], missing: [], skipped: [], ops: 0,
+                sameScale: _composedSameScale(input.photos.length),
+                style: spec.style, pull: COMPOSED_STYLES[si].pull, seed: spec.seed, nameBottom: 0 };
+    ctx.dupMin = COMPOSED_DUP_MIN_MM * ctx.sameScale;
+    var i, nm, nx, usable, slots, s, ph, cell, spot, cx4, cy4;
     for (i = 0; i < ctx.photos.length; i++) { ctx.copies.push(0); ctx.area.push(0); }
     if (input.name) {
-      nm = { kind: "name", x: 0, y: 0, w: input.name.w, h: input.name.h };
+      nx = 0;
+      if (spec.namePos === "center") nx = (ctx.W - input.name.w) / 2;
+      else if (spec.namePos === "right") nx = ctx.W - input.name.w;
+      nm = { kind: "name", x: nx, y: 0, w: input.name.w, h: input.name.h };
       _composedPut(ctx, nm);
       ctx.repel.push(nm);
+      ctx.nameBottom = input.name.h;
     }
     // 시트 네 모서리를 반발점으로 — 없으면 "가장 먼 자리"가 늘 구석이라 큰 조각이 귀퉁이로 몰린다.
+    // 모으기·가장자리는 큰 조각이 가운데·가장자리로 가야 하므로 모서리를 막지 않는다.
     cx4 = [0, ctx.W, 0, ctx.W];
     cy4 = [0, 0, ctx.H, ctx.H];
-    for (i = 0; i < 4; i++) ctx.repel.push({ x: cx4[i], y: cy4[i], w: 0, h: 0 });
+    if (ctx.style !== "cluster" && ctx.style !== "frame") {
+      for (i = 0; i < 4; i++) ctx.repel.push({ x: cx4[i], y: cy4[i], w: 0, h: 0 });
+    }
     usable = ctx.W * ctx.H - (input.name ? input.name.w * input.name.h : 0);
     var plan = _composedPlanSlots(ctx.photos, input.mainIndex, usable, ctx.rim, input.spreadCount, input.dropCount);
     ctx.gradeCounts = plan.counts;
@@ -1714,7 +2293,7 @@
       s = slots[i];
       ph = ctx.photos[s.photo];
       cell = _composedCell(ph.aspect, s.inch, ctx.rim);
-      if (s.fill) s.minSame = COMPOSED_FILL_SAME_MIN_MM;
+      if (s.fill) s.minSame = COMPOSED_FILL_SAME_MIN_MM * ctx.sameScale;
       spot = _composedBestSpot(ctx, s, cell.w, cell.h);
       if (!spot) {
         // 채움 조각은 빠져도 사진은 이미 최소 장수를 가졌다 — 누락(재시도 대상)이 아니라 건너뜀으로 센다.
@@ -1730,6 +2309,25 @@
     ctx.extras = _composedPlaceExtras(ctx);
     if (input.decoWant > 0) _composedPlaceDecos(ctx, input.decoWant);
     return ctx;
+  }
+
+  // 데코 모양 — 스타일 순서대로 아직 안 쓴 것 (다 쓰면 처음부터). decoBigOnly(글씨 두들)는 큰 칸에만.
+  // sizeMm = 데코 박스 한 변. 큰 칸만 받는 모양뿐이면 순서 첫 모양. retro 는 예전의 order[k % n] 과 같은 결과.
+  function _composedDecoMotif(style, used, sizeMm) {
+    var order = style.decoOrder, big = sizeMm >= COMPOSED_DECO_SIZES_MM[0] - 0.001, pass, i, j, n, bigOnly;
+    for (pass = 0; pass < 2; pass++) {
+      for (i = 0; i < order.length; i++) {
+        n = order[i];
+        if (used["$" + n]) continue;
+        bigOnly = false;
+        for (j = 0; j < style.decoBigOnly.length; j++) if (style.decoBigOnly[j] === n) bigOnly = true;
+        if (bigOnly && !big) continue;
+        used["$" + n] = true;
+        return n;
+      }
+      for (i = 0; i < order.length; i++) used["$" + order[i]] = false;   // 한 바퀴 다 썼다 — 다시 처음부터
+    }
+    return order[0];
   }
 
   // 남은 빈 곳 중 가장 큰 정사각형의 한 변(mm, 1mm 격자). 클수록 시트에 죽은 공간이 있다는 뜻.
@@ -1792,7 +2390,14 @@
     var rw = cutInfo.relW, rh = cutInfo.relH;
     if (!isFinite(rw) || !isFinite(rh) || !isFinite(cutInfo.relL) || !isFinite(cutInfo.relT)) return 0;
     if (rw < COMPOSED_CUT_REL_MIN || rw > 1.01 || rh < COMPOSED_CUT_REL_MIN || rh > 1.01) return 0;
-    return (rw / rh) * canvasAspect;
+    // 백만분의 1 로 맞춘다 — .evcut 숫자를 Illustrator 와 미리보기(Python)가 따로 읽어 마지막 자리가 달라도 같은 판이 나오게.
+    return Math.round((rw / rh) * canvasAspect * 1e6) / 1e6;
+  }
+
+  // 미리보기와 시트 생성이 함께 쓰는 배치 영역 (pt) — 같은 식으로 계산해야 같은 판이 나온다 (_runComposed 참고).
+  function _composedPreviewBin() {
+    return { w: (COMPOSED_PREVIEW_BODY_MM[0] - 2 * BODY_PADDING_X_MM) * MM_TO_PT,
+             h: (COMPOSED_PREVIEW_BODY_MM[1] - 2 * BODY_PADDING_Y_MM) * MM_TO_PT };
   }
 
   // 메인 사진 index. 기본 = 목록 첫 사진, 운영자가 고른 base 가 있으면 그것. 선택 밖이면 -1.
@@ -1824,7 +2429,8 @@
       if (!ok) return "사다리에 없는 인치: " + a.payload.base + " " + a.inch;
       if (COMPOSED_GRADES_IN[a.grade] !== a.inch) return "등급과 인치가 안 맞음: " + a.payload.base + " " + a.inch;
       if (res.windows && res.windows[a.photo] && !res.windows[a.photo][a.grade]) {
-        return "종류 범위 밖 크기: " + a.payload.base + " " + a.inch + "\" (" + _composedTypeLabel(res.types[a.photo]) + ")";
+        return "크기 범위 밖: " + a.payload.base + " " + a.inch + "\" (" +
+          ((res.ranges && res.ranges[a.photo]) ? "직접 " + _composedRangeLabel(res.ranges[a.photo]) : _composedTypeLabel(res.types[a.photo])) + ")";
       }
       // 셀 = 사진 박스 + 2×rim 이 계약이다. 어긋나면 Illustrator 쪽 fit 이 틀어진다.
       if (Math.abs(a.w - (a.artW + 2 * res.rimPt)) > eps || Math.abs(a.h - (a.artH + 2 * res.rimPt)) > eps) {
@@ -1865,30 +2471,45 @@
     return "";
   }
 
-  // Composed 배치 입구. pairsArg = 사진 6장(선택 순서), 각 pair.cutAspect(없으면 pair.aspect).
-  // extras = { hero: {w, h} (pt) | null, decoWant }. 반환 좌표·치수는 pt (body 좌상단 원점, y 아래로).
+  // Composed 배치 입구 (시트 한 장). pairsArg = 이 시트의 사진 1~COMPOSED_PER_SHEET 장(선택 순서),
+  // 각 pair.cutAspect(없으면 pair.aspect). 더 많으면 호출부가 _composedDeal 로 먼저 나눈다.
+  // extras = { hero: {w, h} (pt) | null, decoWant, rimPt, layout (배치 선택 — 없으면 기본) }.
+  // 반환 좌표·치수는 pt (body 좌상단 원점, y 아래로). res.layout = 정리된 배치 선택, res.sig = 배치 지문.
   function _packComposed(pairsArg, mainIndex, binW, binH, gap, extras) {
-    if (!pairsArg || pairsArg.length !== COMPOSED_PHOTO_COUNT) {
-      throw new Error("Composed 는 사진 " + COMPOSED_PHOTO_COUNT + "장이어야 합니다 (지금 " + (pairsArg ? pairsArg.length : 0) + "장).");
+    if (!pairsArg || pairsArg.length < 1 || pairsArg.length > COMPOSED_PER_SHEET) {
+      throw new Error("Composed 시트 한 장의 사진은 1~" + COMPOSED_PER_SHEET + "장입니다 (지금 " + (pairsArg ? pairsArg.length : 0) + "장).");
     }
     if (!(mainIndex >= 0) || mainIndex >= pairsArg.length) throw new Error("메인 사진 index 가 범위를 벗어났습니다: " + mainIndex);
     if (!(binW > 0) || !(binH > 0) || !(gap >= 0) || !isFinite(binW + binH + gap)) throw new Error("유효하지 않은 시트 영역 또는 간격");
     if (!extras) extras = {};
-    var start = new Date().getTime(), i, photos = [], aspect;
+    var layout = _composedLayoutSpec(extras.layout);
+    if (!layout) throw new Error("배치 선택 값이 이상합니다 (스타일·이름 위치·좌우 바꿈·섞기 번호)");
+    var nameStyle = _nameStyle(extras.nameStyle);
+    if (!nameStyle) throw new Error("알 수 없는 이름 스타일: " + extras.nameStyle);
+    var start = new Date().getTime(), i, photos = [], aspect, rng;
     for (i = 0; i < pairsArg.length; i++) {
       aspect = pairsArg[i].cutAspect > 0 ? pairsArg[i].cutAspect : pairsArg[i].aspect;
       if (!(aspect > 0) || !isFinite(aspect)) throw new Error("사진 비율을 알 수 없습니다: " + pairsArg[i].base);
+      rng = null;
+      if (pairsArg[i].sizeRange) {
+        rng = _composedSizeRange(pairsArg[i].sizeRange);
+        if (!rng) throw new Error("크기 범위 값이 이상합니다: " + pairsArg[i].base);
+      }
       photos.push({ index: i, letter: "ABCDEF".charAt(i), aspect: aspect,
-                    type: pairsArg[i].shotType || COMPOSED_TYPE_NONE,
-                    window: _composedTypeWindow(pairsArg[i].shotType || COMPOSED_TYPE_NONE) });
+                    type: pairsArg[i].shotType || COMPOSED_TYPE_NONE, range: rng,
+                    window: rng ? _composedRangeWindow(rng) : _composedTypeWindow(pairsArg[i].shotType || COMPOSED_TYPE_NONE) });
     }
     var hero = null;
     if (extras.hero && extras.hero.w > 0 && extras.hero.h > 0) hero = { w: extras.hero.w / MM_TO_PT, h: extras.hero.h / MM_TO_PT };
     var decoWant = 0;
     if (hero && extras.decoWant > 0) decoWant = extras.decoWant;
     var rimMm = (extras.rimPt > 0) ? extras.rimPt / MM_TO_PT : 0;
+    // 이름·데코 박스 안쪽 여백 (bubble = 칼선 여백). 이름 박스 치수에는 이미 들어 있고(_composedPackExtras),
+    // 데코 박스는 크기 그대로 — 둘 다 그리기가 이만큼 안쪽에 그린다.
+    var namePad = (hero && extras.hero.pad > 0) ? extras.hero.pad : 0;
+    var decoPad = (hero && extras.decoPad > 0) ? extras.decoPad : 0;
     var input = { W: binW / MM_TO_PT, H: binH / MM_TO_PT, gap: gap / MM_TO_PT, rim: rimMm, photos: photos,
-                  mainIndex: mainIndex, name: hero, decoWant: decoWant };
+                  mainIndex: mainIndex, name: hero, decoWant: decoWant, layout: layout };
     // 계획한 조각이 다 안 들어가면(빠진 슬롯) 먼저 ④에서 마지막에 넣은 조각을 1~2장 빼고 다시 돌린다 —
     // 곧장 분산을 줄이면 작은 얼굴들이 한곳에 뭉쳤다(EVS-1007 실측 21mm). 그래도 안 되면 분산을 줄인다.
     // 덜 빠진 판을 쓴다 (보통은 한두 판으로 끝).
@@ -1904,8 +2525,14 @@
       if (st.missing.length === 0) break;
     }
     var ev = _composedEvaluate(st);
-    var placed = [], decos = [], nameBox = null, counts = [], area = 0, extraCount = 0, p, box, types = [], windows = [];
-    for (i = 0; i < photos.length; i++) { counts.push(0); types.push(photos[i].type); windows.push(photos[i].window); }
+    var placed = [], decos = [], nameBox = null, counts = [], area = 0, extraCount = 0, p, box, types = [], windows = [], ranges = [];
+    var decoUsed = {};
+    for (i = 0; i < photos.length; i++) {
+      counts.push(0);
+      types.push(photos[i].type);
+      windows.push(photos[i].window);
+      ranges.push(photos[i].range);
+    }
     for (i = 0; i < st.placed.length; i++) {
       p = st.placed[i];
       box = { x: p.x * MM_TO_PT, y: p.y * MM_TO_PT, w: p.w * MM_TO_PT, h: p.h * MM_TO_PT };
@@ -1918,18 +2545,26 @@
         if (p.extra) extraCount++;
       } else if (p.kind === "deco") {
         decos.push({ x: box.x, y: box.y, w: box.w, h: box.h,
-                     payload: { base: "__DECO_" + (decos.length + 1) + "__", isDeco: true, deco: DECO_ORDER[decos.length % DECO_ORDER.length] } });
+                     payload: { base: "__DECO_" + (decos.length + 1) + "__", isDeco: true,
+                                deco: _composedDecoMotif(nameStyle, decoUsed, p.w),
+                                style: nameStyle.key, pad: decoPad } });
       } else if (p.kind === "name") {
         nameBox = box;
       }
     }
+    if (layout.mirror) {
+      _composedMirrorBoxes(placed, binW);
+      _composedMirrorBoxes(decos, binW);
+      if (nameBox) _composedMirrorBoxes([nameBox], binW);
+    }
     var res = { placed: placed, decos: decos, nameBox: nameBox, counts: counts, area: area, rimPt: rimMm * MM_TO_PT,
                 fill: area / (binW * binH), extras: extraCount, missing: st.missing, skipped: st.skipped,
-                gradeCounts: st.gradeCounts, types: types, windows: windows, evaluation: ev, ops: opsAll,
-                runs: runs, spreadCount: st.spreadCount,
+                gradeCounts: st.gradeCounts, types: types, windows: windows, ranges: ranges, evaluation: ev, ops: opsAll,
+                runs: runs, spreadCount: st.spreadCount, layout: layout, nameStyle: nameStyle.key, namePad: namePad,
                 mainIndex: mainIndex, method: "composed", ms: new Date().getTime() - start };
     var error = _composedValidate(res, pairsArg, binW, binH, gap);
     if (error) throw new Error("Composed 배치 검증 실패: " + error);
+    res.sig = _composedLayoutSig(res);
     return res;
   }
 
@@ -2122,8 +2757,7 @@
       }
       _cleanupTraceStash(doc);
       // 아트 라이브러리는 여기서 반드시 닫는다 — 예외가 나도 열린 채 남기지 않는다 (mixed 와 동일).
-      _closeLetterArtLib();
-      _closeDecoArtLib();
+      _closeArtLibs();
       app.userInteractionLevel = prevInteraction;
     }
 
@@ -2359,7 +2993,8 @@
   // 시트 한 장 생성 (Composed 전용 — Small/Large 의 _produceRangeSheet 는 건드리지 않는다).
   // 순서가 v3 와 다른 점 하나: **칼선을 배치보다 먼저** 준비한다. 크기를 칼선 비율로 정하기 때문이다.
   // 캐시가 있으면 트레이스는 0회 (기존 _buildCutlineCache 그대로 — .evcut 공유).
-  function _produceComposedSheet(ctx, sheetPairs, options, mainIndex, gapPt, cutMarginPt, inputFolder, stamp) {
+  // sIdx / sheetTotal = 여러 시트 중 몇 번째 (저장 이름 _sheetNN · 헤더 "sheet 1/2").
+  function _produceComposedSheet(ctx, sheetPairs, options, mainIndex, gapPt, cutMarginPt, inputFolder, stamp, sIdx, sheetTotal) {
     var doc = ctx.doc, i;
     for (i = 0; i < sheetPairs.length; i++) {
       sheetPairs[i].cachedCutline = null;
@@ -2369,13 +3004,11 @@
       sheetPairs[i].symbolError = null;
       sheetPairs[i].cutCacheHit = false;
     }
-    var nameSkipped = "", heroSpec = null;
-    if (options.stickerName) {
-      var ns = _rangeNameSpec(options.stickerName, ctx.binW, gapPt);
-      if (ns && ns.skipped) nameSkipped = ns.skipped;
-      else if (ns) heroSpec = _rangeHeroSpec(options.stickerName, Math.min(RANGE_HERO_MAX_W_MM, ctx.binW / MM_TO_PT - 2 * RANGE_MARGIN_X_MM) * MM_TO_PT) || ns;
-    }
-    var decoWant = heroSpec ? COMPOSED_DECO_MAX : 0;
+    var hero = _composedHero(options.stickerName, ctx.binW, gapPt, options.nameStyle);
+    var nameSkipped = hero.skipped, heroSpec = hero.spec;
+    // 배치 선택은 주문 보드가 시트마다 넘긴다 (대화창 실행이면 없음 = 기본 배치).
+    var layout = (options.layouts && sIdx < options.layouts.length) ? options.layouts[sIdx] : null;
+    var packExtras = _composedPackExtras(heroSpec, cutMarginPt, layout), decoWant = packExtras.decoWant;
     var printLayer = doc.layers.add();
     printLayer.name = "PrintData";
     var kissLayer = doc.layers.add();
@@ -2401,8 +3034,7 @@
       }
       // ② 배치 (순수 계산 — Adobe API 없음)
       var t0 = new Date().getTime();
-      packResult = _packComposed(sheetPairs, mainIndex, ctx.binW, ctx.binH, gapPt,
-        { hero: heroSpec ? { w: heroSpec.cellW, h: heroSpec.cellH } : null, decoWant: decoWant, rimPt: cutMarginPt });
+      packResult = _packComposed(sheetPairs, mainIndex, ctx.binW, ctx.binH, gapPt, packExtras);
       packMs = new Date().getTime() - t0;
       ctx.drawn = true;
       // ③ 사진
@@ -2431,11 +3063,11 @@
           failedItems.push({ base: "데코 " + dp.payload.deco, error: (eDeco && eDeco.message) ? eDeco.message : String(eDeco) });
         }
       }
-      // ⑤ 이름 (기존 이름 엔진 그대로 — 엔진이 정한 자리에 그리기만 한다)
+      // ⑤ 이름 (기존 이름 엔진 그대로 — 엔진이 정한 자리에 그리기만 한다. bubble 은 박스 안쪽 여백 namePad 만큼 들여 그린다)
       if (heroSpec && packResult.nameBox) {
         try {
-          nameInfo = _drawArtLetterBlock(doc, heroSpec, ctx.bL + ctx.padXPt + packResult.nameBox.x,
-                                         ctx.bT - ctx.padYPt - packResult.nameBox.y, printLayer, kissLayer, cutSpot);
+          nameInfo = _drawArtLetterBlock(doc, heroSpec, ctx.bL + ctx.padXPt + packResult.nameBox.x + packResult.namePad,
+                                         ctx.bT - ctx.padYPt - packResult.nameBox.y - packResult.namePad, printLayer, kissLayer, cutSpot);
         } catch (eName) {
           failedItems.push({ base: "이름", error: (eName && eName.message) ? eName.message : String(eName) });
         }
@@ -2468,13 +3100,12 @@
         drawnDesigns++;
       }
       try {
-        if (packResult) _drawProductionHeader(options, drawnDesigns, ctx.headerRightText, 1, 1);
+        if (packResult) _drawProductionHeader(options, drawnDesigns, ctx.headerRightText, sIdx + 1, sheetTotal);
       } catch (eHdr) {
         failedItems.push({ base: "헤더", error: "헤더 생성 실패: " + ((eHdr && eHdr.message) ? eHdr.message : String(eHdr)) });
       }
       _cleanupTraceStash(doc);
-      _closeLetterArtLib();
-      _closeDecoArtLib();
+      _closeArtLibs();
       app.userInteractionLevel = prevInteraction;
     }
 
@@ -2491,7 +3122,7 @@
         throw new Error("제작 검증 실패 " + failedItems.length + "건 — " + failedItems[0].error + " (문서를 확인하고 다시 생성하세요)");
       }
       var outFolder = _resolveOutputFolder(inputFolder);
-      var saveFile = new File(outFolder.fsName + "/" + stamp + "_" + RANGE_TAGS[COMPOSED_KEY] + "_sheet01.ai");
+      var saveFile = new File(outFolder.fsName + "/" + stamp + "_" + RANGE_TAGS[COMPOSED_KEY] + "_sheet" + _pad2(sIdx + 1) + ".ai");
       _saveAi(doc, saveFile);
       savedPath = saveFile.fsName;
     } catch (eSave) {
@@ -2503,7 +3134,7 @@
       if (sheetPairs[i].cutCacheHit) cutCacheHits++;
       if (sheetPairs[i].cachedSymbol) symbolOk++;
     }
-    return { doc: doc, pairs: sheetPairs, packResult: packResult, packMs: packMs, records: records,
+    return { doc: doc, pairs: sheetPairs, mainIndex: mainIndex, packResult: packResult, packMs: packMs, records: records,
              savedPath: savedPath, saveError: saveError, failedItems: failedItems, fitCount: fitCount,
              decoDrawn: decoDrawn, decoWant: decoWant, nameSpec: heroSpec, nameSkipped: nameSkipped,
              nameInfo: nameInfo, drawnDesigns: drawnDesigns, cutCacheHits: cutCacheHits, symbolOk: symbolOk };
@@ -2581,18 +3212,20 @@
     return null;
   }
 
-  // 사진마다 측정값을 모은다 (캐시 우선, 없는 것만 앱으로). 실패해도 던지지 않는다 — error 에 적고
+  // 사진마다 측정값을 모은다 (캐시 우선, 없는 것만 앱으로). skip[i] 가 참인 사진(파일명 표시로 종류가 정해진 사진)은
+  // 캐시도 앱도 안 거친다. 실패해도 던지지 않는다 — error 에 적고
   // 확인 창에서 운영자가 고르게 한다. 반환 { recs[], raw[], saved[], cached, measured, ms, error }.
-  function _composedProbeFaces(pairs) {
+  function _composedProbeFaces(pairs, skip) {
     var out = { recs: [], raw: [], saved: [], cached: 0, measured: 0, ms: 0, error: "" };
-    var t0 = new Date().getTime(), miss = [], i, k, c;
+    var t0 = new Date().getTime(), miss = [], i, k, c, skipped;
     for (i = 0; i < pairs.length; i++) {
-      c = _readFaceCache(pairs[i]);
+      skipped = !!(skip && skip[i]);
+      c = skipped ? null : _readFaceCache(pairs[i]);
       out.recs.push(c ? c.rec : null);
       out.raw.push(c ? c.raw : null);
       out.saved.push(c ? c.type : null);
       if (c) out.cached++;
-      else miss.push(i);
+      else if (!skipped) miss.push(i);
     }
     if (miss.length === 0) return out;
     var appFile = _composedFaceProbeApp();
@@ -2662,57 +3295,102 @@
     return out;
   }
 
-  // 사진마다 {key, note, confirm} — 운영자가 전에 확정한 종류가 있으면 그것을 먼저.
-  function _composedGuessTypes(pairs, probe) {
-    var out = [], i, relH, cc, g;
+  // 사진마다 {key, note, confirm, saved, named, given} — 파일명 표시가 있으면 그것(누끼 저장 때 정한 값)이 이긴다.
+  // 표시가 없으면 주문 보드 미리보기에서 고른 종류(given = { "$base": key }), 운영자가 전에 확정한 종류, 자동 판별 순.
+  function _composedGuessTypes(pairs, probe, given) {
+    var out = [], i, relH, cc, g, nt, pick;
     for (i = 0; i < pairs.length; i++) {
+      nt = _composedNameType(pairs[i].base);
+      if (nt) {
+        out.push({ key: nt.key, note: "파일명 " + nt.token, confirm: false, saved: false, named: true, given: false });
+        continue;
+      }
+      pick = given ? given["$" + pairs[i].base] : undefined;
+      if (pick !== undefined) {
+        out.push({ key: pick, note: "미리보기에서 고름", confirm: false, saved: false, named: false, given: true });
+        continue;
+      }
+      if (pairs[i].sizeRange) {
+        out.push({ key: COMPOSED_TYPE_NONE, note: "크기 직접", confirm: false, saved: false, named: false, given: true });
+        continue;
+      }
       relH = 1;
       cc = _readCutCache(pairs[i]);
       if (cc && cc.cutInfo && cc.cutInfo.relH >= COMPOSED_CUT_REL_MIN && cc.cutInfo.relH <= 1.01) relH = cc.cutInfo.relH;
       g = _composedClassify(probe.recs[i], relH);
-      if (probe.saved[i]) out.push({ key: probe.saved[i], note: g.note, confirm: false, saved: true });
-      else out.push({ key: g.key, note: g.note, confirm: g.confirm, saved: false });
+      if (probe.saved[i]) out.push({ key: probe.saved[i], note: g.note, confirm: false, saved: true, named: false, given: false });
+      else out.push({ key: g.key, note: g.note, confirm: g.confirm, saved: false, named: false, given: false });
     }
     return out;
   }
 
-  // 확인 창 — 사진마다 종류(= 크기 범위)를 보여주고 고치게 한다. 취소면 null.
+  // 확인 창 — 파일명 표시가 없는 사진마다 종류(= 크기 범위)를 보여주고 고치게 한다. 취소면 null.
+  // 표시로 정해진 사진은 한 줄 요약만 보여준다 (바꾸려면 파일명 표시를 고친다).
+  // 고칠 사진이 많으면 열을 늘린다 (한 열 COMPOSED_DIALOG_ROWS 행) — 창이 화면 아래로 넘치지 않게.
   function _composedTypeDialog(pairs, probe, guesses, mainIndex) {
     var dlg = new Window("dialog", "사진 종류 확인 — Composed");
     dlg.orientation = "column";
     dlg.alignChildren = "fill";
     dlg.margins = 18;
     dlg.spacing = 10;
+    var ask = [], namedN = 0, i, t, c, r, cnt, row, nm, info, dd, sel;
+    for (i = 0; i < pairs.length; i++) {
+      if (guesses[i].named || guesses[i].given) namedN++;
+      else ask.push(i);
+    }
     dlg.add("statictext", undefined, "크기는 사진 종류가 정합니다 (긴 변 인치 범위). 자동 판별이 틀렸으면 고쳐 주세요.");
+    if (namedN > 0) {
+      var kinds = [];
+      for (t = 0; t < COMPOSED_SHOT_TYPES.length; t++) {
+        cnt = 0;
+        for (i = 0; i < pairs.length; i++) {
+          if ((guesses[i].named || guesses[i].given) && guesses[i].key === COMPOSED_SHOT_TYPES[t].key) cnt++;
+        }
+        if (cnt > 0) kinds.push(COMPOSED_SHOT_TYPES[t].label + " " + cnt);
+      }
+      dlg.add("statictext", undefined, "파일명 표시(SML·MED·BIG)·미리보기로 정한 사진 " + namedN + "장: " + kinds.join(" · ") +
+        " — 바꾸려면 파일명을 고치세요.");
+    }
     if (probe.error) {
       var warn = dlg.add("statictext", undefined, "⚠ 자동 판별 일부 안 됨 — " + probe.error + ". 해당 사진은 직접 고르세요.");
       try { warn.graphics.foregroundColor = warn.graphics.newPen(warn.graphics.PenType.SOLID_COLOR, [0.75, 0.2, 0.1], 1); } catch (eW) {}
     }
-    var panel = dlg.add("panel", undefined, "사진 " + pairs.length + "장  (★ = 메인)");
-    panel.orientation = "column";
-    panel.alignChildren = "fill";
+    // 열은 최대 3개 (1440pt 폭 화면 안) — 그보다 많으면 열마다 행이 늘어난다.
+    var cols = Math.max(1, Math.min(3, Math.ceil(ask.length / COMPOSED_DIALOG_ROWS))), perCol = Math.max(1, Math.ceil(ask.length / cols));
+    var panel = dlg.add("panel", undefined, "파일명 표시 없는 사진 " + ask.length + "장  (★ = 메인)");
+    panel.orientation = "row";
+    panel.alignChildren = "top";
     panel.margins = [14, 18, 14, 14];
-    panel.spacing = 6;
-    var labels = [], drops = [], i, t, row, nm, info, dd, sel;
+    panel.spacing = 18;
+    var colGroups = [];
+    for (c = 0; c < cols; c++) {
+      colGroups.push(panel.add("group"));
+      colGroups[c].orientation = "column";
+      colGroups[c].alignChildren = "fill";
+      colGroups[c].spacing = 6;
+    }
+    var labels = [], drops = [];
     for (t = 0; t < COMPOSED_SHOT_TYPES.length; t++) labels.push(_composedTypeLabel(COMPOSED_SHOT_TYPES[t].key));
     labels.push(_composedTypeLabel(COMPOSED_TYPE_NONE) + " (제한 없음)");
-    for (i = 0; i < pairs.length; i++) {
-      row = panel.add("group");
+    for (i = 0; i < pairs.length; i++) drops.push(null);
+    for (r = 0; r < ask.length; r++) {
+      i = ask[r];
+      row = colGroups[Math.floor(r / perCol)].add("group");
       row.orientation = "row";
       row.alignChildren = "center";
       row.spacing = 8;
       nm = row.add("statictext", undefined, (i === mainIndex ? "★ " : "    ") + pairs[i].base);
-      nm.preferredSize = [250, 20];
+      nm.preferredSize = [cols > 1 ? 160 : 250, 20];
       info = row.add("statictext", undefined, guesses[i].note + (guesses[i].saved ? " · 저장됨" : "") + (guesses[i].confirm ? "  ← 확인" : ""));
-      info.preferredSize = [170, 20];
+      info.preferredSize = [cols > 1 ? 95 : 170, 20];
       if (guesses[i].confirm) {
         try { info.graphics.foregroundColor = info.graphics.newPen(info.graphics.PenType.SOLID_COLOR, [0.75, 0.2, 0.1], 1); } catch (eI) {}
       }
       dd = row.add("dropdownlist", undefined, labels);
-      dd.preferredSize = [210, 24];
+      dd.preferredSize = [cols > 1 ? 165 : 210, 24];
       sel = _composedTypeIndex(guesses[i].key);
       dd.selection = sel >= 0 ? sel : labels.length - 1;
-      drops.push(dd);
+      drops[i] = dd;
     }
     var btns = dlg.add("group");
     btns.alignment = "right";
@@ -2721,87 +3399,167 @@
     ok.active = true;
     if (dlg.show() !== 1) return null;
     var out = [], s;
-    for (i = 0; i < drops.length; i++) {
+    for (i = 0; i < pairs.length; i++) {
+      if (!drops[i]) { out.push(guesses[i].key); continue; }
       s = drops[i].selection ? drops[i].selection.index : labels.length - 1;
       out.push(s < COMPOSED_SHOT_TYPES.length ? COMPOSED_SHOT_TYPES[s].key : COMPOSED_TYPE_NONE);
     }
     return out;
   }
 
-  // 완료 메시지 — 운영자가 "계획대로 나왔는지" 를 한 화면에서 확인한다.
-  function _composedMessage(options, pairsArg, mainIndex, out, err, probe) {
-    var msg = "완료: Composed 시트 " + ((out && out.savedPath) ? "1/1" : "0/1") + "장 생성\n\n" +
+  // 완료 메시지 — 운영자가 "계획대로 나왔는지" 를 한 화면에서 확인한다. 시트마다 한 덩어리.
+  // outs = 만들어진 시트들 (_produceComposedSheet 결과), plan = _composedDeal 결과, err = 중단 이유.
+  // notes = { preview: [미리보기와 다른 점…], body: "템플릿 크기 경고" } (없으면 null).
+  function _composedMessage(options, pairsArg, plan, outs, err, probe, notes) {
+    var rim = _composedRimMm(options), saved = 0, i, j, s;
+    var nameStyle = _nameStyle(options.nameStyle) || COMPOSED_NAME_STYLES[0];
+    for (s = 0; s < outs.length; s++) if (outs[s].savedPath) saved++;
+    var msg = "완료: Composed 시트 " + saved + "/" + plan.length + "장 생성\n\n" +
       "스크립트: " + SCRIPT_VARIANT + "\n" +
       "고객 이름: " + options.nameText + "\n" +
-      "스티커 이름: " + (options.stickerName ? options.stickerName : "(없음 — 이름·데코 안 넣음)") + "\n" +
-      "구성: 사진 " + COMPOSED_PHOTO_COUNT + "장 · 메인 = " + pairsArg[mainIndex].base +
-      " · 크기 = 인치 사다리 긴 변 " + COMPOSED_GRADES_IN.join("·") + "\" · 칼선 비율 기준\n" +
-      "       흰 테두리 " + _composedRimMm(options) + "mm (칼선 = 사진 윤곽 · 테두리만큼 바깥으로 오프셋해도 이웃과 " +
-      GAP_DEFAULT_MM + "mm 남는다) · 칼선 박스 최소 간격 " + (GAP_DEFAULT_MM + 2 * _composedRimMm(options)) + "mm\n";
-    if (err) return msg + "\n⚠ 생성 중단: " + err + "\n";
-    if (!out) return msg + "\n⚠ 결과 없음\n";
-    var pr = out.packResult, i, parts = [];
-    for (i = 0; i < pairsArg.length; i++) {
-      var areaI = 0;
-      for (var j = 0; j < pr.placed.length; j++) if (pr.placed[j].photo === i) areaI += pr.placed[j].w * pr.placed[j].h;
-      parts.push("ABCDEF".charAt(i) + (i === mainIndex ? "*" : "") + " " + pairsArg[i].base +
-        " [" + _composedTypeLabel(pr.types[i]) + (pairsArg[i].shotNote ? " · " + pairsArg[i].shotNote : "") + "]" +
-        " ×" + pr.counts[i] + " " + Math.round(areaI / pr.area * 1000) / 10 + "%");
-    }
-    var ladder = [];
-    for (i = 0; i < COMPOSED_GRADES_IN.length; i++) {
-      if (pr.gradeCounts[i] > 0) ladder.push(COMPOSED_GRADES_IN[i] + "\"×" + pr.gradeCounts[i]);
-    }
-    msg += "\n생성 스티커 " + out.records.length + "장 (계획 " + pr.placed.length + " = 사다리 " + (pr.placed.length - pr.extras) +
-      " + 빈틈 추가 " + pr.extras + ") · 디자인 " + out.drawnDesigns + "개\n" +
-      "    사다리: " + ladder.join(" · ") + "\n" +
-      "    사진 면적 " + (pr.evaluation.artFill * 100).toFixed(1) + "% (칼선 박스 " + (pr.fill * 100).toFixed(1) +
-      "%) · 같은 사진 최소 거리 " + pr.evaluation.minDup.toFixed(0) +
-      "mm · 가장 큰 빈 곳 " + pr.evaluation.hole + "mm · 배치 " + out.packMs + "ms\n" +
-      "    사진별:\n      " + parts.join("\n      ") + "\n";
+      "스티커 이름: " + (options.stickerName ? options.stickerName + " · 스타일 " + nameStyle.label +
+        (nameStyle.whole ? " (이름 통짜 · 흰 테두리 포함)" : " (글자마다 따로)") : "(없음 — 이름·데코 안 넣음)") + "\n" +
+      "구성: 사진 " + pairsArg.length + "장 → " + plan.length + "시트 (시트당 최대 " + COMPOSED_PER_SHEET + "장 · 큰 사진 고르게)" +
+      " · 크기 = 인치 사다리 긴 변 " + COMPOSED_GRADES_IN.join("·") + "\" · 종류 범위보다 작게 줄이지 않음\n" +
+      "       흰 테두리 " + rim + "mm (칼선 = 사진 윤곽 · 테두리만큼 바깥으로 오프셋해도 이웃과 " +
+      GAP_DEFAULT_MM + "mm 남는다) · 칼선 박스 최소 간격 " + (GAP_DEFAULT_MM + 2 * rim) + "mm\n";
     if (probe) {
-      msg += "    사진 종류 판별: 측정 " + probe.measured + "장 · 캐시 " + probe.cached + "장 · " + probe.ms + "ms" +
+      var namedN = probe.named || 0, givenN = probe.given || 0, autoN = pairsArg.length - namedN - givenN;
+      msg += "사진 종류: 파일명 표시 " + namedN + "장" +
+        (givenN > 0 ? " · 미리보기에서 고름 " + givenN + "장" : "") +
+        (autoN > 0 ? " · 자동 판별 " + autoN + "장 (측정 " + probe.measured + " · 캐시 " + probe.cached + " · " + probe.ms + "ms)" : "") +
         (probe.error ? "  ⚠ " + probe.error : "") + "\n";
     }
-    if (pr.missing.length > 0) msg += "    ⚠ 자리가 없어 못 넣은 슬롯: " + pr.missing.join(", ") + "\n";
-    if (pr.skipped && pr.skipped.length > 0) msg += "    같은 사진 옆자리뿐이라 뺀 채움 조각: " + pr.skipped.join(", ") + "\n";
-    if (out.nameSpec) {
-      msg += "    이름 스티커: 아트 알파벳 유닛 " + (Math.round(out.nameSpec.unitMm * 10) / 10) + "mm · " +
-        (Math.round(out.nameSpec.cellW / MM_TO_PT * 10) / 10) + " × " + (Math.round(out.nameSpec.cellH / MM_TO_PT * 10) / 10) + "mm" +
-        (out.nameInfo ? "" : "  ⚠ 그리기 실패") + "\n";
-    } else if (out.nameSkipped) {
-      msg += "    ⚠ 이름 스티커 없음: " + out.nameSkipped + "\n";
+    if (options.preview) {
+      if (notes && notes.preview && notes.preview.length > 0) {
+        msg += "⚠ 주문 보드 미리보기와 다름 — " + notes.preview.join(" / ") + "\n";
+      } else {
+        msg += "주문 보드 미리보기와 같음 (시트 나눔·스티커 수" + (options.preview.sigs ? "·자리" : "") + ")\n";
+      }
     }
-    if (out.decoWant > 0) msg += "    데코 스티커: " + out.decoDrawn + "/" + out.decoWant + "개 (빈틈에만)\n";
-    msg += "    칼선 캐시 " + out.cutCacheHits + "/" + pairsArg.length + " 히트 · 심볼 " + out.symbolOk + "/" + pairsArg.length +
-      (out.fitCount > 0 ? " · 칼선 맞춤 " + out.fitCount + "장" : "") + "\n";
-    if (out.savedPath) msg += "    저장: " + out.savedPath + "\n";
-    else msg += "    ⚠ 저장 안 됨: " + out.saveError + "\n";
-    msg += "\n손볼 때: 사진(Photo_…)과 칼선(Cutline_…)은 같은 이름끼리 함께 옮기고, 칼선끼리 " + (GAP_DEFAULT_MM + 2 * _composedRimMm(options)) + "mm 이상 띄우세요.\n" +
-      "마지막에 KissCut 칼선을 " + _composedRimMm(options) + "mm 바깥으로 오프셋하면 흰 테두리가 됩니다.\n";
-    if (out.failedItems.length > 0) {
+    if (notes && notes.body) msg += "⚠ " + notes.body + "\n";
+    var failed = [];
+    for (s = 0; s < outs.length; s++) {
+      var out = outs[s], sp = out.pairs, pr = out.packResult, parts = [], ladder = [];
+      for (i = 0; i < sp.length; i++) {
+        var areaI = 0;
+        for (j = 0; j < pr.placed.length; j++) if (pr.placed[j].photo === i) areaI += pr.placed[j].w * pr.placed[j].h;
+        parts.push("ABCDEF".charAt(i) + (i === out.mainIndex ? "*" : "") + " " + sp[i].base +
+          " [" + _composedTypeLabel(pr.types[i]) + (pr.ranges && pr.ranges[i] ? " → 크기 직접 " + _composedRangeLabel(pr.ranges[i]) : "") +
+          (sp[i].shotNote ? " · " + sp[i].shotNote : "") + "]" +
+          " ×" + pr.counts[i] + " " + Math.round(areaI / pr.area * 1000) / 10 + "%");
+      }
+      for (i = 0; i < COMPOSED_GRADES_IN.length; i++) {
+        if (pr.gradeCounts[i] > 0) ladder.push(COMPOSED_GRADES_IN[i] + "\"×" + pr.gradeCounts[i]);
+      }
+      msg += "\n── 시트 " + (s + 1) + "/" + plan.length + " · 사진 " + sp.length + "장 · 메인 " + sp[out.mainIndex].base + "\n" +
+        "배치: " + (pr.layout ? _composedLayoutLabel(pr.layout) : "기본") + "\n" +
+        "생성 스티커 " + out.records.length + "장 (계획 " + pr.placed.length + " = 사다리 " + (pr.placed.length - pr.extras) +
+        " + 빈틈 추가 " + pr.extras + ") · 디자인 " + out.drawnDesigns + "개\n" +
+        "    사다리: " + ladder.join(" · ") + "\n" +
+        "    사진 면적 " + (pr.evaluation.artFill * 100).toFixed(1) + "% (칼선 박스 " + (pr.fill * 100).toFixed(1) +
+        "%) · 같은 사진 최소 거리 " + (pr.evaluation.minDup > 900 ? "-" : pr.evaluation.minDup.toFixed(0) + "mm") +
+        " · 가장 큰 빈 곳 " + pr.evaluation.hole + "mm · 배치 " + out.packMs + "ms\n" +
+        "    사진별:\n      " + parts.join("\n      ") + "\n";
+      if (pr.missing.length > 0) msg += "    ⚠ 자리가 없어 못 넣은 슬롯: " + pr.missing.join(", ") + "\n";
+      if (pr.skipped && pr.skipped.length > 0) msg += "    빈자리가 없어(또는 같은 사진 바로 옆뿐이라) 뺀 채움 조각: " + pr.skipped.join(", ") + "\n";
+      if (out.nameSpec) {
+        msg += "    이름 스티커 (" + nameStyle.label + "): 아트 알파벳 유닛 " + (Math.round(out.nameSpec.unitMm * 10) / 10) + "mm · " +
+          (Math.round(out.nameSpec.cellW / MM_TO_PT * 10) / 10) + " × " + (Math.round(out.nameSpec.cellH / MM_TO_PT * 10) / 10) + "mm";
+        if (out.nameSpec.whole) {
+          msg += " (흰 테두리 " + (Math.round(out.nameSpec.halo / MM_TO_PT * 10) / 10) + "mm 포함)";
+          if (out.nameInfo && out.nameInfo.pieces !== 1) msg += "  ⚠ 흰 테두리가 " + out.nameInfo.pieces + "조각 — 칼선이 여러 개";
+        }
+        if (out.nameInfo && out.nameInfo.missingGlyphs && out.nameInfo.missingGlyphs.length) {
+          msg += "  ⚠ 라이브러리에 없는 글자: " + out.nameInfo.missingGlyphs.join(",");
+        }
+        msg += (out.nameInfo ? "" : "  ⚠ 그리기 실패") + "\n";
+      } else if (out.nameSkipped) {
+        msg += "    ⚠ 이름 스티커 없음: " + out.nameSkipped + "\n";
+      }
+      if (out.decoWant > 0) {
+        msg += "    데코 스티커 (" + nameStyle.label + "): " + out.decoDrawn + "/" + out.decoWant + "개 (빈틈에만)";
+        if (pr.decos.length) {
+          var decoNames = [];
+          for (i = 0; i < pr.decos.length; i++) decoNames.push(pr.decos[i].payload.deco);
+          msg += " — " + decoNames.join(", ");
+        }
+        msg += "\n";
+      }
+      msg += "    칼선 캐시 " + out.cutCacheHits + "/" + sp.length + " 히트 · 심볼 " + out.symbolOk + "/" + sp.length +
+        (out.fitCount > 0 ? " · 칼선 맞춤 " + out.fitCount + "장" : "") + "\n";
+      if (out.savedPath) msg += "    저장: " + out.savedPath + "\n";
+      else msg += "    ⚠ 저장 안 됨: " + out.saveError + "\n";
+      for (i = 0; i < out.failedItems.length; i++) failed.push(out.failedItems[i]);
+    }
+    if (err) msg += "\n⚠ 시트 " + (outs.length + 1) + " 생성 중단 (이후 시트 안 만듦): " + err + "\n";
+    if (outs.length > 0) {
+      msg += "\n손볼 때: 사진(Photo_…)과 칼선(Cutline_…)은 같은 이름끼리 함께 옮기고, 칼선끼리 " + (GAP_DEFAULT_MM + 2 * rim) + "mm 이상 띄우세요.\n" +
+        "마지막에 KissCut 칼선을 " + rim + "mm 바깥으로 오프셋하면 흰 테두리가 됩니다.\n";
+      if (options.stickerName && nameStyle.whole) {
+        msg += nameStyle.label + " 이름(NameHalo · Cutline_name)과 두들 데코는 흰 테두리가 이미 들어 있어요 — 같이 오프셋해도 " +
+          "이웃과 간격이 남도록 칼선 여백만큼 자리를 더 잡아 두었어요.\n";
+      }
+    }
+    if (failed.length > 0) {
       var seen = {};
-      msg += "\n제작 오류 (저장 차단 — 원인을 확인한 뒤 다시 생성):";
-      for (i = 0; i < out.failedItems.length; i++) {
-        var key = "$" + out.failedItems[i].base + ":" + out.failedItems[i].error;
+      msg += "\n제작 오류 (그 시트는 저장 안 함 — 원인을 확인한 뒤 다시 생성):";
+      for (i = 0; i < failed.length; i++) {
+        var key = "$" + failed[i].base + ":" + failed[i].error;
         if (seen[key]) continue;
         seen[key] = true;
-        msg += "\n- " + out.failedItems[i].base + ": " + out.failedItems[i].error;
+        msg += "\n- " + failed[i].base + ": " + failed[i].error;
       }
     }
     return msg;
   }
 
-  // Composed 실행 — 사진 6장 한 시트. Small/Large 의 메인 흐름(시트 계획·루프) 을 타지 않는다.
+  // 템플릿 body 크기가 미리보기 상수(COMPOSED_PREVIEW_BODY_MM)와 다르면 경고 한 줄, 같으면 "".
+  function _composedBodyNote(bodyPath) {
+    try {
+      var gb = bodyPath.geometricBounds, w = (gb[2] - gb[0]) / MM_TO_PT, h = (gb[1] - gb[3]) / MM_TO_PT;
+      if (Math.abs(w - COMPOSED_PREVIEW_BODY_MM[0]) > 0.05 || Math.abs(h - COMPOSED_PREVIEW_BODY_MM[1]) > 0.05) {
+        return "템플릿 body 가 " + (Math.round(w * 100) / 100) + " × " + (Math.round(h * 100) / 100) + "mm 인데 미리보기는 " +
+          COMPOSED_PREVIEW_BODY_MM[0] + " × " + COMPOSED_PREVIEW_BODY_MM[1] + "mm 로 계산한다 — COMPOSED_PREVIEW_BODY_MM 을 고칠 것";
+      }
+    } catch (eBody) {}
+    return "";
+  }
+
+  // 창이 쓸 수 있는 화면 높이(pt). Retina 에서 $.screens 가 **절반 값**을 준다 (2026-09-16 실측: 1512×982 화면의
+  // 쓸 수 있는 영역 1512×872 → 756×436, 대화창 크기는 실제 pt) — 600 보다 작게 나오면 두 배로 본다. 못 읽으면 800.
+  function _screenHeight() {
+    try {
+      var list = $.screens, pick = null, i, h;
+      for (i = 0; list && i < list.length; i++) if (list[i].primary || !pick) pick = list[i];
+      if (pick && pick.bottom > pick.top) {
+        h = pick.bottom - pick.top;
+        return (h < 600) ? h * 2 : h;
+      }
+    } catch (eScr) {}
+    return 800;
+  }
+
+  // 긴 완료 메시지 — alert 는 화면 밖으로 넘치므로 스크롤되는 글상자 창으로 보여준다.
+  function _showReportDialog(title, text) {
+    var dlg = new Window("dialog", title);
+    dlg.orientation = "column";
+    dlg.alignChildren = "fill";
+    dlg.margins = 16;
+    dlg.spacing = 10;
+    var box = dlg.add("edittext", undefined, text, { multiline: true, scrolling: true, readonly: true });
+    box.preferredSize = [780, Math.max(240, Math.min(620, _screenHeight() - 220))];
+    var btns = dlg.add("group");
+    btns.alignment = "right";
+    btns.add("button", undefined, "확인", { name: "ok" });
+    return dlg;
+  }
+
+  // Composed 실행 — 선택한 사진 전부 (장수 제한 없음). 종류를 정한 뒤 시트당 최대 COMPOSED_PER_SHEET 장으로
+  // 나눠 시트마다 만든다. Small/Large 의 메인 흐름(시트 계획·루프) 을 타지 않는다.
   function _runComposed(inputFolder, pairs, options, testConfig) {
     var layoutPairs = (options.selectedPairs && options.selectedPairs.length > 0) ? options.selectedPairs : pairs;
-    var msgText, i;
-    if (layoutPairs.length !== COMPOSED_PHOTO_COUNT) {
-      msgText = "Composed 는 사진 " + COMPOSED_PHOTO_COUNT + "장을 선택하세요 (지금 " + layoutPairs.length +
-        "장). 사진을 자동으로 빼거나 채우지 않습니다.";
-      if (testConfig) { testConfig.lastMessage = msgText; } else { alert(msgText); }
-      return;
-    }
+    var msgText, i, s;
     var mainIndex = _composedMainIndex(layoutPairs, options.mainBase);
     if (mainIndex < 0) {
       msgText = "메인 사진 \"" + options.mainBase + "\" 이 선택한 사진 안에 없습니다.";
@@ -2824,19 +3582,35 @@
         return;
       }
     }
-    // 사진 종류 = 크기 범위. 자동 판별(Vision) → 확인 창(운영자) → 확정값을 캐시에 남긴다.
-    var probe;
-    if (testConfig && testConfig.skipProbe) {
-      probe = { recs: [], raw: [], saved: [], cached: 0, measured: 0, ms: 0, error: "테스트 — 측정 건너뜀" };
+    // 사진 종류 = 크기 범위. 파일명 표시(SML·MED·BIG)가 있는 사진은 그 표시가, 주문 보드 미리보기에서 종류를 고른
+    // 사진은 그 값이 정한다 — 둘 다 측정·확인 창 없음. 나머지만 자동 판별(Vision) → 확인 창 → 확정값을 캐시에 남긴다.
+    // 주문 보드에서 크기를 직접 고른 사진(sizeRange)은 그 범위를 쓰므로 측정할 필요가 없다.
+    var named = [], namedCount = 0, givenCount = 0, decidedCount = 0, probe, decided = [];
+    var given = options.shotTypes || null, ranges = options.sizeRanges || null;
+    for (i = 0; i < layoutPairs.length; i++) {
+      layoutPairs[i].sizeRange = (ranges && ranges["$" + layoutPairs[i].base]) ? ranges["$" + layoutPairs[i].base] : null;
+      named.push(_composedNameType(layoutPairs[i].base) !== null);
+      decided.push(named[i] || (given !== null && given["$" + layoutPairs[i].base] !== undefined) || layoutPairs[i].sizeRange !== null);
+      if (named[i]) namedCount++;
+      else if (decided[i]) givenCount++;
+      if (decided[i]) decidedCount++;
+    }
+    if ((testConfig && testConfig.skipProbe) || decidedCount === layoutPairs.length) {
+      probe = { recs: [], raw: [], saved: [], cached: 0, measured: 0, ms: 0,
+                error: (testConfig && testConfig.skipProbe) ? "테스트 — 측정 건너뜀" : "" };
       for (i = 0; i < layoutPairs.length; i++) { probe.recs.push(null); probe.raw.push(null); probe.saved.push(null); }
     } else {
-      probe = _composedProbeFaces(layoutPairs);
+      probe = _composedProbeFaces(layoutPairs, decided);
     }
-    var guesses = _composedGuessTypes(layoutPairs, probe), types = [];
+    probe.named = namedCount;
+    probe.given = givenCount;
+    var guesses = _composedGuessTypes(layoutPairs, probe, given), types = [];
     if (testConfig) {
       for (i = 0; i < layoutPairs.length; i++) types.push(testConfig.shotTypes ? testConfig.shotTypes[i] : guesses[i].key);
       testConfig.lastProbe = probe;
       testConfig.lastGuesses = guesses;
+    } else if (decidedCount === layoutPairs.length) {
+      for (i = 0; i < layoutPairs.length; i++) types.push(guesses[i].key);   // 전부 정해졌다 — 확인 창 없음
     } else {
       types = _composedTypeDialog(layoutPairs, probe, guesses, mainIndex);
       if (!types) return;
@@ -2846,30 +3620,58 @@
       layoutPairs[i].shotNote = guesses[i].note;
       if (!testConfig && probe.raw[i] && types[i] !== probe.saved[i]) _writeFaceCache(layoutPairs[i], probe.raw[i], types[i]);
     }
+    // 시트 나누기 — 종류가 정해진 뒤라야 큰 사진을 시트마다 고르게 나눌 수 있다.
+    var maxIns = [];
+    for (i = 0; i < layoutPairs.length; i++) maxIns.push(_composedPairMaxIn(layoutPairs[i]));
+    var plan = _composedDeal(maxIns, mainIndex);
     var padXPt = BODY_PADDING_X_MM * MM_TO_PT, padYPt = BODY_PADDING_Y_MM * MM_TO_PT;
     // Composed 는 칼선 여백 = 흰 테두리. 셀 = 사진 + 2×rim 이라 사진 크기(등급 인치)는 안 줄어든다.
     var gapPt = GAP_DEFAULT_MM * MM_TO_PT, cutMarginPt = _composedRimMm(options) * MM_TO_PT;
-    var sctx = _openSheetContext(templateFile, padXPt, padYPt);
-    if (sctx.error) {
-      if (testConfig) { testConfig.lastMessage = sctx.error; } else { alert(sctx.error); }
-      return;
+    var stamp = _timestamp(), outs = [], err = "", notes = { preview: [], body: "" };
+    for (s = 0; s < plan.length; s++) {
+      var sheetPairs = [], sheetMain = 0;
+      for (i = 0; i < plan[s].photos.length; i++) {
+        if (plan[s].photos[i] === plan[s].main) sheetMain = i;
+        sheetPairs.push(layoutPairs[plan[s].photos[i]]);
+      }
+      var sctx = _openSheetContext(templateFile, padXPt, padYPt);
+      if (sctx.error) { err = sctx.error; break; }
+      if (s === 0) notes.body = _composedBodyNote(sctx.bodyPath);
+      // 템플릿 좌표는 72/25.4 로 저장돼 있어 MM_TO_PT(2.834645)로 잰 미리보기 영역과 1e-4pt 쯤 다르다 — 그 차이만으로
+      // 같은 선택의 자리가 미세하게 어긋나 지문 비교가 틀어졌다 (2026-09-16). 허용 오차 안이면 미리보기와 같은 값으로 계산한다
+      // (그리는 기준점 bL·bT 는 그대로). 다르면 잰 값을 쓰고 _composedBodyNote 가 경고한다.
+      var pbin = _composedPreviewBin();
+      if (Math.abs(sctx.binW - pbin.w) <= COMPOSED_FIT_TOL_MM * MM_TO_PT && Math.abs(sctx.binH - pbin.h) <= COMPOSED_FIT_TOL_MM * MM_TO_PT) {
+        sctx.binW = pbin.w;
+        sctx.binH = pbin.h;
+      }
+      try {
+        outs.push(_produceComposedSheet(sctx, sheetPairs, options, sheetMain, gapPt, cutMarginPt, inputFolder, stamp, s, plan.length));
+      } catch (eProduce) {
+        err = (eProduce && eProduce.message) ? eProduce.message : String(eProduce);
+        try { if (sctx.doc && !sctx.drawn) sctx.doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eCl) {}
+        break;
+      }
     }
-    var out = null, err = "";
-    try {
-      out = _produceComposedSheet(sctx, layoutPairs, options, mainIndex, gapPt, cutMarginPt, inputFolder, _timestamp());
-    } catch (eProduce) {
-      err = (eProduce && eProduce.message) ? eProduce.message : String(eProduce);
-      try { if (sctx.doc && !sctx.drawn) sctx.doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eCl) {}
+    var planned = [], sigs = [];
+    for (s = 0; s < outs.length; s++) {
+      planned.push(outs[s].packResult.placed.length);
+      sigs.push(outs[s].packResult.sig);
     }
-    msgText = _composedMessage(options, layoutPairs, mainIndex, out, err, probe);
+    notes.preview = _composedPreviewDiff(options.preview, plan, planned, layoutPairs, sigs);
+    msgText = _composedMessage(options, layoutPairs, plan, outs, err, probe, notes);
     if (testConfig) {
       testConfig.lastMessage = msgText;
-      testConfig.lastComposed = out;          // 래퍼가 실제 칼선 치수를 재는 용도
+      testConfig.lastPlan = plan;
+      testConfig.lastComposedAll = outs;      // 래퍼가 실제 칼선 치수를 재는 용도
+      testConfig.lastComposed = outs.length > 0 ? outs[0] : null;
     } else {
-      alert(msgText);
+      _showReportDialog("Composed 완료", msgText).show();
     }
-    if (testConfig && testConfig.closeAfter && out && out.doc) {
-      try { out.doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eTc) {}
+    if (testConfig && testConfig.closeAfter) {
+      for (s = 0; s < outs.length; s++) {
+        try { outs[s].doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eTc) {}
+      }
     }
   }
 
@@ -2892,165 +3694,255 @@
   //  UI
   // ═════════════════════════════════════════════════════════
 
+  // 스티커 이름 → 이름 스펙 (시트 생성·주문 보드 미리보기 공용). 반환 { spec, skipped } —
+  // 한글·숫자·너무 긴 이름은 spec 없이 skipped 에 이유 (그 시트는 이름·데코 없이 사진만).
+  // nameStyle = COMPOSED_NAME_STYLES 키 (비우면 retro, 모르는 키면 예외). 스펙에 스타일이 실려 데코·그리기까지 따라간다.
+  function _composedHero(stickerName, binW, gapPt, nameStyle) {
+    if (!_nameStyle(nameStyle)) throw new Error("알 수 없는 이름 스타일: " + nameStyle);
+    if (!stickerName) return { spec: null, skipped: "" };
+    var ns = _rangeNameSpec(stickerName, binW, gapPt, nameStyle);
+    if (!ns) return { spec: null, skipped: "" };
+    if (ns.skipped) return { spec: null, skipped: ns.skipped };
+    var maxW = Math.min(RANGE_HERO_MAX_W_MM, binW / MM_TO_PT - 2 * RANGE_MARGIN_X_MM) * MM_TO_PT;
+    return { spec: _rangeHeroSpec(stickerName, maxW, nameStyle) || ns, skipped: "" };
+  }
+
+  // _packComposed 의 extras (시트 생성·미리보기 공용) — 데코는 이름이 있을 때만. layout = 배치 선택 (없으면 기본).
+  // 이름 스타일은 heroSpec 에서 온다. rimBox 스타일(bubble)은 이름·데코 박스를 칼선 여백(rimPt)만큼 넓히고 그 안쪽에 그린다 (pad).
+  function _composedPackExtras(heroSpec, rimPt, layout) {
+    var style = heroSpec ? _nameStyle(heroSpec.nameStyle) : null;
+    var pad = (style && style.rimBox && rimPt > 0) ? rimPt : 0;
+    return { hero: heroSpec ? { w: pad ? heroSpec.cellW + 2 * pad : heroSpec.cellW,
+                                h: pad ? heroSpec.cellH + 2 * pad : heroSpec.cellH, pad: pad } : null,
+             decoWant: heroSpec ? COMPOSED_DECO_MAX : 0, rimPt: rimPt, layout: layout ? layout : null,
+             nameStyle: style ? style.key : null, decoPad: pad };
+  }
+
+  // 주문 보드 미리보기가 넘긴 값 → 대화창 options (2026-09-16). 사진은 base 로 찾는다 — 한글 NFD/NFC 차이는 _nfcHangul 로 맞춘다.
+  // 폴더에 없는 사진이 하나라도 있으면 만들지 않는다 (미리보기 뒤에 파일이 바뀐 것 — 추측해서 빼거나 바꾸지 않는다).
+  // 반환 { options } 또는 { error }.
+  function _composedLaunchOptions(cfg, pairsArg) {
+    var byKey = {}, sel = [], shot = {}, i, p, key, t, mainBase = "", cut = null, material = null, layouts = null, ls;
+    var sizes = {}, rng;
+    if (!cfg || !cfg.bases || !cfg.bases.length) return { error: "미리보기에서 고른 사진이 없습니다." };
+    for (i = 0; i < pairsArg.length; i++) byKey["$" + _nfcHangul(pairsArg[i].base)] = pairsArg[i];
+    for (i = 0; i < cfg.bases.length; i++) {
+      p = byKey["$" + _nfcHangul(String(cfg.bases[i]))];
+      if (!p) return { error: "미리보기에서 고른 사진이 폴더에 없습니다: " + cfg.bases[i] + " — 보드에서 미리보기를 새로 고친 뒤 다시 만드세요." };
+      sel.push(p);
+    }
+    if (cfg.mainBase) {
+      p = byKey["$" + _nfcHangul(String(cfg.mainBase))];
+      if (!p) return { error: "메인 사진이 폴더에 없습니다: " + cfg.mainBase };
+      mainBase = p.base;
+    }
+    if (cfg.shotTypes) {
+      for (key in cfg.shotTypes) {
+        if (!cfg.shotTypes.hasOwnProperty(key)) continue;
+        p = byKey["$" + _nfcHangul(key)];
+        t = String(cfg.shotTypes[key]);
+        if (!p) return { error: "종류를 고른 사진이 폴더에 없습니다: " + key };
+        if (t !== COMPOSED_TYPE_NONE && _composedTypeIndex(t) < 0) return { error: "알 수 없는 사진 종류: " + t };
+        shot["$" + p.base] = t;
+      }
+    }
+    for (i = 0; i < CUT_MARGIN_VALUES.length; i++) if (CUT_MARGIN_VALUES[i] === Number(cfg.cutMarginMm)) cut = CUT_MARGIN_VALUES[i];
+    if (cut === null) return { error: "칼선 여백 값이 이상합니다: " + cfg.cutMarginMm };
+    for (i = 0; i < MATERIAL_OPTIONS.length; i++) if (MATERIAL_OPTIONS[i] === String(cfg.material)) material = MATERIAL_OPTIONS[i];
+    if (material === null) return { error: "알 수 없는 재질: " + cfg.material };
+    if (!_trim(cfg.nameText || "")) return { error: "고객 이름이 비어 있습니다." };
+    // 사진마다 직접 고른 크기 범위 { base: [최소, 최대] } (없는 사진은 종류 범위).
+    if (cfg.sizeRanges !== undefined && cfg.sizeRanges !== null) {
+      if (typeof cfg.sizeRanges !== "object" || cfg.sizeRanges instanceof Array) return { error: "크기 범위 값이 이상합니다." };
+      for (key in cfg.sizeRanges) {
+        if (!cfg.sizeRanges.hasOwnProperty(key)) continue;
+        p = byKey["$" + _nfcHangul(key)];
+        if (!p) return { error: "크기를 고른 사진이 폴더에 없습니다: " + key };
+        rng = _composedSizeRange(cfg.sizeRanges[key]);
+        if (!rng) return { error: "크기 범위 값이 이상합니다: " + key };
+        sizes["$" + p.base] = rng;
+      }
+    }
+    // 이름 스타일 (없으면 첫 번째 = retro). 모르는 값이면 만들지 않는다.
+    var nameStyle = COMPOSED_NAME_STYLES[0].key;
+    if (cfg.nameStyle !== undefined && cfg.nameStyle !== null && cfg.nameStyle !== "") {
+      if (typeof cfg.nameStyle !== "string" || !_nameStyle(cfg.nameStyle)) {
+        return { error: "알 수 없는 이름 스타일: " + cfg.nameStyle + " — 보드에서 미리보기를 새로 고친 뒤 다시 만드세요." };
+      }
+      nameStyle = cfg.nameStyle;
+    }
+    // 시트마다 고른 배치 (없으면 기본). 이상한 값이면 만들지 않는다 — 미리보기와 다른 시트가 조용히 나오면 안 된다.
+    if (cfg.layouts !== undefined && cfg.layouts !== null) {
+      if (!(cfg.layouts instanceof Array)) return { error: "배치 선택 값이 이상합니다." };
+      layouts = [];
+      for (i = 0; i < cfg.layouts.length; i++) {
+        ls = _composedLayoutSpec(cfg.layouts[i]);
+        if (!ls) return { error: "알 수 없는 배치 선택 (시트 " + (i + 1) + ") — 보드에서 미리보기를 새로 고친 뒤 다시 만드세요." };
+        layouts.push(ls);
+      }
+    }
+    return { options: {
+      nameText: _trim(cfg.nameText),
+      mainBase: mainBase,
+      stickerName: _trim(cfg.stickerName || ""),
+      nameStyle: nameStyle,
+      material: material,
+      orderNumber: _trim(cfg.orderNumber || ""),
+      orderDate: _trim(cfg.orderDate || "") || _todayIso(),
+      range: COMPOSED_KEY,
+      candidate: 0,
+      cutMarginMm: cut,
+      selectedPairs: sel,
+      shotTypes: shot,
+      sizeRanges: sizes,
+      layouts: layouts,
+      preview: cfg.expect || null
+    } };
+  }
+
+  // 미리보기가 예상한 시트 나눔·스티커 수·자리 → 실제와 다른 점 (없으면 빈 배열). 이유는 짐작하지 않고 차이만 적는다.
+  // expect = { sheets: [[base…]…], stickers: [n…], sigs: [지문…] }, plan = _composedDeal 결과,
+  // counts = 시트별 계획 스티커 수, sigs = 시트별 배치 지문 (_composedLayoutSig). 수가 다르면 자리는 따로 적지 않는다.
+  function _composedPreviewDiff(expect, plan, counts, layoutPairs, sigs) {
+    var notes = [], s, i, want, got;
+    if (!expect) return notes;
+    if (expect.sheets && expect.sheets.length !== plan.length) {
+      notes.push("시트 수: 미리보기 " + expect.sheets.length + "장 → 실제 " + plan.length + "장");
+    }
+    for (s = 0; s < plan.length; s++) {
+      if (expect.sheets && expect.sheets[s]) {
+        want = [];
+        got = [];
+        for (i = 0; i < expect.sheets[s].length; i++) want.push(_nfcHangul(String(expect.sheets[s][i])));
+        for (i = 0; i < plan[s].photos.length; i++) got.push(_nfcHangul(layoutPairs[plan[s].photos[i]].base));
+        if (want.join("|") !== got.join("|")) notes.push("시트 " + (s + 1) + ": 사진 구성이 미리보기와 다름");
+      }
+      if (expect.stickers && s < counts.length && typeof expect.stickers[s] === "number" && expect.stickers[s] !== counts[s]) {
+        notes.push("시트 " + (s + 1) + ": 스티커 미리보기 " + expect.stickers[s] + "장 → 실제 " + counts[s] + "장");
+      } else if (expect.sigs && sigs && s < sigs.length && typeof expect.sigs[s] === "string" && expect.sigs[s] !== "" &&
+                 expect.sigs[s] !== sigs[s]) {
+        notes.push("시트 " + (s + 1) + ": 스티커 자리가 미리보기와 다름");
+      }
+    }
+    return notes;
+  }
+
+  // n 장을 고르면 시트별 장수 (대화창 표시용 — _composedDeal 과 같은 나눔).
+  function _composedSheetSizes(n) {
+    var zeros = [], out = [], plan, k;
+    for (k = 0; k < n; k++) zeros.push(0);
+    plan = _composedDeal(zeros, 0);
+    for (k = 0; k < plan.length; k++) out.push(plan[k].photos.length);
+    return out;
+  }
+
+  // 대화창 — Composed 전용 (2026-09-16 사용자: 크기 범위·배치 후보 선택을 뺐고, 사진 수 제한이 없다).
+  // 두 열: 왼쪽 = 이름·헤더·칼선 여백, 오른쪽 = 사진 목록·메인. 목록 높이를 화면 높이에 맞춰 버튼이 화면 밖으로 안 나간다.
   function _showDialog(pairsArg, defaultName) {
+    var gray = [0.45, 0.45, 0.45], i;
+    function _hint(parent, text, w, lines) {
+      var st = parent.add("statictext", undefined, text, { multiline: true });
+      st.preferredSize = [w, 16 * lines];
+      try { st.graphics.foregroundColor = st.graphics.newPen(st.graphics.PenType.SOLID_COLOR, gray, 1); } catch (eH) {}
+      return st;
+    }
+    function _panel(parent, title) {
+      var p = parent.add("panel", undefined, title);
+      p.orientation = "column";
+      p.alignChildren = "fill";
+      p.margins = [12, 16, 12, 12];
+      p.spacing = 6;
+      return p;
+    }
+    function _labeledRow(parent, label) {
+      var g = parent.add("group");
+      g.orientation = "row";
+      g.alignChildren = "center";
+      g.add("statictext", undefined, label).preferredSize = [56, 20];
+      return g;
+    }
+
     var dlg = new Window("dialog", SCRIPT_TITLE);
     dlg.orientation = "column";
     dlg.alignChildren = "fill";
-    dlg.margins = 18;
+    dlg.margins = 16;
     dlg.spacing = 12;
+    var cols = dlg.add("group");
+    cols.orientation = "row";
+    cols.alignChildren = "top";
+    cols.spacing = 16;
+    var left = cols.add("group");
+    left.orientation = "column";
+    left.alignChildren = "fill";
+    left.spacing = 10;
+    var right = cols.add("group");
+    right.orientation = "column";
+    right.alignChildren = "fill";
+    right.spacing = 10;
 
-    var note = dlg.add("statictext", undefined,
-      "테스트용 별도 스크립트 — Everstory_mixed.jsx 와 같은 입력·템플릿·출력 규약. 매니페스트 프리필 없음.");
-    try { note.graphics.foregroundColor = note.graphics.newPen(note.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eN) {}
+    // ── 왼쪽 ──
+    var nameInput = _panel(left, "고객 이름").add("edittext", undefined, defaultName || "");
+    nameInput.preferredSize = [300, 24];
 
-    var namePanel = dlg.add("panel", undefined, "고객 이름");
-    namePanel.orientation = "column";
-    namePanel.alignChildren = "fill";
-    namePanel.margins = [14, 18, 14, 14];
-    var nameInput = namePanel.add("edittext", undefined, defaultName || "");
-    nameInput.preferredSize = [320, 24];
-
-    // 스티커 이름 — 헤더의 고객 이름과 **별개**다 (선물이면 받는 사람 이름). 비우면 이름
-    // 스티커도 데코도 안 넣는다. mixed.jsx 와 같은 규약.
-    var stickerPanel = dlg.add("panel", undefined, "스티커 이름 (비우면 이름·데코 없음)");
-    stickerPanel.orientation = "column";
-    stickerPanel.alignChildren = "fill";
-    stickerPanel.margins = [14, 18, 14, 14];
-    stickerPanel.spacing = 6;
+    // 스티커 이름 — 헤더의 고객 이름과 **별개**다 (선물이면 받는 사람 이름). 비우면 이름 스티커도 데코도 안 넣는다.
+    var stickerPanel = _panel(left, "스티커 이름 (비우면 이름·데코 없음)");
     var stickerInput = stickerPanel.add("edittext", undefined, "");
-    stickerInput.preferredSize = [320, 24];
-    var stickerHint = stickerPanel.add("statictext", undefined,
-      "A–Z 이름 → 아트 알파벳(위 가운데) + 데코 " + DECO_EXTRA + "개(+디자인 수). 한글·숫자는 아직 없음 (이름·데코 없이 사진만)");
-    try { stickerHint.graphics.foregroundColor = stickerHint.graphics.newPen(stickerHint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eSh) {}
+    stickerInput.preferredSize = [300, 24];
+    _hint(stickerPanel, "A–Z 이름 → 위쪽 아트 알파벳 + 데코 최대 " + COMPOSED_DECO_MAX + "개(빈틈). 한글·숫자 이름은 아직 사진만.", 300, 2);
 
-    var detailPanel = dlg.add("panel", undefined, "헤더 정보");
-    detailPanel.orientation = "column";
-    detailPanel.alignChildren = "fill";
-    detailPanel.margins = [14, 18, 14, 14];
-    detailPanel.spacing = 8;
-
-    var materialGroup = detailPanel.add("group");
-    materialGroup.orientation = "row";
-    materialGroup.alignChildren = "center";
-    materialGroup.add("statictext", undefined, "재질");
-    var materialDropdown = materialGroup.add("dropdownlist", undefined, MATERIAL_OPTIONS);
+    var detailPanel = _panel(left, "헤더 정보");
+    var materialDropdown = _labeledRow(detailPanel, "재질").add("dropdownlist", undefined, MATERIAL_OPTIONS);
     materialDropdown.selection = 0;
-    materialDropdown.preferredSize = [250, 24];
+    materialDropdown.preferredSize = [234, 24];
+    var orderInput = _labeledRow(detailPanel, "주문번호").add("edittext", undefined, "");
+    orderInput.preferredSize = [234, 24];
+    var dateInput = _labeledRow(detailPanel, "날짜").add("edittext", undefined, _todayIso());
+    dateInput.preferredSize = [234, 24];
 
-    var orderGroup = detailPanel.add("group");
-    orderGroup.orientation = "row";
-    orderGroup.alignChildren = "center";
-    orderGroup.add("statictext", undefined, "주문번호");
-    var orderInput = orderGroup.add("edittext", undefined, "");
-    orderInput.preferredSize = [250, 24];
-
-    var dateGroup = detailPanel.add("group");
-    dateGroup.orientation = "row";
-    dateGroup.alignChildren = "center";
-    dateGroup.add("statictext", undefined, "날짜");
-    var dateInput = dateGroup.add("edittext", undefined, _todayIso());
-    dateInput.preferredSize = [250, 24];
-
-    var rangePanel = dlg.add("panel", undefined, "크기 범위 (정사각 환산 면적 등급 · 칼선 포함)");
-    rangePanel.orientation = "column";
-    rangePanel.alignChildren = "left";
-    rangePanel.margins = [14, 18, 14, 14];
-    rangePanel.spacing = 6;
-    var rangeRadios = [];
-    for (var ro = 0; ro < RANGE_OPTIONS.length; ro++) {
-      rangeRadios.push(rangePanel.add("radiobutton", undefined, RANGE_OPTIONS[ro]));
+    // 칼선 여백 = 흰 테두리 (셀 = 사진 + 2×여백). 기본 COMPOSED_RIM_MM.
+    var cutPanel = _panel(left, "칼선 여백 (= 흰 테두리)");
+    cutPanel.orientation = "row";
+    cutPanel.spacing = 12;
+    var cutRadios = [];
+    for (i = 0; i < CUT_MARGIN_OPTIONS.length; i++) {
+      cutRadios.push(cutPanel.add("radiobutton", undefined, CUT_MARGIN_OPTIONS[i]));
+      cutRadios[i].value = (CUT_MARGIN_VALUES[i] === COMPOSED_RIM_MM);
     }
-    rangeRadios[RANGE_DEFAULT_INDEX].value = true;
-    var composedRadioIndex = -1;
-    for (ro = 0; ro < RANGE_KEYS.length; ro++) if (RANGE_KEYS[ro] === COMPOSED_KEY) composedRadioIndex = ro;
-    function _isComposedMode() { return composedRadioIndex >= 0 && rangeRadios[composedRadioIndex].value; }
 
-    var candPanel = dlg.add("panel", undefined, "배치 후보 (같은 규칙, 다른 시드)");
-    candPanel.orientation = "row";
-    candPanel.alignChildren = "center";
-    candPanel.margins = [14, 18, 14, 14];
-    candPanel.spacing = 8;
-    var candDropdown = candPanel.add("dropdownlist", undefined, ["후보 1", "후보 2", "후보 3"]);
-    candDropdown.selection = 0;
-    candDropdown.preferredSize = [140, 24];
-    var candHint = candPanel.add("statictext", undefined, "후보 = 같은 규칙, 다른 시작 순서 (행 안 배열이 달라진다)");
-    try { candHint.graphics.foregroundColor = candHint.graphics.newPen(candHint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eCh) {}
-
-    var pairsPanel = dlg.add("panel", undefined, "사용할 사진 페어 (multi-select · 1 · 4~6 · 8개)");
-    pairsPanel.orientation = "column";
-    pairsPanel.alignChildren = "fill";
-    pairsPanel.margins = [14, 18, 14, 14];
-    pairsPanel.spacing = 6;
-
+    // ── 오른쪽 ──
+    var pairsPanel = _panel(right, "사진 (여러 장 선택 · 장수 제한 없음)");
     var pairItems = [];
-    for (var pli = 0; pli < pairsArg.length; pli++) pairItems.push(pairsArg[pli].base);
+    for (i = 0; i < pairsArg.length; i++) pairItems.push(pairsArg[i].base);
     var pairsListbox = pairsPanel.add("listbox", undefined, pairItems, {
       multiselect: true,
       numberOfColumns: 1,
       showHeaders: false
     });
-    pairsListbox.preferredSize = [340, 180];
-
-    var countRow = pairsPanel.add("group");
-    countRow.orientation = "row";
-    countRow.alignChildren = "left";
-    countRow.spacing = 8;
-    var countLabel = countRow.add("statictext", undefined, "선택: 0");
-    countLabel.preferredSize = [120, 18];
-    var hintLabel = countRow.add("statictext", undefined, "1·4~6개 → 1시트 / 8개 → 2시트 (4+4) · 디자인마다 같은 장수, 비율대로 셀 계산 (면적 같게)");
-    try { hintLabel.graphics.foregroundColor = hintLabel.graphics.newPen(hintLabel.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eHi) {}
-
+    // 창 높이 ≈ 목록 + 330pt (제목줄·안내·메인·버튼). 화면이 낮으면 목록을 줄인다.
+    pairsListbox.preferredSize = [380, Math.max(160, Math.min(360, _screenHeight() - 330))];
+    var countLabel = pairsPanel.add("statictext", undefined, "선택: 0장");
+    countLabel.preferredSize = [380, 18];
+    _hint(pairsPanel, "기본은 앞 " + COMPOSED_DEFAULT_SELECT + "장 — ⌘+클릭으로 더하거나 빼세요. 시트당 최대 " + COMPOSED_PER_SHEET +
+      "장이라 넘치면 시트를 늘리고, 큰 사진을 시트마다 고르게 나눕니다.", 380, 2);
     function _syncCount() {
-      var sel = pairsListbox.selection;
-      var selLen = sel ? sel.length : 0;
-      if (_isComposedMode()) {
-        countLabel.text = "선택: " + selLen + (selLen === COMPOSED_PHOTO_COUNT ? "" : " (Composed 는 " + COMPOSED_PHOTO_COUNT + "개)");
-      } else {
-        countLabel.text = "선택: " + selLen + (_isAllowedDesignCount(selLen) ? "" : " (1·4·5·6·8 아님)");
-      }
+      var n = pairsListbox.selection ? pairsListbox.selection.length : 0;
+      var sizes = _composedSheetSizes(n);
+      countLabel.text = "선택: " + n + "장" + (n > 0 ? " → " + sizes.length + "시트" + (sizes.length > 1 ? " (" + sizes.join("+") + ")" : "") : "");
     }
     pairsListbox.onChange = _syncCount;
-    for (ro = 0; ro < rangeRadios.length; ro++) rangeRadios[ro].onClick = _syncCount;
-
-    // 기본 선택: 4개까지 (그보다 적으면 있는 만큼)
     var initialSel = [];
-    var initialCount = (RANGE_KEYS[RANGE_DEFAULT_INDEX] === COMPOSED_KEY) ? COMPOSED_PHOTO_COUNT : 4;
-    for (var isi = 0; isi < pairItems.length && isi < initialCount; isi++) initialSel.push(pairsListbox.items[isi]);
+    for (i = 0; i < pairItems.length && i < COMPOSED_DEFAULT_SELECT; i++) initialSel.push(pairsListbox.items[i]);
     pairsListbox.selection = initialSel;
     _syncCount();
 
-    // 메인 사진 — Composed 전용. 기본은 **선택 목록의 첫 사진**, 운영자가 다른 사진으로 바꿀 수 있다.
-    var mainRow = pairsPanel.add("group");
-    mainRow.orientation = "row";
-    mainRow.alignChildren = "center";
-    mainRow.spacing = 8;
-    mainRow.add("statictext", undefined, "메인 사진");
+    // 메인 사진 — 기본은 **선택 목록의 첫 사진**. 시트가 여럿이면 메인이 든 시트 말고는 각 시트의 가장 큰 종류가 메인.
+    var mainPanel = _panel(right, "메인 사진 (가장 크게)");
     var mainItems = ["첫 번째 선택 사진 (기본)"];
-    for (var mdi = 0; mdi < pairsArg.length; mdi++) mainItems.push(pairsArg[mdi].base);
-    var mainDropdown = mainRow.add("dropdownlist", undefined, mainItems);
+    for (i = 0; i < pairsArg.length; i++) mainItems.push(pairsArg[i].base);
+    var mainDropdown = mainPanel.add("dropdownlist", undefined, mainItems);
     mainDropdown.selection = 0;
-    mainDropdown.preferredSize = [250, 24];
-    var mainHint = mainRow.add("statictext", undefined, "Composed 전용 — 가장 크게 넣을 사진");
-    try { mainHint.graphics.foregroundColor = mainHint.graphics.newPen(mainHint.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1); } catch (eMh) {}
-
-    var cutPanel = dlg.add("panel", undefined, "칼선 여백");
-    cutPanel.orientation = "row";
-    cutPanel.margins = [14, 18, 14, 14];
-    cutPanel.spacing = 14;
-    var cutRadios = [];
-    for (var cm = 0; cm < CUT_MARGIN_OPTIONS.length; cm++) {
-      cutRadios.push(cutPanel.add("radiobutton", undefined, CUT_MARGIN_OPTIONS[cm]));
-    }
-    cutRadios[CUT_MARGIN_DEFAULT_INDEX].value = true;
-    // Composed 에서는 이 값이 흰 테두리다 — 기본을 COMPOSED_RIM_MM 으로 옮겨 놓는다 (Small/Large 기본값은 그대로).
-    function _syncCutMargin() {
-      if (!_isComposedMode()) return;
-      for (var ci = 0; ci < CUT_MARGIN_VALUES.length; ci++) cutRadios[ci].value = (CUT_MARGIN_VALUES[ci] === COMPOSED_RIM_MM);
-    }
-    for (var rr = 0; rr < rangeRadios.length; rr++) {
-      rangeRadios[rr].onClick = function () { _syncCount(); _syncCutMargin(); };
-    }
-    _syncCutMargin();
+    mainDropdown.preferredSize = [380, 24];
+    _hint(mainPanel, "시트가 여럿이면 나머지 시트의 메인은 자동 (그 시트의 가장 큰 종류).", 380, 1);
 
     var btnGroup = dlg.add("group");
     btnGroup.alignment = "right";
@@ -3061,60 +3953,46 @@
 
     okBtn.onClick = function () {
       if (!_trim(nameInput.text)) {
-        alert("이름이 비어 있습니다.");
+        alert("고객 이름이 비어 있습니다.");
         return;
       }
-      var selLen = pairsListbox.selection ? pairsListbox.selection.length : 0;
-      if (_isComposedMode()) {
-        if (selLen !== COMPOSED_PHOTO_COUNT) {
-          alert("Composed 는 사진 " + COMPOSED_PHOTO_COUNT + "개를 선택하세요 (지금 " + selLen + "개).");
+      var sel = pairsListbox.selection;
+      if (!sel || sel.length === 0) {
+        alert("사진을 한 장 이상 고르세요.");
+        return;
+      }
+      if (mainDropdown.selection && mainDropdown.selection.index > 0) {
+        var wantBase = pairsArg[mainDropdown.selection.index - 1].base, found = false;
+        for (var mk = 0; mk < sel.length; mk++) {
+          if (pairsArg[sel[mk].index].base === wantBase) found = true;
+        }
+        if (!found) {
+          alert("메인 사진 \"" + wantBase + "\" 이 선택한 사진 안에 없습니다.");
           return;
         }
-        if (mainDropdown.selection && mainDropdown.selection.index > 0) {
-          var wantBase = pairsArg[mainDropdown.selection.index - 1].base, found = false;
-          for (var mk = 0; mk < pairsListbox.selection.length; mk++) {
-            if (pairsArg[pairsListbox.selection[mk].index].base === wantBase) found = true;
-          }
-          if (!found) {
-            alert("메인 사진 \"" + wantBase + "\" 이 선택한 사진 안에 없습니다.");
-            return;
-          }
-        }
-      } else if (!_isAllowedDesignCount(selLen)) {
-        alert("Small/Large 는 사진 1개, 4~6개 또는 8개를 선택하세요 (지금 " + selLen + "개).");
-        return;
       }
       dlg.close(1);
     };
 
     if (dlg.show() !== 1) return null;
 
-    var rangeKey = RANGE_KEYS[RANGE_DEFAULT_INDEX];
-    for (var ri = 0; ri < rangeRadios.length; ri++) {
-      if (rangeRadios[ri].value) { rangeKey = RANGE_KEYS[ri]; break; }
-    }
-    var cutMarginMm = CUT_MARGIN_VALUES[CUT_MARGIN_DEFAULT_INDEX];
-    for (var cidx = 0; cidx < cutRadios.length; cidx++) {
-      if (cutRadios[cidx].value) { cutMarginMm = CUT_MARGIN_VALUES[cidx]; break; }
+    var cutMarginMm = COMPOSED_RIM_MM;
+    for (i = 0; i < cutRadios.length; i++) {
+      if (cutRadios[i].value) { cutMarginMm = CUT_MARGIN_VALUES[i]; break; }
     }
     var materialText = (materialDropdown.selection !== null) ? materialDropdown.selection.text : MATERIAL_OPTIONS[0];
-
     var selectedPairs = [];
     if (pairsListbox.selection) {
-      for (var spi = 0; spi < pairsListbox.selection.length; spi++) {
-        selectedPairs.push(pairsArg[pairsListbox.selection[spi].index]);
-      }
+      for (i = 0; i < pairsListbox.selection.length; i++) selectedPairs.push(pairsArg[pairsListbox.selection[i].index]);
     }
     if (selectedPairs.length === 0) {
-      alert("페어가 선택되지 않았습니다.");
+      alert("사진이 선택되지 않았습니다.");
       return null;
     }
-
     var mainBaseText = "";
-    if (rangeKey === COMPOSED_KEY && mainDropdown.selection && mainDropdown.selection.index > 0) {
+    if (mainDropdown.selection && mainDropdown.selection.index > 0) {
       mainBaseText = pairsArg[mainDropdown.selection.index - 1].base;
     }
-
     return {
       nameText: _trim(nameInput.text),
       mainBase: mainBaseText,
@@ -3122,8 +4000,8 @@
       material: materialText,
       orderNumber: _trim(orderInput.text),
       orderDate: _trim(dateInput.text) || _todayIso(),
-      range: rangeKey,
-      candidate: candDropdown.selection ? candDropdown.selection.index : 0,
+      range: COMPOSED_KEY,
+      candidate: 0,
       cutMarginMm: cutMarginMm,
       selectedPairs: selectedPairs
     };
@@ -3132,7 +4010,8 @@
   // ═════════════════════════════════════════════════════════
   //  아래는 Everstory_mixed.jsx (2026-09-06) 그대로 — 페어 수집 · 템플릿 · 칼선 캐시 ·
   //  트레이스 · 사진 배치 · 저장. 고칠 일이 있으면 mixed.jsx 를 먼저 고치고 여기로 복사한다.
-  //  (_collectPairs 만 3버킷/tier 토큰 파싱을 뺐다 — 이 모드는 파일명 토큰을 쓰지 않는다.)
+  //  (_collectPairs 만 3버킷/tier 토큰 파싱을 뺐다 — Small/Large 는 파일명 토큰을 쓰지 않고,
+  //   Composed 는 base 끝 표시를 _composedNameType 으로 따로 읽어 사진 종류로 쓴다.)
   // ═════════════════════════════════════════════════════════
 
   function _collectPairs(folder) {

@@ -42,6 +42,22 @@ layers[1..N]          = 누끼 레이어 + 보정 레이어 (Brightness/Contrast
 
 기존 `_FAM` 파일은 Phase B에서 `XXL`로 호환 처리됩니다.
 
+### 버킷 = 사진 종류 (2026-09-16)
+
+주문 폼에 Big/Medium/Small 칸이 없는 주문(새 라인업)은 원본에 버킷이 없어 `자동` 이 멈춥니다.
+그때는 **사진 종류를 보고** 버킷 버튼을 누릅니다 — 크기를 정하는 곳은 여기 한 곳입니다.
+
+| 버튼 | 사진 | `Everstory_range.jsx` Composed 크기 범위 (긴 변) |
+|---|---|---|
+| `SML` | 얼굴 (반려동물 얼굴 포함) | 0.75–1.5″ |
+| `MED` | 상반신 | 1–2″ |
+| `BIG` | 전신 (반려동물 전신 포함) | 1.25–2.5″ |
+
+range 는 옛 표시도 같은 묶음으로 읽습니다 (`XS`·`S` → SML, `M`·`L` → MED, `XL`·`XXL` → BIG, `_FAM` → 커플·단체 2–2.5″).
+표시가 없는 사진만 range 가 자동 판별(Vision) + 확인 창으로 정합니다.
+옛 Package 주문 폴더의 버킷은 고객이 고른 값이라 종류와 다를 수 있습니다 — 틀리면 파일명 표시(`_clean.psd` · `_sil.png` 둘 다)를 고치세요.
+`Everstory_mixed.jsx` Package 모드는 같은 버킷을 좁은 인치(BIG 2–2.5″ · MED 1.25–1.5″ · SML 0.75–1″)로 배정합니다.
+
 ## 산출물
 
 원본이 `projects/로운/01_original/cute_pet.psd`이고 S 버튼 클릭 시:
@@ -66,7 +82,7 @@ NN 은 tier 무관하게 폴더 내 공유 카운트 (S → 01, 그 다음 M →
 1. PS에서 누끼+실루엣 두 레이어가 있는 PSD 열기 (저장된 파일이어야 함)
 2. 패널 버튼 클릭
    - `자동 — 파일명에서` (기본 강조): 파일명의 `_BIG/_MED/_SML` 을 읽어 씀
-   - `BIG` / `MED` / `SML`: Package 버킷 직접 지정
+   - `BIG` / `MED` / `SML`: 버킷 직접 지정 — 사진 종류로 고른다 (전신 · 상반신 · 얼굴)
    - `XS` / `S` / `M` / `L` / `XL` / `XXL`: 단일·전 사이즈 tier
 3. 상태 영역에 `완료` + 출력 경로 표시
 
@@ -85,3 +101,4 @@ bash watch.sh
 ## 다음 Phase
 
 - **Phase B**: `Everstory_mixed.jsx` (Illustrator) — `_sil.png` trace + cutline + A5 시트 배치 + `03_output/` 자동 저장
+- **Phase B (Composed)**: `Everstory_range.jsx` — 사진 6장 구성 시트. 파일명 버킷이 사진 종류(크기 범위)를 정한다

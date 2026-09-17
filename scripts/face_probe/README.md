@@ -3,12 +3,15 @@
 `Everstory_range.jsx` 의 Composed 모드가 사진 종류(얼굴 · 상반신 · 전신 · 커플·단체)를 자동으로 고를 때 쓰는 작은 앱이다.
 macOS Vision 으로 `_clean.psd` 의 얼굴·사람·동물 박스를 잰다. Python·Xcode 는 필요 없다.
 
+**파일명에 버킷 표시(`_SML` 얼굴 · `_MED` 상반신 · `_BIG` 전신, 옛 `_XS`~`_XXL` · `_FAM`)가 없는 사진만 잰다** (2026-09-16).
+표시가 있는 사진은 그 표시가 종류를 정하고, 여섯 장 모두 표시면 이 앱은 뜨지 않는다.
+
 ## 왜 앱인가
 
 Illustrator 스크립트(ExtendScript)는 셸 명령을 못 부른다 (`app.system` 없음 · `app.doScript` 는 액션 재생뿐).
 대신 `File.execute()` 로 앱을 띄울 수 있어서, 스크립트는 파일로 요청하고 결과 파일을 기다린다.
 
-1. 스크립트가 고른 사진 6장을 `$TMPDIR/everstory_face/in/` 으로 복사한다
+1. 스크립트가 고른 사진 중 표시 없는 사진(캐시도 없는 것)을 `$TMPDIR/everstory_face/in/` 으로 복사한다
    — 이 앱이 바탕화면을 직접 읽으면 macOS 권한 창이 뜰 수 있다.
 2. `request.txt` 에 사진 목록을 쓰고 앱을 띄운다.
 3. 앱이 `result.txt` 를 쓰면 스크립트가 읽는다. 앱은 끝나면 스스로 종료한다.
