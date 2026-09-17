@@ -64,7 +64,7 @@
 //     나중에 칼선을 rim 만큼 바깥으로 오프셋해도 이웃 칼선과 1.5mm 가 남는다. rim 을 0 으로 고르면 그 여유가 없다.
 //   · **칼선을 배치보다 먼저** 준비한다 (_produceComposedSheet ①) — 크기가 칼선 비율에서 나오기 때문. 캐시 히트면 트레이스 0회.
 //   · 사진 배치도 칼선 기준(_placeComposedSticker) — 투명 캔버스 여백이 스티커를 줄이지 않는다. Small/Large 는 기존 경로 그대로.
-//   · 이름·데코는 기존 엔진 그대로 쓰고 자리만 정한다. 말풍선은 아트가 없어 아직 안 그린다.
+//   · 이름·데코는 기존 엔진 그대로 쓰고 자리만 정한다.
 //   · **이름 스타일** (2026-09-17 사용자, 주문 보드에서 고른다 · 대화창 실행은 retro): COMPOSED_NAME_STYLES —
 //     retro = alphabet_art_v1 + deco_art_v1 (글자마다 칼선, 예전 그대로) · bubble = alphabet_art_v2 + deco_art_v2
 //     (글자를 살짝 겹쳐 쓰고 이름 전체를 흰 테두리 하나로 — _drawNameHalo, 칼선 1개. 옆 장식은 줄 맨 앞·끝 글자만).
@@ -72,6 +72,9 @@
 //     bubble 글자는 자리마다 색을 돌린다 (LETTER_PAINT_CYCLE_V2 · 색 그룹 'LTR A PINK').
 //     미리보기 그림은 templates/art_preview/<라이브러리>/ (라이브러리를 고치면 다시 뽑는다 — templates/art_preview/README.md).
 //   · **데코 돌리기** (2026-09-17): 스티커 이름마다 다른 데코로 시작하고 다음 시트는 이어서 (_composedDecoStart).
+//   · **말풍선** (2026-09-17 사용자): 글씨 두들은 12.7mm 데코 칸에서 안 읽혀서 시트당 COMPOSED_BUBBLE_MAX(2)개까지
+//     22mm(안 되면 19mm)로 따로 자리를 잡는다 — 사다리 사진 뒤 · 빈틈 추가 사진 앞, 데코 6개 안에서 (_composedPlaceBubbles).
+//     레트로 말풍선 그림은 scripts/art_library/build_retro_bubbles.jsx 가 deco_art_v1.ai 에 그린다.
 //
 //  검증: sim/range_layout_test.js · sim/range_name_test.js · sim/range_output_test.js · sim/range_composed_test.js.
 //  Illustrator 실행은 테스트 시트로.
@@ -217,10 +220,16 @@
   var COMPOSED_FACE_CACHE_FORMAT = "EVFACE1";
   var COMPOSED_FACE_CACHE_EXT = ".evface";  // _cutcache 안, .evcut 옆. 측정값 + 운영자가 확정한 종류
   var COMPOSED_DECO_SIZES_MM = [12.7, 10];
-  var COMPOSED_DECO_MAX = 6;               // 스티커 이름이 있을 때만 (range 규약) · 빈틈이 없으면 덜 넣는다
+  var COMPOSED_DECO_MAX = 6;               // 스티커 이름이 있을 때만 (range 규약) · 말풍선 포함 · 빈틈이 없으면 덜 넣는다
   var COMPOSED_DECO_NEAR_MM = 4.5;         // 데코는 스티커 가장자리에서 이 거리 안 = 빈틈에만
-  var COMPOSED_DECO_SPACING_MM = 22;       // 데코끼리 중심 최소 거리
+  var COMPOSED_DECO_SPACING_MM = 22;       // 데코끼리(말풍선 포함) 중심 최소 거리
   var COMPOSED_DECO_GRID_MM = 4;
+  // 말풍선 (2026-09-17 사용자) — 글씨 두들은 데코 칸(12.7mm)에서 글씨가 2mm 안팎이라 안 읽혀서 따로 자리를 잡는다:
+  // 사다리 사진 뒤 · 빈틈 추가 사진 앞, 시트당 COMPOSED_BUBBLE_MAX 개까지 (데코 COMPOSED_DECO_MAX 개 안에서).
+  // 크기 = 그림의 긴 변 — 앞 크기가 들어갈 자리가 없으면 다음 크기. 박스 비율 = 그 말풍선 그림 비율 (스타일 표 bubbleAspect).
+  var COMPOSED_BUBBLE_MAX = 2;
+  var COMPOSED_BUBBLE_SIZES_MM = [22, 19];
+  var COMPOSED_BUBBLE_SPACING_MM = 45;     // 말풍선끼리 중심 최소 거리
   var COMPOSED_CUT_REL_MIN = 0.2;          // 칼선 캐시 relW/relH 가 이보다 작으면 손상으로 본다
   var COMPOSED_FIT_TOL_MM = 0.05;          // 출력 검사: 실제 칼선 박스 = 계획 셀 허용 오차
 
@@ -284,6 +293,18 @@
     "HEART", "FLOWER", "STAR", "CAMERA", "BOW", "BONE",
     "CHERRY", "SMILE", "RAINBOW", "CUPCAKE", "GIFT", "CLOUD"
   ];
+  // 레트로 말풍선 (2026-09-17) — scripts/art_library/build_retro_bubbles.jsx 가 deco_art_v1.ai 에 그린다.
+  // 분홍 바탕 둘(YAY · WOW)이 한 시트에 같이 나오지 않게 떨어뜨린 순서.
+  var DECO_BUBBLES_V1 = ["YAY", "BESTDAY", "XOXO", "WOW", "MYFAVE", "YOUME"];
+  // 말풍선 그림 비율 = 라이브러리 그룹 geometricBounds 폭 ÷ 높이 (도구가 다시 재서 이 표와 비교한다).
+  var DECO_BUBBLE_ASPECT_V1 = {
+    YAY: 1.3063,
+    BESTDAY: 1.3063,
+    XOXO: 1.2840,
+    WOW: 1.2840,
+    MYFAVE: 1.3063,
+    YOUME: 1.2840
+  };
 
   // ── 이름 스타일 (2026-09-17 사용자: 주문 보드에서 두 스타일 중 고른다) ─────────────────
   // retro  = alphabet_art_v1 + deco_art_v1. 글자마다 따로 떼는 스티커 — 예전 그대로이고 대화창 실행도 이것.
@@ -358,27 +379,36 @@
   // 흰색이 대략 세 칸에 하나 = 레퍼런스(assets/style_refs/2026-09-11_bubble-alphabet_names.png) 비율. 흔한 이름 102개 시뮬:
   // 흰 글자 56% → 38%, 옆 글자끼리 같은 색 185곳 → 0 (2026-09-17).
   var LETTER_PAINT_CYCLE_V2 = ["WHITE", "PINK", "YELLOW", "WHITE", "SKY", "PINK", "WHITE", "YELLOW", "SKY"];
-  // 두들 27종 중 데코로 쓰는 것 (시트당 앞에서부터 COMPOSED_DECO_MAX 개). 뺀 것 — LOVE(<3)·LUCKY 는 글자뿐이라 작으면 안 읽히고,
+  // 두들 27종 중 작은 데코로 쓰는 것 (시트마다 이름 자리부터). 뺀 것 — LOVE(<3)·LUCKY 는 글자뿐이라 작으면 안 읽히고,
   // SPARKLES·DOTS·BURSTPINK·BURSTGOLD·SWOOSH·ARROW 는 조각·긴 선이라 정사각 칸에서 너무 작아진다 (라이브러리에는 있다).
+  // 글씨 말풍선은 작은 칸에 넣지 않고 DECO_BUBBLES_V2 로 따로 큰 자리에 넣는다 (2026-09-17).
   var DECO_ORDER_V2 = [
-    "SMILE", "HEART", "YAY", "DAISY", "CHERRY", "BESTDAY",
-    "STAR", "BOW", "CLOVER", "FOREVER", "SUN", "CLOUD",
-    "YOUME", "FLOWER", "SPARKLE", "MYFAVE", "BOLT", "MINIHEART", "XOXO"
+    "SMILE", "HEART", "DAISY", "CHERRY", "STAR", "BOW", "CLOVER",
+    "SUN", "CLOUD", "FLOWER", "SPARKLE", "BOLT", "MINIHEART"
   ];
-  // 글씨 두들은 큰 칸(COMPOSED_DECO_SIZES_MM[0])에만 — 작은 칸에서 칼선 여백을 빼면 글씨가 1.5mm 안팎이라 안 읽힌다.
-  var DECO_BIG_ONLY_V2 = ["YAY", "BESTDAY", "FOREVER", "YOUME", "MYFAVE", "XOXO"];
+  var DECO_BUBBLES_V2 = ["YAY", "BESTDAY", "FOREVER", "YOUME", "MYFAVE", "XOXO"];
+  // 흰 테두리(SIL)까지 포함한 비율 — build_bubble_style.jsx 가 다시 재서 비교한다.
+  var DECO_BUBBLE_ASPECT_V2 = {
+    YAY: 1.1945,
+    BESTDAY: 1.1391,
+    FOREVER: 1.1186,
+    YOUME: 1.1190,
+    MYFAVE: 1.3748,
+    XOXO: 1.6276
+  };
   // unitMm = 큰 이름 한 줄 높이. gap · lineGap · halo = 한 줄 높이 비율 (gap 음수 = 글자 틀이 살짝 겹침 → 테두리 선이 붙는다).
-  // halo = 이름 전체 흰 테두리 (인쇄 + 칼선). rimBox = 칼선 여백만큼 이름 박스를 넓히고 데코는 박스 안쪽으로 줄여 그린다 —
+  // halo = 이름 전체 흰 테두리 (인쇄 + 칼선). rimBox = 칼선 여백만큼 이름 박스를 넓히고 데코·말풍선은 박스 안쪽으로 줄여 그린다 —
   // 나중에 칼선을 여백만큼 바깥으로 오프셋해도 이웃 사진 칼선과 간격이 남게 (retro 는 예전 배치를 지키려고 끈 채로 둔다).
   // 데코 박스 자체는 retro 와 같은 크기 (12.7 / 10mm) — 키웠더니 빈틈에 들어가는 데코가 평균 5.4 → 3.9개로 줄었다.
   // paints / paintCycle = 글자 색 돌리기 (없으면 라이브러리 원래 색 그대로 — retro).
+  // bubbleOrder / bubbleAspect = 말풍선 모양 순서 · 그림 비율 (COMPOSED_BUBBLE_MAX 참고).
   var COMPOSED_NAME_STYLES = [
     { key: "retro", label: "레트로", whole: false, letterLib: LETTER_ART_LIB_NAME, decoLib: DECO_ART_LIB_NAME,
-      metrics: LETTER_ART_METRICS, decoOrder: DECO_ORDER, decoBigOnly: [], unitMm: RANGE_HERO_UNIT_MM,
-      gap: LETTER_GAP_RATIO, lineGap: LETTER_GAP_RATIO, halo: 0, rimBox: false, paints: null, paintCycle: null },
+      metrics: LETTER_ART_METRICS, decoOrder: DECO_ORDER, bubbleOrder: DECO_BUBBLES_V1, bubbleAspect: DECO_BUBBLE_ASPECT_V1,
+      unitMm: RANGE_HERO_UNIT_MM, gap: LETTER_GAP_RATIO, lineGap: LETTER_GAP_RATIO, halo: 0, rimBox: false, paints: null, paintCycle: null },
     { key: "bubble", label: "버블", whole: true, letterLib: "alphabet_art_v2.ai", decoLib: "deco_art_v2.ai",
-      metrics: LETTER_ART_METRICS_V2, decoOrder: DECO_ORDER_V2, decoBigOnly: DECO_BIG_ONLY_V2, unitMm: 13,
-      gap: -0.03, lineGap: 0.1, halo: 0.08, rimBox: true, paints: LETTER_ART_PAINTS_V2, paintCycle: LETTER_PAINT_CYCLE_V2 }
+      metrics: LETTER_ART_METRICS_V2, decoOrder: DECO_ORDER_V2, bubbleOrder: DECO_BUBBLES_V2, bubbleAspect: DECO_BUBBLE_ASPECT_V2,
+      unitMm: 13, gap: -0.03, lineGap: 0.1, halo: 0.08, rimBox: true, paints: LETTER_ART_PAINTS_V2, paintCycle: LETTER_PAINT_CYCLE_V2 }
   ];
   var ART_LIB_DOCS = {};                   // 라이브러리 파일 이름 → 이번 실행에서 열어 둔 문서 (_closeArtLibs 가 닫는다)
 
@@ -2283,9 +2313,54 @@
     return added;
   }
 
+  // 말풍선 자리 (2026-09-17) — 사다리 사진 뒤 · 빈틈 추가 사진 앞에 부른다. 말풍선마다 COMPOSED_BUBBLE_SIZES_MM 의
+  // 큰 크기부터 들어갈 자리를 찾고, 없으면 다음 크기 (다 안 되면 거기서 멈춘다). 박스 = 그림(긴 변 = 크기, 비율 = 그 말풍선)
+  // + 2 × pad. 자리 = 스티커 가장자리 COMPOSED_DECO_NEAR_MM 안(빈틈)이면서 다른 말풍선과 COMPOSED_BUBBLE_SPACING_MM 이상
+  // 떨어진 곳 중 이웃에 꼭 맞는 곳 (아래쪽을 조금 더 — 데코와 같은 점수). 후보 = 이웃에 붙는 자리 + 데코 격자.
+  // bubble = { want, motifs: [모양], aspects: [폭 ÷ 높이], pad (mm) }. 반환 = 놓은 개수.
+  function _composedPlaceBubbles(ctx, bubble) {
+    var n = 0, best, si, L, asp, w, h, xs, ys, xi, yi, x, y, cx, cy, near, bd, i, p, gain;
+    while (n < bubble.want && n < bubble.motifs.length) {
+      best = null;
+      asp = bubble.aspects[n];
+      for (si = 0; si < COMPOSED_BUBBLE_SIZES_MM.length && !best; si++) {
+        L = COMPOSED_BUBBLE_SIZES_MM[si];
+        w = (asp >= 1 ? L : L * asp) + 2 * bubble.pad;
+        h = (asp >= 1 ? L / asp : L) + 2 * bubble.pad;
+        xs = _composedAxis(w, ctx.W, ctx.placed, ctx.gap, true, COMPOSED_DECO_GRID_MM);
+        ys = _composedAxis(h, ctx.H, ctx.placed, ctx.gap, false, COMPOSED_DECO_GRID_MM);
+        for (xi = 0; xi < xs.length; xi++) {
+          for (yi = 0; yi < ys.length; yi++) {
+            x = xs[xi];
+            y = ys[yi];
+            ctx.ops++;
+            if (!_composedFree(x, y, w, h, ctx.placed, ctx.W, ctx.H, ctx.gap)) continue;
+            cx = x + w / 2;
+            cy = y + h / 2;
+            near = 99;
+            bd = 80;
+            for (i = 0; i < ctx.placed.length; i++) {
+              p = ctx.placed[i];
+              if (p.kind === "bubble") bd = Math.min(bd, _composedDist(cx, cy, p.x + p.w / 2, p.y + p.h / 2));
+              else near = Math.min(near, _composedEdgeDist(x, y, w, h, p));
+            }
+            if (near > COMPOSED_DECO_NEAR_MM || bd < COMPOSED_BUBBLE_SPACING_MM) continue;
+            gain = 10 * _composedContact(x, y, w, h, ctx.placed, ctx.W, ctx.H, ctx.gap) + 0.3 * bd + 8 * (cy / ctx.H);
+            if (!best || gain > best.gain) best = { gain: gain, x: x, y: y, w: w, h: h, size: L };
+          }
+        }
+      }
+      if (!best) break;
+      _composedPut(ctx, { kind: "bubble", x: best.x, y: best.y, w: best.w, h: best.h, size: best.size, motif: bubble.motifs[n] });
+      n++;
+    }
+    return n;
+  }
+
   // 사진이 못 들어갈 만큼 작은 틈에만 데코를 넣는다 (스티커 가장자리 COMPOSED_DECO_NEAR_MM 안).
   // 격자 후보까지 보는 이유: 데코는 이웃에 딱 붙지 않고 틈 가운데 떠 있는 자리가 더 자연스럽다.
   // 박스 크기는 스타일과 무관하다 — bubble 은 박스 안쪽 칼선 여백(payload.pad)만큼 작게 그린다 (박스를 키우면 데코가 덜 들어갔다).
+  // 말풍선은 데코처럼 떨어뜨린다 (COMPOSED_DECO_SPACING_MM — 작은 데코가 말풍선 옆에 몰리지 않게).
   function _composedPlaceDecos(ctx, want) {
     var n = 0, best, zi, sz, xs, ys, xi, yi, x, y, cx, cy, near, decoD, i, p, gain, gx, gy;
     while (n < want) {
@@ -2308,7 +2383,7 @@
             decoD = 60;
             for (i = 0; i < ctx.placed.length; i++) {
               p = ctx.placed[i];
-              if (p.kind === "deco") decoD = Math.min(decoD, _composedDist(cx, cy, p.x + p.w / 2, p.y + p.h / 2));
+              if (p.kind === "deco" || p.kind === "bubble") decoD = Math.min(decoD, _composedDist(cx, cy, p.x + p.w / 2, p.y + p.h / 2));
               else near = Math.min(near, _composedEdgeDist(x, y, sz, sz, p));
             }
             if (near > COMPOSED_DECO_NEAR_MM || decoD < COMPOSED_DECO_SPACING_MM) continue;
@@ -2326,7 +2401,7 @@
   }
 
   // 배치 한 판 — 결정적. input.layout = _composedLayoutSpec 결과 (스타일 · 이름 위치 · 섞기. 뒤집기는 _packComposed 가 한다).
-  // 순서 = 이름(위 · 왼쪽/가운데/오른쪽) → 등급 내림차순 슬롯(큰 것부터) → 빈틈 추가 사진 → 데코.
+  // 순서 = 이름(위 · 왼쪽/가운데/오른쪽) → 등급 내림차순 슬롯(큰 것부터) → 말풍선 → 빈틈 추가 사진 → 데코.
   function _composedLayout(input) {
     var spec = input.layout ? input.layout : _composedLayoutSpec(null);
     var si = _composedStyleIndex(spec.style);
@@ -2374,24 +2449,23 @@
                           artW: cell.artW, artH: cell.artH, extra: false });
       if (s.spread) ctx.repel.push(ctx.placed[ctx.placed.length - 1]);
     }
+    // 말풍선은 빈틈 추가 사진보다 먼저 (2026-09-17 사용자) — 데코 개수 안에서 센다.
+    ctx.bubbles = (input.bubble && input.bubble.want > 0) ? _composedPlaceBubbles(ctx, input.bubble) : 0;
     ctx.extras = _composedPlaceExtras(ctx);
-    if (input.decoWant > 0) _composedPlaceDecos(ctx, input.decoWant);
+    if (input.decoWant > ctx.bubbles) _composedPlaceDecos(ctx, input.decoWant - ctx.bubbles);
     return ctx;
   }
 
-  // 데코 모양 — 스타일 순서를 start 자리부터 돌며 아직 안 쓴 것 (다 쓰면 처음부터). decoBigOnly(글씨 두들)는 큰 칸에만.
-  // sizeMm = 데코 박스 한 변. start = 시작 자리 (_composedDecoStart, 없으면 0). 큰 칸만 받는 모양뿐이면 시작 자리 모양.
-  // start 0 이면 예전 결과 그대로 (retro 는 order[k % n]).
-  function _composedDecoMotif(style, used, sizeMm, start) {
-    var order = style.decoOrder, len = order.length, big = sizeMm >= COMPOSED_DECO_SIZES_MM[0] - 0.001, pass, i, j, n, bigOnly;
+  // 데코 모양 — 스타일 순서(decoOrder)를 start 자리부터 돌며 아직 안 쓴 것 (다 쓰면 처음부터).
+  // start = 시작 자리 (_composedDecoStart, 없으면 0). start 0 이면 예전 결과 그대로 (retro 는 order[k % n]).
+  // 글씨 말풍선은 작은 칸에 넣지 않는다 — 따로 큰 자리에 넣는다 (_composedPlaceBubbles · _composedBubblePlan).
+  function _composedDecoMotif(style, used, start) {
+    var order = style.decoOrder, len = order.length, pass, i, n;
     var s0 = (start > 0) ? Math.floor(start) % len : 0;
     for (pass = 0; pass < 2; pass++) {
       for (i = 0; i < len; i++) {
         n = order[(s0 + i) % len];
         if (used["$" + n]) continue;
-        bigOnly = false;
-        for (j = 0; j < style.decoBigOnly.length; j++) if (style.decoBigOnly[j] === n) bigOnly = true;
-        if (bigOnly && !big) continue;
         used["$" + n] = true;
         return n;
       }
@@ -2400,32 +2474,50 @@
     return order[s0];
   }
 
-  // 데코 시작 자리 (2026-09-17 사용자) — 스티커 이름마다 다른 데코로 시작하고, 다음 시트는 앞 시트 구간(_composedDecoSpan)
-  // 바로 뒤에서 이어 간다 → 두 장까지는 시트끼리 데코가 겹치지 않는다 (순서가 모자라면 셋째 장부터 다시 돈다).
-  // 예전에는 시트마다 순서 맨 앞에서 시작해 버블 두들 19종 중 앞 8종·레트로 12종 중 앞 6종만 나왔고, 여러 장 주문은 시트마다
-  // 데코가 같았다. 이름 글자(대문자)와 시트 번호(0부터)만 쓴다 — 배치와 상관없이 미리보기와 Illustrator 가 같은 값을 얻는다.
-  function _composedDecoStart(heroSpec, sheetIndex) {
-    var style = heroSpec ? _nameStyle(heroSpec.nameStyle) : null, h = 0, i, s, k, len;
-    if (!style || !heroSpec.chars) return 0;
-    len = style.decoOrder.length;
+  // 스티커 이름 → 0~65520 정수. 이름 글자(대문자)만 쓴다 — 배치와 상관없이 미리보기와 Illustrator 가 같은 값을 얻는다.
+  function _composedNameHash(heroSpec) {
+    var h = 0, i, s;
+    if (!heroSpec || !heroSpec.chars) return 0;
     s = heroSpec.chars.join("");
     for (i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 65521;
-    h = h % len;
-    for (k = 0; k < sheetIndex; k++) h = (h + _composedDecoSpan(style, h)) % len;
     return h;
   }
 
-  // start 자리부터 데코 COMPOSED_DECO_MAX 개가 다 나오는 순서 구간의 길이 = 글씨 두들이 아닌 모양이 COMPOSED_DECO_MAX 개 들어가는
-  // 가장 짧은 구간. 작은 칸은 글씨 두들을 건너뛰고 큰 칸은 안 쓴 첫 모양을 쓰므로 한 시트의 데코는 늘 이 구간 안에서 나온다.
-  function _composedDecoSpan(style, start) {
-    var order = style.decoOrder, len = order.length, plain = 0, i, j, n, bigOnly;
-    for (i = 0; i < len; i++) {
-      n = order[(start + i) % len];
-      bigOnly = false;
-      for (j = 0; j < style.decoBigOnly.length; j++) if (style.decoBigOnly[j] === n) bigOnly = true;
-      if (!bigOnly && ++plain >= COMPOSED_DECO_MAX) return i + 1;
+  // 데코 시작 자리 (2026-09-17 사용자) — 스티커 이름마다 다른 데코로 시작하고, 다음 시트는 앞 시트가 쓸 수 있는
+  // COMPOSED_DECO_MAX 칸 바로 뒤에서 이어 간다 → 순서가 그 두 배 이상이면 두 장까지 시트끼리 데코가 겹치지 않는다
+  // (모자라면 셋째 장부터 다시 돈다). 예전에는 시트마다 순서 맨 앞에서 시작해 앞 몇 종만 나왔고, 여러 장 주문은 시트마다
+  // 데코가 같았다. sheetIndex = 몇 번째 시트인지 (0부터, 없으면 0).
+  function _composedDecoStart(heroSpec, sheetIndex) {
+    var style = heroSpec ? _nameStyle(heroSpec.nameStyle) : null, len, k;
+    if (!style || !heroSpec.chars) return 0;
+    len = style.decoOrder.length;
+    k = (sheetIndex > 0) ? Math.floor(sheetIndex) : 0;
+    return (_composedNameHash(heroSpec) % len + k * Math.min(COMPOSED_DECO_MAX, len)) % len;
+  }
+
+  // 말풍선 시작 자리 — 데코와 같은 규칙으로 시트마다 COMPOSED_BUBBLE_MAX 칸씩 (여섯 종이면 세 장까지 겹치지 않는다).
+  function _composedBubbleStart(heroSpec, sheetIndex) {
+    var style = heroSpec ? _nameStyle(heroSpec.nameStyle) : null, len, k;
+    if (!style || !heroSpec.chars || !style.bubbleOrder || !style.bubbleOrder.length) return 0;
+    len = style.bubbleOrder.length;
+    k = (sheetIndex > 0) ? Math.floor(sheetIndex) : 0;
+    return (_composedNameHash(heroSpec) % len + k * Math.min(COMPOSED_BUBBLE_MAX, len)) % len;
+  }
+
+  // 이번 시트 말풍선 — start 자리부터 want 개 (순서 길이까지). 반환 { want, motifs, aspects }.
+  // 표에 비율이 없는 모양은 조용히 넘기지 않고 멈춘다 (라이브러리를 고치고 표를 안 고친 것).
+  function _composedBubblePlan(style, start, want) {
+    var order = style.bubbleOrder, out = { want: 0, motifs: [], aspects: [] }, i, n, a;
+    if (!order || !order.length || !(want > 0)) return out;
+    for (i = 0; i < want && i < order.length; i++) {
+      n = order[(Math.floor(start) + i) % order.length];
+      a = style.bubbleAspect ? style.bubbleAspect[n] : 0;
+      if (!(a > 0) || !isFinite(a)) throw new Error("말풍선 '" + n + "' 의 그림 비율이 표에 없습니다 (" + style.key + ")");
+      out.motifs.push(n);
+      out.aspects.push(a);
     }
-    return len;
+    out.want = out.motifs.length;
+    return out;
   }
 
   // 남은 빈 곳 중 가장 큰 정사각형의 한 변(mm, 1mm 격자). 클수록 시트에 죽은 공간이 있다는 뜻.
@@ -2456,11 +2548,12 @@
 
   // 판 요약 (보고용). v1 의 변형 비교 점수는 없앴다 — 배치가 결정적이라 비교할 대상이 없다.
   function _composedEvaluate(ctx) {
-    var i, j, p, q, d, minDup = 999, photos = 0, decos = 0, extras = 0, area = 0, artArea = 0;
+    var i, j, p, q, d, minDup = 999, photos = 0, decos = 0, bubbles = 0, extras = 0, area = 0, artArea = 0;
     var list = [];
     for (i = 0; i < ctx.placed.length; i++) {
       p = ctx.placed[i];
       if (p.kind === "deco") { decos++; continue; }
+      if (p.kind === "bubble") { bubbles++; continue; }
       if (p.kind !== "photo") continue;
       photos++;
       if (p.extra) extras++;
@@ -2477,7 +2570,7 @@
       }
     }
     q = _composedLargestEmpty(ctx.placed, ctx.W, ctx.H, ctx.gap);
-    return { photos: photos, extras: extras, decos: decos, minDup: minDup, hole: q,
+    return { photos: photos, extras: extras, decos: decos, bubbles: bubbles, minDup: minDup, hole: q,
              cellFill: area / (ctx.W * ctx.H), artFill: artArea / (ctx.W * ctx.H) };
   }
 
@@ -2571,7 +2664,8 @@
 
   // Composed 배치 입구 (시트 한 장). pairsArg = 이 시트의 사진 1~COMPOSED_PER_SHEET 장(선택 순서),
   // 각 pair.cutAspect(없으면 pair.aspect). 더 많으면 호출부가 _composedDeal 로 먼저 나눈다.
-  // extras = { hero: {w, h} (pt) | null, decoWant, rimPt, layout (배치 선택 — 없으면 기본) }.
+  // extras = { hero: {w, h} (pt) | null, decoWant, rimPt, layout (배치 선택 — 없으면 기본),
+  //            bubbleWant · bubbleStart (말풍선 개수 · 시작 자리 — 없으면 말풍선 없음, 데코 개수 안에서 센다) }.
   // 반환 좌표·치수는 pt (body 좌상단 원점, y 아래로). res.layout = 정리된 배치 선택, res.sig = 배치 지문.
   function _packComposed(pairsArg, mainIndex, binW, binH, gap, extras) {
     if (!pairsArg || pairsArg.length < 1 || pairsArg.length > COMPOSED_PER_SHEET) {
@@ -2607,8 +2701,12 @@
     var namePad = (hero && extras.hero.pad > 0) ? extras.hero.pad : 0;
     var decoPad = (hero && extras.decoPad > 0) ? extras.decoPad : 0;
     var decoStart = (extras.decoStart > 0 && isFinite(extras.decoStart)) ? Math.floor(extras.decoStart) : 0;
+    var bubbleStart = (extras.bubbleStart > 0 && isFinite(extras.bubbleStart)) ? Math.floor(extras.bubbleStart) : 0;
+    var bubbleWant = (decoWant > 0 && extras.bubbleWant > 0) ? Math.min(Math.floor(extras.bubbleWant), COMPOSED_BUBBLE_MAX, decoWant) : 0;
+    var bubble = _composedBubblePlan(nameStyle, bubbleStart, bubbleWant);
+    bubble.pad = decoPad / MM_TO_PT;
     var input = { W: binW / MM_TO_PT, H: binH / MM_TO_PT, gap: gap / MM_TO_PT, rim: rimMm, photos: photos,
-                  mainIndex: mainIndex, name: hero, decoWant: decoWant, layout: layout };
+                  mainIndex: mainIndex, name: hero, decoWant: decoWant, layout: layout, bubble: bubble };
     // 계획한 조각이 다 안 들어가면(빠진 슬롯) 먼저 ④에서 마지막에 넣은 조각을 1~2장 빼고 다시 돌린다 —
     // 곧장 분산을 줄이면 작은 얼굴들이 한곳에 뭉쳤다(EVS-1007 실측 21mm). 그래도 안 되면 분산을 줄인다.
     // 덜 빠진 판을 쓴다 (보통은 한두 판으로 끝).
@@ -2625,7 +2723,7 @@
     }
     var ev = _composedEvaluate(st);
     var placed = [], decos = [], nameBox = null, counts = [], area = 0, extraCount = 0, p, box, types = [], windows = [], ranges = [];
-    var decoUsed = {};
+    var decoUsed = {}, bubbleCount = 0;
     for (i = 0; i < photos.length; i++) {
       counts.push(0);
       types.push(photos[i].type);
@@ -2645,8 +2743,14 @@
       } else if (p.kind === "deco") {
         decos.push({ x: box.x, y: box.y, w: box.w, h: box.h,
                      payload: { base: "__DECO_" + (decos.length + 1) + "__", isDeco: true,
-                                deco: _composedDecoMotif(nameStyle, decoUsed, p.w, decoStart),
+                                deco: _composedDecoMotif(nameStyle, decoUsed, decoStart),
                                 style: nameStyle.key, pad: decoPad } });
+      } else if (p.kind === "bubble") {
+        // 말풍선도 데코 목록에 (그리기·미리보기·검사가 같은 길을 탄다). sizeMm = 그림의 긴 변.
+        decos.push({ x: box.x, y: box.y, w: box.w, h: box.h,
+                     payload: { base: "__DECO_" + (decos.length + 1) + "__", isDeco: true, bubble: true, sizeMm: p.size,
+                                deco: p.motif, style: nameStyle.key, pad: decoPad } });
+        bubbleCount++;
       } else if (p.kind === "name") {
         nameBox = box;
       }
@@ -2660,7 +2764,8 @@
                 fill: area / (binW * binH), extras: extraCount, missing: st.missing, skipped: st.skipped,
                 gradeCounts: st.gradeCounts, types: types, windows: windows, ranges: ranges, evaluation: ev, ops: opsAll,
                 runs: runs, spreadCount: st.spreadCount, layout: layout, nameStyle: nameStyle.key, namePad: namePad,
-                decoStart: decoStart, mainIndex: mainIndex, method: "composed", ms: new Date().getTime() - start };
+                decoStart: decoStart, bubbleStart: bubbleStart, bubbles: bubbleCount,
+                mainIndex: mainIndex, method: "composed", ms: new Date().getTime() - start };
     var error = _composedValidate(res, pairsArg, binW, binH, gap);
     if (error) throw new Error("Composed 배치 검증 실패: " + error);
     res.sig = _composedLayoutSig(res);
@@ -3578,13 +3683,13 @@
         msg += "    ⚠ 이름 스티커 없음: " + out.nameSkipped + "\n";
       }
       if (out.decoWant > 0) {
-        msg += "    데코 스티커 (" + nameStyle.label + "): " + out.decoDrawn + "/" + out.decoWant + "개 (빈틈에만)";
-        if (pr.decos.length) {
-          var decoNames = [];
-          for (i = 0; i < pr.decos.length; i++) decoNames.push(pr.decos[i].payload.deco);
-          msg += " — " + decoNames.join(", ");
+        var bubbleNames = [], decoNames = [];
+        for (i = 0; i < pr.decos.length; i++) {
+          if (pr.decos[i].payload.bubble) bubbleNames.push(pr.decos[i].payload.deco + " " + pr.decos[i].payload.sizeMm + "mm");
+          else decoNames.push(pr.decos[i].payload.deco);
         }
-        msg += "\n";
+        msg += "    데코 스티커 (" + nameStyle.label + "): " + out.decoDrawn + "/" + out.decoWant + "개 (말풍선 포함 · 빈틈에만) — 말풍선 " +
+          (bubbleNames.length ? bubbleNames.join(", ") : "0 (들어갈 자리 없음)") + (decoNames.length ? " · " + decoNames.join(", ") : "") + "\n";
       }
       msg += "    칼선 캐시 " + out.cutCacheHits + "/" + sp.length + " 히트 · 심볼 " + out.symbolOk + "/" + sp.length +
         (out.fitCount > 0 ? " · 칼선 맞춤 " + out.fitCount + "장" : "") + "\n";
@@ -3812,14 +3917,15 @@
 
   // _packComposed 의 extras (시트 생성·미리보기 공용) — 데코는 이름이 있을 때만. layout = 배치 선택 (없으면 기본).
   // 이름 스타일은 heroSpec 에서 온다. rimBox 스타일(bubble)은 이름·데코 박스를 칼선 여백(rimPt)만큼 넓히고 그 안쪽에 그린다 (pad).
-  // sheetIndex = 몇 번째 시트인지 (0부터, 없으면 0) — 데코 시작 자리 (_composedDecoStart).
+  // sheetIndex = 몇 번째 시트인지 (0부터, 없으면 0) — 데코·말풍선 시작 자리 (_composedDecoStart · _composedBubbleStart).
   function _composedPackExtras(heroSpec, rimPt, layout, sheetIndex) {
     var style = heroSpec ? _nameStyle(heroSpec.nameStyle) : null;
     var pad = (style && style.rimBox && rimPt > 0) ? rimPt : 0;
     return { hero: heroSpec ? { w: pad ? heroSpec.cellW + 2 * pad : heroSpec.cellW,
                                 h: pad ? heroSpec.cellH + 2 * pad : heroSpec.cellH, pad: pad } : null,
              decoWant: heroSpec ? COMPOSED_DECO_MAX : 0, rimPt: rimPt, layout: layout ? layout : null,
-             nameStyle: style ? style.key : null, decoPad: pad, decoStart: _composedDecoStart(heroSpec, sheetIndex) };
+             nameStyle: style ? style.key : null, decoPad: pad, decoStart: _composedDecoStart(heroSpec, sheetIndex),
+             bubbleWant: heroSpec ? COMPOSED_BUBBLE_MAX : 0, bubbleStart: _composedBubbleStart(heroSpec, sheetIndex) };
   }
 
   // 주문 보드 미리보기가 넘긴 값 → 대화창 options (2026-09-16). 사진은 base 로 찾는다 — 한글 NFD/NFC 차이는 _nfcHangul 로 맞춘다.
@@ -3996,7 +4102,7 @@
     var stickerPanel = _panel(left, "스티커 이름 (비우면 이름·데코 없음)");
     var stickerInput = stickerPanel.add("edittext", undefined, "");
     stickerInput.preferredSize = [300, 24];
-    _hint(stickerPanel, "A–Z 이름 → 위쪽 아트 알파벳 + 데코 최대 " + COMPOSED_DECO_MAX + "개(빈틈). 한글·숫자 이름은 아직 사진만.", 300, 2);
+    _hint(stickerPanel, "A–Z 이름 → 위쪽 아트 알파벳 + 말풍선·데코 최대 " + COMPOSED_DECO_MAX + "개(빈틈). 한글·숫자 이름은 아직 사진만.", 300, 2);
 
     var detailPanel = _panel(left, "헤더 정보");
     var materialDropdown = _labeledRow(detailPanel, "재질").add("dropdownlist", undefined, MATERIAL_OPTIONS);

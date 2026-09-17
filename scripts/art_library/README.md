@@ -1,4 +1,11 @@
-# 버블 이름 스타일 라이브러리 (2026-09-17)
+# 이름 스타일 라이브러리 (2026-09-17)
+
+| 도구 | 하는 일 |
+|---|---|
+| `build_bubble_style.jsx` | **버블** 스타일 아트 두 개를 원본 .ai 에서 다시 만든다 (아래) |
+| `build_retro_bubbles.jsx` | **레트로** 데코 라이브러리(`deco_art_v1.ai`)에 말풍선 6종을 그린다 ([아래](#레트로-말풍선-build_retro_bubblesjsx)) |
+
+## 버블 (`build_bubble_style.jsx`)
 
 주문 보드 `구성` 화면의 **이름 스타일 → 버블**이 쓰는 아트 두 개를 원본 .ai 에서 다시 만든다.
 
@@ -17,6 +24,8 @@
 
 - 요약에 **"⚠ 색 표가 range.jsx 와 다름"** 이 나오면 작업 폴더의 `LETTER_ART_PAINTS_V2.txt` 로 `Everstory_range.jsx` 의
   `LETTER_ART_PAINTS_V2` 표를 바꾸고 아래 테스트를 돌린다 (원본에서 글자 바탕 색이나 장식 색을 바꾸면 생긴다).
+- 요약에 **"⚠ 말풍선 비율표가 range.jsx 와 다름"** 이 나오면 작업 폴더의 `DECO_BUBBLE_ASPECT_V2.txt` 로
+  `DECO_BUBBLE_ASPECT_V2` 표를 바꾸고 테스트를 돌린다 (원본에서 글씨 두들 모양을 바꾸면 생긴다 — 시트의 말풍선 칸이 이 비율이다).
 - 요약에 **"⚠ 치수표가 range.jsx 와 다름"** 이 나오면 작업 폴더의 `LETTER_ART_METRICS_V2.txt` 로
   `Everstory_range.jsx` 의 `LETTER_ART_METRICS_V2` 표를 바꾸고 테스트를 돌린다 (반올림 0.0001 차이는 같은 것으로 본다):
   ```
@@ -25,8 +34,9 @@
   ```
   표가 틀리면 미리보기와 Illustrator 가 같은 틀 크기를 쓰긴 하지만, 글자 크기·바닥선이 그림과 어긋난다.
 - 주문 보드는 **새로고침**하면 새 그림을 쓴다 (그림 주소에 파일 시각이 붙는다).
-- 두들을 더하거나 빼서 데코로 쓰고 싶으면 `Everstory_range.jsx` 의 `DECO_ORDER_V2`(순서) ·
-  `DECO_BIG_ONLY_V2`(글씨 두들 — 큰 칸에만)를 고친다. 테스트가 순서의 모든 이름에 그림이 있는지 확인한다.
+- 두들을 더하거나 빼서 데코로 쓰고 싶으면 `Everstory_range.jsx` 의 `DECO_ORDER_V2`(작은 데코 순서) ·
+  `DECO_BUBBLES_V2`(글씨 말풍선 — 시트당 2개까지 22mm 자리, 이 도구의 `BUBBLES` 도 같이)를 고친다.
+  테스트가 순서의 모든 이름에 그림이 있는지 확인한다.
 
 ## 만드는 규칙 (range.jsx 가 기대하는 모양)
 
@@ -63,3 +73,26 @@
 - 테스트 훅: `$.global.__EVERSTORY_ART_BUILD__ = { work: "<폴더>", workOnly: true }` → templates 를 안 건드리고 `cfg.report` 에 요약.
 - 다시 만들어도 원래 글자·두들 그림은 픽셀 단위로 같다 (2026-09-17 색 그룹 추가 때 56장 비교). `.ai` 파일은 저장 시각이 들어가
   바이트는 달라진다 — 내용이 그대로인 라이브러리는 굳이 바꿔 넣지 않아도 된다.
+
+## 레트로 말풍선 (`build_retro_bubbles.jsx`)
+
+레트로 데코(`deco_art_v1.ai`, 원본 sticker sample 3)에는 글씨 스티커가 없어서 **같은 모양새로 스크립트가 그린다**
+(2026-09-17 — 사용자가 시안을 보고 "다듬어 넣자"). Illustrator → File → Scripts → Other Script → `build_retro_bubbles.jsx`, 22초.
+`templates/deco_art_v1.ai` 를 작업 폴더에 복사해 열고, 같은 이름 그룹이 있으면 지우고 다시 그린다 (기존 12종은 그대로).
+요약 창에서 **"예"** 를 눌러야 `templates/deco_art_v1.ai` 와 `art_preview/deco_art_v1/DECO_YAY.png` … 6장을 바꾼다.
+
+- 모양: 팝 색 물결 바탕 + 검정 테두리 + 크림 말풍선(꼬리) + 입체 그림자 + **Luckiest Guy** 글씨(색 · 검정 테두리 · 검정 그림자).
+  색은 기존 레트로 데코의 채우기 색 그대로 (`COLORS`). 문구·색·꼬리 방향은 스크립트의 `BUBBLES` 표 —
+  YAY! · BEST DAY · XOXO · WOW! · MY FAVE · YOU+ME. 이름(key)을 바꾸거나 더하면 range.jsx `DECO_BUBBLES_V1` 도 고친다.
+- 규칙 (range.jsx 가 기대하는 모양): 그룹 `DECO <이름>` · **선(stroke) 없음** — 시트에 놓을 때 `resize` 가 선 굵기를 안 바꾸므로
+  테두리는 모두 Offset Path 로 부풀린 채운 도형이다. 맨 아래 `SIL` = 모든 조각(바탕·그림자·말풍선·글씨)을 5pt 부풀린 합집합 =
+  검정 바깥 테두리 = **칼선 한 조각** (그룹에서 가장 큰 도형이라 `_artOutlinePath` 가 고른다). 도구가 선 0 · SIL = 그룹 경계를 확인하고
+  아니면 멈춘다.
+- 요약에 **"⚠ 비율표가 range.jsx 와 다름"** 이 나오면 작업 폴더의 `DECO_BUBBLE_ASPECT_V1.txt` 로 `DECO_BUBBLE_ASPECT_V1` 을 바꾸고
+  테스트를 돌린다 (그림자가 오른쪽으로 나가서 꼬리가 왼쪽인 것 1.3063 · 오른쪽인 것 1.2840).
+- 서체가 없으면 멈춘다 — Luckiest Guy(Google Fonts, OFL)를 설치하고 Illustrator 를 다시 켠다 (실행 중에는 서체 목록을 다시 안 읽는다).
+- 라이브러리 크기 267KB → 506KB (말풍선 6종). 같은 입력이면 그림이 픽셀까지 같게 나온다 (2026-09-17 두 번 실행).
+- 알아 둘 것 (2026-09-17 확인, 아직 안 고침): 기존 레트로 데코 중 HEART · CUPCAKE · BONE · CAMERA · RAINBOW · FLOWER 는
+  `_artOutlinePath` 가 고르는 가장 큰 도형이 **검정 테두리 고리(바깥선 + 약 6pt 안쪽 구멍선)** 라 칼선에 안쪽 선이 하나 더 들어간다.
+  실제 시트에서도 FLOWER · CAMERA 칼선이 두 조각이었다 (2026-09-17 Composed 레트로 실행).
+

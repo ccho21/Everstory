@@ -6,7 +6,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 
 첫 주력 상품은 **A5 커스텀 사진 다이컷 스티커 시트**. 대표 모드는 **Name Included** (사진 + 상단 헤더에 고객/주문 정보). 운영 메인은 **`Everstory_mixed.jsx`** (v23 multi-sheet, v2 브랜드 템플릿). 단일·전 사이즈는 한 시트 정책 — A5 한 시트만 생성, 넘치는 입력은 사이즈별 디자인 cap (auto-cap, 시트 물리 슬롯 수 기준) 으로 입력 단계에서 제한. **Package 만 다중 시트** — 넘치는 분을 버리지 않고 다음 시트로 배분한다 (기본 2장). 칼선 여백 (0/0.5/1/2mm) 은 고객 옵션이 아니라 내부 제작 옵션.
 
-**`Everstory_mixed.jsx` 와 `Everstory_range.jsx` 는 목적이 다른 별도 스크립트다 (2026-09-16 사용자 결정 — 하나로 합치지 않는다).** mixed = **주문이 크기를 정하는 시트**(SKU·파일명 토큰 → 단일 사이즈 · 전 사이즈 · Package 3버킷). range = **스튜디오가 크기와 구성을 정하는 시트**(Composed: 고른 사진을 종류별 크기 범위로 자동 구성, 이름·데코 포함). 대화창은 Composed 전용이다 (2026-09-16 — 크기 범위·배치 후보 선택을 뺐다. Small/Large 엔진은 코드에만 남음). 사진 수 제한이 없다 — 기본 6장 선택, 더 고르면 시트당 최대 6장으로 나눠 큰 사진을 시트마다 고르게 배분하고(8 → 4+4), 종류 범위보다 작게 줄이지 않는다. Composed 의 사진 종류는 **파일명 버킷이 먼저 정한다** — 누끼 저장 때 스튜디오가 사진을 보고 누른 `SML` 얼굴 0.75–1.5″ · `MED` 상반신 1–2″ · `BIG` 전신 1.25–2.5″ (옛 `_XS`~`_XXL` · `_FAM` 도 읽음). 버킷이 없는 사진만 자동 판별(Vision) + 확인 창을 거친다 (2026-09-16 사용자 결정). 같은 버킷을 mixed Package 는 좁은 인치로 배정한다. 공통 코드는 각자 복사본으로 둔다 — range 의 "mixed.jsx 그대로" 구간. 주문 보드 `시트` 버튼은 mixed 를 실행하고, `구성` 버튼은 **Composed 미리보기** 화면을 연다 — range.jsx 엔진을 브라우저에서 그대로 돌려 시트를 미리 보고, `Illustrator 에서 만들기` 를 누르면 range.jsx 가 대화창 없이 그대로 만든다 (2026-09-16, `scripts/order_intake/composed_preview.*`). 미리보기에서는 **배치**(스타일 가운데·양옆·모으기·가장자리·아래쪽 · 이름 위치 · 좌우 바꿈 · 섞기)와 **사진별 크기**(0.75~2.5″ 최소·최대, 기본 = 파일명 버킷 범위), **이름 스타일**(레트로 = 글자마다 따로 떼는 v1 알파벳 + 레트로 데코 · 버블 = `알파벳 샘플_6` 글자를 붙여 이름 전체를 흰 테두리 하나로 묶은 통짜 스티커 + `sticker sample 4` 두들 데코, 2026-09-17 — 버블 글자는 자리마다 색이 돌고, 데코는 두 스타일 모두 스티커 이름마다 다른 모양에서 시작해 다음 시트로 이어진다)를 보면서 고르고, 완료 창이 자리·데코까지 미리보기와 같은지 확인한다 (배치 지문). 대화창 실행은 기본 배치·버킷 범위·레트로 그대로. range 는 File → Scripts 로 직접 실행해도 된다 (대화창).
+**`Everstory_mixed.jsx` 와 `Everstory_range.jsx` 는 목적이 다른 별도 스크립트다 (2026-09-16 사용자 결정 — 하나로 합치지 않는다).** mixed = **주문이 크기를 정하는 시트**(SKU·파일명 토큰 → 단일 사이즈 · 전 사이즈 · Package 3버킷). range = **스튜디오가 크기와 구성을 정하는 시트**(Composed: 고른 사진을 종류별 크기 범위로 자동 구성, 이름·데코 포함). 대화창은 Composed 전용이다 (2026-09-16 — 크기 범위·배치 후보 선택을 뺐다. Small/Large 엔진은 코드에만 남음). 사진 수 제한이 없다 — 기본 6장 선택, 더 고르면 시트당 최대 6장으로 나눠 큰 사진을 시트마다 고르게 배분하고(8 → 4+4), 종류 범위보다 작게 줄이지 않는다. Composed 의 사진 종류는 **파일명 버킷이 먼저 정한다** — 누끼 저장 때 스튜디오가 사진을 보고 누른 `SML` 얼굴 0.75–1.5″ · `MED` 상반신 1–2″ · `BIG` 전신 1.25–2.5″ (옛 `_XS`~`_XXL` · `_FAM` 도 읽음). 버킷이 없는 사진만 자동 판별(Vision) + 확인 창을 거친다 (2026-09-16 사용자 결정). 같은 버킷을 mixed Package 는 좁은 인치로 배정한다. 공통 코드는 각자 복사본으로 둔다 — range 의 "mixed.jsx 그대로" 구간. 주문 보드 `시트` 버튼은 mixed 를 실행하고, `구성` 버튼은 **Composed 미리보기** 화면을 연다 — range.jsx 엔진을 브라우저에서 그대로 돌려 시트를 미리 보고, `Illustrator 에서 만들기` 를 누르면 range.jsx 가 대화창 없이 그대로 만든다 (2026-09-16, `scripts/order_intake/composed_preview.*`). 미리보기에서는 **배치**(스타일 가운데·양옆·모으기·가장자리·아래쪽 · 이름 위치 · 좌우 바꿈 · 섞기)와 **사진별 크기**(0.75~2.5″ 최소·최대, 기본 = 파일명 버킷 범위), **이름 스타일**(레트로 = 글자마다 따로 떼는 v1 알파벳 + 레트로 데코 · 버블 = `알파벳 샘플_6` 글자를 붙여 이름 전체를 흰 테두리 하나로 묶은 통짜 스티커 + `sticker sample 4` 두들 데코, 2026-09-17 — 버블 글자는 자리마다 색이 돌고, 데코는 두 스타일 모두 스티커 이름마다 다른 모양에서 시작해 다음 시트로 이어진다. 글씨 말풍선은 데코 칸 대신 시트당 2개까지 22mm(안 되면 19mm)로 반복 사진보다 먼저 자리를 잡고 데코 6개 안에서 센다 — 레트로 말풍선은 `scripts/art_library/build_retro_bubbles.jsx` 가 그린다)를 보면서 고르고, 완료 창이 자리·데코까지 미리보기와 같은지 확인한다 (배치 지문). 대화창 실행은 기본 배치·버킷 범위·레트로 그대로. range 는 File → Scripts 로 직접 실행해도 된다 (대화창).
 
 상품/운영 정책은 [docs/business/business.md](docs/business/business.md).
 
@@ -22,13 +22,13 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 ├── SHOPIFY_ORDER_DOWNLOAD.command   # Phase -1 런처 — 더블클릭하면 브라우저에 주문받기 화면. 이름은 바꿔도 됨
 ├── scripts/doctor.py              # 읽기 전용 통합 건강검진 — 상품/매니페스트/페어/보존/백업/디스크/테스트
 ├── scripts/order_intake/          # Phase -1 — Shopify 주문 사진 다운로드·리네임 (scripts/order_intake/README.md)
-├── scripts/art_library/           # 버블 이름 스타일 라이브러리 다시 만들기 (원본 두 .ai → templates, README.md)
+├── scripts/art_library/           # 이름 스타일 라이브러리 도구 — 버블 원본 두 .ai → templates · 레트로 말풍선 그리기 (README.md)
 ├── scripts/face_probe/            # Composed 사진 종류 자동 판별 앱 (macOS Vision · JXA) — 파일명 버킷이 없는 사진용. range.jsx 가 File.execute() 로 띄운다 (README.md)
 ├── plugins/everstory_save/        # Phase A — UXP 패널 플러그인 (PS)
 ├── templates/
 │   ├── address_labels/            # 주소 라벨 칼선 시트 .ai 보관 — 한 번 만들어 계속 쓴다
 │   ├── alphabet_art_v1.ai         # range.jsx 전용 — 이름 스티커 아트 알파벳, 레트로 스타일 (`LTR A` … 이름 규칙)
-│   ├── deco_art_v1.ai             # range.jsx 전용 — 데코 스티커 12종, 레트로 스타일
+│   ├── deco_art_v1.ai             # range.jsx 전용 — 데코 스티커 12종 + 말풍선 6종(scripts/art_library), 레트로 스타일
 │   ├── alphabet_art_v2.ai         # range.jsx 전용 — 버블 스타일 알파벳 (`LTR A` + `SIL`·`SIDE L/R`·`FACE` + 색 그룹 `LTR A PINK`, scripts/art_library 로 다시 만든다)
 │   ├── deco_art_v2.ai             # range.jsx 전용 — 버블 스타일 두들 27종 (흰 테두리 `SIL` 포함)
 │   ├── art_preview/               # 주문 보드 구성 미리보기용 글자·데코 PNG (라이브러리마다 폴더, README.md)

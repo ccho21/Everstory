@@ -121,6 +121,7 @@ try:
             "_composedCutAspect", "_composedClassify", "_composedParseProbe", "_traceSignature",
             "_nameStyle", "_artLetterBoxes", "_artLetterPaint", "_letterBlockSpec", "_composedDecoStart", "_composedVariants",
             "COMPOSED_NAME_STYLES", "LETTER_ART_METRICS_V2", "LETTER_ART_PAINTS_V2", "DECO_ORDER_V2",
+            "DECO_BUBBLES_V1", "DECO_BUBBLES_V2", "COMPOSED_BUBBLE_MAX",
             "COMPOSED_PREVIEW_BODY_MM", "COMPOSED_SHOT_TYPES", "MATERIAL_OPTIONS", "CUT_MARGIN_VALUES", "TRACE_OPTS"]
     chk("미리보기에 필요한 함수·상수가 다 들어 있다", all(n in names_py for n in need),
         ", ".join(n for n in need if n not in names_py) or "%d 심볼" % len(names_py))
@@ -273,7 +274,12 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     for const, lib in (("DECO_ORDER", "deco_art_v1"), ("DECO_ORDER_V2", "deco_art_v2")):
         order = re.findall(r'"(\w+)"', re.search(r"var %s = \[(.*?)\n  \];" % const, src, re.S).group(1))
         missing += ["%s DECO_%s" % (lib, n) for n in order if "DECO_" + n not in idx.get(lib, {})]
-    chk("치수표 글자(옆 장식 포함)·데코 순서마다 그림이 있다", not missing and len(v2) > 0,
+    bubbles = 0
+    for const, lib in (("DECO_BUBBLES_V1", "deco_art_v1"), ("DECO_BUBBLES_V2", "deco_art_v2")):
+        order = re.findall(r'"(\w+)"', re.search(r"var %s = \[(.*?)\];" % const, src).group(1))
+        bubbles += len(order)
+        missing += ["%s DECO_%s" % (lib, n) for n in order if "DECO_" + n not in idx.get(lib, {})]
+    chk("치수표 글자(옆 장식 포함)·데코 순서·말풍선(%d)마다 그림이 있다" % bubbles, not missing and len(v2) > 0 and bubbles == 12,
         ", ".join(missing) or ", ".join("%s %d" % (k, len(v)) for k, v in sorted(idx.items())))
     art_tmp = os.path.join(root, "art")
     os.makedirs(os.path.join(art_tmp, "deco_art_v9"))

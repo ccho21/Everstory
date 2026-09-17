@@ -4,10 +4,10 @@
 //  원본 두 파일(shopify_assets/assets)
 //    · 알파벳 샘플_6.ai    → templates/alphabet_art_v2.ai  (그룹 'LTR A'~'LTR Z')
 //    · sticker sample 4.ai → templates/deco_art_v2.ai      (그룹 'DECO SMILE' … 27종)
-//  과 주문 보드 미리보기 그림(templates/art_preview/…/*.png), 글자 치수표·색 표를 만든다.
+//  과 주문 보드 미리보기 그림(templates/art_preview/…/*.png), 글자 치수표·색 표·말풍선 비율표를 만든다.
 //  원본 파일은 사본으로만 연다 (저장·수정 안 함). 결과는 먼저 임시 폴더에 만들고, 확인 창에서 "예"를 눌러야
-//  templates 에 덮어쓴다. 치수표·색 표가 Everstory_range.jsx 의 LETTER_ART_METRICS_V2 · LETTER_ART_PAINTS_V2 와 다르면
-//  완료 창에 알린다 — 그때는 새 표(작업 폴더의 .txt)로 range.jsx 를 고치고 테스트를 돌린다 (README.md).
+//  templates 에 덮어쓴다. 치수표·색 표·말풍선 비율표가 Everstory_range.jsx 의 LETTER_ART_METRICS_V2 · LETTER_ART_PAINTS_V2 ·
+//  DECO_BUBBLE_ASPECT_V2 와 다르면 완료 창에 알린다 — 그때는 새 표(작업 폴더의 .txt)로 range.jsx 를 고치고 테스트를 돌린다 (README.md).
 //
 //  라이브러리 규칙 (range.jsx 가 기대하는 모양 — 바꾸면 range.jsx 도 같이):
 //   · 글자 그룹 = 글자 몸통('BODY' = 검정 테두리 컴파운드) + 안쪽 장식·바탕('FACE') + 맨 아래 'SIL'(합집합 바깥 윤곽, 흰색).
@@ -41,6 +41,8 @@
     { key: "SKY", rgb: "176,205,235" }
   ];
   var FACE_MIN = 0.2;                                      // 바탕 = 채우기(FILL) 넓이의 이 비율 이상인 색 조각
+  // 글씨 말풍선 두들 (range.jsx DECO_BUBBLES_V2 와 같은 목록) — 시트에 그림 비율대로 크게 놓으므로 비율표를 잰다.
+  var BUBBLES = ["YAY", "BESTDAY", "FOREVER", "YOUME", "MYFAVE", "XOXO"];
   // 원본 sticker sample 4 의 두들 자리 (pt, [left, top, right, bottom]) — 2026-09-17 원본 기준
   var DOODLE_ITEMS = [
     { name: "SMILE", b: [-78.419, 1032.954, 132.582, 829.030] },
@@ -511,7 +513,7 @@
   // 옆 장식이 있는 글자는 LTR_C_R · LTR_C_PINK_R 처럼 장식을 넣은 그림도. measure 면 원래 글자 그룹의 틀·몸통 경계를 돌려준다
   // (색 그룹은 모양이 같아 재지 않는다).
   function exportPreviews(libPath, prefix, px, outDir, measure) {
-    var tmp = app.documents.add(DocumentColorSpace.RGB, 1000, 1000), lib = null, out = { files: 0, metrics: {} };
+    var tmp = app.documents.add(DocumentColorSpace.RGB, 1000, 1000), lib = null, out = { files: 0, metrics: {}, bounds: {} };
     function one(src, keep, path) {
       var TL = tmp.layers[0];
       while (TL.pageItems.length) TL.pageItems[0].remove();
@@ -544,6 +546,7 @@
         var key = g.name.substring(prefix.length), fname = (prefix + key).replace(/ /g, "_"), sides = [], s, variants = {};
         for (s = 0; s < g.groupItems.length; s++) if (g.groupItems[s].name.indexOf("SIDE ") === 0) sides.push(g.groupItems[s].name.charAt(5));
         variants.core = one(g, "", dir.fsName + "/" + fname + ".png");
+        out.bounds[key] = variants.core;
         for (s = 0; s < sides.length; s++) variants[sides[s]] = one(g, sides[s], dir.fsName + "/" + fname + "_" + sides[s] + ".png");
         if (measure && key.indexOf(" ") < 0) {
           var body = null;
@@ -620,10 +623,21 @@
     return out;
   }
 
-  // 두 치수표가 같은가 — 글자·틀 이름은 그대로, 숫자는 반올림 경계 차이(0.0001)까지 같은 것으로 본다. 다른 줄 목록을 돌려준다.
-  function metricsDiff(curLines, newLines) {
+  // 말풍선 비율표 줄 (range.jsx DECO_BUBBLE_ASPECT_V2 와 같은 모양) — 흰 테두리(SIL)까지 넣은 그룹 경계의 폭 ÷ 높이.
+  function bubbleAspectLines(bounds) {
+    var lines = [], i, b;
+    for (i = 0; i < BUBBLES.length; i++) {
+      b = bounds[BUBBLES[i]];
+      if (!b) throw new Error("말풍선 두들 " + BUBBLES[i] + " 가 라이브러리에 없습니다");
+      lines.push("    " + BUBBLES[i] + ": " + fix4((b[2] - b[0]) / (b[1] - b[3])) + (i < BUBBLES.length - 1 ? "," : ""));
+    }
+    return lines;
+  }
+
+  // 두 표가 같은가 — 글자·틀 이름은 그대로, 숫자는 반올림 경계 차이(0.0001)까지 같은 것으로 본다. 다른 줄 목록을 돌려준다.
+  function metricsDiff(curLines, newLines, name) {
     var out = [], i, j, a, b, na, nb;
-    if (!curLines) return ["range.jsx 에서 LETTER_ART_METRICS_V2 를 못 찾음"];
+    if (!curLines) return ["range.jsx 에서 " + (name || "LETTER_ART_METRICS_V2") + " 를 못 찾음"];
     if (curLines.length !== newLines.length) return ["줄 수 " + curLines.length + " → " + newLines.length];
     for (i = 0; i < newLines.length; i++) {
       a = curLines[i];
@@ -714,6 +728,16 @@
     report.push(pdiff.length === 0 ? "색 표: range.jsx 와 같음"
       : "⚠ 색 표가 range.jsx 와 다름 (" + pdiff.length + "줄) — " + pf.fsName + " 로 LETTER_ART_PAINTS_V2 를 바꾸고 테스트를 돌리세요");
     for (i = 0; i < pdiff.length && i < 5; i++) LOG("색 표 다름: " + pdiff[i]);
+    var bl = bubbleAspectLines(pd.bounds), bf = new File(work.fsName + "/DECO_BUBBLE_ASPECT_V2.txt");
+    bf.encoding = "UTF-8";
+    bf.lineFeed = "Unix";
+    bf.open("w");
+    bf.write("  var DECO_BUBBLE_ASPECT_V2 = {\n" + bl.join("\n") + "\n  };\n");
+    bf.close();
+    var bdiff = metricsDiff(currentTableLines("DECO_BUBBLE_ASPECT_V2"), bl, "DECO_BUBBLE_ASPECT_V2");
+    report.push(bdiff.length === 0 ? "말풍선 비율표: range.jsx 와 같음"
+      : "⚠ 말풍선 비율표가 range.jsx 와 다름 (" + bdiff.length + "줄) — " + bf.fsName + " 로 DECO_BUBBLE_ASPECT_V2 를 바꾸고 테스트를 돌리세요");
+    for (i = 0; i < bdiff.length; i++) LOG("말풍선 비율표 다름: " + bdiff[i]);
     if (prevDoc) { try { app.activeDocument = prevDoc; } catch (eAct) {} }
     app.userInteractionLevel = prevUI;
 

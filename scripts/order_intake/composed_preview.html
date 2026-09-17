@@ -707,7 +707,7 @@ function haloFilter(id, r) {
     `<feMerge><feMergeNode in="edge"/><feMergeNode in="white"/><feMergeNode in="SourceGraphic"/></feMerge></filter></svg>`;
 }
 
-// 데코 — 박스 안쪽 여백(pad, 버블)만큼 줄여 가운데에 맞춘다 (range.jsx _drawDecoSticker 와 같은 규칙).
+// 데코·말풍선 — 박스 안쪽 여백(pad, 버블)만큼 줄여 가운데에 맞춘다 (range.jsx _drawDecoSticker 와 같은 규칙).
 function decoHtml(d, px) {
   const M = E.MM_TO_PT, st = E._nameStyle(d.payload.style), pad = (d.payload.pad || 0) / M;
   const src = st ? artUrl(libStem(st.decoLib), "DECO_" + d.payload.deco) : "";
@@ -715,7 +715,7 @@ function decoHtml(d, px) {
   const at = `left:${px(E.BODY_PADDING_X_MM + d.x / M + pad)};top:${px(E.BODY_PADDING_Y_MM + d.y / M + pad)};width:${px(w)};height:${px(h)}`;
   if (src) return `<div class="deco" style="${at}" title="데코 ${esc(d.payload.deco)}"><img src="${src}" alt=""></div>`;
   return `<div class="deco" style="${at};font-size:${px(Math.min(w, h) * 0.78)}" title="데코 ${esc(d.payload.deco)} (모양은 대략)">` +
-    `${DECO_EMOJI[d.payload.deco] || "✨"}</div>`;
+    `${DECO_EMOJI[d.payload.deco] || (d.payload.bubble ? "💬" : "✨")}</div>`;
 }
 
 // 이름 스타일 버튼 — 스티커 이름의 앞 글자(없으면 ABC)를 그 스타일 그림으로 보여 준다 (버블은 이름 블록과 같은 색 돌리기,
@@ -785,7 +785,7 @@ function renderSheets() {
         (x.r.missing.length ? ` · <span class="miss">못 넣음 ${esc(x.r.missing.join(", "))}</span>` : "") +
         (hasLayouts() && x.layout ? `<br>배치 ${esc(E._composedLayoutLabel(x.layout))}` : "") +
         (x.r.nameBox && S.hero && S.hero.spec ? `<br>이름 ${esc(E._nameStyle(S.hero.spec.nameStyle).label)} ` +
-          `${(S.hero.spec.cellW / M).toFixed(1)}×${(S.hero.spec.cellH / M).toFixed(1)}mm · 데코 ${x.r.decos.length}개` : "");
+          `${(S.hero.spec.cellW / M).toFixed(1)}×${(S.hero.spec.cellH / M).toFixed(1)}mm · 데코 ${x.r.decos.length}개 (말풍선 ${x.r.bubbles || 0})` : "");
     } else {
       stats = `<b>시트 ${s + 1}</b> · <span class="miss">${esc(x.error)}</span>`;
     }

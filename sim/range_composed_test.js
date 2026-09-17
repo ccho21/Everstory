@@ -20,6 +20,8 @@ const heroBox = { w: HERO.cellW, h: HERO.cellH };
 let checks = 0;
 const chk = (name, cond, extra) => { console.log((cond ? '✅ ' : '❌ ') + name + (extra ? '   ' + extra : '')); assert(cond, name); checks++; };
 const pairsOf = list => list.map((a, i) => ({ base: 'D' + i, aspect: a, cutAspect: a }));
+// 레트로 SANVI 말풍선 판 지문 — 2026-09-17 말풍선 결정 때 고정 (레트로 말풍선 비율표가 바뀌면 같이 바뀐다)
+const RETRO_BUBBLE_SIG = 'a58b828e';
 const pack = (aspects, opt) => P._packComposed(pairsOf(aspects), (opt && opt.main) || 0, W, H, G,
   { hero: (opt && opt.noName) ? null : heroBox, decoWant: P.COMPOSED_DECO_MAX, rimPt: (opt && 'rim' in opt) ? opt.rim : RIM });
 
@@ -770,21 +772,32 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
   }));
   chk('레트로 이름 치수 = 작업 전 값 (스타일 생략 · retro 둘 다, 비트 단위)', sameOld);
   const tallSet = [0.38, 0.78, 0.66, 0.85, 0.79, 0.89].map((a, i) => ({ base: 'D' + i, aspect: a, cutAspect: a, shotType: 'none' }));
-  const retroPack = st => {
+  const retroPack = (st, more) => {
     const h = st ? P._composedHero('SANVI', W, G, st) : P._composedHero('SANVI', W, G);
-    return P._packComposed(tallSet, 0, W, H, G, P._composedPackExtras(h.spec, RIM, null));
+    return P._packComposed(tallSet, 0, W, H, G, { ...P._composedPackExtras(h.spec, RIM, null), ...(more || {}) });
   };
-  const r0 = retroPack(''), r1 = retroPack('retro');
-  // 데코 모양은 2026-09-17 부터 스티커 이름 자리에서 시작한다 (_composedDecoStart) — 자리·크기(지문)는 작업 전 그대로.
+  // 데코 모양은 2026-09-17 부터 스티커 이름 자리에서 시작한다 (_composedDecoStart). 같은 날 말풍선이 들어가 판이 바뀌었다 —
+  // 말풍선을 끄면(bubbleWant 0) 자리·크기(지문)는 작업 전 그대로여야 한다.
+  const r0 = retroPack('', { bubbleWant: 0 }), r1 = retroPack('retro', { bubbleWant: 0 });
   const rotated = (order, start, n) => Array.from({ length: n }, (_, k) => order[(start + k) % order.length]).join();
   const sanviSpec = P._composedHero('SANVI', W, G).spec, sanviStart = P._composedDecoStart(sanviSpec, 0);
-  chk('레트로 배치 = 작업 전 판 (지문 af6aae65 · 데코는 이름 자리부터 같은 순서 · 박스 안쪽 여백 0)',
-      r0.sig === 'af6aae65' && r1.sig === r0.sig && r0.nameStyle === 'retro' && r0.namePad === 0 &&
+  chk('레트로 · 말풍선 끔 = 작업 전 판 (지문 af6aae65 · 데코는 이름 자리부터 같은 순서 · 박스 안쪽 여백 0)',
+      r0.sig === 'af6aae65' && r1.sig === r0.sig && r0.nameStyle === 'retro' && r0.namePad === 0 && r0.bubbles === 0 &&
       r0.decoStart === sanviStart && r0.decos.map(d => d.payload.deco).join() === rotated(P.DECO_ORDER, sanviStart, r0.decos.length) &&
       r0.decos.every(d => d.payload.style === 'retro' && d.payload.pad === 0), r0.sig + ' · 시작 ' + sanviStart);
-  const r00 = P._packComposed(tallSet, 0, W, H, G, { ...P._composedPackExtras(sanviSpec, RIM, null), decoStart: 0 });
-  chk('데코 시작 자리 0 = 작업 전 데코 순서 그대로', r00.sig === 'af6aae65' && r00.decoStart === 0 &&
+  const r00 = retroPack('', { decoStart: 0, bubbleWant: 0 });
+  chk('데코 시작 자리 0 · 말풍선 끔 = 작업 전 데코 순서 그대로', r00.sig === 'af6aae65' && r00.decoStart === 0 &&
       r00.decos.map(d => d.payload.deco).join() === 'HEART,FLOWER,STAR,CAMERA,BOW', r00.decos.map(d => d.payload.deco).join());
+  const rOn = retroPack('retro'), rOnB = rOn.decos.filter(d => d.payload.bubble), rOnS = rOn.decos.filter(d => !d.payload.bubble);
+  const sanviBubble = P._composedBubbleStart(sanviSpec, 0);
+  chk('레트로 · 말풍선 켬 (2026-09-17 결정 판 고정): 레트로 말풍선이 순서 자리부터 · 데코 목록 앞 · 합 ≤ 6 · 사다리 그대로',
+      rOn.sig === RETRO_BUBBLE_SIG && rOn.bubbles === rOnB.length && rOnB.length >= 1 && rOnB.length <= P.COMPOSED_BUBBLE_MAX &&
+      rOn.decos.slice(0, rOnB.length).every(d => d.payload.bubble) && rOn.decos.length <= P.COMPOSED_DECO_MAX &&
+      rOnB.map(d => d.payload.deco).join() === rotated(P.DECO_BUBBLES_V1, sanviBubble, rOnB.length) &&
+      rOnS.map(d => d.payload.deco).join() === rotated(P.DECO_ORDER, sanviStart, rOnS.length) &&
+      rOn.bubbleStart === sanviBubble && rOnB.every(d => d.payload.style === 'retro' && d.payload.pad === 0) &&
+      rOn.placed.length - rOn.extras === r0.placed.length - r0.extras && rOn.missing.length === r0.missing.length,
+      `${rOn.sig} · 말풍선 ${rOnB.map(d => d.payload.deco + ' ' + d.payload.sizeMm).join(', ')} · 사진 ${r0.placed.length}→${rOn.placed.length}`);
 
   // 버블 이름 스펙
   const bs = P._composedHero('Vivian', W, G, 'bubble').spec;
@@ -853,44 +866,49 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
       Math.abs(b1.nameBox.w - (sb.cellW + 2 * RIM)) < 1e-9 && Math.abs(b1.nameBox.h - (sb.cellH + 2 * RIM)) < 1e-9 &&
       b1.namePad === RIM && b0.namePad === 0 && Math.abs(b0.nameBox.w - sb.cellW) < 1e-9 && b1.nameStyle === 'bubble',
       `${(b1.nameBox.w / M).toFixed(2)} × ${(b1.nameBox.h / M).toFixed(2)}mm`);
-  // 기대 모양: 시작 자리부터 돈 순서에서 안 쓴 것, 글씨 두들은 큰 칸(12.7)에만 (따로 구현해 대조)
-  const expectMotifs = (sizes, start) => {
-    const used = new Set(), out = [], n = P.DECO_ORDER_V2.length;
-    const order = P.DECO_ORDER_V2.map((_, k) => P.DECO_ORDER_V2[(start + k) % n]);
-    for (const s of sizes) {
-      const pick = order.find(m => !used.has(m) && (s >= 12.7 - 1e-6 || P.DECO_BIG_ONLY_V2.indexOf(m) < 0));
-      used.add(pick);
-      out.push(pick);
-    }
-    return out.join();
-  };
-  const b1sizes = b1.decos.map(d => d.w / M);
-  chk('버블 데코 = 이름 자리부터 두들 순서 (글씨 두들은 큰 칸만) · 스타일 · 안쪽 여백 · 박스 크기는 레트로와 같은 12.7 / 10mm',
-      b1.decos.length > 0 && b1.decoStart === P._composedDecoStart(sb, 0) &&
-      b1.decos.map(d => d.payload.deco).join() === expectMotifs(b1sizes, b1.decoStart) &&
-      b1.decos.every(d => d.payload.style === 'bubble' && d.payload.pad === RIM &&
-        P.COMPOSED_DECO_SIZES_MM.some(s => Math.abs(d.w / M - s) < 1e-9 && Math.abs(d.h / M - s) < 1e-9)) &&
-      b1.decos.every(d => d.w / M >= 12.7 - 1e-6 || P.DECO_BIG_ONLY_V2.indexOf(d.payload.deco) < 0),
-      b1.decos.map(d => d.payload.deco + ' ' + (d.w / M).toFixed(1)).join(', '));
-  const motif = (sizes, st, start) => { const used = {}; return sizes.map(s => P._composedDecoMotif(P._nameStyle(st), used, s, start)).join(); };
-  chk('데코 모양 고르기: 작은 칸만 있어도 글씨 두들을 건너뛴다 · 한 바퀴 돌면 처음부터 · 시작 자리 없으면 예전 순서',
-      motif([10, 10, 10], 'bubble') === 'SMILE,HEART,DAISY' &&
-      motif(Array(20).fill(12.7), 'bubble').split(',').slice(18).join() === 'XOXO,SMILE' &&
-      motif(Array(14).fill(10), 'retro') === P.DECO_ORDER.concat(P.DECO_ORDER.slice(0, 2)).join(),
-      motif([10, 10, 10], 'bubble'));
-  chk('데코 모양 고르기: 시작 자리부터 돌고 끝에서 처음으로 이어진다 (글씨 두들 건너뛰기 · 시작 자리 = 순서 길이로 나눈 나머지)',
-      motif([10, 10, 10], 'bubble', 1) === 'HEART,DAISY,CHERRY' && motif([10, 10], 'bubble', 18) === 'SMILE,HEART' &&
-      motif([12.7, 12.7], 'bubble', 18) === 'XOXO,SMILE' && motif([10, 10], 'retro', 11) === 'CLOUD,HEART' &&
-      motif([10, 10], 'retro', 23) === 'CLOUD,HEART' && motif(Array(13).fill(10), 'retro', 5).split(',').slice(11).join() === 'BOW,BONE',
-      motif([10, 10, 10], 'bubble', 1));
+  // 기대 모양: 작은 데코 = 이름 자리부터 두들 순서 · 말풍선 = 말풍선 순서 자리부터 (따로 구현해 대조)
+  const b1s = b1.decos.filter(d => !d.payload.bubble);
+  chk('말풍선 자리가 없는 빽빽한 판 (가장 큰 빈 곳 18mm) = 말풍선 0 · 작은 데코로 6개',
+      b1.bubbles === 0 && b1.decos.length === P.COMPOSED_DECO_MAX && b1s.length === P.COMPOSED_DECO_MAX,
+      `빈 곳 ${b1.evaluation.hole}mm · 데코 ${b1.decos.length}`);
+  // 말풍선 두 개 (22 · 19mm) · 순서 끝에서 처음으로 넘어가는 판 — Vivian 은 말풍선 순서 5(XOXO)부터
+  const vb = P._composedHero('Vivian', W, G, 'bubble').spec;
+  const bb = P._packComposed(pairsOf([0.75, 0.8, 1.2, 0.9]), 0, W, H, G,
+    P._composedPackExtras(vb, RIM, { style: 'bottom', namePos: 'center', mirror: false, seed: 0 }));
+  const b1b = bb.decos.filter(d => d.payload.bubble);
+  chk('버블 작은 데코 = 이름 자리부터 두들 순서 · 스타일 · 안쪽 여백 · 박스 크기는 레트로와 같은 12.7 / 10mm',
+      b1s.length > 0 && b1.decoStart === P._composedDecoStart(sb, 0) &&
+      b1s.map(d => d.payload.deco).join() === rotated(P.DECO_ORDER_V2, b1.decoStart, b1s.length) &&
+      b1s.every(d => d.payload.style === 'bubble' && d.payload.pad === RIM &&
+        P.COMPOSED_DECO_SIZES_MM.some(s => Math.abs(d.w / M - s) < 1e-9 && Math.abs(d.h / M - s) < 1e-9)),
+      b1s.map(d => d.payload.deco + ' ' + (d.w / M).toFixed(1)).join(', '));
+  chk('버블 말풍선 = 말풍선 순서 자리부터 · 박스 = 그림 비율 + 안쪽 여백 (긴 변 22 또는 19mm)',
+      b1b.length === P.COMPOSED_BUBBLE_MAX && bb.bubbleStart === P._composedBubbleStart(vb, 0) && bb.bubbles === b1b.length &&
+      b1b.map(d => d.payload.deco).join() === 'XOXO,YAY' && b1b.map(d => d.payload.sizeMm).join() === '22,19' &&
+      b1b.map(d => d.payload.deco).join() === rotated(P.DECO_BUBBLES_V2, bb.bubbleStart, b1b.length) &&
+      b1b.every(d => {
+        const a = P.DECO_BUBBLE_ASPECT_V2[d.payload.deco], w = d.w / M - 2, h = d.h / M - 2;
+        return d.payload.pad === RIM && P.COMPOSED_BUBBLE_SIZES_MM.indexOf(d.payload.sizeMm) >= 0 &&
+          Math.abs(Math.max(w, h) - d.payload.sizeMm) < 1e-9 && Math.abs(w / h - a) < 1e-9;
+      }), b1b.map(d => `${d.payload.deco} ${(d.w / M).toFixed(1)}×${(d.h / M).toFixed(1)}`).join(', '));
+  const motif = (n, st, start) => { const used = {}; return Array.from({ length: n }, () => P._composedDecoMotif(P._nameStyle(st), used, start)).join(); };
+  chk('데코 모양 고르기: 순서대로 · 한 바퀴 돌면 처음부터 · 시작 자리 없으면 예전 순서',
+      motif(3, 'bubble') === 'SMILE,HEART,DAISY' && motif(15, 'bubble').split(',').slice(13).join() === 'SMILE,HEART' &&
+      motif(14, 'retro') === P.DECO_ORDER.concat(P.DECO_ORDER.slice(0, 2)).join(), motif(3, 'bubble'));
+  chk('데코 모양 고르기: 시작 자리부터 돌고 끝에서 처음으로 이어진다 (시작 자리 = 순서 길이로 나눈 나머지)',
+      motif(3, 'bubble', 1) === 'HEART,DAISY,CHERRY' && motif(2, 'bubble', 12) === 'MINIHEART,SMILE' &&
+      motif(2, 'bubble', 25) === 'MINIHEART,SMILE' && motif(2, 'retro', 11) === 'CLOUD,HEART' &&
+      motif(2, 'retro', 23) === 'CLOUD,HEART' && motif(13, 'retro', 5).split(',').slice(11).join() === 'BOW,BONE',
+      motif(3, 'bubble', 1));
   chk('버블 판도 검증기 통과 · 지문이 레트로와 다르다', P._composedValidate(b1, tallSet, W, H, G) === '' && b1.sig !== r0.sig, b1.sig);
   const vars = P._composedVariants(tallSet, 0, W, H, G, sb, RIM, 'sides', 'center');
   chk('배치 변형 줄도 이름 스타일을 따라간다', vars.length > 1 && vars.every(v => v.res.nameStyle === 'bubble' &&
       v.res.decos.every(d => d.payload.style === 'bubble')), vars.map(v => v.kind).join(' '));
   const vars2 = P._composedVariants(tallSet, 0, W, H, G, sb, RIM, 'sides', 'center', 2);
-  chk('배치 변형 줄도 시트 번호의 데코 시작 자리를 쓴다', vars2.length === vars.length &&
-      vars2.every(v => v.res.decoStart === P._composedDecoStart(sb, 2)) && vars.every(v => v.res.decoStart === P._composedDecoStart(sb, 0)) &&
-      vars2.every((v, i) => v.res.sig === vars[i].res.sig), `시트1 ${vars[0].res.decoStart} · 시트3 ${vars2[0].res.decoStart}`);
+  chk('배치 변형 줄도 시트 번호의 데코·말풍선 시작 자리를 쓴다', vars2.length > 1 &&
+      vars2.every(v => v.res.decoStart === P._composedDecoStart(sb, 2) && v.res.bubbleStart === P._composedBubbleStart(sb, 2)) &&
+      vars.every(v => v.res.decoStart === P._composedDecoStart(sb, 0) && v.res.bubbleStart === P._composedBubbleStart(sb, 0)),
+      `시트1 ${vars[0].res.decoStart}/${vars[0].res.bubbleStart} · 시트3 ${vars2[0].res.decoStart}/${vars2[0].res.bubbleStart}`);
   let threw2 = '';
   try { P._packComposed(tallSet, 0, W, H, G, { hero: heroBox, decoWant: 6, rimPt: RIM, nameStyle: 'gothic' }); } catch (e) { threw2 = e.message; }
   chk('배치 입구도 모르는 이름 스타일은 막는다', /알 수 없는 이름 스타일/.test(threw2), threw2);
@@ -979,49 +997,52 @@ console.log('\n══ 데코 돌리기 — 이름마다 시작 자리 · 다음 
   chk('이름이 없으면 시작 자리 0', P._composedDecoStart(null, 0) === 0 && P._composedDecoStart(null, 3) === 0 &&
       P._composedPackExtras(null, RIM, null, 2).decoStart === 0);
   const bubble = P._nameStyle('bubble'), retro = P._nameStyle('retro');
-  const span = (style, s) => P._composedDecoSpan(style, s);
-  chk('구간 길이: 레트로 = 시트당 데코 수 · 버블 = 글씨 두들이 아닌 모양 6개가 드는 가장 짧은 구간 (예: SMILE~BOW 8칸)',
-      [0, 3, 11].every(k => span(retro, k) === P.COMPOSED_DECO_MAX) && span(bubble, 0) === 8 && span(bubble, 8) === 9 &&
-      P.DECO_ORDER_V2.every((_, k) => span(bubble, k) >= P.COMPOSED_DECO_MAX && span(bubble, k) <= 9) &&
-      span({ decoOrder: ['A', 'B', 'C'], decoBigOnly: ['B'] }, 0) === 3, P.DECO_ORDER_V2.map((_, k) => span(bubble, k)).join(''));
-  const st = P._composedDecoStart(spec('Vivian'), 0), st1 = (st + span(bubble, st)) % len;
-  chk('시작 자리: 순서 안 · 같은 이름 = 같은 값 · 다음 시트 = 앞 시트 구간 바로 뒤 · 대소문자 상관없음 · 시트 번호 없으면 첫 시트',
+  const st = P._composedDecoStart(spec('Vivian'), 0), rst = P._composedDecoStart(rspec('Vivian'), 0);
+  chk('시작 자리: 순서 안 · 같은 이름 = 같은 값 · 다음 시트 = 시트당 데코 수(6)칸 뒤 · 대소문자 상관없음 · 시트 번호 없으면 첫 시트',
       st >= 0 && st < len && P._composedDecoStart(spec('Vivian'), 0) === st &&
-      P._composedDecoStart(spec('Vivian'), 1) === st1 &&
-      P._composedDecoStart(spec('Vivian'), 2) === (st1 + span(bubble, st1)) % len &&
-      P._composedDecoStart(rspec('Vivian'), 3) === (P._composedDecoStart(rspec('Vivian'), 0) + 18) % rlen &&
+      [1, 2, 3, 5].every(k => P._composedDecoStart(spec('Vivian'), k) === (st + k * P.COMPOSED_DECO_MAX) % len &&
+        P._composedDecoStart(rspec('Vivian'), k) === (rst + k * P.COMPOSED_DECO_MAX) % rlen) &&
+      P._composedDecoStart(rspec('Vivian'), 3) === (rst + 18) % rlen &&
       P._composedDecoStart(spec('VIVIAN'), 0) === st && P._composedDecoStart(spec('vivian'), 0) === st &&
       P._composedDecoStart(spec('Vivian'), undefined) === st && P._composedDecoStart(spec('Vivian'), -1) === st &&
-      P._composedPackExtras(spec('Vivian'), RIM, null, 1).decoStart === st1,
-      `Vivian ${st} → 시트2 ${st1}`);
+      P._composedPackExtras(spec('Vivian'), RIM, null, 1).decoStart === (st + 6) % len && len >= 2 * P.COMPOSED_DECO_MAX,
+      `Vivian ${st} → 시트2 ${(st + 6) % len} (순서 ${len}종)`);
   const names = ['Vivian', 'Heather', 'Harin', 'Sanvi', 'Emma', 'Liam', 'Olivia', 'Noah', 'Charles', 'Terry', 'Yumi', 'Zoe'];
   const starts = new Set(names.map(n => P._composedDecoStart(spec(n), 0)));
   const rstarts = new Set(names.map(n => P._composedDecoStart(rspec(n), 0)));
   chk('이름마다 시작 자리가 흩어진다 (12명)', starts.size >= 7 && rstarts.size >= 6 && [...rstarts].every(v => v < rlen),
       `버블 ${[...starts].join(',')} · 레트로 ${[...rstarts].join(',')}`);
-  // 여러 이름 × 시트 3장 × 사진 조합 — 모든 두들이 나오고, 같은 주문의 시트끼리 데코가 겹치지 않는다(가능할 때)
+  // 여러 이름 × 시트 3장 × 사진 조합 — 모든 두들·말풍선이 나오고, 같은 주문의 시트끼리 겹치지 않는다
   const sets = [[0.38, 0.78, 0.66, 0.85, 0.79, 0.89], [0.75, 0.8, 1.2, 0.9], [1.0, 0.7], [0.66, 0.66, 0.9, 1.1, 0.8]];
-  const seen = { bubble: new Set(), retro: new Set() };
-  let overlap = 0, sheetsTotal = 0, smallText = 0;
+  const seen = { bubble: new Set(), retro: new Set() }, seenB = { bubble: new Set(), retro: new Set() };
+  let overlap = 0, overlapB = 0, sheetsTotal = 0, smallBubble = 0, orderBad = 0;
   for (const st2 of ['bubble', 'retro']) {
+    const style = P._nameStyle(st2);
     for (const n of names) {
       const h = P._composedHero(n, W, G, st2).spec;
       for (const aspects of sets) {
-        const got = [0, 1, 2].map(s => P._packComposed(pairsOf(aspects), 0, W, H, G, P._composedPackExtras(h, RIM, null, s)).decos.map(d => {
-          seen[st2].add(d.payload.deco);
-          if (P.DECO_BIG_ONLY_V2.indexOf(d.payload.deco) >= 0 && d.w / M < 12.7 - 1e-6) smallText++;
-          return d.payload.deco;
-        }));
+        const got = [0, 1, 2].map(k => {
+          const r = P._packComposed(pairsOf(aspects), 0, W, H, G, P._composedPackExtras(h, RIM, null, k));
+          const small = r.decos.filter(d => !d.payload.bubble).map(d => d.payload.deco);
+          const bubs = r.decos.filter(d => d.payload.bubble).map(d => d.payload.deco);
+          small.forEach(m => { seen[st2].add(m); if (style.bubbleOrder.indexOf(m) >= 0) smallBubble++; });
+          bubs.forEach(m => { seenB[st2].add(m); if (style.bubbleOrder.indexOf(m) < 0) smallBubble++; });
+          if (r.decos.slice(0, bubs.length).some(d => !d.payload.bubble)) orderBad++;
+          return { small, bubs };
+        });
         sheetsTotal += 3;
-        if (st2 === 'bubble' && got[0].some(d => got[1].indexOf(d) >= 0)) overlap++;
+        if (got[0].small.some(d => got[1].small.indexOf(d) >= 0)) overlap++;
+        if ([[0, 1], [0, 2], [1, 2]].some(([a, b]) => got[a].bubs.some(d => got[b].bubs.indexOf(d) >= 0))) overlapB++;
       }
     }
   }
-  chk(`모든 두들이 데코로 나온다 (${sheetsTotal}시트 · 버블 ${P.DECO_ORDER_V2.length}종 · 레트로 ${P.DECO_ORDER.length}종)`,
-      seen.bubble.size === P.DECO_ORDER_V2.length && seen.retro.size === P.DECO_ORDER.length,
-      `버블 ${seen.bubble.size} · 레트로 ${seen.retro.size}`);
-  chk('버블: 첫 시트와 둘째 시트 데코가 겹치지 않는다 · 글씨 두들은 여전히 큰 칸만', overlap === 0 && smallText === 0,
-      `겹침 ${overlap} · 작은 칸 글씨 ${smallText}`);
+  chk(`모든 두들·말풍선이 나온다 (${sheetsTotal}시트 · 버블 ${P.DECO_ORDER_V2.length}+${P.DECO_BUBBLES_V2.length}종 · 레트로 ${P.DECO_ORDER.length}+${P.DECO_BUBBLES_V1.length}종)`,
+      seen.bubble.size === P.DECO_ORDER_V2.length && seen.retro.size === P.DECO_ORDER.length &&
+      seenB.bubble.size === P.DECO_BUBBLES_V2.length && seenB.retro.size === P.DECO_BUBBLES_V1.length,
+      `버블 ${seen.bubble.size}+${seenB.bubble.size} · 레트로 ${seen.retro.size}+${seenB.retro.size}`);
+  chk('첫·둘째 시트 작은 데코가 겹치지 않고 · 세 장까지 말풍선이 겹치지 않는다 · 작은 칸에 말풍선 없음 · 말풍선이 목록 앞',
+      overlap === 0 && overlapB === 0 && smallBubble === 0 && orderBad === 0,
+      `작은 데코 겹침 ${overlap} · 말풍선 겹침 ${overlapB} · 섞임 ${smallBubble} · 순서 ${orderBad}`);
   // 미리보기 비교 — 데코 모양 (자리가 같을 때만 따로 적는다)
   const planC = P._composedDeal([2, 2], 0), pairsC = [{ base: 'A_01' }, { base: 'A_02' }];
   const ex = { stickers: [10], sigs: ['abc'], decos: [['SMILE', 'HEART']] };
@@ -1032,6 +1053,91 @@ console.log('\n══ 데코 돌리기 — 이름마다 시작 자리 · 다음 
   chk('미리보기 비교: 데코 모양이 다르면 적는다 · 자리가 다르면 자리만 · 옛 보드(모양 없음)는 비교 안 함',
       sameD.length === 0 && diffD.length === 1 && diffD[0].indexOf('데코 모양') >= 0 &&
       movedD.length === 1 && movedD[0].indexOf('자리') >= 0 && oldBoard.length === 0, [diffD, movedD].map(x => x.join()).join(' | '));
+}
+
+console.log('\n══ 말풍선 — 시트당 2개까지 22mm(안 되면 19mm) · 빈틈 추가 사진보다 먼저 (2026-09-17) ══');
+{
+  const styles = ['retro', 'bubble'].map(k => P._nameStyle(k));
+  chk('표: 최대 2개 · 크기 22 → 19mm · 스타일마다 말풍선 6종 (겹침 없음 · 작은 데코 순서와 안 겹침 · 비율표와 이름이 같음)',
+      P.COMPOSED_BUBBLE_MAX === 2 && P.COMPOSED_BUBBLE_SIZES_MM.join() === '22,19' && P.COMPOSED_BUBBLE_MAX < P.COMPOSED_DECO_MAX &&
+      styles.every(st => st.bubbleOrder.length === 6 && new Set(st.bubbleOrder).size === 6 &&
+        st.bubbleOrder.every(n => /^[A-Z0-9]+$/.test(n) && st.decoOrder.indexOf(n) < 0 && st.bubbleAspect[n] > 0.8 && st.bubbleAspect[n] < 2) &&
+        Object.keys(st.bubbleAspect).sort().join() === st.bubbleOrder.slice().sort().join()) &&
+      P._nameStyle('retro').bubbleOrder === P.DECO_BUBBLES_V1 && P._nameStyle('bubble').bubbleOrder === P.DECO_BUBBLES_V2,
+      styles.map(st => st.key + ' ' + st.bubbleOrder.join('·')).join(' | '));
+  const bubble = P._nameStyle('bubble');
+  const plan = P._composedBubblePlan(bubble, 5, 2), none = P._composedBubblePlan(bubble, 0, 0), many = P._composedBubblePlan(bubble, 1, 9);
+  let threw = '';
+  try { P._composedBubblePlan({ key: 'x', bubbleOrder: ['ZAP'], bubbleAspect: {} }, 0, 1); } catch (e) { threw = e.message; }
+  chk('말풍선 계획: 시작 자리부터 · 끝에서 처음으로 · 0개 · 순서보다 많이 달라면 순서 길이까지 · 비율 없으면 멈춘다',
+      plan.want === 2 && plan.motifs.join() === 'XOXO,YAY' && plan.aspects.join() === [P.DECO_BUBBLE_ASPECT_V2.XOXO, P.DECO_BUBBLE_ASPECT_V2.YAY].join() &&
+      none.want === 0 && none.motifs.length === 0 && many.want === 6 && many.motifs[0] === 'BESTDAY' && /비율/.test(threw), threw);
+  const spec = n => P._composedHero(n, W, G, 'bubble').spec, rspec = n => P._composedHero(n, W, G, 'retro').spec;
+  const bs0 = P._composedBubbleStart(spec('Charles'), 0);
+  chk('말풍선 시작 자리: 이름 없으면 0 · 시트마다 2칸 · 대소문자 상관없음 · extras 에 실린다 (이름 없으면 말풍선 0개)',
+      P._composedBubbleStart(null, 2) === 0 && bs0 >= 0 && bs0 < 6 &&
+      [1, 2, 3].every(k => P._composedBubbleStart(spec('Charles'), k) === (bs0 + 2 * k) % 6) &&
+      P._composedBubbleStart(spec('CHARLES'), 0) === bs0 && P._composedBubbleStart(spec('Charles'), -3) === bs0 &&
+      P._composedPackExtras(spec('Charles'), RIM, null, 1).bubbleStart === (bs0 + 2) % 6 &&
+      P._composedPackExtras(spec('Charles'), RIM, null).bubbleWant === 2 && P._composedPackExtras(null, RIM, null).bubbleWant === 0 &&
+      P._composedBubbleStart(rspec('Charles'), 1) === (P._composedBubbleStart(rspec('Charles'), 0) + 2) % 6, `Charles ${bs0}`);
+
+  const names = ['Mia', 'Charles', 'Heather', 'Christopher', 'Vivian Liz', 'Zoe', 'Harin'];
+  const sets = [[0.38, 0.78, 0.66, 0.85, 0.79, 0.89], [0.75, 0.8, 1.2, 0.9], [1.0, 0.7], [0.66, 0.66, 0.9, 1.1, 0.8],
+                [0.8], [1.3, 0.6, 0.9], [0.55, 0.62, 0.7, 0.75, 0.9, 1.4]];
+  const lays = [null, { style: 'sides', namePos: 'center' }, { style: 'cluster', namePos: 'right' }, { style: 'bottom', namePos: 'left', mirror: true, seed: 3 }];
+  const bad = [], stat = { retro: { n: 0, one: 0, bub: 0, lost: 0 }, bubble: { n: 0, one: 0, bub: 0, lost: 0 } };
+  for (const st of styles) {
+    for (const n of names) {
+      const h = P._composedHero(n, W, G, st.key).spec;
+      for (const set of sets) {
+        for (const lay of lays) {
+          const ex = P._composedPackExtras(h, RIM, lay, 1);
+          const on = P._packComposed(pairsOf(set), 0, W, H, G, ex), off = P._packComposed(pairsOf(set), 0, W, H, G, { ...ex, bubbleWant: 0 });
+          const again = P._packComposed(pairsOf(set), 0, W, H, G, ex);
+          const tag = `${st.key} ${n} ${set.length}장 ${lay ? lay.style : '기본'}`;
+          const bubs = on.decos.filter(d => d.payload.bubble), pad = ex.decoPad / M, plan = P._composedBubblePlan(st, ex.bubbleStart, 2);
+          const c = b => ({ x: (b.x + b.w / 2) / M, y: (b.y + b.h / 2) / M });
+          stat[st.key].n++;
+          stat[st.key].bub += bubs.length;
+          if (bubs.length) stat[st.key].one++;
+          stat[st.key].lost += off.placed.length - on.placed.length;
+          if (bubs.length > 2 || on.decos.length > P.COMPOSED_DECO_MAX || on.bubbles !== bubs.length) bad.push(tag + ' 개수');
+          if (on.decos.slice(0, bubs.length).some(d => !d.payload.bubble)) bad.push(tag + ' 순서');
+          bubs.forEach((d, i) => {
+            const w = d.w / M - 2 * pad, hh = d.h / M - 2 * pad, a = st.bubbleAspect[d.payload.deco];
+            if (d.payload.deco !== plan.motifs[i] || P.COMPOSED_BUBBLE_SIZES_MM.indexOf(d.payload.sizeMm) < 0 ||
+                Math.abs(Math.max(w, hh) - d.payload.sizeMm) > 1e-9 || Math.abs(w / hh - a) > 1e-9 || d.payload.pad !== ex.decoPad) bad.push(tag + ' 모양 ' + d.payload.deco);
+            const others = on.placed.map(p => ({ x: p.x / M, y: p.y / M, w: p.w / M, h: p.h / M })).concat(on.nameBox ? [{ x: on.nameBox.x / M, y: on.nameBox.y / M, w: on.nameBox.w / M, h: on.nameBox.h / M }] : []);
+            const bx = { x: d.x / M, y: d.y / M, w: d.w / M, h: d.h / M };
+            const near = Math.min(...others.map(o => Math.hypot(Math.max(0, o.x - (bx.x + bx.w), bx.x - (o.x + o.w)), Math.max(0, o.y - (bx.y + bx.h), bx.y - (o.y + o.h)))));
+            if (near > P.COMPOSED_DECO_NEAR_MM + 1e-6) bad.push(tag + ' 빈틈 아님 ' + near.toFixed(1));
+            for (const e of on.decos) {
+              if (e === d) continue;
+              const dist = Math.hypot(c(e).x - c(d).x, c(e).y - c(d).y);
+              if (e.payload.bubble && dist < P.COMPOSED_BUBBLE_SPACING_MM - 1e-6) bad.push(tag + ' 말풍선 간격 ' + dist.toFixed(1));
+              if (!e.payload.bubble && dist < P.COMPOSED_DECO_SPACING_MM - 1e-6) bad.push(tag + ' 데코-말풍선 간격 ' + dist.toFixed(1));
+            }
+          });
+          if (on.placed.length - on.extras !== off.placed.length - off.extras || on.missing.length !== off.missing.length ||
+              on.gradeCounts.join() !== off.gradeCounts.join()) bad.push(tag + ' 사다리가 바뀜');
+          if (off.bubbles !== 0 || off.decos.some(d => d.payload.bubble)) bad.push(tag + ' 끔인데 말풍선');
+          if (again.sig !== on.sig || P._composedValidate(on, pairsOf(set), W, H, G) !== '') bad.push(tag + ' 결정론·검증');
+        }
+      }
+    }
+  }
+  chk(`여러 판 (${stat.retro.n + stat.bubble.n}): 2개 이하 · 데코 6개 안 · 목록 앞 · 모양·크기·비율 · 빈틈 · 말풍선 45mm · 데코 22mm 간격 · 사다리·누락 그대로 · 결정적`,
+      bad.length === 0, bad.slice(0, 4).join(' | '));
+  chk('말풍선이 들어가는 판: 버블 85% 이상 · 레트로 90% 이상 (반복 사진만 줄어든다)',
+      stat.bubble.one / stat.bubble.n >= 0.85 && stat.retro.one / stat.retro.n >= 0.9 && stat.bubble.lost >= 0 && stat.retro.lost >= 0,
+      ['bubble', 'retro'].map(k => `${k} ${(100 * stat[k].one / stat[k].n).toFixed(0)}% · 평균 ${(stat[k].bub / stat[k].n).toFixed(2)}개 · 사진 −${(stat[k].lost / stat[k].n).toFixed(2)}`).join(' / '));
+  const cap = P._packComposed(pairsOf([0.8, 0.8, 0.8]), 0, W, H, G, { ...P._composedPackExtras(spec('Vivian'), RIM, null), bubbleWant: 5, decoWant: 6 });
+  const noHero = P._packComposed(pairsOf([0.8, 0.8, 0.8]), 0, W, H, G, { hero: null, decoWant: 6, bubbleWant: 2, rimPt: RIM, nameStyle: 'bubble' });
+  const one = P._packComposed(pairsOf([0.8, 0.8, 0.8]), 0, W, H, G, { ...P._composedPackExtras(spec('Vivian'), RIM, null), decoWant: 1 });
+  chk('입구: 말풍선은 2개를 넘지 않고 · 이름이 없으면 없고 · 데코 개수보다 많을 수 없다',
+      cap.bubbles <= 2 && noHero.bubbles === 0 && noHero.decos.length === 0 && one.decos.length <= 1 && one.bubbles <= 1,
+      `상한 ${cap.bubbles} · 이름 없음 ${noHero.decos.length} · 데코 1개 ${one.decos.map(d => d.payload.deco).join()}`);
 }
 
 console.log('\n══ 결정론 · 보고 일치 · 입력 불변 ══');
