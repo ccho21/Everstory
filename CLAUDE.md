@@ -33,7 +33,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 │   ├── deco_art_v2.ai             # range.jsx 전용 — 버블 스타일 두들 27종 (흰 테두리 `SIL` 포함)
 │   ├── art_preview/               # 주문 보드 구성 미리보기용 글자·데코 PNG (라이브러리마다 폴더, README.md)
 │   └── template_cutout_v2.ait     # v2 브랜드 템플릿 (mixed·range 공용). info > body 142×175mm + info > header > header_right (TextFrame, 값만 주입)
-├── assets/                        # 브랜드 로고·QR·템플릿 미리보기 PNG
+├── assets/                        # 브랜드 로고·QR
 │   └── style_refs/                # 제작 스타일 타깃 이미지 (AI 생성 샘플 등, README.md 색인)
 ├── projects/_labels.txt           # 주소 라벨 텍스트 (`intake.py --labels` 산출). **개인정보 · gitignore**
 ├── projects/{고객명 주문번호}/     # 예: `Naekyung Seong EVS-1007`. 구 폴더는 이름만 (`하린`) — 혼재 정상
