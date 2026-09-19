@@ -212,8 +212,10 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
                                                         "LTR L SKY", "LTR I WHITE", "LTR Z"],
             [x[5] for x in bub.get("letters") or []])
         sd = res.get("sheetDecos") or []
-        chk("여러 시트 — 시트마다 데코 시작 자리가 다르고 두 추출본이 같은 모양 (변형 줄 포함)",
-            res.get("sameSheets") is True and len(sd) == 3 and len(set(x[2] for x in sd)) == 3 and
+        # 두들 12종에 시트마다 6칸씩 밀면 시트 3 은 시트 1 자리로 돌아온다 (13종일 때도 5/6 이 겹쳤다) —
+        # 지키는 것은 "이웃한 두 시트가 안 겹친다" 이므로 시작 자리는 2가지 이상이면 된다.
+        chk("여러 시트 — 시트마다 데코 시작 자리가 밀리고 이웃 시트끼리 모양이 안 겹친다 (두 추출본 동일)",
+            res.get("sameSheets") is True and len(sd) == 3 and len(set(x[2] for x in sd)) >= 2 and
             not set(sd[0][3].split()) & set(sd[1][3].split()), [(x[2], x[3]) for x in sd])
         sig = res.get("sig")
         chk("미리보기 body 상수 = 템플릿 실측 142 × 175mm", res.get("body") == [142, 175], res.get("body"))
@@ -281,7 +283,8 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
         order = re.findall(r'"(\w+)"', re.search(r"var %s = \[(.*?)\];" % const, src).group(1))
         bubbles += len(order)
         missing += ["%s DECO_%s" % (lib, n) for n in order if "DECO_" + n not in idx.get(lib, {})]
-    chk("치수표 글자(옆 장식 포함)·데코 순서·말풍선(%d)마다 그림이 있다" % bubbles, not missing and len(v2) > 0 and bubbles == 12,
+    # 말풍선 개수는 목록이 바뀌면 같이 바뀐다 (스타일마다 COMPOSED_BUBBLE_MAX 개는 골라야 하므로 하한만 본다).
+    chk("치수표 글자(옆 장식 포함)·데코 순서·말풍선(%d)마다 그림이 있다" % bubbles, not missing and len(v2) > 0 and bubbles >= 8,
         ", ".join(missing) or ", ".join("%s %d" % (k, len(v)) for k, v in sorted(idx.items())))
     art_tmp = os.path.join(root, "art")
     os.makedirs(os.path.join(art_tmp, "deco_art_v9"))

@@ -388,11 +388,14 @@
   // 두들 27종 중 작은 데코로 쓰는 것 (시트마다 이름 자리부터). 뺀 것 — LOVE(<3)·LUCKY 는 글자뿐이라 작으면 안 읽히고,
   // SPARKLES·DOTS·BURSTPINK·BURSTGOLD·SWOOSH·ARROW 는 조각·긴 선이라 정사각 칸에서 너무 작아진다 (라이브러리에는 있다).
   // 글씨 말풍선은 작은 칸에 넣지 않고 DECO_BUBBLES_V2 로 따로 큰 자리에 넣는다 (2026-09-17).
+  // CLOUD 는 뺐다 (2026-09-17 사용자 "뭔지 알기 힘들다") — 구름 안 얼굴이 90도 누워 있어 작게 놓으면 안 읽힌다.
+  // 라이브러리(deco_art_v2.ai)에는 그대로 있다. 다시 쓰려면 이 목록에 넣으면 된다.
   var DECO_ORDER_V2 = [
     "SMILE", "HEART", "DAISY", "CHERRY", "STAR", "BOW", "CLOVER",
-    "SUN", "CLOUD", "FLOWER", "SPARKLE", "BOLT", "MINIHEART"
+    "SUN", "FLOWER", "SPARKLE", "BOLT", "MINIHEART"
   ];
-  var DECO_BUBBLES_V2 = ["YAY", "BESTDAY", "FOREVER", "YOUME", "MYFAVE", "XOXO"];
+  // FOREVER 는 뺐다 (2026-09-17 사용자) — 하트 안 "forever >l" 이 작게 놓으면 안 읽힌다. 비율표에는 남는다 (도구가 재는 표라 목록과 별개).
+  var DECO_BUBBLES_V2 = ["YAY", "BESTDAY", "YOUME", "MYFAVE", "XOXO"];
   // 흰 테두리(SIL)까지 포함한 비율 — build_bubble_style.jsx 가 다시 재서 비교한다.
   var DECO_BUBBLE_ASPECT_V2 = {
     YAY: 1.1945,
