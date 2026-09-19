@@ -60,6 +60,8 @@
 //     선택이 없으면(대화창 실행) 가운데 · 이름 왼쪽 = 예전 배치 그대로.
 //   · **크기 직접** (2026-09-16 사용자, 주문 보드): 사진마다 [최소, 최대] 인치(pair.sizeRange)를 고르면 종류 범위 대신 쓴다 —
 //     시트 나누기·배치·검사기 모두. 고르지 않은 사진은 종류 범위 그대로.
+//   · **장수 상한** (2026-09-17 사용자, 주문 보드): 사진마다 pair.maxCopies 를 정하면 그 사진은 그 장수를 넘지 않는다.
+//     비우면(0) 지금처럼 엔진이 정한다. 상한일 뿐이라 자리가 모자라면 더 적게 나올 수 있고, 남는 자리는 다른 사진이 채운다.
 //   · **셀 = 사진 + 2×흰 테두리(rim)**. rim = 다이얼로그 "칼선 여백"(Composed 기본 1mm). 칼선은 사진 윤곽에 맞추므로
 //     나중에 칼선을 rim 만큼 바깥으로 오프셋해도 이웃 칼선과 1.5mm 가 남는다. rim 을 0 으로 고르면 그 여유가 없다.
 //   · **칼선을 배치보다 먼저** 준비한다 (_produceComposedSheet ①) — 크기가 칼선 비율에서 나오기 때문. 캐시 히트면 트레이스 0회.
@@ -149,6 +151,7 @@
   var COMPOSED_GRADE_SHARE = [0.15, 0.08, 0.28, 0.10, 0.19, 0.20];  // 레퍼런스 목업 실측 면적 비중
   var COMPOSED_GRADE_MAX = [1, 2, 6, 4, 10, 16];   // 등급 상한 — 쓸 수 있는 등급이 적으면 그 비중만큼 풀린다
   var COMPOSED_MIN_COPIES = 2;                     // 사진마다 최소 장수 (자리가 되는 한)
+  var COMPOSED_COPIES_MAX = 24;                    // 사진별 장수 상한으로 받을 수 있는 가장 큰 값 (넘으면 값이 잘못된 것)
   var COMPOSED_ART_BUDGET = 0.56;          // 사진 박스(테두리 제외) 합 / 쓸 수 있는 넓이
   var COMPOSED_PACK_BUDGET = 0.72;         // 셀(테두리 포함) 합 / 쓸 수 있는 넓이 — 넘으면 큰 등급부터 한 장씩 뺀다
   var COMPOSED_SPREAD_COUNT = 6;           // 앞에서 이만큼은 서로 멀리 (2.5·2·1.5…). 나머지는 빈틈 채우기
@@ -1786,6 +1789,15 @@
     return [lo, hi];
   }
 
+  // 장수 상한 (2026-09-17 사용자: "사진 개수도 제한할 수 있으면 좋겠다" — 주문 보드에서 사진마다 정한다).
+  // pair.maxCopies = 그 사진이 한 시트에서 넘지 않을 장수. 1~COMPOSED_COPIES_MAX 의 정수여야 하고, 아니면 null.
+  // 비었으면(없음·0) 상한 없음 = 엔진이 정한다.
+  function _composedCopyCap(raw) {
+    if (typeof raw !== "number" || !isFinite(raw) || Math.floor(raw) !== raw) return null;
+    if (raw < 1 || raw > COMPOSED_COPIES_MAX) return null;
+    return raw;
+  }
+
   // [최소, 최대] → 등급별 쓸 수 있음 (종류 창과 같은 모양).
   function _composedRangeWindow(range) {
     var w = [];
@@ -1868,10 +1880,12 @@
     var slots = [], copies = [], per = [], counts = [], artByGrade = [], cellSum = 0, artSum = 0, fillPhase = false;
     for (i = 0; i < n; i++) { copies.push(0); per.push([]); for (g = 0; g < G; g++) per[i].push(0); }
     for (g = 0; g < G; g++) { counts.push(0); artByGrade.push(0); }
+    // 사진별 장수 상한 (주문 보드에서 정한 값, 0 = 없음).
+    function copyCap(p) { return photos[p].maxCopies > 0 ? photos[p].maxCopies : 1e9; }
     function canAdd(p, gg) {
       var c = cells[p][gg];
       return photos[p].window[gg] && per[p][gg] < perMax[gg] && counts[gg] < gradeCap[gg] &&
-             cellSum + c.w * c.h <= cap + 1e-9;
+             copies[p] < copyCap(p) && cellSum + c.w * c.h <= cap + 1e-9;
     }
     function add(p, gg) {
       var c = cells[p][gg];
@@ -1887,7 +1901,8 @@
     function fewest(gg) {
       var best = -1, low = -1, p;
       for (p = 0; p < n; p++) {
-        if (!photos[p].window[gg] || per[p][gg] >= perMax[gg]) continue;
+        // 상한에 닿은 사진은 기준(low)에서도 뺀다 — 안 그러면 그 사진이 가장 적다는 이유로 다른 사진까지 못 넣는다.
+        if (!photos[p].window[gg] || per[p][gg] >= perMax[gg] || copies[p] >= copyCap(p)) continue;
         if (low < 0 || copies[p] < low) low = copies[p];
       }
       for (p = 0; p < n; p++) {
@@ -2311,6 +2326,8 @@
         // 좁은 사진만 빈틈에 계속 들어가 한 사진이 10번 나오는 일을 막는다 (시뮬 실측 [2,10,2,4,2,4]).
         if (ctx.copies[order[i]] > ctx.copies[order[0]] + 1) break;
         ph = ctx.photos[order[i]];
+        // 주문 보드에서 정한 장수 상한 — 빈틈 채움도 넘지 않는다 (계획만 막으면 여기서 다시 늘어난다).
+        if (ph.maxCopies > 0 && ctx.copies[order[i]] >= ph.maxCopies) continue;
         for (gi = COMPOSED_GRADES_IN.length - 1; gi >= 0; gi--) { if (ph.window[gi]) break; }
         if (gi < 0) continue;
         cell = _composedCell(ph.aspect, COMPOSED_GRADES_IN[gi], ctx.rim);
@@ -2694,7 +2711,7 @@
     if (!layout) throw new Error("배치 선택 값이 이상합니다 (스타일·이름 위치·좌우 바꿈·섞기 번호)");
     var nameStyle = _nameStyle(extras.nameStyle);
     if (!nameStyle) throw new Error("알 수 없는 이름 스타일: " + extras.nameStyle);
-    var start = new Date().getTime(), i, photos = [], aspect, rng;
+    var start = new Date().getTime(), i, photos = [], aspect, rng, cap;
     for (i = 0; i < pairsArg.length; i++) {
       aspect = pairsArg[i].cutAspect > 0 ? pairsArg[i].cutAspect : pairsArg[i].aspect;
       if (!(aspect > 0) || !isFinite(aspect)) throw new Error("사진 비율을 알 수 없습니다: " + pairsArg[i].base);
@@ -2703,8 +2720,13 @@
         rng = _composedSizeRange(pairsArg[i].sizeRange);
         if (!rng) throw new Error("크기 범위 값이 이상합니다: " + pairsArg[i].base);
       }
+      cap = 0;
+      if (pairsArg[i].maxCopies) {
+        cap = _composedCopyCap(pairsArg[i].maxCopies);
+        if (!cap) throw new Error("장수 상한 값이 이상합니다: " + pairsArg[i].base);
+      }
       photos.push({ index: i, letter: "ABCDEF".charAt(i), aspect: aspect,
-                    type: pairsArg[i].shotType || COMPOSED_TYPE_NONE, range: rng,
+                    type: pairsArg[i].shotType || COMPOSED_TYPE_NONE, range: rng, maxCopies: cap,
                     window: rng ? _composedRangeWindow(rng) : _composedTypeWindow(pairsArg[i].shotType || COMPOSED_TYPE_NONE) });
     }
     var hero = null;
@@ -3807,9 +3829,11 @@
     // 사진은 그 값이 정한다 — 둘 다 측정·확인 창 없음. 나머지만 자동 판별(Vision) → 확인 창 → 확정값을 캐시에 남긴다.
     // 주문 보드에서 크기를 직접 고른 사진(sizeRange)은 그 범위를 쓰므로 측정할 필요가 없다.
     var named = [], namedCount = 0, givenCount = 0, decidedCount = 0, probe, decided = [];
-    var given = options.shotTypes || null, ranges = options.sizeRanges || null;
+    var given = options.shotTypes || null, ranges = options.sizeRanges || null, caps = options.maxCopies || null;
     for (i = 0; i < layoutPairs.length; i++) {
       layoutPairs[i].sizeRange = (ranges && ranges["$" + layoutPairs[i].base]) ? ranges["$" + layoutPairs[i].base] : null;
+      // 장수 상한은 종류 판별과 무관하다 (크기 범위를 대신하지 않는다) — 배치 계획에만 쓴다.
+      layoutPairs[i].maxCopies = (caps && caps["$" + layoutPairs[i].base]) ? caps["$" + layoutPairs[i].base] : 0;
       named.push(_composedNameType(layoutPairs[i].base) !== null);
       decided.push(named[i] || (given !== null && given["$" + layoutPairs[i].base] !== undefined) || layoutPairs[i].sizeRange !== null);
       if (named[i]) namedCount++;
@@ -3949,7 +3973,7 @@
   // 반환 { options } 또는 { error }.
   function _composedLaunchOptions(cfg, pairsArg) {
     var byKey = {}, sel = [], shot = {}, i, p, key, t, mainBase = "", cut = null, material = null, layouts = null, ls;
-    var sizes = {}, rng;
+    var sizes = {}, rng, copies = {}, capN;
     if (!cfg || !cfg.bases || !cfg.bases.length) return { error: "미리보기에서 고른 사진이 없습니다." };
     for (i = 0; i < pairsArg.length; i++) byKey["$" + _nfcHangul(pairsArg[i].base)] = pairsArg[i];
     for (i = 0; i < cfg.bases.length; i++) {
@@ -3989,6 +4013,18 @@
         sizes["$" + p.base] = rng;
       }
     }
+    // 사진마다 정한 장수 상한 { base: 장수 } (없는 사진은 엔진이 정한다).
+    if (cfg.maxCopies !== undefined && cfg.maxCopies !== null) {
+      if (typeof cfg.maxCopies !== "object" || cfg.maxCopies instanceof Array) return { error: "장수 상한 값이 이상합니다." };
+      for (key in cfg.maxCopies) {
+        if (!cfg.maxCopies.hasOwnProperty(key)) continue;
+        p = byKey["$" + _nfcHangul(key)];
+        if (!p) return { error: "장수를 정한 사진이 폴더에 없습니다: " + key };
+        capN = _composedCopyCap(cfg.maxCopies[key]);
+        if (!capN) return { error: "장수 상한 값이 이상합니다: " + key };
+        copies["$" + p.base] = capN;
+      }
+    }
     // 이름 스타일 (없으면 첫 번째 = retro). 모르는 값이면 만들지 않는다.
     var nameStyle = COMPOSED_NAME_STYLES[0].key;
     if (cfg.nameStyle !== undefined && cfg.nameStyle !== null && cfg.nameStyle !== "") {
@@ -4021,6 +4057,7 @@
       selectedPairs: sel,
       shotTypes: shot,
       sizeRanges: sizes,
+      maxCopies: copies,
       layouts: layouts,
       preview: cfg.expect || null
     } };

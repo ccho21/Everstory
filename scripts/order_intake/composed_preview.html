@@ -79,6 +79,8 @@
   .ph .size.custom select { border-color:var(--acc); color:var(--acc); font-weight:650; }
   .ph .size button { border:0; padding:0 1px; font-size:12px; color:var(--acc); background:transparent; }
   .ph .size:not(.custom) button { display:none; }
+  .ph .cap select { margin-top:3px; }
+  .ph .cap.custom select { border-color:var(--acc); color:var(--acc); font-weight:650; }
   .sizetools { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--mut); margin:0 0 7px; }
   .sizetools button { padding:2px 8px; font-size:12px; }
   #view { flex:1; min-width:0; overflow:auto; padding:12px 16px 24px; background:var(--soft); }
@@ -218,6 +220,7 @@ const S = { folder: "", data: null, pairs: [], main: "", rim: 1, sel: [], result
 const hasLayouts = () => S.features.indexOf("layouts") >= 0;
 const hasSizes = () => S.features.indexOf("sizes") >= 0;
 const hasNameStyles = () => S.features.indexOf("nameStyles") >= 0;
+const hasCounts = () => S.features.indexOf("counts") >= 0;
 const NAME_STYLE_KEY = "everstory.composed.nameStyle";   // 이 화면에서 마지막으로 고른 이름 스타일 (보는 사람 브라우저에만)
 const libStem = f => String(f || "").replace(/\.ai$/i, "");
 // 미리보기 그림 주소 — 서버 목록(S.art)에 있을 때만 (없으면 "" → 대략 모양으로 그린다).
@@ -287,11 +290,13 @@ function preparePair(raw, keep) {
     selected: prev ? prev.selected : false,
     sizeMin: prev ? prev.sizeMin : null,        // 직접 고른 크기 범위 (null = 종류대로)
     sizeMax: prev ? prev.sizeMax : null,
+    maxCopies: prev ? prev.maxCopies : 0,       // 장수 상한 (0 = 자동)
   };
 }
 
 const typeOf = p => p.nameType ? p.nameType.key : (p.userType || E.COMPOSED_TYPE_NONE);
 const customSize = p => hasSizes() && p.sizeMin != null;
+const cappedCount = p => hasCounts() && p.maxCopies > 0;
 function typeRange(key) {
   const t = E.COMPOSED_SHOT_TYPES[E._composedTypeIndex(key)];
   const lad = E.COMPOSED_GRADES_IN;
@@ -406,6 +411,14 @@ function sizeOptions() {
   return E.COMPOSED_GRADES_IN.slice().sort((a, b) => a - b).map(v => `<option value="${v}">${v}</option>`).join("");
 }
 
+// 장수 상한 — 0 = 자동(엔진이 정함). 상한일 뿐이라 자리가 모자라면 더 적게 나온다.
+const CAP_MAX = 12;
+function capOptions() {
+  let out = '<option value="0">자동</option>';
+  for (let v = 1; v <= CAP_MAX; v++) out += `<option value="${v}">${v}장까지</option>`;
+  return out;
+}
+
 function buildList() {
   $("#plist").innerHTML = S.pairs.map((p, i) => {
     const tok = p.nameType ? p.nameType.token : "";
@@ -417,10 +430,12 @@ function buildList() {
       `<select data-min="${i}" aria-label="최소 크기 (인치)">${sizeOptions()}</select><span>~</span>` +
       `<select data-max="${i}" aria-label="최대 크기 (인치)">${sizeOptions()}</select><span>″</span>` +
       `<button type="button" data-reset="${i}" title="종류대로 되돌리기">↺</button></div>` : "";
+    const cap = hasCounts() ? `<div class="cap" title="이 사진을 몇 장까지 넣을지 — 자동이면 엔진이 정한다">` +
+      `<select data-cap="${i}" aria-label="장수 상한">${capOptions()}</select></div>` : "";
     return `<div class="ph" data-i="${i}" title="${esc(p.label)}">
       <div class="thumb" style="background-image:url('${thumbUrl(p)}')"></div>
       <button type="button" class="star" data-star="${i}" title="메인 사진 (첫 시트에서 가장 크게)">★</button>${badge}
-      <div class="nm">${esc(p.nn)}</div>${kind}${size}
+      <div class="nm">${esc(p.nn)}</div>${kind}${size}${cap}
       <div class="where"></div><div class="flag"></div></div>`;
   }).join("") || '<div class="empty">페어가 없어요</div>';
   $("#pickFirst").textContent = "앞 " + E.COMPOSED_DEFAULT_SELECT + "장";
@@ -446,6 +461,11 @@ function updateList() {
       sz.querySelector("[data-min]").value = String(lo);
       sz.querySelector("[data-max]").value = String(hi);
       sz.classList.toggle("custom", customSize(p));
+    }
+    const cp = el.querySelector(".cap");
+    if (cp) {
+      cp.querySelector("[data-cap]").value = String(p.maxCopies || 0);
+      cp.classList.toggle("custom", cappedCount(p));
     }
     const fl = el.querySelector(".flag");
     let flag = "", bad = false;
@@ -479,7 +499,8 @@ function compute() {
     let mainIdx = S.main ? sel.findIndex(p => p.base === S.main) : 0;
     if (mainIdx < 0) { S.main = ""; mainIdx = 0; }
     const eng = sel.map(p => ({ base: p.base, aspect: p.canvasAspect, cutAspect: cutAspectOf(p), shotType: typeOf(p),
-                                sizeRange: customSize(p) ? [p.sizeMin, p.sizeMax] : null }));
+                                sizeRange: customSize(p) ? [p.sizeMin, p.sizeMax] : null,
+                                maxCopies: cappedCount(p) ? p.maxCopies : 0 }));
     const bin = E._composedPreviewBin();          // Illustrator 도 같은 식 — 같은 판·같은 지문
     const binW = bin.w, binH = bin.h;
     const gapPt = E.GAP_DEFAULT_MM * M;
@@ -523,6 +544,14 @@ function compute() {
   const custom = sel.filter(customSize);
   if (custom.length) notes.push(["info", `크기를 직접 정한 사진 ${custom.length}장 — ` +
     custom.map(p => `${p.nn} ${p.sizeMin}~${p.sizeMax}″`).join(", ") + " (종류 범위 대신 이 범위로 만들어요)"]);
+  const capped = sel.filter(cappedCount);
+  if (capped.length) {
+    const got = new Map();
+    S.results.forEach(x => x.pairs.forEach((p, k) => { if (x.r) got.set(p.base, x.r.counts[k]); }));
+    notes.push(["info", `장수를 제한한 사진 ${capped.length}장 — ` +
+      capped.map(p => `${p.nn} ${p.maxCopies}장까지 (지금 ${got.has(p.base) ? got.get(p.base) + "장" : "—"})`).join(", ") +
+      " (상한이라 자리가 모자라면 더 적게 나와요)"]);
+  }
   const old = sel.filter(p => p.nameType && OLD_TOKENS[p.nameType.token]);
   if (old.length) notes.push(["info", `옛 표시(XS~XXL·FAM) ${old.length}장은 같은 묶음으로 읽어요 — 고객이 고른 값이면 종류와 다를 수 있어요.`]);
   S.results.forEach((x, s) => {
@@ -820,10 +849,11 @@ function highlight(i, on) {
 async function make() {
   if (S.busy || S.blockers.length) return;
   const f = form();
-  const shotTypes = {}, sizeRanges = {};
+  const shotTypes = {}, sizeRanges = {}, maxCopies = {};
   // 종류 없이 크기만 정한 사진은 "미분류"로 보낸다 (크기는 sizeRanges 가 정한다).
   S.sel.filter(p => !p.nameType).forEach(p => { shotTypes[p.base] = p.userType || E.COMPOSED_TYPE_NONE; });
   S.sel.filter(customSize).forEach(p => { sizeRanges[p.base] = [p.sizeMin, p.sizeMax]; });
+  S.sel.filter(cappedCount).forEach(p => { maxCopies[p.base] = p.maxCopies; });
   const body = {
     folder: S.folder, bases: S.sel.map(p => p.base), mainBase: S.main || "",
     nameText: f.name, stickerName: f.sticker, orderNumber: f.order, material: f.material, orderDate: f.date,
@@ -832,6 +862,7 @@ async function make() {
               decos: S.results.map(x => x.r ? x.r.decos.map(d => d.payload.deco) : []) },
   };
   if (hasSizes()) body.sizeRanges = sizeRanges;
+  if (hasCounts()) body.maxCopies = maxCopies;
   if (hasNameStyles()) body.nameStyle = S.nameStyle;
   if (hasLayouts()) {
     // 시트마다 고른 배치 + 배치 지문 — Illustrator 가 같은 자리에 만들었는지 완료 창에서 확인한다.
@@ -863,7 +894,7 @@ function wire() {
       compute();
       return;
     }
-    if (e.target.closest(".size")) return;
+    if (e.target.closest(".size") || e.target.closest(".cap")) return;
     const star = e.target.closest("[data-star]");
     const card = e.target.closest(".ph");
     if (!card) return;
@@ -881,6 +912,12 @@ function wire() {
     const dd = e.target.closest("select[data-i]");
     if (dd) {
       S.pairs[+dd.dataset.i].userType = dd.value;
+      compute();
+      return;
+    }
+    const cp = e.target.closest("select[data-cap]");
+    if (cp) {
+      S.pairs[+cp.dataset.cap].maxCopies = +cp.value;
       compute();
       return;
     }

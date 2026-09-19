@@ -238,6 +238,8 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     name_block = re.search(r"var COMPOSED_NAME_STYLES = \[(.*?)\n  \];", src, re.S).group(1)
     name_styles = re.findall(r'\{ key: "(\w+)"', name_block)
     chk("이름 스타일 키", tuple(name_styles) == cp.NAME_STYLE_KEYS, name_styles)
+    copies_max = int(re.search(r"var COMPOSED_COPIES_MAX = (\d+);", src).group(1))
+    chk("장수 상한 최대값", copies_max == cp.COPIES_MAX, copies_max)
 
     print("\n══ 이름·데코 미리보기 그림 (templates/art_preview) ══")
     # range.jsx 가 쓰는 라이브러리·글자·옆 장식·데코 순서마다 그림이 있어야 한다 (없으면 화면이 대략 모양으로 그린다).
@@ -409,7 +411,7 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
         p1["cut"]["srcOk"] and p1["face"] is None and re.match(r"^\d+,\d+;\d+,\d+$", p1["v"]) and
         pay["prefill"]["stickerName"] == "LUCKY" and pay["sheets"] == 0, p1)
     chk("화면 데이터: 서버가 받는 기능 (배치 선택 · 크기 직접 · 이름 스타일) + 그림 목록",
-        pay["features"] == ["layouts", "sizes", "nameStyles"] and "alphabet_art_v2" in pay.get("art", {}), pay["features"])
+        pay["features"] == ["layouts", "sizes", "nameStyles", "counts"] and "alphabet_art_v2" in pay.get("art", {}), pay["features"])
     try:
         cp.pairs_payload(projects, "../outside")
         chk("화면 데이터: 이상한 폴더는 LookupError", False)
@@ -452,19 +454,21 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
         c["shotTypes"] == {"Order A EVS-1_03": "face"} and
         c["expect"] == {"sheets": [["Order A EVS-1_03", "Order A EVS-1_01_BIG"]], "stickers": [17], "sigs": []}, c)
     chk("배치·크기·이름 스타일을 안 보내면 launch 에도 없다 (Illustrator 는 기본 배치 · 종류 범위 · retro)",
-        "layouts" not in c and "sizeRanges" not in c and "nameStyle" not in c, c)
+        "layouts" not in c and "sizeRanges" not in c and "nameStyle" not in c and "maxCopies" not in c, c)
     chk("이름 스타일은 그대로 싣는다",
         cp.build_launch(projects, dict(good, nameStyle="bubble"))[0]["composed"]["nameStyle"] == "bubble" and
         cp.build_launch(projects, dict(good, nameStyle="retro"))[0]["composed"]["nameStyle"] == "retro")
     chk("요약 한 줄", summary == "사진 2장 · 시트 1장 예상", summary)
     picked2 = dict(good, layouts=[{"style": "sides", "namePos": "center", "mirror": True, "seed": 3}],
                    sizeRanges={"Order A EVS-1_01_BIG": [0.75, 2.5], "Order A EVS-1_03": [1, 1], "Order A EVS-1_02_SML": [2, 2.5]},
+                   maxCopies={"Order A EVS-1_01_BIG": 3, "Order A EVS-1_02_SML": 5},
                    expect=dict(good["expect"], sigs=["1bdd211", "NOT-HEX", 7],
                                decos=[["SMILE", "HEART"], ["smile"], "SUN"]))
     c2 = cp.build_launch(projects, picked2)[0]["composed"]
     chk("배치 선택·크기 직접은 그대로 싣고, 안 고른 사진의 크기는 버린다 · 이상한 지문 칸은 빈 값 · 사진 수보다 긴 지문은 자른다",
         c2["layouts"] == [{"style": "sides", "namePos": "center", "mirror": True, "seed": 3}] and
         c2["sizeRanges"] == {"Order A EVS-1_01_BIG": [0.75, 2.5], "Order A EVS-1_03": [1, 1]} and
+        c2["maxCopies"] == {"Order A EVS-1_01_BIG": 3} and
         c2["expect"]["sigs"] == ["1bdd211", ""], c2)
     bad_decos = [["DECO\nX"], [7], ["A" * 25], ["SUN"] * 25, [None]]
     c3 = cp.build_launch(projects, dict(good, expect=dict(good["expect"], decos=bad_decos)))[0]["composed"]
@@ -511,6 +515,12 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
         ("크기 칸이 하나", dict(good, sizeRanges={"Order A EVS-1_03": [1]}), "크기 범위"),
         ("크기에 True", dict(good, sizeRanges={"Order A EVS-1_03": [True, 2]}), "크기 범위"),
         ("크기 문자열", dict(good, sizeRanges={"Order A EVS-1_03": ["1", "2"]}), "크기 범위"),
+        ("장수가 dict 아님", dict(good, maxCopies=[3]), "장수 상한"),
+        ("장수 0", dict(good, maxCopies={"Order A EVS-1_03": 0}), "장수 상한"),
+        ("장수 소수", dict(good, maxCopies={"Order A EVS-1_03": 2.5}), "장수 상한"),
+        ("장수 문자열", dict(good, maxCopies={"Order A EVS-1_03": "2"}), "장수 상한"),
+        ("장수 True", dict(good, maxCopies={"Order A EVS-1_03": True}), "장수 상한"),
+        ("장수 너무 큼", dict(good, maxCopies={"Order A EVS-1_03": 25}), "장수 상한"),
         ("모르는 이름 스타일", dict(good, nameStyle="gothic"), "이름 스타일"),
         ("이름 스타일 빈 값", dict(good, nameStyle=""), "이름 스타일"),
         ("이름 스타일 목록", dict(good, nameStyle=["bubble"]), "이름 스타일"),

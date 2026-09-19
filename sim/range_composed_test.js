@@ -731,6 +731,45 @@ console.log('\n══ 크기 직접 고르기 (사진마다 0.75~2.5″ 안의 �
       g[0].key === P.COMPOSED_TYPE_NONE && g[0].note === '크기 직접' && g[0].given === true && g[1].key === 'face' && g[1].named);
 }
 
+console.log('\n══ 장수 상한 (사진마다 몇 장까지 — 2026-09-17) ══');
+{
+  chk('상한 값 정리: 1~COMPOSED_COPIES_MAX 의 정수만',
+      P._composedCopyCap(1) === 1 && P._composedCopyCap(P.COMPOSED_COPIES_MAX) === P.COMPOSED_COPIES_MAX &&
+      [0, -1, 2.5, P.COMPOSED_COPIES_MAX + 1, '3', true, null, undefined, NaN, Infinity].every(v => P._composedCopyCap(v) === null));
+  const aspects = [0.8, 0.85, 0.72, 0.9, 0.66, 0.78];
+  const mkC = caps => aspects.map((a, i) => ({ base: 'C' + i, aspect: a, cutAspect: a,
+    shotType: ['face', 'face', 'full', 'upper', 'full', 'face'][i], maxCopies: caps[i] || 0 }));
+  const packC = caps => P._packComposed(mkC(caps), 0, W, H, G, { hero: heroBox, decoWant: P.COMPOSED_DECO_MAX, rimPt: RIM });
+  const auto = packC({});
+  const capped = packC({ 1: 2, 4: 1 });
+  chk('상한을 안 주면 예전 결과 그대로 (자리·장수·지문)',
+      P._composedLayoutSig(packC({})) === P._composedLayoutSig(auto) && packC({}).counts.join() === auto.counts.join(),
+      auto.counts.join(','));
+  chk('상한을 주면 그 사진은 넘지 않는다 (2장까지 · 1장까지)',
+      capped.counts[1] <= 2 && capped.counts[4] <= 1 && auto.counts[1] > 2, `자동 [${auto.counts}] → 상한 [${capped.counts}]`);
+  chk('상한 1장은 "사진마다 최소 2장" 보다 앞선다', packC({ 3: 1 }).counts[3] === 1 && P.COMPOSED_MIN_COPIES === 2);
+  chk('상한이 남긴 자리는 다른 사진이 가져간다 (시트가 헐거워지지 않는다)',
+      capped.placed.length >= auto.placed.length - (auto.counts[1] - capped.counts[1]) - (auto.counts[4] - capped.counts[4]),
+      `자동 ${auto.placed.length}장 → 상한 ${capped.placed.length}장`);
+  chk('상한이 실제 장수보다 크면 자동과 같다',
+      P._composedLayoutSig(packC({ 2: P.COMPOSED_COPIES_MAX })) === P._composedLayoutSig(auto));
+  chk('같은 상한이면 언제나 같은 결과 (결정적)',
+      P._composedLayoutSig(packC({ 1: 2, 4: 1 })) === P._composedLayoutSig(capped));
+  let badC = '';
+  try { packC({ 0: 99 }); } catch (e) { badC = e.message; }
+  chk('이상한 상한이면 엔진이 멈춘다', /장수 상한/.test(badC), badC);
+  const pairsC = [{ base: '하린_02' }, { base: 'A_01_BIG' }];
+  const cfgC = { bases: ['하린_02', 'A_01_BIG'], nameText: 'T', material: 'White Matte', cutMarginMm: 1,
+                 maxCopies: { '하린_02': 3 } };
+  const lc = P._composedLaunchOptions(cfgC, pairsC);
+  chk('보드가 넘긴 상한을 실제 파일 이름으로 싣는다', !lc.error && lc.options.maxCopies.$하린_02 === 3 &&
+      lc.options.maxCopies.$A_01_BIG === undefined, lc.error || '');
+  const badL = [[{ ...cfgC, maxCopies: [3] }, '장수 상한'], [{ ...cfgC, maxCopies: { A_01_BIG: 0 } }, 'A_01_BIG'],
+                [{ ...cfgC, maxCopies: { A_01_BIG: 2.5 } }, 'A_01_BIG'], [{ ...cfgC, maxCopies: { 없는사진: 2 } }, '장수를 정한 사진']];
+  chk('이상한 상한이면 만들지 않는다', badL.every(([c, w]) => (P._composedLaunchOptions(c, pairsC).error || '').includes(w)),
+      badL.map(([c]) => P._composedLaunchOptions(c, pairsC).error).join(' / '));
+}
+
 console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
 {
   const keys = P.COMPOSED_NAME_STYLES.map(s => s.key);

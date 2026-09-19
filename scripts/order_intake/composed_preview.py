@@ -39,8 +39,9 @@ STYLE_KEYS = ("center", "sides", "cluster", "frame", "bottom")     # COMPOSED_ST
 NAME_POSITIONS = ("left", "center", "right")                       # COMPOSED_NAME_POSITIONS
 SHUFFLE_MAX = 999                                                  # COMPOSED_SHUFFLE_MAX
 NAME_STYLE_KEYS = ("retro", "bubble")                              # COMPOSED_NAME_STYLES (이름 스타일)
-# 이 서버가 받는 값 — 화면은 이 목록에 있는 기능만 보여 준다 (예전 서버가 배치 선택·크기·이름 스타일을 조용히 버리지 않게).
-FEATURES = ("layouts", "sizes", "nameStyles")
+COPIES_MAX = 24                                                    # COMPOSED_COPIES_MAX (사진별 장수 상한)
+# 이 서버가 받는 값 — 화면은 이 목록에 있는 기능만 보여 준다 (예전 서버가 배치 선택·크기·이름 스타일·장수를 조용히 버리지 않게).
+FEATURES = ("layouts", "sizes", "nameStyles", "counts")
 
 # 이름 글자·데코 미리보기 그림 (라이브러리 그룹을 투명 PNG 로 뽑은 것 — templates/art_preview/README.md).
 ART_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "templates", "art_preview"))
@@ -491,6 +492,7 @@ def build_launch(projects_dir, body):
     if date and not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
         raise ValueError("날짜는 2026-09-16 같은 모양으로 적어 주세요.")
     sizes = _size_ranges(body.get("sizeRanges"), picked)
+    copies = _max_copies(body.get("maxCopies"), picked)
     layouts = _layouts(body.get("layouts"), len(picked))
     expect = {"sheets": [], "stickers": [], "sigs": []}
     raw_expect = body.get("expect") or {}
@@ -527,6 +529,8 @@ def build_launch(projects_dir, body):
     }
     if sizes:
         composed["sizeRanges"] = sizes
+    if copies:
+        composed["maxCopies"] = copies
     if layouts is not None:
         composed["layouts"] = layouts
     # 이름 스타일 (range.jsx COMPOSED_NAME_STYLES 키). 없으면 보내지 않는다 = retro.
@@ -559,6 +563,26 @@ def _size_ranges(raw, picked):
         if not ok:
             raise ValueError("크기 범위가 이상해요: %s %s" % (k, v))
         out[k] = [v[0], v[1]]
+    return out
+
+
+def _max_copies(raw, picked):
+    """사진마다 정한 장수 상한 {base: 장수} → 정리된 dict (고르지 않은 사진 이름은 버린다).
+
+    range.jsx _composedCopyCap 과 같은 규칙: 1~COPIES_MAX 의 정수. 이상하면 ValueError.
+    """
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise ValueError("장수 상한 형식이 이상해요.")
+    out = {}
+    for k, v in raw.items():
+        k = nfc(str(k))
+        if k not in picked:
+            continue
+        if isinstance(v, bool) or not isinstance(v, int) or not 1 <= v <= COPIES_MAX:
+            raise ValueError("장수 상한이 이상해요: %s %s" % (k, v))
+        out[k] = v
     return out
 
 
