@@ -222,7 +222,10 @@
   var COMPOSED_FACE_PROBE_TIMEOUT_MS = 15000;
   var COMPOSED_FACE_CACHE_FORMAT = "EVFACE1";
   var COMPOSED_FACE_CACHE_EXT = ".evface";  // _cutcache 안, .evcut 옆. 측정값 + 운영자가 확정한 종류
-  var COMPOSED_DECO_SIZES_MM = [12.7, 10];
+  var COMPOSED_DECO_SIZES_MM = [12.7, 10];   // 데코 **그림** 크기 (정사각 mm) — 박스 = 그림 + 2×여백 (레트로는 여백 0 이라 같다)
+  // 버블 데코 그림 (2026-09-17 사용자 "아이콘이 너무 작다, 20% 키우자"): 예전 10.7·8 의 1.2배 + 가운데 칸은 예전 큰 값.
+  // 가운데 칸이 없으면 큰 칸(12.84)이 안 들어가는 자리가 전부 제일 작은 칸으로 떨어진다 (실측: 평균 11.14 → 11.39mm).
+  var COMPOSED_DECO_ART_V2_MM = [12.84, 10.7, 9.6];
   var COMPOSED_DECO_MAX = 6;               // 스티커 이름이 있을 때만 (range 규약) · 말풍선 포함 · 빈틈이 없으면 덜 넣는다
   var COMPOSED_DECO_NEAR_MM = 4.5;         // 데코는 스티커 가장자리에서 이 거리 안 = 빈틈에만
   var COMPOSED_DECO_SPACING_MM = 22;       // 데코끼리(말풍선 포함) 중심 최소 거리
@@ -408,10 +411,12 @@
   var COMPOSED_NAME_STYLES = [
     { key: "retro", label: "레트로", whole: false, letterLib: LETTER_ART_LIB_NAME, decoLib: DECO_ART_LIB_NAME,
       metrics: LETTER_ART_METRICS, decoOrder: DECO_ORDER, bubbleOrder: DECO_BUBBLES_V1, bubbleAspect: DECO_BUBBLE_ASPECT_V1,
-      unitMm: RANGE_HERO_UNIT_MM, gap: LETTER_GAP_RATIO, lineGap: LETTER_GAP_RATIO, halo: 0, rimBox: false, paints: null, paintCycle: null },
+      unitMm: RANGE_HERO_UNIT_MM, gap: LETTER_GAP_RATIO, lineGap: LETTER_GAP_RATIO, halo: 0, rimBox: false, decoArt: null,
+      paints: null, paintCycle: null },
     { key: "bubble", label: "버블", whole: true, letterLib: "alphabet_art_v2.ai", decoLib: "deco_art_v2.ai",
       metrics: LETTER_ART_METRICS_V2, decoOrder: DECO_ORDER_V2, bubbleOrder: DECO_BUBBLES_V2, bubbleAspect: DECO_BUBBLE_ASPECT_V2,
-      unitMm: 13, gap: -0.03, lineGap: 0.1, halo: 0.08, rimBox: true, paints: LETTER_ART_PAINTS_V2, paintCycle: LETTER_PAINT_CYCLE_V2 }
+      unitMm: 13, gap: -0.03, lineGap: 0.1, halo: 0.08, rimBox: true, decoArt: COMPOSED_DECO_ART_V2_MM,
+      paints: LETTER_ART_PAINTS_V2, paintCycle: LETTER_PAINT_CYCLE_V2 }
   ];
   var ART_LIB_DOCS = {};                   // 라이브러리 파일 이름 → 이번 실행에서 열어 둔 문서 (_closeArtLibs 가 닫는다)
 
@@ -2394,12 +2399,20 @@
   // 격자 후보까지 보는 이유: 데코는 이웃에 딱 붙지 않고 틈 가운데 떠 있는 자리가 더 자연스럽다.
   // 박스 크기는 스타일과 무관하다 — bubble 은 박스 안쪽 칼선 여백(payload.pad)만큼 작게 그린다 (박스를 키우면 데코가 덜 들어갔다).
   // 말풍선은 데코처럼 떨어뜨린다 (COMPOSED_DECO_SPACING_MM — 작은 데코가 말풍선 옆에 몰리지 않게).
+  // 데코 박스 (mm) = 그림 + 2 × pad. 그림은 박스에서 pad 만큼 안쪽에 그려진다 (bubble = 칼선 여백, retro = 0).
+  // 그림 사다리는 스타일이 정한다 (style.decoArt, 없으면 COMPOSED_DECO_SIZES_MM).
+  function _composedDecoSizes(style, pad) {
+    var art = (style && style.decoArt) ? style.decoArt : COMPOSED_DECO_SIZES_MM, out = [], i;
+    for (i = 0; i < art.length; i++) out.push(Math.round((art[i] + 2 * pad) * 100) / 100);
+    return out;
+  }
+
   function _composedPlaceDecos(ctx, want) {
     var n = 0, best, zi, sz, xs, ys, xi, yi, x, y, cx, cy, near, decoD, i, p, gain, gx, gy;
     while (n < want) {
       best = null;
-      for (zi = 0; zi < COMPOSED_DECO_SIZES_MM.length; zi++) {
-        sz = COMPOSED_DECO_SIZES_MM[zi];
+      for (zi = 0; zi < ctx.decoSizes.length; zi++) {
+        sz = ctx.decoSizes[zi];
         xs = [];
         for (gx = 0; gx + sz <= ctx.W + EPS; gx += COMPOSED_DECO_GRID_MM) xs.push(gx);
         ys = [];
@@ -2439,6 +2452,7 @@
     var spec = input.layout ? input.layout : _composedLayoutSpec(null);
     var si = _composedStyleIndex(spec.style);
     var ctx = { W: input.W, H: input.H, gap: input.gap, rim: input.rim, photos: input.photos,
+                decoSizes: input.decoSizes || COMPOSED_DECO_SIZES_MM,
                 placed: [], copies: [], area: [], repel: [], missing: [], skipped: [], ops: 0,
                 sameScale: _composedSameScale(input.photos.length),
                 style: spec.style, pull: COMPOSED_STYLES[si].pull, seed: spec.seed, nameBottom: 0 };
@@ -2744,7 +2758,8 @@
     var bubble = _composedBubblePlan(nameStyle, bubbleStart, bubbleWant);
     bubble.pad = decoPad / MM_TO_PT;
     var input = { W: binW / MM_TO_PT, H: binH / MM_TO_PT, gap: gap / MM_TO_PT, rim: rimMm, photos: photos,
-                  mainIndex: mainIndex, name: hero, decoWant: decoWant, layout: layout, bubble: bubble };
+                  mainIndex: mainIndex, name: hero, decoWant: decoWant, layout: layout, bubble: bubble,
+                  decoSizes: _composedDecoSizes(nameStyle, decoPad / MM_TO_PT) };   // decoPad 는 pt — 박스 계산은 mm
     // 계획한 조각이 다 안 들어가면(빠진 슬롯) 먼저 ④에서 마지막에 넣은 조각을 1~2장 빼고 다시 돌린다 —
     // 곧장 분산을 줄이면 작은 얼굴들이 한곳에 뭉쳤다(EVS-1007 실측 21mm). 그래도 안 되면 분산을 줄인다.
     // 덜 빠진 판을 쓴다 (보통은 한두 판으로 끝).

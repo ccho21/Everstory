@@ -907,20 +907,30 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
       `${(b1.nameBox.w / M).toFixed(2)} × ${(b1.nameBox.h / M).toFixed(2)}mm`);
   // 기대 모양: 작은 데코 = 이름 자리부터 두들 순서 · 말풍선 = 말풍선 순서 자리부터 (따로 구현해 대조)
   const b1s = b1.decos.filter(d => !d.payload.bubble);
-  chk('말풍선 자리가 없는 빽빽한 판 (가장 큰 빈 곳 18mm) = 말풍선 0 · 작은 데코로 6개',
-      b1.bubbles === 0 && b1.decos.length === P.COMPOSED_DECO_MAX && b1s.length === P.COMPOSED_DECO_MAX,
-      `빈 곳 ${b1.evaluation.hole}mm · 데코 ${b1.decos.length}`);
+  chk('말풍선 자리가 없는 빽빽한 판 (가장 큰 빈 곳 18mm) = 말풍선 0 · 작은 데코로만 채운다',
+      b1.bubbles === 0 && b1.decos.length === b1s.length && b1s.length >= 4 && b1s.length <= P.COMPOSED_DECO_MAX,
+      `빈 곳 ${b1.evaluation.hole}mm · 데코 ${b1.decos.length} (버블 데코 박스가 커져 6개를 다 못 넣을 수 있다)`);
   // 말풍선 두 개 (22 · 19mm) · 순서 끝에서 처음으로 넘어가는 판 — Vivian 은 말풍선 순서 5(XOXO)부터
   const vb = P._composedHero('Vivian', W, G, 'bubble').spec;
   const bb = P._packComposed(pairsOf([0.75, 0.8, 1.2, 0.9]), 0, W, H, G,
     P._composedPackExtras(vb, RIM, { style: 'bottom', namePos: 'center', mirror: false, seed: 0 }));
   const b1b = bb.decos.filter(d => d.payload.bubble);
-  chk('버블 작은 데코 = 이름 자리부터 두들 순서 · 스타일 · 안쪽 여백 · 박스 크기는 레트로와 같은 12.7 / 10mm',
+  const bubStyle = P.COMPOSED_NAME_STYLES[1], retStyle = P.COMPOSED_NAME_STYLES[0];
+  const bubBoxes = P._composedDecoSizes(bubStyle, RIM / M), retBoxes = P._composedDecoSizes(retStyle, 0);
+  chk('버블 작은 데코 = 이름 자리부터 두들 순서 · 스타일 · 안쪽 여백 · 박스 = 그림 + 2 × 여백 (14.84 / 12.7 / 11.6mm)',
       b1s.length > 0 && b1.decoStart === P._composedDecoStart(sb, 0) &&
       b1s.map(d => d.payload.deco).join() === rotated(P.DECO_ORDER_V2, b1.decoStart, b1s.length) &&
       b1s.every(d => d.payload.style === 'bubble' && d.payload.pad === RIM &&
-        P.COMPOSED_DECO_SIZES_MM.some(s => Math.abs(d.w / M - s) < 1e-9 && Math.abs(d.h / M - s) < 1e-9)),
-      b1s.map(d => d.payload.deco + ' ' + (d.w / M).toFixed(1)).join(', '));
+        bubBoxes.some(s => Math.abs(d.w / M - s) < 1e-9 && Math.abs(d.h / M - s) < 1e-9)),
+      b1s.map(d => d.payload.deco + ' ' + (d.w / M).toFixed(2)).join(', '));
+  // 박스 = 그림 + 2 × 여백. 버블 그림 사다리(2026-09-17) = 예전 그림(10.7 · 8)의 1.2배 + 가운데 칸은 예전 큰 값.
+  const bubArt = bubBoxes.map(b => +(b - 2 * RIM / M).toFixed(2)), oldArt = P.COMPOSED_DECO_SIZES_MM.map(s => +(s - 2 * RIM / M).toFixed(2));
+  chk('데코 박스 규칙: 레트로는 상수 그대로 · 버블 그림 = 예전의 1.2배(가운데 칸 = 예전 큰 값) · 박스 = 그림 + 2 × 여백',
+      retBoxes.join() === P.COMPOSED_DECO_SIZES_MM.join() && retStyle.decoArt === null &&
+      bubArt.join() === P.COMPOSED_DECO_ART_V2_MM.join() && bubArt.length === 3 &&
+      Math.abs(bubArt[0] - oldArt[0] * 1.2) < 0.01 && Math.abs(bubArt[2] - oldArt[1] * 1.2) < 0.01 &&
+      Math.abs(bubArt[1] - oldArt[0]) < 0.01 && P._composedDecoSizes(bubStyle, 0).join() === P.COMPOSED_DECO_ART_V2_MM.join(),
+      `버블 박스 ${bubBoxes.join(' / ')}mm · 그림 ${bubArt.join(' / ')}mm (예전 ${oldArt.join(' / ')}mm)`);
   chk('버블 말풍선 = 말풍선 순서 자리부터 · 박스 = 그림 비율 + 안쪽 여백 (긴 변 22 또는 19mm)',
       b1b.length === P.COMPOSED_BUBBLE_MAX && bb.bubbleStart === P._composedBubbleStart(vb, 0) && bb.bubbles === b1b.length &&
       b1b.map(d => d.payload.deco).join() === 'XOXO,YAY' && b1b.map(d => d.payload.sizeMm).join() === '22,19' &&
