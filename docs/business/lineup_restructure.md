@@ -2,6 +2,8 @@
 
 2026-09-03 논의 결과를 실행 순서로 정리한 계획서다. 결정이 바뀌면 이 문서를 고치고, 확정된 값은 [`products.md`](products.md) / [`../shopify/product_descriptions.md`](../shopify/product_descriptions.md) 로 옮긴다. 이 문서는 SOT 가 아니라 **작업 순서와 범위**를 잡는 문서다.
 
+> **최신 결정은 [§2026-09-19 확정](#-2026-09-19-확정--상품-2종-이름-포함-시트) 에 있다.** 그 위의 §라인업(안)·§확정 구조(09-04)는 거기까지의 경과 기록이다.
+
 ## 왜 바꾸나
 
 - Package Full 주문 폼의 Big / Medium / Small 3칸 필수 업로드가 핵심 마찰. 손님이 사진을 3등급으로 분류하고 후보를 추려야 해서 "각잡고" 주문해야 했다는 직접 피드백.
@@ -227,12 +229,103 @@ order_intake 앱 스코프가 read 전용이라 스크립트 대신 **MCP GraphQ
 
 ## 결정 필요 (사용자)
 
-1. **1단계 실행 여부** — 지금 라이브 폼부터 고칠지, 2단계까지 기다릴지.
+1. ~~**1단계 실행 여부**~~ — 무의미해짐. 상품 2종 구조가 곧 새 폼이다.
 2. ~~Face / Full Body 를 Custom Sheet 하나로 합칠지~~ — **합치기로 결정 (2026-09-03)**. 크롭은 선택 노트(Studio's choice 기본).
-3. **상품명 확정** — Planner Sheet / Phone & Bottle Sheet / Laptop Sheet / Full Set / Custom Sheet. 영어 단일 정책 유지.
+3. ~~**상품명 확정**~~ — **Name & Photo Sticker Sheet · Custom Sticker Sheet 로 확정 (2026-09-19)**. 영어 단일 정책 유지.
+4. ~~**가격**~~ — **$24.99 확정 (2026-09-19)**.
+5. ~~**이름 필수 여부**~~ — **필수 (2026-09-19)**. 상품명에 Name 이 들어가는데 비우면 이름 없는 시트를 만들게 된다.
 
 ## 미확인 (진행하며 검증)
 
 - Easify: 업로드 최대 개수의 variant 조건부 설정 가능 여부.
 - ~~Judge.me 리뷰 이관 방법~~ → 확인 완료: 일괄 이동 불가, 제자리 변환으로 해결 (§리뷰 보존).
 - Draft 상품을 복사 테마로 미리보는 우회 경로 유무.
+
+## ⚠ 2026-09-19 확정 — 상품 2종, 이름 포함 시트
+
+사용자 결정. 이 절이 §확정 구조(09-04)를 대체한다. 바뀐 것은 세 가지다: **디자인 수를 5로 고정**, **이름 스티커를 기본 포함**, **상품명 확정**.
+
+### 라인업 (확정)
+
+| 상품 | 옵션 | 가격 | 손님이 고르는 것 |
+|---|---|---|---|
+| **Name & Photo Sticker Sheet** | `Material` 4종만 | **$24.99** | 재질 하나 |
+| **Custom Sticker Sheet** | `Size` 6택 × `Material` 4종 | from $18.99 (+$3/장) | 크기·크롭·장수·재질 |
+
+- 1번은 **사진 5개 디자인 + 이름 스티커 + 꾸밈 스티커**가 A5 시트 하나에 들어간다. 크기 배합·배치·크롭은 전부 스튜디오가 정한다. 구매 박스에 남는 결정은 재질 하나뿐이다.
+- 2번 이름에 `Size` 를 넣지 않는다 — 크기만 커스텀하는 게 아니라 크롭·장수·재질도 고르기 때문이다(사용자 판단, 09-19).
+- `Designs` 옵션(1/4/8)은 **폐기**한다. 5개 고정이라 옵션 자체가 없어진다.
+
+### 5개 고정 시트의 실제 산출 (200시트 시뮬)
+
+| 이름 스타일 | 사진 스티커 | 꾸밈 | 말풍선 | 이름 | 합계 |
+|---|---|---|---|---|---|
+| 버블 | 17.41장 (10~26) | 3.75 | 1.82 | 1 | **24.0장** |
+| 레트로 | 17.05장 (10~25) | 4.04 | 1.93 | 1 | **24.0장** |
+
+시트 1.00장, 누락 0~1. 카피에 쓸 수 있는 숫자는 "about 24 stickers".
+
+### 가격 $24.99 의 근거
+
+Package Full($34.99)에서 **내리는 게 아니라 더 작은 패키지로 바꾸는 것**이다.
+
+| | Package Full | Name & Photo Sticker Sheet |
+|---|---|---|
+| 누끼 사진 | 8장 | 5장 |
+| 시트 | 2장 | 1장 |
+| 가격 | $34.99 | $24.99 |
+| 시트당 | $17.50 | **$24.99** |
+| 사진 1장당 | $4.37 | **$5.00** |
+
+시트당·사진당 수익은 오히려 올라간다. 비는 $34.99 자리는 Easify 의 기존 `Extra sheets (same design)` 업셀이 받는다 — 구매 박스에 결정을 늘리지 않는다.
+
+### 없애는 두 상품 — 판매 데이터
+
+2026-09-19 Shopify analytics (지난 365일):
+
+| 상품 | 주문 | 매출 | 리뷰(09-03) |
+|---|---|---|---|
+| Package Full | 3 | $104.97 | 6 |
+| Face Sticker | 1 | $18.99 | 1 |
+| **Package Mini** | **0** | — | 1 |
+| **Full Body Sticker** | **0** | — | 1 |
+
+내리는 두 상품은 1년간 한 건도 팔리지 않았다. 묻히는 리뷰 2건은 그 안 팔린 상품에 붙어 있던 것이고, 팔린 두 상품의 리뷰 7건은 제자리 변환으로 그대로 간다.
+
+### 어느 상품을 무엇으로
+
+| 지금 | → | 방식 |
+|---|---|---|
+| Package Full (3주문·6리뷰) | Name & Photo Sticker Sheet | 제자리 변환. **옵션이 이미 Material 뿐이라 `productOptionsCreate` 가 불필요** |
+| Face Sticker (1주문·1리뷰) | Custom Sticker Sheet | 제자리 변환 + `Mixed` 사이즈 제거 |
+| Package Mini (0주문) | — | DRAFT + 리다이렉트 |
+| Full Body Sticker (0주문) | — | DRAFT + 리다이렉트 |
+| Photo Sticker Sheet 쌍둥이 `9655556833536` | — | metafield 값 복사원으로만 쓰고 컷오버 후 삭제 |
+
+**이 구조의 가장 큰 이득**: 런북에서 유일하게 리허설 못 해본 단계(`productOptionsCreate(variantStrategy: CREATE)` 를 기존 variant 가 있는 라이브 상품에 실행)가 **통째로 사라진다.** Package Full 은 지금도 Material 4 variant 뿐이라 가격·SKU 만 고치면 된다.
+
+### Face + Full Body 를 합치면서 같이 처리할 것
+
+1. **크롭 선택지** — 둘을 합치면 "얼굴이냐 전신이냐"를 고를 자리가 없어진다. Easify `Crop preference (optional)` 드롭다운(Studio's choice 기본 / Face & shoulders / Full body / Round)이 그 자리를 받는다. 스펙은 §Easify 옵션셋 스펙 세트 B 에 이미 있다.
+2. **`Mixed` 사이즈 제거** — Size 7택 중 `Mixed` 는 이제 1번 상품 그 자체라 남기면 두 상품이 겹쳐 보인다. 6택(28 → 24 variant)으로 줄인다. `productOptionUpdate` 의 `variantStrategy: MANAGE` 가 삭제된 값을 쓰는 variant 를 같이 지운다(스키마 확인함, 09-19).
+3. **리다이렉트 + 메뉴 라벨** — `/products/package-mini`, `/products/full-body-sticker` 리다이렉트. 네비게이션에 옛 상품 4개가 이름으로 걸려 있어 **라벨도 바꿔야 한다**(리다이렉트는 라벨을 안 고친다).
+
+### SKU 와 인테이크
+
+새 SKU 는 `EVS-NAME-5-{WM|SV|GD|TR}` 이다. 현재 `intake.py` 는 이 형식을 못 읽으므로 세 줄을 고쳐야 한다 (`scripts/order_intake/intake.py:122-129`).
+
+| 지금 | 고칠 값 |
+|---|---|
+| `SKU_PACK_RE = r"-(PLAN\|PHONE\|LAPTOP\|FULL)-(\d+)-[A-Z]{2}$"` | 앞쪽에 `NAME` 추가 |
+| `PACK_SHEETS_BY_PHOTOS = {1: 1, 4: 1, 8: 2}` | `5: 1` 추가 |
+| `PACK_NAMES = {...}` | `"NAME": "Name & Photo"` 추가 |
+
+그리고 주문 옵션 `Name style`(Retro / Bubble)을 `job` 에 담아 구성 보드가 미리 고르게 한다. 지금 옵션 루프는 `key == "name"` 하나만 보고 `break` 한다(`intake.py:213-216`) — 두 키를 다 읽도록 고친다. 실제 키 문자열은 테스트 주문 1건으로 확인한 뒤 확정한다(추측하지 않는다).
+
+### 이 절이 무효화하는 것
+
+- §라인업(안) 5종 표 — 폐기
+- §확정 구조(09-04) `Designs` 1/4/8 — 폐기
+- §Easify 옵션셋 스펙 세트 A 의 "최대 파일 수 = Photos variant (1/4/8)" — **최소 5 · 최대 7**(5 + 스페어 2)로 대체. 스페어는 2026-09-06 사용자 확정 설계라 유지한다 — 모든 사진이 누끼가 되는 게 아니라서 여분에서 대체한다. `4 designs → 최대 6` 과 같은 +2 규칙이다.
+- §Easify 세트 A 의 `Name on the sheet header` — **필수** 유지하되 라벨은 `Name`(Easify 내부 이름도 정확히 `Name`), 아래에 `Name style` 드롭다운을 추가한다.
+- §컷오버 뮤테이션 순서 표 — [`cutover_runbook.md`](cutover_runbook.md) 가 정본이다.

@@ -1,5 +1,7 @@
 # Product Structure
 
+> ⚠ **이 문서는 옛 4종 모델(Face / Full Body / Package Mini / Package Full)을 기술한다.** 2026-09-19 로 상품은 2종(Name & Photo Sticker Sheet $24.99 · Custom Sticker Sheet)으로 확정됐다. 새 기준은 [`lineup_restructure.md`](lineup_restructure.md) §2026-09-19 확정, 실행은 [`cutover_runbook.md`](cutover_runbook.md). 이 문서는 컷오버 후에 갱신한다.
+
 Everstory 런칭 상품 구조를 잠그기 위한 비즈니스 기준 문서다. 상품 축은 고객이 먼저 이해하는 **스티커 형태 + 큐레이션 정도**로 정의한다.
 
 이 문서는 상품 구조, Package 운영 규칙, 사진 QC, 가격 가정만 다룬다. Shopify 구현, 스크립트 변경, 고객-facing 상세 카피 반영은 후속 작업으로 분리한다.
