@@ -35,8 +35,8 @@ Package Full 의 현재 variant 4개 (가격·SKU 를 여기에 덮어쓴다):
 - [x] **코드 먼저** — `intake.py` 가 `EVS-NAME-5-*` 를 못 읽으면 테스트 주문이 막힌다. §11 참조. **2026-09-19 구현 완료.**
 - [ ] **실물 시트 1장** 출력·재단·촬영. PDP 사진과 "about 24 stickers" 카피의 근거가 된다.
 - [x] **두 상품 카피** — [`../shopify/copy_two_products.md`](../shopify/copy_two_products.md) (2026-09-19 초안. 스티커 개수 24 는 실물 실측 후 확정).
-- [ ] **Easify 세트 A 개조** (`767342`): 업로드 **최소 5 · 최대 7**(5 + 스페어 2), `Name` 필수, `Name style` 드롭다운 추가. §5 참조.
-- [ ] **Easify 세트 B 생성**: `767314` 복제 후 업로드 도움말 교체 + `Crop preference` 드롭다운 추가.
+- [ ] **Easify 세트 A** — `767342` 를 **제자리에서** 고친다 (업로드 1칸 min 5 · max 7, `Name` 필수, `Name style`, `Extra sheets`). §5.
+- [ ] **Easify 세트 B** — `767314` 를 **제자리에서** 고친다 (복제하지 않는다): 업로드 도움말 · `Crop preference` · `Name` 도움말. `Photos to include (Mixed)` 삭제는 컷오버 창에서. §5.
 - [ ] 브랜치 `lineup-2026-09` 를 main 에 머지할 준비 (아직 머지하지 않는다).
 
 ## 1. 창 열기 — 스냅샷 먼저
@@ -166,41 +166,59 @@ query { product(id: "gid://shopify/Product/9451674370304") {
 
 리뷰 2건은 여기서 묻힌다. 둘 다 1년간 주문 0건인 상품이다(§lineup_restructure 판매 데이터).
 
-## 5. Easify 옵션셋 (앱 화면, 손으로)
+## 5. Easify 옵션셋 (앱 화면)
 
-MCP 로 못 한다. iframe 이라 자동화도 안 된다.
+MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — ① 앱 화면에서 손으로(필드 8개 수준), ② Claude in Chrome 으로 제가(사용자 로그인 세션, 지켜보는 중에 — 09-19 에는 확장이 응답하지 않았다), ③ CSV export→수정→import(새 세트로 **추가만** 되고 할당·조건 이식이 미확인이라 비권장).
 
-### 세트 A — Name & Photo Sticker Sheet (`767342` 개조)
+### 현재 상태 (2026-09-19, 스토어프론트 `<script about="Option Set Data Parsed">` 실측)
 
-| # | 타입 | 라벨 | 필수 | 설정 |
-|---|---|---|---|---|
-| 1 | Text | `Name` | **예** | 최대 24자, A–Z 와 공백만. 도움말: "Printed as its own sticker. Letters A–Z only; a space starts a new line." |
-| 2 | Dropdown | `Name style` | 예 | `Retro` / `Bubble`. 기본 Retro |
-| 3 | File upload | `Your photos` | 예 | 다중, 이미지(**accept 에 `.heic,.heif` 필수**), **최소 5 · 최대 7**. 도움말: "Five different photos, uploaded in one go, plus a spare or two in case one can’t be cut cleanly. If a photo cannot be used we swap in one of your spares, and email you only if there are none." |
-| 4 | Text | `Which photo should be biggest? (optional)` | 아니오 | 한 줄 |
-| 5 | Dropdown | `Extra sheets (same design)` | 아니오 | 기존 값·가격 그대로 |
-| 6 | Textarea | `Special instructions (optional)` | 아니오 | 기존 placeholder |
+| 세트 | 이름 | 붙은 상품 | 필드 |
+|---|---|---|---|
+| `523847` | Photo Sticker — General | Face · Full Body | 767314 와 같은 내용. **같은 상품에 둘 다 붙어 있다** — 하나는 비활성일 것. 앱에서 어느 쪽이 렌더되는지 확인하고 옛 것 삭제 |
+| `523886` | Package — Mini | Package Mini | Big/Medium/Small 업로드(3/3/4장) + Special instructions |
+| `523889` | Package — Full | Package Full | Big/Medium/Small 업로드(5/5/7장) + Special instructions(내부 이름 `special_instruction`) |
+| `767314` | Photo Sticker — General | Face · Full Body | `Name`(필수, 24자, 도움말 "Printed on the sheet header") · `Photos to include` ×7(사이즈별 조건 `variant CONTAIN "0.75\""`…, 값 개수 = 사이즈별 상한) · `Upload your photo(s)`(내부 `Photos`, 0–15장, 100MB, heic 포함) · `Extra sheets` · `Special instructions` |
+| `767342` | Pack upload | Draft 쌍둥이 `9655556833536` | `Your photos` ×3(`1 design`/`4 designs`/`8 designs` 조건, 1–3 / 2–6 / 6–10장, 확장자에 svg 섞임) · `Which photo should be biggest?`(내부 이름 **`text-box-1`**) · `Special instructions`(`special_instruction`) |
 
-- Easify **내부 이름(key)도 정확히 `Name`** 이어야 `intake.py` 가 읽는다.
-- **스페어 2장은 의도된 설계다** (2026-09-06 사용자 확정). 모든 사진이 누끼가 되는 건 아니라서 여분을 받아 그중에서 고른다. 옛 Package 의 3버킷 분류와 다르다 — 손님은 등급을 나누거나 고르지 않고 몇 장 더 넣을 뿐이다. 없애지 말 것.
-- **"Fewer is fine — we repeat favourites to fill the sheet" 문구는 되살리지 않는다** (2026-09-06 전면 삭제). 최소 5장이 상품 약속(디자인 5개)을 지킨다.
-- Big/Medium/Small 필드는 만들지 않는다.
+- **내부 이름(Option name)이 주문 속성 키다.** 인테이크는 `Name` · `Name style` 을 그 이름으로 읽는다(`_`·`-N` 정규화 뒤 소문자 비교).
+- `Photos to include` 값은 사이즈마다 다르다 — **0.75″ 13 · 1″ 10 · 1.25″ 5 · 1.5″ 3 · 2″ 3 · 2.5″ 1**(+$3/장). 시트 슬롯 수 기준 auto-cap, 의도된 설계. 카피에 "1 to 13" 이라고 쓰지 않는다.
+- `Extra sheets (same design)` 값: `No extra print`(기본) · `Add 1 extra print` +$7 … `Add 10 extra print` +$70.
+- 텍스트 상자 데이터에 `except_number` · `except_special_characters` · `type_letter` 플래그가 있다 — 에디터에 "숫자/특수문자 제외" 스위치가 있을 가능성. **있으면 `Name` 에 켠다** (A–Z 와 공백만). 없으면 도움말 + 인테이크 notes 로 잡는다.
 
-### 세트 B — Custom Sticker Sheet (`767314` 복제)
+### 결정 — 새 세트를 만들지 않는다
 
-| 변경 | 내용 |
+`767342` 를 세트 A 로 고쳐 Package Full 에 재할당하고, `767314` 를 세트 B 로 고쳐 그대로 둔다(이미 Face Sticker 에 붙어 있다). 복제·import 는 세트만 늘린다.
+
+### 세트 A — `767342` "Pack upload" → "Name & Photo — upload"
+
+| # | 할 일 |
 |---|---|
-| Upload 도움말 | "studio will choose the strongest" 삭제 → "Upload the number of photos you chose." |
-| 추가 | Dropdown `Crop preference (optional)`: Studio's choice(기본) / Face & shoulders / Full body / Round |
+| 1 | `Your photos (4)` · `Your photos (1)` 업로드 필드 **삭제** |
+| 2 | `Your photos (8)` → 조건 **끄기**(항상 표시), 내부 이름 `Your photos`, 파일 수 **min 5 · max 7**, 확장자 `png,jpg,jpeg,heic,heif,tif,tiff`(svg 제거), 100MB 유지, 도움말 = `copy_two_products.md` §1 |
+| 3 | Text box **`Name`** 추가 — 내부 이름 정확히 `Name`, 라벨 `Name`, 필수, 길이 1–24, placeholder `e.g. MIA`, 도움말 = copy §1. 숫자·특수문자 제외 스위치가 있으면 켠다 |
+| 4 | Dropdown **`Name style`** 추가 — 내부 이름 `Name style`, 필수, 값 `Retro`(기본) · `Bubble`, 가격 0, 도움말 = copy §1 |
+| 5 | Dropdown **`Extra sheets (same design)`** 추가 — 내부 이름 `Extra sheets`, 값·가격은 위 표 그대로 |
+| 6 | `Which photo should be biggest? (optional)` 내부 이름 `text-box-1` → `Biggest photo` (주문 속성 키가 읽히게) |
+| 7 | 순서: Name → Name style → Your photos → Biggest photo → Extra sheets → Special instructions |
+| 8 | **컷오버 창에서** 할당을 쌍둥이 → Package Full `9451742396672` 로 교체 |
 
-`Photos to include`(1–13, +$3/장) · Name · Extra sheets · Special instructions 는 그대로.
+1~7 은 Draft 쌍둥이에만 붙어 있으므로 지금 해도 라이브에 영향이 없다. 어드민 Preview 링크(`onlineStorePreviewUrl`)로 확인할 수 있다.
 
-### 할당 교체
+### 세트 B — `767314` 제자리 수정 (Custom Sticker Sheet)
 
-- [ ] 세트 A → **Name & Photo Sticker Sheet 하나만**
-- [ ] 세트 B → **Custom Sticker Sheet**
-- [ ] 세트 `767314` 에서 Face Sticker·Full Body 제거
-- [ ] 세트 `523889`(Package Full) · `523886`(Package Mini) 비활성화
+| # | 할 일 | 언제 |
+|---|---|---|
+| 1 | `Upload your photo(s)` 도움말 교체 — "studio will choose the strongest" 삭제, copy §2 문장 | 지금 가능 |
+| 2 | Dropdown **`Crop preference (optional)`** 추가 — 내부 이름 `Crop preference`, 선택, 값 `Studio's choice`(기본) · `Face & shoulders` · `Full body` · `Round`, 가격 0, 위치 = Photos to include 뒤 | 지금 가능 (선택 항목이라 무해) |
+| 3 | `Name` 도움말 "Printed on the sheet header. Up to 24 characters" → 이름 스티커 설명(copy §1 과 같은 문장) — 헤더가 아니라 이름 스티커로 쓰인다 | 지금 가능 |
+| 4 | `Photos to include (Mixed)` 드롭다운 **삭제** | **컷오버 창**, Mixed variant 를 지운 뒤 |
+| 5 | 할당에서 Full Body Sticker 제거 | 컷오버 창 |
+
+### 정리 (컷오버 뒤)
+
+- [ ] `523847` — 렌더되지 않는 쪽을 확인해 삭제
+- [ ] `523886` · `523889` 비활성화
+- [ ] 세트 이름을 상품 이름에 맞춘다 (`Name & Photo — upload` / `Custom Sticker Sheet — upload`)
 
 ## 6. 테마
 
@@ -219,7 +237,7 @@ MCP 로 못 한다. iframe 이라 자동화도 안 된다.
 ## 8. 검증
 
 - [ ] Name & Photo PDP: 옵션이 **Material 하나뿐**, 가격 $24.99, 업로드 최소 5·최대 7, `Name` 필수, `Name style` 보임
-- [ ] Custom PDP: Size **6택**(Mixed 없음), `Crop preference` 보임, 팩 문구가 **안** 보임
+- [ ] Custom PDP: Size **6택**(Mixed 없음), `Crop preference` 보임, 팩 문구가 **안** 보임, `Photos to include` 가 사이즈별 상한대로 뜸(0.75″ 13 … 2.5″ 1)
 - [ ] 두 PDP 모두 Judge.me 리뷰 위젯이 이전 개수 그대로 (6건 / 1건)
 - [ ] quick-add 모달이 다시 켜지지 않았는지 (사진 업로드 우회 재발 방지)
 - [ ] 옛 주소 4개가 전부 새 주소로 넘어감

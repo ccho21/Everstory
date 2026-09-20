@@ -145,7 +145,7 @@
 
 > - One A5 sheet, packed as full as your size allows
 > - One size per sheet, 0.75″ to 2.5″ by the longest edge — you pick it
-> - As many different photos as you like, 1 to 13; each photo after the first adds $3
+> - As many different photos as the size allows — up to 13 at 0.75″, down to 1 at 2.5″; each photo after the first adds $3
 > - Crop your way — face and shoulders, full body, or a round frame — or leave it to us
 > - Hair, ears and paws traced by hand, with a clean white edge on every sticker
 > - Your name and the order date printed on the sheet header
@@ -157,11 +157,11 @@
 > **Best for**
 > When you already know the size: a planner full of one face, a laptop-size portrait, a strip of the dog for the water bottle. Kids, pets, portraits and outfits.
 
-- "each photo after the first adds $3" 는 Easify `Photos to include`(1–13, +$3/장) 그대로다. 가격을 바꾸면 이 줄도 같이.
+- "each photo after the first adds $3" 는 Easify `Photos to include`(+$3/장) 그대로다. **값 개수는 사이즈마다 다르다** — 0.75″ 13 · 1″ 10 · 1.25″ 5 · 1.5″ 3 · 2″ 3 · 2.5″ 1 (시트 슬롯 수 기준 auto-cap, 의도된 설계). "1 to 13" 이라고 쓰면 틀린다.
 - `Mixed` 사이즈가 빠졌으므로 "one size per sheet" 라고 말할 수 있다.
 
 ```json
-{"type": "root", "children": [{"type": "list", "listType": "unordered", "children": [{"type": "list-item", "children": [{"type": "text", "value": "One A5 sheet, packed as full as your size allows"}]}, {"type": "list-item", "children": [{"type": "text", "value": "One size per sheet, 0.75″ to 2.5″ by the longest edge — you pick it"}]}, {"type": "list-item", "children": [{"type": "text", "value": "As many different photos as you like, 1 to 13; each photo after the first adds $3"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Crop your way — face and shoulders, full body, or a round frame — or leave it to us"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Hair, ears and paws traced by hand, with a clean white edge on every sticker"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Your name and the order date printed on the sheet header"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Hand-refined and precision-cut in Toronto"}]}]}, {"type": "heading", "level": 5, "children": [{"type": "text", "value": "Photo tip"}]}, {"type": "paragraph", "children": [{"type": "text", "value": "Choose a photo where the subject is sharp, well lit and fully visible — not covered by hair, hands or shadow. For a full-body crop, keep the whole figure inside the frame."}]}, {"type": "heading", "level": 5, "children": [{"type": "text", "value": "Best for"}]}, {"type": "paragraph", "children": [{"type": "text", "value": "When you already know the size: a planner full of one face, a laptop-size portrait, a strip of the dog for the water bottle. Kids, pets, portraits and outfits."}]}]}
+{"type": "root", "children": [{"type": "list", "listType": "unordered", "children": [{"type": "list-item", "children": [{"type": "text", "value": "One A5 sheet, packed as full as your size allows"}]}, {"type": "list-item", "children": [{"type": "text", "value": "One size per sheet, 0.75″ to 2.5″ by the longest edge — you pick it"}]}, {"type": "list-item", "children": [{"type": "text", "value": "As many different photos as the size allows — up to 13 at 0.75″, down to 1 at 2.5″; each photo after the first adds $3"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Crop your way — face and shoulders, full body, or a round frame — or leave it to us"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Hair, ears and paws traced by hand, with a clean white edge on every sticker"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Your name and the order date printed on the sheet header"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Hand-refined and precision-cut in Toronto"}]}]}, {"type": "heading", "level": 5, "children": [{"type": "text", "value": "Photo tip"}]}, {"type": "paragraph", "children": [{"type": "text", "value": "Choose a photo where the subject is sharp, well lit and fully visible — not covered by hair, hands or shadow. For a full-body crop, keep the whole figure inside the frame."}]}, {"type": "heading", "level": 5, "children": [{"type": "text", "value": "Best for"}]}, {"type": "paragraph", "children": [{"type": "text", "value": "When you already know the size: a planner full of one face, a laptop-size portrait, a strip of the dog for the water bottle. Kids, pets, portraits and outfits."}]}]}
 ```
 
 ### 폼 문장 (Easify 세트 B)
