@@ -191,6 +191,9 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 
 ### 세트 A — `767342` "Pack upload" → "Name & Photo — upload"
 
+✅ **1~7 완료 (2026-09-19, Claude in Chrome 으로 편집 · 사용자가 Save).** 스토어프론트 데이터로 재확인: 이름 `Name & Photo — upload`, 옵션 6개 = `Name`(필수 1–24자, 숫자·특수문자 제외) · `Name style`(Retro 기본/Bubble) · `Your photos`(5–7장, 조건 없음, svg 제거) · `Biggest photo` · `Extra sheets`(No extra print 기본, +$7×1~10) · `special_instruction`. 아직 Draft 쌍둥이에만 할당 — 8번은 컷오버 창.
+에디터 메모: 텍스트 상자에 **Letter case** · **Exclude from text field**(Numbers/Letters/Spaces/Special characters 체크) 설정이 있다. 앱 본문은 iframe 이라 Chrome 탭이 **앞에 있어야** 클릭이 먹고, 드롭다운 값은 Bulk add(줄바꿈 구분)로 넣고 가격은 줄마다 입력한다.
+
 | # | 할 일 |
 |---|---|
 | 1 | `Your photos (4)` · `Your photos (1)` 업로드 필드 **삭제** |
@@ -205,6 +208,8 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 1~7 은 Draft 쌍둥이에만 붙어 있으므로 지금 해도 라이브에 영향이 없다. 어드민 Preview 링크(`onlineStorePreviewUrl`)로 확인할 수 있다.
 
 ### 세트 B — `767314` 제자리 수정 (Custom Sticker Sheet)
+
+✅ **1~3 완료 (2026-09-19, 라이브 반영됨 — "Options set saved").** 스토어프론트 데이터로 재확인: `Name` 도움말 교체, `Photos` 도움말 교체, `Crop preference`(선택, Studio's choice 기본 / Face & shoulders / Full body / Round) 가 `Photos to include (Mixed)` 뒤에 있다. 4·5 는 컷오버 창.
 
 | # | 할 일 | 언제 |
 |---|---|---|
