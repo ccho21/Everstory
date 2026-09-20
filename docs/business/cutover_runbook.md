@@ -1,6 +1,6 @@
 # Cutover Runbook — 상품 2종
 
-새 구조를 라이브로 옮기는 **실행표**다. 배경·근거는 [`lineup_restructure.md`](lineup_restructure.md) §2026-09-19 확정, 카피는 [`../shopify/copy_rework_packs.md`](../shopify/copy_rework_packs.md).
+새 구조를 라이브로 옮기는 **실행표**다. 배경·근거는 [`lineup_restructure.md`](lineup_restructure.md) §2026-09-19 확정, 카피는 [`../shopify/copy_two_products.md`](../shopify/copy_two_products.md).
 
 핵심 원칙: **상품을 새로 만들지 않고 기존 상품을 제자리에서 바꾼다.** 상품 ID 가 유지돼야 Judge.me 리뷰가 그대로 붙어 있는다.
 
@@ -34,7 +34,7 @@ Package Full 의 현재 variant 4개 (가격·SKU 를 여기에 덮어쓴다):
 
 - [x] **코드 먼저** — `intake.py` 가 `EVS-NAME-5-*` 를 못 읽으면 테스트 주문이 막힌다. §11 참조. **2026-09-19 구현 완료.**
 - [ ] **실물 시트 1장** 출력·재단·촬영. PDP 사진과 "about 24 stickers" 카피의 근거가 된다.
-- [ ] **Custom Sticker Sheet 카피** 작성 (title·card_subtitle·story·intro·SEO).
+- [x] **두 상품 카피** — [`../shopify/copy_two_products.md`](../shopify/copy_two_products.md) (2026-09-19 초안. 스티커 개수 24 는 실물 실측 후 확정).
 - [ ] **Easify 세트 A 개조** (`767342`): 업로드 **최소 5 · 최대 7**(5 + 스페어 2), `Name` 필수, `Name style` 드롭다운 추가. §5 참조.
 - [ ] **Easify 세트 B 생성**: `767314` 복제 후 업로드 도움말 교체 + `Crop preference` 드롭다운 추가.
 - [ ] 브랜치 `lineup-2026-09` 를 main 에 머지할 준비 (아직 머지하지 않는다).
@@ -104,7 +104,7 @@ query { product(id: "gid://shopify/Product/9655556833536") {
 | 키 | 값 |
 |---|---|
 | `card_subtitle` | `Their name and 5 photos, cut and ready to peel` |
-| `product_intro` · `product_story_html` | 쌍둥이 값에서 "Pick how many different designs" 류를 제거하고 5개 고정·이름 포함으로 |
+| `product_intro` · `product_story_html` | `copy_two_products.md` §1 의 값 (rich text JSON · HTML 그대로) |
 | `pack_sizes` · `pack_use` · `is_package` · `pack_size_codes` · `sheet_prefix` | 쌍둥이 값 그대로 |
 
 - [ ] 완료
@@ -150,8 +150,8 @@ query { product(id: "gid://shopify/Product/9451674370304") {
 
 **3-3. metafield**
 
-- [ ] `card_subtitle`: `You pick the size and the crop`
-- [ ] `product_story_html` · `product_intro` 작성분 반영
+- [ ] `card_subtitle`: `You choose the size, the crop and the photos` (`copy_two_products.md` §2)
+- [ ] `product_story_html` · `product_intro`: `copy_two_products.md` §2 의 값
 - [ ] ⚠ `pack_sizes` 를 **넣지 않는다.** 넣으면 사이즈 선택 UI 가 숨겨진다.
 
 **3-4. 리다이렉트**
@@ -207,7 +207,7 @@ MCP 로 못 한다. iframe 이라 자동화도 안 된다.
 - [ ] 브랜치 `lineup-2026-09` → `main` 머지 → GitHub 동기화가 라이브 테마에 반영
 - [ ] **반드시 pull 해서 라이브와 diff** — 동기화가 전부 잡지 못한 전례가 있다
 - [ ] 안 맞으면 `shopify theme push --store q3gj59-am.myshopify.com --live --allow-live --only <파일>`
-- [ ] `es-pack-note.liquid` 가 `Designs` 옵션을 읽고 있다. 옵션이 없어졌으므로 **5개 고정 문구로 바꾸거나 제거**한다.
+- [x] 테마 문장 교체 **완료 (2026-09-19)** — 브랜치 `lineup-2026-09` 커밋 `6ac1063`, 복사 테마에 push 하고 5페이지(홈·컬렉션·FAQ·package-full·face-sticker)에서 확인. 목록은 `copy_two_products.md` §3. main 머지는 컷오버 창에서.
 
 ## 7. 컬렉션·메뉴
 

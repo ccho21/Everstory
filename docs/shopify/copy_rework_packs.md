@@ -2,6 +2,8 @@
 
 새 라인업(Planner / Phone & Bottle / Laptop / Full Set + Custom Sheet)에 맞춰 웹 카피를 다시 쓰기 위한 계획서다. 구조·단계는 [`../business/lineup_restructure.md`](../business/lineup_restructure.md), 확정 문구는 승인 후 [`product_descriptions.md`](product_descriptions.md) 로 옮긴다.
 
+> ⚠ **2026-09-19**: 상품이 2종(Name & Photo Sticker Sheet · Custom Sticker Sheet)으로 확정되면서 이 문서의 팩 4종 카피(카드 부제 표·Planner 샘플)는 경과 기록이 됐다. 현재 상품 카피는 [`copy_two_products.md`](copy_two_products.md). 직관성 장치 4개와 공용 문장 교정은 그대로 유효하다.
+
 ## 무엇이 왜 틀렸나
 
 상품 축이 바뀌었는데 카피는 옛 축으로 쓰여 있다.
