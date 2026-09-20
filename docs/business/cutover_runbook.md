@@ -14,7 +14,7 @@
 | Face Sticker → **Custom Sticker Sheet** | `gid://shopify/Product/9451674370304` · handle `face-sticker` |
 | Package Mini → Draft | `gid://shopify/Product/9451741872384` |
 | Full Body Sticker → Draft | `gid://shopify/Product/9458539626752` |
-| 참조용 Draft 쌍둥이 (metafield 복사원) | `gid://shopify/Product/9655556833536` |
+| 참조용 Draft 쌍둥이 — **2026-09-20 최종 형태로 변환 완료** (Material 4 · $24.99 · `EVS-NAME-5-*` · 제목/SEO/metafield = copy_two_products §1). 컷오버 때 이 상품의 값을 그대로 Package Full 에 옮기면 된다 | `gid://shopify/Product/9655556833536` (handle `full-set-preview`) |
 | Online Store 채널 | `gid://shopify/Publication/197301731584` |
 | Easify — Pack upload (→ 세트 A 로 개조) | `767342` |
 | Easify — Photo Sticker General (Face/Full Body 현재) | `767314` |
@@ -94,7 +94,7 @@ SKU 형식은 `intake.py` 의 `SKU_PACK_RE` 가 읽는 형식이다. 바꾸면 �
 
 **2-3. metafield**
 
-쌍둥이(`9655556833536`)의 값을 복사하되, `Designs` 를 전제한 문구는 5개 고정 문장으로 고친다.
+쌍둥이(`9655556833536`)의 값을 그대로 복사한다 — 2026-09-20 에 쌍둥이를 이미 5개 고정·이름 포함 카피로 바꿔 두었다 (`Designs` 옵션 삭제 = `productOptionsDelete(strategy: POSITION)` 리허설 완료, 첫 값 variant 4개만 남고 옛 8개 삭제).
 
 ```graphql
 query { product(id: "gid://shopify/Product/9655556833536") {
