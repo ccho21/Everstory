@@ -382,10 +382,10 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     print("\n══ 주문 정보 · 화면 데이터 ══")
     write(os.path.join(order_a, "_order.json"), json.dumps({"job": {
         "customer": " Jennifer Test ", "order": "#EVS-1", "material": "Gold", "sticker_name": "LUCKY",
-        "notes": ["재질: SKU 에서 못 읽음"]}}))
+        "name_style": "bubble", "notes": ["재질: SKU 에서 못 읽음"]}}))
     pre = cp.order_prefill(order_a)
-    chk("주문 정보 = job 블록 (주문번호 # 제거)", pre == {"nameText": "Jennifer Test", "orderNumber": "EVS-1",
-        "material": "Gold", "stickerName": "LUCKY", "notes": ["재질: SKU 에서 못 읽음"], "orderFrom": "job"}, pre)
+    chk("주문 정보 = job 블록 (주문번호 # 제거 · 이름 스타일)", pre == {"nameText": "Jennifer Test", "orderNumber": "EVS-1",
+        "material": "Gold", "stickerName": "LUCKY", "nameStyle": "bubble", "notes": ["재질: SKU 에서 못 읽음"], "orderFrom": "job"}, pre)
     cases = [("Sanvi EVS-0000", ("EVS-0000", "Sanvi")), ("Jennifer Lee EVS-1008 (test)", ("EVS-1008", "Jennifer Lee (test)")),
              ("#evs-12 Kim", ("EVS-12", "Kim")), ("하린", ("", "하린")), ("Mary-Jane Park", ("", "Mary-Jane Park")),
              (NFD_HARIN + " EVS-2001", ("EVS-2001", "하린")), ("EVS-1 EVS-1100", ("EVS-1100", "EVS-1"))]
@@ -403,16 +403,16 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     pre_j = cp.order_prefill(order_j)
     chk("job 에 주문번호가 있으면 그게 먼저 (폴더 이름보다)",
         pre_j["orderNumber"] == "EVS-7001" and pre_j["nameText"] == "Kim J" and pre_j["orderFrom"] == "job", pre_j)
-    write(os.path.join(order_h, "_order.json"), json.dumps({"job": {"material": "Plastic"}}))
+    write(os.path.join(order_h, "_order.json"), json.dumps({"job": {"material": "Plastic", "name_style": "gothic"}}))
     pre_h = cp.order_prefill(order_h)
-    chk("매니페스트에 이름이 없으면 폴더 이름(NFC) · 모르는 재질은 비움",
-        pre_h["nameText"] == "하린" and pre_h["material"] == "", pre_h)
+    chk("매니페스트에 이름이 없으면 폴더 이름(NFC) · 모르는 재질·이름 스타일은 비움",
+        pre_h["nameText"] == "하린" and pre_h["material"] == "" and pre_h["nameStyle"] == "", pre_h)
     chk("매니페스트가 없어도 폴더 이름", cp.order_prefill(empty)["nameText"] == "빈 주문")
     pay = cp.pairs_payload(projects, "Order A EVS-1")
     p1 = pay["pairs"][0]
     chk("화면 데이터: 페어 3장 · 캔버스 · 캐시 · 지문", len(pay["pairs"]) == 3 and p1["canvas"] == [40, 60] and
         p1["cut"]["srcOk"] and p1["face"] is None and re.match(r"^\d+,\d+;\d+,\d+$", p1["v"]) and
-        pay["prefill"]["stickerName"] == "LUCKY" and pay["sheets"] == 0, p1)
+        pay["prefill"]["stickerName"] == "LUCKY" and pay["prefill"]["nameStyle"] == "bubble" and pay["sheets"] == 0, p1)
     chk("화면 데이터: 서버가 받는 기능 (배치 선택 · 크기 직접 · 이름 스타일) + 그림 목록",
         pay["features"] == ["layouts", "sizes", "nameStyles", "counts"] and "alphabet_art_v2" in pay.get("art", {}), pay["features"])
     try:

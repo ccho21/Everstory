@@ -66,7 +66,8 @@ x-amz-expiration: expiry-date="...", rule-id="ExpireAllObjectsAfterNinetyDays"
 - **이름 스타일** (2026-09-17 사용자): 스티커 이름 아래 버튼 — 버튼마다 그 스타일로 쓴 이름 앞 글자가 보인다.
   **레트로** = 예전 그대로(v1 알파벳, 글자마다 따로 떼는 스티커 · 레트로 데코). **버블** = `알파벳 샘플_6` 글자를 살짝 겹쳐 쓰고
   이름 전체를 흰 테두리 하나로 묶은 통짜 스티커(칼선 1개) · 데코는 `sticker sample 4` 두들(흰 테두리 포함, 글씨 두들은 큰 칸에만).
-  두 단어 이름은 두 줄이 한 스티커로 이어진다. 마지막에 고른 스타일은 이 화면이 기억한다(브라우저 저장). 규칙은 `sim/README.md` "이름 스타일".
+  두 단어 이름은 두 줄이 한 스티커로 이어진다. 주문에 `Name style` 이 있으면(`job.name_style`) 그 스타일이 먼저 골라지고 안내 문구가 뜬다 (2026-09-19);
+  없으면 마지막에 고른 스타일(브라우저 저장)을 쓴다. 규칙은 `sim/README.md` "이름 스타일".
 - **배치 고르기** (2026-09-16 사용자): 시트 오른쪽 작은 그림 — **스타일**(가운데·양옆·모으기·가장자리·아래쪽)과 고른 스타일의
   **변형**(기본·좌우 바꿈·섞기). 왼쪽 `이름 위치`(자동·왼쪽·가운데·오른쪽). 시트마다 따로 고르고, `모든 시트에` 로 맞출 수 있다.
   스타일 줄은 화면을 먼저 그린 뒤 나눠 계산한다(시트당 20~40ms). 규칙은 `sim/README.md` "배치 선택".
@@ -255,14 +256,17 @@ projects/{고객명 주문번호}/
 ```json
 "job": { "order":"EVS-1007", "customer":"Naekyung Seong", "product":"Package Full",
          "material":"White Matte", "mode":"package", "size_mm":null, "sheets":2,
-         "quantity":1, "photos":14, "sticker_name":"", "notes":[] }
+         "quantity":1, "photos":14, "sticker_name":"", "name_style":"", "notes":[] }
 ```
 
 재질·사이즈는 SKU 문자열 안에 인코딩돼 있다 (`EVS-PACKAGE-FULL-WM`). 그대로 두면 **읽는
 쪽마다 SKU 해석기를 한 벌씩** 갖게 되고 (일러스트·포토샵·CLI), 규칙이 바뀔 때 하나만
 빠뜨려도 **틀린 재질로 인쇄된다.** 그래서 해석은 인테이크에서 한 번만 하고 결과를 박아둔다.
 
-- `mode` = `single` (그때만 `size_mm`) · `package` (그때만 `sheets`) · `all`(Mixed → 전 사이즈)
+- `mode` = `single` (그때만 `size_mm`) · `package` (그때만 `sheets`) · `all`(Mixed → 전 사이즈) ·
+  `pack` (그때 `pack`·`photos_ordered`·`sheets` — `EVS-NAME-5-WM` = Name & Photo Sticker Sheet, 사진 5 · 1시트)
+- `sticker_name` = 옵션 `Name`. `name_style` = 옵션 `Name style` (Retro / Bubble → `retro` / `bubble`, range.jsx
+  `COMPOSED_NAME_STYLES` 키). 모르는 값이면 비우고 `notes` 에 남긴다 — 구성 보드가 이 값으로 이름 스타일을 미리 고른다 (2026-09-19).
 - **한 값으로 안 좁혀지면 채우지 않고 `notes` 에 이유를 남긴다.** line item 이 여럿이고
   재질이 엇갈리면 임의로 하나를 고르는 순간 절반이 틀린 재질로 나간다.
 - 일러스트(`Everstory_mixed.jsx`)는 `job` 이 있으면 그대로 쓰고, 없으면(구 매니페스트)

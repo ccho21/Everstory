@@ -9,7 +9,7 @@
   02_cutout/<base>_sil.png            캔버스 크기 (PNG IHDR — range.jsx _pngAspect 와 같은 값)
   02_cutout/_cutcache/<base>.evcut    칼선 박스(info=) · 트레이스 서명(sig=) · 실루엣 지문(src=)
   02_cutout/_cutcache/<base>.evface   자동 판별 측정값(probe=) · 운영자가 확정한 종류(type=)
-  _order.json 의 job                  고객 이름 · 주문번호 · 재질 · 스티커 이름
+  _order.json 의 job                  고객 이름 · 주문번호 · 재질 · 스티커 이름 · 이름 스타일
 
 이름 글자·데코 그림은 저장소의 templates/art_preview/<라이브러리>/*.png 에서 읽는다 (이름 스타일마다 다른 라이브러리).
 쓰는 것은 썸네일 캐시(~/Library/Caches/EverstoryBoard) 뿐이다 — 주문 폴더에는 아무것도 쓰지 않는다.
@@ -238,7 +238,7 @@ def order_prefill(folder):
     job 에 주문번호가 없으면 폴더 이름의 주문번호(2026-09-16 사용자), 고객 이름이 없으면 폴더 이름(주문번호는 뺀다).
     orderFrom = "job" | "folder" | "" — 화면이 어디서 채웠는지 알린다.
     """
-    out = {"nameText": "", "orderNumber": "", "material": "", "stickerName": "", "notes": [], "orderFrom": ""}
+    out = {"nameText": "", "orderNumber": "", "material": "", "stickerName": "", "nameStyle": "", "notes": [], "orderFrom": ""}
     doc = None
     try:
         with open(os.path.join(folder, "_order.json"), "r", encoding="utf-8") as f:
@@ -255,6 +255,9 @@ def order_prefill(folder):
         out["material"] = job["material"]
     if job.get("sticker_name"):
         out["stickerName"] = str(job["sticker_name"]).strip()
+    # 주문의 `Name style` (intake job.name_style = range.jsx 키). 모르는 값은 비운다 — 화면이 마지막에 고른 스타일을 쓴다.
+    if job.get("name_style") in NAME_STYLE_KEYS:
+        out["nameStyle"] = job["name_style"]
     out["notes"] = [str(n) for n in (job.get("notes") or [])]
     num, rest = order_from_folder(os.path.basename(folder))
     if not out["orderNumber"] and num:

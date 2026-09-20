@@ -116,12 +116,15 @@ SKU_MATERIAL = {"WM": "White Matte", "TR": "Translucent", "SV": "Silver", "GD": 
 SKU_PACKAGE_RE = re.compile(r"-PACKAGE-(FULL|MINI)-[A-Z]{2}$", re.I)
 PACKAGE_SHEETS_BY_KIND = {"FULL": 2, "MINI": 1}
 
-# 용도 팩 SKU: EVS-{PLAN|PHONE|LAPTOP|FULL}-{1|4|8}-{WM|SV|GD|TR}.
-# 사이즈 배합은 상품이 정하고, 사진 수가 시트 수를 정한다 (1·4 = 1시트, 8 = 2시트).
+# 팩 SKU: EVS-{NAME|PLAN|PHONE|LAPTOP|FULL}-{1|4|5|8}-{WM|SV|GD|TR}.
+# 사이즈 배합은 상품이 정하고, 사진 수가 시트 수를 정한다 (1·4·5 = 1시트, 8 = 2시트).
 # 구 Package SKU 와 안 겹친다 — 저쪽은 `-PACKAGE-FULL-WM` 으로 가운데에 숫자가 없다.
-SKU_PACK_RE = re.compile(r"-(PLAN|PHONE|LAPTOP|FULL)-(\d+)-[A-Z]{2}$", re.I)
-PACK_SHEETS_BY_PHOTOS = {1: 1, 4: 1, 8: 2}
+# NAME = Name & Photo Sticker Sheet (2026-09-19 확정 상품: 사진 5개 디자인 + 이름 스티커 고정 → EVS-NAME-5-*).
+# PLAN/PHONE/LAPTOP/FULL 은 폐기된 용도 팩·Designs 안의 SKU — Draft 쌍둥이가 남아 있는 동안 계속 읽는다.
+SKU_PACK_RE = re.compile(r"-(NAME|PLAN|PHONE|LAPTOP|FULL)-(\d+)-[A-Z]{2}$", re.I)
+PACK_SHEETS_BY_PHOTOS = {1: 1, 4: 1, 5: 1, 8: 2}
 PACK_NAMES = {
+    "NAME": "Name & Photo",
     "PLAN": "Planner",
     "PHONE": "Phone & Bottle",
     "LAPTOP": "Laptop",
@@ -177,6 +180,13 @@ def size_from_options(options, line_item_index):
     return None
 
 
+# 옵션 `Name style` = 이름 스티커 스타일 (Easify 드롭다운 Retro / Bubble). range.jsx COMPOSED_NAME_STYLES 의 키로 바꿔 담는다.
+# 키 철자는 Easify 내부 이름을 따른다 — 정확한 값은 테스트 주문으로 확인한다 (2026-09-19, cutover_runbook §11).
+NAME_STYLE_OPTION_KEYS = ("name style", "name_style", "namestyle")
+NAME_STYLE_VALUES = {"retro": "retro", "레트로": "retro", "bubble": "bubble", "버블": "bubble"}
+NAME_STYLE_LABELS = {"retro": "레트로", "bubble": "버블"}
+
+
 def build_job(manifest):
     """매니페스트 -> 제작 잡티켓. **매니페스트 안의 값만 쓴다** (네트워크 없음).
 
@@ -205,15 +215,25 @@ def build_job(manifest):
         "photos_ordered": None,
         "photos": sum(1 for p in photos if p.get("file")),
         "sticker_name": "",
+        "name_style": "",
         "notes": [],
     }
 
     # 옵션 `Name` = 스티커에 넣을 이름. 고객 이름과 별개다 (선물이면 받는 사람 이름).
+    # 옵션 `Name style` = 그 이름의 스타일 (retro | bubble). 모르는 값이면 비워 두고 notes 에 남긴다 — 보드에서 고른다.
     for o in options:
         key, _ = split_key(o.get("key") or "")
-        if key == "name" and o.get("value"):
-            job["sticker_name"] = str(o["value"]).strip()
-            break
+        value = str(o.get("value") or "").strip()
+        if not value:
+            continue
+        if key == "name" and not job["sticker_name"]:
+            job["sticker_name"] = value
+        elif key in NAME_STYLE_OPTION_KEYS and not job["name_style"]:
+            style = NAME_STYLE_VALUES.get(value.lower())
+            if style:
+                job["name_style"] = style
+            else:
+                job["notes"].append("이름 스타일: 모르는 값 '%s' — 보드에서 고를 것" % value)
 
     titles, materials, sizes = [], [], []
     for it in items:
@@ -263,7 +283,8 @@ def job_label(job):
     elif job["mode"] == "single" and job["size_mm"]:
         bits.append('%.2f" / %dmm' % (job["size_mm"] / 25.4, round(job["size_mm"])))
     if job["sticker_name"]:
-        bits.append("이름 '%s'" % job["sticker_name"])
+        style = NAME_STYLE_LABELS.get(job.get("name_style") or "")
+        bits.append("이름 '%s'%s" % (job["sticker_name"], (" · " + style) if style else ""))
     line = " · ".join(bits)
     return line + ("   ⚠ " + " / ".join(job["notes"]) if job["notes"] else "")
 

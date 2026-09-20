@@ -382,9 +382,14 @@ async function loadFolder(name, fresh) {
     $("#fOrder").value = f.orderNumber || "";
     $("#fMat").value = f.material || E.MATERIAL_OPTIONS[0];
     $("#fDate").value = d.today || "";
+    // 주문에 Name style 이 있으면(job.name_style) 그 스타일을 먼저 고른다. 없으면 마지막에 고른 것 그대로 — 브라우저 저장값은 안 건드린다.
+    const styleKeys = (E.COMPOSED_NAME_STYLES || []).map(st => st.key);
+    const styleFromOrder = hasNameStyles() && styleKeys.indexOf(f.nameStyle || "") >= 0 ? f.nameStyle : "";
+    if (styleFromOrder) S.nameStyle = styleFromOrder;
     const memo = (f.notes && f.notes.length) ? "주문 메모: " + f.notes.join(" / ") : "";
     const from = f.orderFrom === "folder" ? "주문번호는 폴더 이름에서 읽었어요 (_order.json 에 없음)." : "";
-    $("#formHint").textContent = [memo, from].filter(Boolean).join(" · ");
+    const styleNote = styleFromOrder ? "이름 스타일 '" + E._nameStyle(styleFromOrder).label + "' 은 주문의 Name style 에서 읽었어요." : "";
+    $("#formHint").textContent = [memo, from, styleNote].filter(Boolean).join(" · ");
     $("#formHint").className = "hint" + (memo ? " warn" : "");
     say("");
   } else if (S.main && !S.pairs.some(p => p.base === S.main)) {

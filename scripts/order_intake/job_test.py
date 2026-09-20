@@ -86,6 +86,7 @@ try:
     chk("Package Full → package 2시트 · White Matte",
         (j1["mode"], j1["sheets"], j1["material"]) == ("package", 2, "White Matte"), j1)
     chk("사진 수는 실제 받은 것만 셈", j1["photos"] == 1, j1["photos"])
+    chk("name_style 키는 늘 있다 (옵션이 없으면 빈 값)", j1.get("name_style") == "", j1.get("name_style"))
 
     j2 = read_json(p2)["job"]
     chk("레거시: 옵션 라벨에서 19mm", (j2["mode"], j2["size_mm"]) == ("single", 19.05), j2)
@@ -125,12 +126,39 @@ try:
         ("EVS-PLAN-1-GD", ("pack", 1, "PLAN", 1)),
         ("EVS-PHONE-4-SV", ("pack", 1, "PHONE", 4)),
         ("EVS-LAPTOP-8-WM", ("pack", 2, "LAPTOP", 8)),
+        ("EVS-NAME-5-WM", ("pack", 1, "NAME", 5)),      # Name & Photo Sticker Sheet (2026-09-19 확정 상품)
+        ("EVS-NAME-5-TR", ("pack", 1, "NAME", 5)),
+        ("evs-name-5-gd", ("pack", 1, "NAME", 5)),      # 대소문자 무시
     ]:
         j = intake.build_job({"order": {"name": "EVS-1010", "customer": "T"},
                               "line_items": [{"index": 0, "title": "P", "sku": sku, "quantity": 1}],
                               "options": [], "photos": []})
         got = (j["mode"], j["sheets"], j["pack"], j["photos_ordered"])
         chk("SKU %s" % sku, got == want, "%s / %s" % (got, intake.job_label(j)))
+
+    print("\n══ 이름 스타일 옵션 (Name style → job.name_style) ══")
+    def job_with(options):
+        return intake.build_job({"order": {"name": "EVS-1011", "customer": "T"},
+                                 "line_items": [{"index": 0, "title": "Name & Photo Sticker Sheet",
+                                                 "sku": "EVS-NAME-5-WM", "quantity": 1}],
+                                 "options": options, "photos": []})
+    jb = job_with([{"line_item": 0, "key": "Name", "value": "Mochi"},
+                   {"line_item": 0, "key": "Name style", "value": "Bubble"}])
+    chk("Name · Name style → sticker_name · name_style", (jb["sticker_name"], jb["name_style"]) == ("Mochi", "bubble"), jb)
+    chk("라벨: 이름 뒤에 스타일, 팩 이름·사진 수·시트",
+        "이름 'Mochi' · 버블" in intake.job_label(jb) and "Name & Photo 팩 · 사진 5장 · 1시트" in intake.job_label(jb),
+        intake.job_label(jb))
+    jr = job_with([{"line_item": 0, "key": "_Name style-1", "value": " retro "}])
+    chk("접두 `_` · 접미 `-N` · 공백 · 대소문자는 무시", jr["name_style"] == "retro" and jr["sticker_name"] == "", jr)
+    chk("한글 값도 읽는다", job_with([{"line_item": 0, "key": "Name style", "value": "버블"}])["name_style"] == "bubble")
+    ju = job_with([{"line_item": 0, "key": "Name", "value": "Mochi"}, {"line_item": 0, "key": "Name style", "value": "Gothic"}])
+    chk("모르는 값은 비우고 notes 에 남긴다 (라벨에는 안 붙음)",
+        ju["name_style"] == "" and any("이름 스타일" in n for n in ju["notes"]) and "이름 'Mochi'   ⚠" in intake.job_label(ju),
+        intake.job_label(ju))
+    jn = job_with([{"line_item": 0, "key": "Name", "value": "Mochi"}])
+    chk("옵션이 없으면 빈 값 · 경고 없음", jn["name_style"] == "" and not jn["notes"], jn["notes"])
+    je = job_with([{"line_item": 0, "key": "Name", "value": "  "}, {"line_item": 0, "key": "Name", "value": "Mochi"}])
+    chk("빈 Name 은 건너뛰고 다음 Name 을 쓴다", je["sticker_name"] == "Mochi", je["sticker_name"])
 
     print("\n══ 구 SKU 회귀 (팩 정규식이 안 삼켰나) ══")
     for sku, want in [

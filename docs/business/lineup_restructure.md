@@ -312,7 +312,7 @@ Package Full($34.99)에서 **내리는 게 아니라 더 작은 패키지로 바
 
 ### SKU 와 인테이크
 
-새 SKU 는 `EVS-NAME-5-{WM|SV|GD|TR}` 이다. 현재 `intake.py` 는 이 형식을 못 읽으므로 세 줄을 고쳐야 한다 (`scripts/order_intake/intake.py:122-129`).
+새 SKU 는 `EVS-NAME-5-{WM|SV|GD|TR}` 이다. `intake.py` 는 2026-09-19 에 고쳤다 — 세 줄:
 
 | 지금 | 고칠 값 |
 |---|---|
@@ -320,7 +320,7 @@ Package Full($34.99)에서 **내리는 게 아니라 더 작은 패키지로 바
 | `PACK_SHEETS_BY_PHOTOS = {1: 1, 4: 1, 8: 2}` | `5: 1` 추가 |
 | `PACK_NAMES = {...}` | `"NAME": "Name & Photo"` 추가 |
 
-그리고 주문 옵션 `Name style`(Retro / Bubble)을 `job` 에 담아 구성 보드가 미리 고르게 한다. 지금 옵션 루프는 `key == "name"` 하나만 보고 `break` 한다(`intake.py:213-216`) — 두 키를 다 읽도록 고친다. 실제 키 문자열은 테스트 주문 1건으로 확인한 뒤 확정한다(추측하지 않는다).
+그리고 주문 옵션 `Name style`(Retro / Bubble)을 `job.name_style` 에 담아 구성 보드가 미리 고른다 (2026-09-19 구현, `cutover_runbook.md` §11). 실제 키 문자열은 테스트 주문 1건으로 확인한다.
 
 ### 이 절이 무효화하는 것
 

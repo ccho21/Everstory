@@ -32,7 +32,7 @@ Package Full 의 현재 variant 4개 (가격·SKU 를 여기에 덮어쓴다):
 
 ## 0. 창을 열기 전에 (며칠 전)
 
-- [ ] **코드 먼저** — `intake.py` 가 `EVS-NAME-5-*` 를 못 읽으면 테스트 주문이 막힌다. §11 참조.
+- [x] **코드 먼저** — `intake.py` 가 `EVS-NAME-5-*` 를 못 읽으면 테스트 주문이 막힌다. §11 참조. **2026-09-19 구현 완료.**
 - [ ] **실물 시트 1장** 출력·재단·촬영. PDP 사진과 "about 24 stickers" 카피의 근거가 된다.
 - [ ] **Custom Sticker Sheet 카피** 작성 (title·card_subtitle·story·intro·SEO).
 - [ ] **Easify 세트 A 개조** (`767342`): 업로드 **최소 5 · 최대 7**(5 + 스페어 2), `Name` 필수, `Name style` 드롭다운 추가. §5 참조.
@@ -247,20 +247,19 @@ MCP 로 못 한다. iframe 이라 자동화도 안 된다.
 - [ ] `products.md` · `product_descriptions.md` · `business.md` 를 새 구조로 갱신 (지금 전부 옛 4종 모델)
 - [ ] 실물 시트 사진으로 PDP 갤러리 교체
 
-## 11. 코드 (창 열기 전에 끝낼 것)
+## 11. 코드 (창 열기 전에 끝낼 것) — ✅ 2026-09-19 구현 완료
 
-`scripts/order_intake/intake.py`
+`scripts/order_intake/intake.py` · `composed_preview.py` · `composed_preview.html`
 
-| 위치 | 지금 | 고칠 값 |
-|---|---|---|
-| `:122` | `SKU_PACK_RE = r"-(PLAN\|PHONE\|LAPTOP\|FULL)-(\d+)-[A-Z]{2}$"` | 대안에 `NAME` 추가 |
-| `:123` | `PACK_SHEETS_BY_PHOTOS = {1: 1, 4: 1, 8: 2}` | `5: 1` 추가 |
-| `:124` | `PACK_NAMES = {...}` | `"NAME": "Name & Photo"` 추가 |
-| `:213` | 옵션 루프가 `key == "name"` 만 보고 `break` | `Name style` 도 읽어 `job["name_style"]` 에 담기 |
+| 항목 | 상태 |
+|---|---|
+| `SKU_PACK_RE` 에 `NAME` · `PACK_SHEETS_BY_PHOTOS` 에 `5: 1` · `PACK_NAMES` 에 `"NAME": "Name & Photo"` | 완료 — `EVS-NAME-5-*` → pack · 사진 5 · 1시트 |
+| 옵션 `Name style` → `job["name_style"]` (`retro` / `bubble`) | 완료 — 키는 정규화 뒤 `name style`(`_`·`-N` 제거), 값은 Retro/Bubble/레트로/버블. 모르는 값은 비우고 `notes` 에 남김 |
+| 구성 보드가 `job.name_style` 로 이름 스타일을 미리 고름 | 완료 — `order_prefill.nameStyle` → 화면에서 먼저 선택 + 안내 문구. 브라우저에 저장된 "마지막 선택"은 안 건드림 |
 
-`Name style` 의 실제 옵션 키 문자열은 **테스트 주문 1건으로 확인한 뒤** 확정한다. 추측해서 적지 않는다.
+⚠ **`Name style` 의 실제 옵션 키 문자열은 테스트 주문 1건으로 확인한다** (§8). Easify 내부 이름을 `Name style` 로 두면 그대로 읽힌다. 다르면 `intake.py` 의 `NAME_STYLE_OPTION_KEYS` 에 추가.
 
-그다음 구성 보드(`composed_preview.py` / `.html`)가 `job["name_style"]` 을 읽어 이름 스타일을 미리 골라두게 한다.
+테스트: `python3 job_test.py` · `python3 composed_preview_test.py` · `node sim/ordertest.js`.
 
 ## 아직 검증 안 된 것
 
