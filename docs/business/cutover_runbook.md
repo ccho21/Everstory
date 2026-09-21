@@ -191,7 +191,7 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 
 ### 세트 A — `767342` "Pack upload" → "Name & Photo — upload"
 
-✅ **1~7 완료 (2026-09-19, Claude in Chrome 으로 편집 · 사용자가 Save).** 스토어프론트 데이터로 재확인: 이름 `Name & Photo — upload`, 옵션 6개 = `Name`(필수 1–24자, 숫자·특수문자 제외) · `Name style`(Retro 기본/Bubble) · `Your photos`(5–7장, 조건 없음, svg 제거) · `Biggest photo` · `Extra sheets`(No extra print 기본, +$7×1~10) · `special_instruction`. 아직 Draft 쌍둥이에만 할당 — 8번은 컷오버 창.
+✅ **1~7 완료 (2026-09-19, Claude in Chrome 으로 편집 · 사용자가 Save).** 스토어프론트 데이터로 재확인: 이름 `Name & Photo — upload`, 옵션 6개 = `Name`(필수 1–24자, 숫자·특수문자 제외) · `Name style`(Retro 기본/Bubble) · `Your photos`(5–7장, 조건 없음, svg 제거) · `Extra sheets`(No extra print 기본, +$7×1~10) · `special_instruction`. 아직 Draft 쌍둥이에만 할당 — 8번은 컷오버 창.
 에디터 메모: 텍스트 상자에 **Letter case** · **Exclude from text field**(Numbers/Letters/Spaces/Special characters 체크) 설정이 있다. 앱 본문은 iframe 이라 Chrome 탭이 **앞에 있어야** 클릭이 먹고, 드롭다운 값은 Bulk add(줄바꿈 구분)로 넣고 가격은 줄마다 입력한다.
 
 | # | 할 일 |
@@ -201,8 +201,8 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 | 3 | Text box **`Name`** 추가 — 내부 이름 정확히 `Name`, 라벨 `Name`, 필수, 길이 1–24, placeholder `e.g. MIA`, 도움말 = copy §1. 숫자·특수문자 제외 스위치가 있으면 켠다 |
 | 4 | Dropdown **`Name style`** 추가 — 내부 이름 `Name style`, 필수, 값 `Retro`(기본) · `Bubble`, 가격 0, 도움말 = copy §1 |
 | 5 | Dropdown **`Extra sheets (same design)`** 추가 — 내부 이름 `Extra sheets`, 값·가격은 위 표 그대로 |
-| 6 | `Which photo should be biggest? (optional)` 내부 이름 `text-box-1` → `Biggest photo` (주문 속성 키가 읽히게) |
-| 7 | 순서: Name → Name style → Your photos → Biggest photo → Extra sheets → Special instructions |
+| 6 | ~~`Which photo should be biggest? (optional)` 내부 이름 → `Biggest photo`~~ → **필드 자체를 삭제** (2026-09-20 사용자: 필요 없음). 큰 사진은 스튜디오가 정한다 |
+| 7 | 순서: Name → Name style → Your photos → Extra sheets → Special instructions |
 | 8 | **컷오버 창에서** 할당을 쌍둥이 → Package Full `9451742396672` 로 교체 |
 
 1~7 은 Draft 쌍둥이에만 붙어 있으므로 지금 해도 라이브에 영향이 없다. 어드민 Preview 링크(`onlineStorePreviewUrl`)로 확인할 수 있다.
