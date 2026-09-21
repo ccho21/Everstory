@@ -35,9 +35,10 @@ Package Full 의 현재 variant 4개 (가격·SKU 를 여기에 덮어쓴다):
 - [x] **코드 먼저** — `intake.py` 가 `EVS-NAME-5-*` 를 못 읽으면 테스트 주문이 막힌다. §11 참조. **2026-09-19 구현 완료.**
 - [ ] **실물 시트 1장** 출력·재단·촬영. PDP 사진과 "about 24 stickers" 카피의 근거가 된다.
 - [x] **두 상품 카피** — [`../shopify/copy_two_products.md`](../shopify/copy_two_products.md) (2026-09-19 초안. 스티커 개수 24 는 실물 실측 후 확정).
-- [ ] **Easify 세트 A** — `767342` 를 **제자리에서** 고친다 (업로드 1칸 min 5 · max 7, `Name` 필수, `Name style`, `Extra sheets`). §5.
-- [ ] **Easify 세트 B** — `767314` 를 **제자리에서** 고친다 (복제하지 않는다): 업로드 도움말 · `Crop preference` · `Name` 도움말. `Photos to include (Mixed)` 삭제는 컷오버 창에서. §5.
-- [ ] 브랜치 `lineup-2026-09` 를 main 에 머지할 준비 (아직 머지하지 않는다).
+- [x] **Easify 세트 A** — `767342` 제자리 수정 **완료 (2026-09-19~20, §5 1~7)**. 할당을 쌍둥이 → Package Full 로 바꾸는 것만 컷오버 창.
+- [x] **Easify 세트 B** — `767314` 1~3 **완료 (2026-09-19, 라이브 반영)**. `Photos to include (Mixed)` 삭제·Full Body 할당 제거는 컷오버 창. §5.
+- [x] 브랜치 `lineup-2026-09` 머지 준비 **완료 (2026-09-20)**: origin 에 push 했고, `main` 과의 merge-base 가 main HEAD(c6e6d27) 라 **fast-forward, 충돌 없음**(`git merge-tree` 로 확인). 라이브 pull 과 비교하면 브랜치 = 라이브 + 의도한 수정뿐 (§6 실측).
+- [ ] **홈 product_list 가 5열·5개** (09-03 다섯 상품 계획의 잔재, `collection: all`). 최종 2종이면 5열에 카드 2장만 남는다. 컬렉션 페이지도 2개짜리 그리드는 본 적이 없다. 복사 테마에서 `columns`·`max_products` 를 2 로 바꿔 보고 정한다 (라이브 무영향).
 
 ## 1. 창 열기 — 스냅샷 먼저
 
@@ -227,16 +228,17 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 
 ## 6. 테마
 
-- [ ] 브랜치 `lineup-2026-09` → `main` 머지 → GitHub 동기화가 라이브 테마에 반영
-- [ ] **반드시 pull 해서 라이브와 diff** — 동기화가 전부 잡지 못한 전례가 있다
-- [ ] 안 맞으면 `shopify theme push --store q3gj59-am.myshopify.com --live --allow-live --only <파일>`
+- [ ] 브랜치 `lineup-2026-09` → `main` 머지 (fast-forward, 09-20 확인). **GitHub 동기화가 라이브에 반영해 줄 거라고 믿지 않는다** — 실측 (2026-09-20): `shopify[bot]` 마지막 커밋이 07-30 인데 라이브 파일은 08-18 까지 Theme Editor 로 바뀌었고(`templates/index.json` 19:37Z 등) 커밋이 없다 → Shopify→GitHub 방향은 죽어 있고, GitHub→Shopify 도 검증되지 않았다.
+- [ ] 머지 직후 **라이브 pull → main 과 diff**. 09-20 기준 라이브와 main 의 차이는 3파일뿐 — `config/settings_data.json`(Judge.me 카트 위젯 블록) · `templates/index.json`(212 leaf: IN THE WILD·hero CSS·Judge.me 캐러셀) · `templates/product.json`(Judge.me real_data) — 그리고 **브랜치는 그 셋을 이미 라이브 값으로 갖고 있다**(09-03 복사 테마 pull 이 베이스). 머지 뒤 남는 차이는 의도한 수정(index 5 leaf · product 13 leaf + 스니펫)만이어야 한다.
+- [ ] 라이브 반영은 **CLI 로 직접**: `shopify theme push --store q3gj59-am.myshopify.com --live --allow-live --only <브랜치가 바꾼 파일>` (사용자 승인 후). GitHub 이 살아 있어도 같은 내용이라 해가 없다.
+- 복사 테마에만 있는 `snippets/es-upsert-probe.liquid`(08-16 쓰기 프로브, 아무 데서도 render 안 함)는 브랜치에 없어 라이브로 가지 않는다. 복사 테마를 지울 때 같이 사라진다.
 - [x] 테마 문장 교체 **완료 (2026-09-19)** — 브랜치 `lineup-2026-09` 커밋 `6ac1063`, 복사 테마에 push 하고 5페이지(홈·컬렉션·FAQ·package-full·face-sticker)에서 확인. 목록은 `copy_two_products.md` §3. main 머지는 컷오버 창에서.
 
 ## 7. 컬렉션·메뉴
 
 - [ ] 컬렉션 `photo-sheets` 에 두 상품만 남기고 정렬 (Name & Photo 가 앞)
 - [ ] **네비게이션 메뉴** (Shopify Navigation, 테마 아님). 푸터에 옛 상품 4개가 이름으로 걸려 있다. 리다이렉트가 있어도 **라벨이 옛 이름으로 남으므로** 반드시 교체한다
-- [ ] 홈 product_list 가 새 컬렉션을 가리키는지 확인
+- [ ] 홈 product_list: 지금 `collection: all` · 5열 · 5개. `photo-sheets`(MANUAL 정렬, Name & Photo 앞)로 바꾸고 열 수를 2종에 맞춘다(§0). 09-20 실측: 활성 상품이 4종뿐이라 all = photo-sheets 와 같지만 정렬을 못 정한다. `photo-sheets` 에는 Draft `shape-sticker` 도 들어 있다(Draft 라 안 보임).
 - [ ] Custom Sticker Sheet 는 메뉴에 두되 **2번째**로. 결정이 적은 쪽이 먼저 보여야 한다
 
 ## 8. 검증
@@ -286,7 +288,9 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 
 ## 아직 검증 안 된 것
 
-- `productOptionUpdate` 의 정확한 **인자 이름**(§3-2). `variantStrategy` enum 의 동작만 스키마로 확인했다.
+- ~~`productOptionUpdate` 의 정확한 **인자 이름**(§3-2)~~ → **09-20 validate 통과**: `productOptionUpdate(productId:, option: OptionUpdateInput!, optionValuesToDelete: [ID!], variantStrategy: MANAGE)`. 실행은 컷오버 창(Face 에는 쌍둥이가 없어 리허설은 못 했다).
 - Judge.me 위젯이 handle 변경 후에도 즉시 붙는지 (상품 ID 기준이라 붙어야 하지만 실측은 없다).
-- Easify 업로드 **최소 5 · 최대 7** 설정 위치. variant 조건부가 필요 없어져서 단순해졌지만 화면에서 확인은 해야 한다.
-- **최소 5 가 맞는지**는 사용자 확인이 필요하다. 지금까지 min 은 티어를 강제하는 장치였는데(8designs=min 6), 티어가 하나뿐이라 그 이유가 사라졌다. 더 낮춰도 엔진은 반복으로 채운다.
+- ~~Easify 업로드 **최소 5 · 최대 7** 설정 위치~~ → 09-19 세트 A 에서 설정·확인 완료.
+- ~~**최소 5 가 맞는지**~~ → 사용자 확정 (09-19 "업로드는 7 최대로 받고 그중에 5디자인을 골라서 줄거야") = min 5 · max 7.
+- GitHub→Shopify 방향 동기화 생사. Shopify→GitHub 은 죽은 것으로 실측(§6). 라이브 반영을 CLI 기본으로 잡았으니 컷오버 절차에는 영향 없다.
+- 2종만 있을 때 홈·컬렉션 그리드 모양 (§0 의 5열 항목).
