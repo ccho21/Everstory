@@ -277,7 +277,7 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 
 ## 7. 컬렉션·메뉴
 
-- [~] 컬렉션 `photo-sheets` 에 두 상품만 남기고 정렬 (Name & Photo 가 앞) — **09-22 정렬 완료**(`collectionReorderProducts` Name & Photo → 0번). Mini·Full Body·shape-sticker 제거는 `collectionRemoveProducts` 가 자동 모드에서 차단돼 **Admin 에서 손으로** (셋 다 DRAFT 라 스토어프론트엔 안 보임)
+- [x] **09-22 완료** — 사용자가 Admin 에서 DRAFT 3개를 뺐고, 조회 결과 2개(Name & Photo → Custom, MANUAL). 컬렉션 `photo-sheets` 에 두 상품만 남기고 정렬 (Name & Photo 가 앞) — **09-22 정렬 완료**(`collectionReorderProducts` Name & Photo → 0번). Mini·Full Body·shape-sticker 제거는 `collectionRemoveProducts` 가 자동 모드에서 차단돼 **Admin 에서 손으로** (셋 다 DRAFT 라 스토어프론트엔 안 보임)
 - [x] **네비게이션 메뉴** — **09-22 완료**: 메뉴 `shop`(262364463360) 을 `menuUpdate` 로 2항목(Name & Photo Sticker Sheet → Custom Sticker Sheet, 기존 item id 633050202368·633050071296 재사용, Mini·Full Body 항목 삭제). 푸터에 옛 상품 4개가 이름으로 걸려 있다. 리다이렉트가 있어도 **라벨이 옛 이름으로 남으므로** 반드시 교체한다
 - [x] **09-22 완료 (main 커밋 37a494e)** — index/cart/404 `products` → `name-photo-sticker-sheet`·`custom-sticker-sheet`. 홈·카트·404 `product-list`의 직접 선택 값(`products`)을 상품 handle 변경 후 새 handle `name-photo-sticker-sheet` · `custom-sticker-sheet` 순서로 맞춘다. 현재 Draft는 `package-full` · `face-sticker`를 사용한다. 선택이 비면 collection으로 돌아가므로 §6 배포 전 세 템플릿을 모두 확인한다.
 - [x] **09-22 확인**(메뉴 `shop` 2번째, 컬렉션·홈·카트·404 도 2번째) — Custom Sticker Sheet 는 메뉴에 두되 **2번째**로. 결정이 적은 쪽이 먼저 보여야 한다
