@@ -90,7 +90,7 @@ fragment Snap on Product {
 
 ### 1-A. 전환 창의 유입과 주문 확인
 
-- [x] **09-22 17:40Z 사용자가 켬** (원래 상태: 꺼짐 — 17:14Z 스토어프론트 200 확인, 켠 뒤 `/password` 로 감). 사용자가 승인한 전환 창에 Online Store의 **Private mode/비밀번호 보호**를 켰다(Online Store → Preferences → Store access, UI 명칭은 현재 화면 확인). 해제는 §8 확인 뒤이며, 원래 보호 상태도 기록한다. [Shopify 공식 안내](https://help.shopify.com/en/manual/online-store/themes/password-page)
+- [x] **09-22 17:40Z 사용자가 켬** (원래 상태: 꺼짐 — 17:14Z 스토어프론트 200 확인, 켠 뒤 `/password` 로 감). **19:36Z 사용자가 해제** — 비밀번호를 넣을 브라우저가 막혀(앱 브라우저 숨김·Chrome 가림) 사용자가 먼저 풀고, §8 스토어프론트 확인은 해제 직후 했다. 사용자가 승인한 전환 창에 Online Store의 **Private mode/비밀번호 보호**를 켰다(Online Store → Preferences → Store access, UI 명칭은 현재 화면 확인). 해제는 §8 확인 뒤이며, 원래 보호 상태도 기록한다. [Shopify 공식 안내](https://help.shopify.com/en/manual/online-store/themes/password-page)
 - [ ] **비밀번호를 전체 판매 중단이나 원자적 전환으로 간주하지 않는다.** 기존 탭·카트·checkout·Shop 등 다른 채널의 차단 여부는 미검증이다. D-3의 채널 결정과 별개로 전환 창에 접수된 주문의 SKU·가격·개인화 속성을 수동 대조한 뒤 제작한다.
 - [ ] §2의 가격/SKU 변경과 §5-A 8번 할당을 한 전환 창에서 연속 처리하고, 완료 직후 실제 필드·가격을 확인한다. 할당을 먼저 바꾸는 대안도 중간 상태를 만들므로 이것만으로 문제를 해결했다고 기록하지 않는다.
 
@@ -243,7 +243,7 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 | 5 | Dropdown **`Extra sheets (same design)`** 추가 — 내부 이름 `Extra sheets`, 값·가격은 위 표 그대로 |
 | 6 | ~~`Which photo should be biggest? (optional)` 내부 이름 → `Biggest photo`~~ → **필드 자체를 삭제** (2026-09-20 사용자: 필요 없음). 큰 사진은 스튜디오가 정한다 |
 | 7 | 순서: Name → Name style → Your photos → Extra sheets → Special instructions |
-| 8 | **컷오버 창에서** 할당을 쌍둥이 → Package Full `9451742396672` 로 교체 |
+| 8 | ✅ **09-22 19:15Z 완료** — 할당을 쌍둥이 → Package Full `9451742396672` 로 교체. ⚠ 쌍둥이 제목도 `Name & Photo Sticker Sheet` 라 선택 창에서 둘이 똑같아 보여 첫 저장은 쌍둥이 그대로였다. **Active** 쪽을 고르고 스토어프론트 `option_set_products` 로 확인한다 |
 
 1~7 은 Draft 쌍둥이에만 붙어 있으므로 지금 해도 라이브에 영향이 없다. 어드민 Preview 링크(`onlineStorePreviewUrl`)로 확인할 수 있다.
 
@@ -256,21 +256,21 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 | 1 | `Upload your photo(s)` 도움말 교체 — "studio will choose the strongest" 삭제, copy §2 문장 | 지금 가능 |
 | 2 | Dropdown **`Crop preference (optional)`** 추가 — 내부 이름 `Crop preference`, 선택, 값 `Studio's choice`(기본) · `Face & shoulders` · `Full body` · `Round`, 가격 0, 위치 = Photos to include 뒤 | 지금 가능 (선택 항목이라 무해) |
 | 3 | `Name` 도움말 "Printed on the sheet header. Up to 24 characters" → 이름 스티커 설명(copy §1 과 같은 문장) — 헤더가 아니라 이름 스티커로 쓰인다 | 지금 가능 |
-| 4 | `Photos to include (Mixed)` 드롭다운 **삭제** | **컷오버 창**, Mixed variant 를 지운 뒤 |
-| 5 | 할당에서 Full Body Sticker 제거 | 컷오버 창 |
+| 4 | `Photos to include (Mixed)` 드롭다운 **삭제** | ✅ 09-22 18:48Z (스토어프론트 데이터로 확인) |
+| 5 | 할당에서 Full Body Sticker 제거 | ✅ 09-22 18:48Z (할당 = Custom Sticker Sheet 하나) |
 
 ### 정리 (컷오버 뒤)
 
-- [ ] `523847` — 렌더되지 않는 쪽을 확인해 삭제
-- [ ] `523886` · `523889` 비활성화
-- [ ] 세트 이름을 상품 이름에 맞춘다 (`Name & Photo — upload` / `Custom Sticker Sheet — upload`)
+- [x] `523847` — 09-22 스토어프론트 활성 세트 목록에서 빠짐(`option_set_count` 2 = 767314·767342). 삭제인지 비활성인지는 앱 화면으로 확인하지 않았다
+- [x] `523886` · `523889` — 09-22 같은 방법으로 활성 목록에서 빠진 것을 확인
+- [ ] 세트 이름을 상품 이름에 맞춘다 (`Name & Photo — upload` / `Custom Sticker Sheet — upload`) — 767314 는 아직 `Photo Sticker — General`
 
 ## 6. 테마
 
-- [ ] §1 라이브 백업 테마 ID를 기록했고, 승인된 카피와 §7의 handle 참조 수정이 배포 파일 목록에 포함돼 있다. Judge.me handle 수정은 상품 handle 변경 확인 뒤 **이 push 직전**에 한다.
+- [x] **09-22 확인** — §1 라이브 백업 테마 ID를 기록했고, 승인된 카피와 §7의 handle 참조 수정이 배포 파일 목록에 포함돼 있다. Judge.me handle 수정은 상품 handle 변경 확인 뒤 **이 push 직전**에 한다.
 - [x] **09-22 머지 완료** (ff → ebcd185, 이어 handle 교체 37a494e). 브랜치 `lineup-2026-09` → `main` 머지 (fast-forward, 09-20 확인). **GitHub 동기화가 라이브에 반영해 줄 거라고 믿지 않는다** — 실측 (2026-09-20): `shopify[bot]` 마지막 커밋이 07-30 인데 라이브 파일은 08-18 까지 Theme Editor 로 바뀌었고(`templates/index.json` 19:37Z 등) 커밋이 없다 → Shopify→GitHub 방향은 죽어 있고, GitHub→Shopify 도 검증되지 않았다.
 - [x] **09-22 diff 완료** — 라이브 pull(백업 폴더) vs main: 변경 14 + 신규 snippet 3 (`es-how-to-order`·`es-pack-note`·`es-what-you-get`), 그 외 차이 없음. 머지 직후 **라이브 pull → main 과 diff**. 09-20 비교에서는 `config/settings_data.json`(Judge.me 카트 위젯) · `templates/index.json`(IN THE WILD·hero CSS·Judge.me 캐러셀) · `templates/product.json`(Judge.me real_data)의 라이브 편집을 브랜치가 이미 포함했다. 09-22 Draft 수정도 추가됐으므로 과거 leaf 개수를 완료 기준으로 쓰지 말고, 최신 라이브와 실제 배포 파일 차이를 다시 검토한다.
-- [ ] 라이브 반영은 **CLI 로 직접**: `shopify theme push --store q3gj59-am.myshopify.com --live --allow-live --only <브랜치가 바꾼 파일>` (사용자 승인 후). GitHub 이 살아 있어도 같은 내용이라 해가 없다.
+- [x] **09-22 18:51Z push 완료** (17파일 = 변경 14 + 신규 snippet 3). push 직전 라이브를 다시 pull 해 백업과 비교했더니 `index.json` 캐러셀 handle 2개만 달랐다 — 상품 handle 을 바꿀 때 Shopify 가 자동으로 고쳐 쓴 것이라 덮어써도 잃는 편집이 없었다. **함정: 한 번에 올리면 `product-list` 의 새 설정 `products` 가 index/cart/404 템플릿에서 빠진다**(템플릿이 새 섹션 스키마보다 먼저 검사된 것으로 보임) → 18:52Z 템플릿 3개만 다시 push 했고, 17개 전부 repo 와 같다(liquid 는 바이트, JSON 은 내용 비교). 새 섹션 설정을 쓰는 템플릿은 섹션을 먼저 올린 뒤 템플릿을 따로 올린다. 라이브 반영은 **CLI 로 직접**: `shopify theme push --store q3gj59-am.myshopify.com --live --allow-live --only <브랜치가 바꾼 파일>` (사용자 승인 후). GitHub 이 살아 있어도 같은 내용이라 해가 없다.
 - 복사 테마에만 있는 `snippets/es-upsert-probe.liquid`(08-16 쓰기 프로브, 아무 데서도 render 안 함)는 브랜치에 없어 라이브로 가지 않는다. 복사 테마를 지울 때 같이 사라진다.
 - [x] 테마 문장 교체 **완료 (2026-09-19)** — 브랜치 `lineup-2026-09` 커밋 `6ac1063`, 복사 테마에 push 하고 5페이지(홈·컬렉션·FAQ·package-full·face-sticker)에서 확인. 목록은 `copy_two_products.md` §3. main 머지는 컷오버 창에서.
 - [x] **2026-09-22 Draft 추가 반영:** 홈·카트·404 두 상품 선택, 카피 정합성, Easify 접근성 이름. 테마 13파일을 복사 테마에 적용했다. 확인 범위와 미실행 시험은 [Shopify 작업 문서](../shopify/plan.md)에 기록했다. 이번 변경은 아직 Git 커밋·push하지 않았다.
@@ -280,34 +280,34 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 - [~] 컬렉션 `photo-sheets` 에 두 상품만 남기고 정렬 (Name & Photo 가 앞) — **09-22 정렬 완료**(`collectionReorderProducts` Name & Photo → 0번). Mini·Full Body·shape-sticker 제거는 `collectionRemoveProducts` 가 자동 모드에서 차단돼 **Admin 에서 손으로** (셋 다 DRAFT 라 스토어프론트엔 안 보임)
 - [x] **네비게이션 메뉴** — **09-22 완료**: 메뉴 `shop`(262364463360) 을 `menuUpdate` 로 2항목(Name & Photo Sticker Sheet → Custom Sticker Sheet, 기존 item id 633050202368·633050071296 재사용, Mini·Full Body 항목 삭제). 푸터에 옛 상품 4개가 이름으로 걸려 있다. 리다이렉트가 있어도 **라벨이 옛 이름으로 남으므로** 반드시 교체한다
 - [x] **09-22 완료 (main 커밋 37a494e)** — index/cart/404 `products` → `name-photo-sticker-sheet`·`custom-sticker-sheet`. 홈·카트·404 `product-list`의 직접 선택 값(`products`)을 상품 handle 변경 후 새 handle `name-photo-sticker-sheet` · `custom-sticker-sheet` 순서로 맞춘다. 현재 Draft는 `package-full` · `face-sticker`를 사용한다. 선택이 비면 collection으로 돌아가므로 §6 배포 전 세 템플릿을 모두 확인한다.
-- [ ] Custom Sticker Sheet 는 메뉴에 두되 **2번째**로. 결정이 적은 쪽이 먼저 보여야 한다
+- [x] **09-22 확인**(메뉴 `shop` 2번째, 컬렉션·홈·카트·404 도 2번째) — Custom Sticker Sheet 는 메뉴에 두되 **2번째**로. 결정이 적은 쪽이 먼저 보여야 한다
 - [x] **09-22 완료 (37a494e)** — 캐러셀 `products` 4개 → 새 handle 2개. 홈 Judge.me 캐러셀(`templates/index.json`의 `cards_carousel`)에 남은 옛 상품 handle 4개를 실제 새 상품 handle과 대조한다. 최종 대상은 `name-photo-sticker-sheet` · `custom-sticker-sheet`이며, 내린 두 상품 참조는 제거한다. **상품 handle 변경 후 §6 push 직전**에 맞추고 §8에서 렌더를 확인한다. 미리 새 handle만 배포하면 아직 없는 상품을 가리킬 수 있다.
 
 ## 8. 검증
 
 **Draft 미리보기와 주문 검증을 나눈다.** Draft 쌍둥이의 admin preview는 표시·옵션 점검용이며 카트·checkout까지 된다고 가정하지 않는다. 아래 구매·제작 시험은 사용자가 승인한 구매 가능한 상품·테스트 창에서 사업주가 실행한다. 아직 실행하지 않았다. 사업주 소유의 비민감 합성 사진을 쓰고 `시각 / 테마·상품 ID / 기기·브라우저 / 입력 / 기대값 / 실제값 / 통과·실패·접근불가`를 실행 항목 옆에 기록한다. 실제 사진 URL·주소·결제정보는 기록하지 않는다. 미리보기 쿠키·표시줄을 확인해 Draft와 라이브 결과를 구분한다.
 
-- [ ] Name & Photo PDP: 옵션이 **Material 하나뿐**, 가격 $24.99, 업로드 최소 5·최대 7, `Name` 필수, `Name style` 보임
+- [x] **09-22 19:37Z 라이브 확인** — Material 4개만, $24.99, Easify `Name*` · `Name style*` · `Your photos*` · `Extra sheets` · `Special instructions`. 업로드 5–7 은 Easify 설정값(`minFileQty`/`maxFileQty`)으로 확인했고 실제 업로드는 해 보지 않았다. Name & Photo PDP: 옵션이 **Material 하나뿐**, 가격 $24.99, 업로드 최소 5·최대 7, `Name` 필수, `Name style` 보임
 - [ ] NAME 후보 5·6·7장과 Retro/Bubble을 각각 확인한다. 재질 변경 뒤 사진·이름·스타일이 보존되며 업로드 완료 전 제출 동작이 안내와 일치한다.
-- [ ] Custom PDP: Size **6택**(Mixed 없음), `Crop preference` 보임, 팩 문구가 **안** 보임, `Photos to include` 가 사이즈별 상한대로 뜸(0.75″ 13 … 2.5″ 1)
+- [x] **09-22 19:38Z 라이브 확인** — $18.99, Size 6개(Mixed 없음), 사이즈를 바꾸면 `Photos to include (19mm)`…`(64mm)` 중 하나만 뜸, `Crop preference` 보임, 팩 안내 없음. 사이즈별 개수 13/10/5/3/3/1 은 Easify 설정값으로 확인(드롭다운을 펼쳐 세지는 않음). Custom PDP: Size **6택**(Mixed 없음), `Crop preference` 보임, 팩 문구가 **안** 보임, `Photos to include` 가 사이즈별 상한대로 뜸(0.75″ 13 … 2.5″ 1)
 - [ ] Custom 각 크기의 상한 13/10/5/3/3/1에 대해 선택 N과 업로드 부족/동일/초과, 크기 변경 후 상태·금액을 확인한다. Crop preference와 Special instructions가 충돌할 때 두 값 모두 보존하고 [pending.md](pending.md)의 결정과 대조한다.
-- [ ] 두 PDP 모두 Judge.me 리뷰 위젯이 이전 개수 그대로 (6건 / 1건)
-- [ ] quick-add 모달이 다시 켜지지 않았는지 (사진 업로드 우회 재발 방지)
-- [ ] Easify 정상/지연/미로딩 상태에서 일반·sticky·빠른 결제 버튼을 각각 확인한다. 사진·이름 없이 결제가 가능한지는 실제 경로로 검증하며 D-2의 처리 방식을 따른다.
-- [ ] 옛 주소 4개가 전부 새 주소로 넘어감
-- [ ] 두 상품의 Shop 게시 여부와 판매 방식이 D-3 결정과 일치한다. Admin 게시 체크만으로 Shop 고객 화면의 개인화 입력 검증을 대신하지 않는다.
+- [x] **09-22 확인: 8건 / 1건** — 전환 전 스냅샷 `reviews.rating_count`(Package Full 8 · Face 1)와 같다. 아래 원래 문장의 "6건"은 옛 숫자. 두 PDP 모두 Judge.me 리뷰 위젯이 이전 개수 그대로 (6건 / 1건)
+- [x] **09-22 확인: 두 PDP 모두 0개.** quick-add 모달이 다시 켜지지 않았는지 (사진 업로드 우회 재발 방지)
+- [ ] (09-22 정상 로딩만 확인: 필수칸이 비어 있으면 두 PDP 모두 Add to cart·빠른 결제가 disabled. 지연/미로딩은 시험 안 함) Easify 정상/지연/미로딩 상태에서 일반·sticky·빠른 결제 버튼을 각각 확인한다. 사진·이름 없이 결제가 가능한지는 실제 경로로 검증하며 D-2의 처리 방식을 따른다.
+- [x] **09-22 19:36Z 확인** — 옛 주소 4개 + 체인 2건(`custom-photo-sticker-face` · `full-body-sticker-1`) 모두 301 → 새 주소, 쌍둥이 `full-set-preview` 는 404. 옛 주소 4개가 전부 새 주소로 넘어감
+- [ ] (09-22 현재: NAME = Online Store + Shop, Custom = Online Store 만. D-3 보류 중) 두 상품의 Shop 게시 여부와 판매 방식이 D-3 결정과 일치한다. Admin 게시 체크만으로 Shop 고객 화면의 개인화 입력 검증을 대신하지 않는다.
 - [ ] 느린 네트워크에서 재질 변경 직후 즉시 담기 → `/cart.js`에서 NAME 라인에 `Name` · `Name style` · `Your photos`가 보존되는지 확인(결제 없음). 정상 속도 결과도 대조한다.
 - [ ] `Extra sheets` 없음/1 × 수량 1/2의 네 조합에서 상품·추가금 라인의 수량·단가·총액·약속한 총장수를 대조한다(결제 없음). Easify의 수량별 과금 동작은 실측 전 단정하지 않는다.
 - [ ] 같은 SKU로 `MIA/Retro`와 `LEO/Bubble`을 담았을 때 두 개인화가 라인별로 보존되는지 확인한다. 내부 도구가 두 사람의 제작을 자동 분리한다고 가정하지 않는다.
 - [ ] Name의 빈값/공백·`Chloé`·`MIA2`·`O'BRIEN`·24자 W·`MIA ROSE`를 Retro/Bubble 각각에서 확인한다. 제출 시 오류·초점·최종 주문값과 실제 이름 생성 결과를 대조하고, Custom 한글 이름의 별도 제작 방식과 혼동하지 않는다.
-- [ ] NAME PDP의 eyebrow가 승인 문구와 일치하고 다른 상품명으로 읽히지 않는다.
-- [ ] 홈 캐러셀·홈/컬렉션·카트/404 추천 그리드에서 새 상품 참조·2종 배치를 확인한다.
+- [ ] (09-22 화면: `Photo sticker sheet · Made in Toronto` / `Name & photo sticker sheet`. 승인 문구와는 아직 대조 안 함) NAME PDP의 eyebrow가 승인 문구와 일치하고 다른 상품명으로 읽히지 않는다.
+- [x] **09-22 확인** — 홈·컬렉션·카트·404 모두 두 상품만, Name & Photo → Custom 순서. 홈 캐러셀 설정값은 새 handle 2개(라이브 pull 로 확인). 홈 캐러셀·홈/컬렉션·카트/404 추천 그리드에서 새 상품 참조·2종 배치를 확인한다.
 - [ ] **테스트 주문 1건** — 사진 5장 + 이름 + Name style → 결제 → `intake.py --order <번호>` 로 폴더·파일명·`sticker_name`·`name_style`·`job.notes`·수량/옵션 확인 → 구성 보드에서 최종 5장을 선택해 시트 생성. 결제 방식과 환불 비용은 사업주가 실행 전에 확인한다.
 - [ ] 실제 출력·재단 결과의 최종 5디자인·이름·칼선·장수와 주문/미리보기를 대조하고 전체 스티커 개수를 실측한다. 자동 테스트 통과로 Adobe 제작·인쇄 성공을 대신하지 않는다.
 - [ ] 테스트 주문 환불·취소 처리
 - [ ] 결제 테스트 모드를 사용했다면 시험 종료 후 끄고, 결제 설정과 실결제 가능 상태가 시험 전 승인한 상태로 돌아왔는지 확인한다.
 - [ ] 변경 전 열린 PDP·카트·checkout과 변경 후 새 탭에서 구/신 SKU·가격·개인화 혼합을 확인하고 §9의 복구 리허설 시간·복원 결과를 기록한다. 비밀번호만으로 기존 세션·다른 채널이 차단됐다고 가정하지 않는다.
-- [ ] 전환 창의 접수 주문을 확인하고 누락 속성/옛 Package 속성/새 SKU 조합이 있으면 제작 전에 수동 확인한다. 확인이 끝난 뒤 §1-A의 Online Store 접근 상태를 승인한 상태로 되돌린다.
+- [x] **09-22 확인: 17:00Z 이후 주문 0건** → 대조할 주문 없음. 비밀번호는 19:36Z 해제(§1-A). 전환 창의 접수 주문을 확인하고 누락 속성/옛 Package 속성/새 SKU 조합이 있으면 제작 전에 수동 확인한다. 확인이 끝난 뒤 §1-A의 Online Store 접근 상태를 승인한 상태로 되돌린다.
 
 ## 9. 되돌리기
 
@@ -360,9 +360,9 @@ Doctor 기본 검사와 자체 테스트는 구 4상품·7사이즈 중심이다
 ## 아직 검증 안 된 것
 
 - ~~`productOptionUpdate` 의 정확한 **인자 이름**(§3-2)~~ → **09-20 validate 통과**: `productOptionUpdate(productId:, option: OptionUpdateInput!, optionValuesToDelete: [ID!], variantStrategy: MANAGE)`. 실행은 컷오버 창(Face 에는 쌍둥이가 없어 리허설은 못 했다).
-- Judge.me 위젯이 handle 변경 후에도 즉시 붙는지 (상품 ID 기준이라 붙어야 하지만 실측은 없다).
+- ~~Judge.me 위젯이 handle 변경 후에도 즉시 붙는지~~ → 09-22 라이브 실측: 두 PDP 모두 전환 전 개수 그대로(8 / 1).
 - ~~Easify 업로드 **최소 5 · 최대 7** 설정 위치~~ → 09-19 세트 A 에서 설정·확인 완료.
 - ~~**최소 5 가 맞는지**~~ → 사용자 확정 (09-19 "업로드는 7 최대로 받고 그중에 5디자인을 골라서 줄거야") = min 5 · max 7.
 - GitHub→Shopify 방향 동기화 생사. Shopify→GitHub 은 죽은 것으로 실측(§6). 라이브 반영을 CLI 기본으로 잡았으니 컷오버 절차에는 영향 없다.
-- 전환 뒤 새 상품 데이터로 컬렉션 두 상품 배치와 메뉴·추천 링크. 홈·카트·404의 현재 두 상품 배치는 Draft에서 확인했다(09-22).
+- ~~전환 뒤 새 상품 데이터로 컬렉션 두 상품 배치와 메뉴·추천 링크~~ → 09-22 라이브 확인(§8). 홈·카트·404의 현재 두 상품 배치는 Draft에서 확인했다(09-22).
 - Draft 상품 admin preview에서 새 테마 선택이 유지되지 않아 Name & Photo의 새 테마 전체 흐름은 아직 실측하지 못했다. 테마 코드/카피 점검을 실제 업로드·주문 시험으로 간주하지 않는다.
