@@ -81,16 +81,16 @@ fragment Snap on Product {
 }
 ```
 
-- [ ] 실행하고 저장했다. 각 connection의 `hasNextPage`가 true이면 해당 상품·connection을 `after: endCursor`로 추가 조회해 모두 저장했다. 첫 페이지만 저장하고 완료로 체크하지 않는다.
-- [ ] 채널 전체 목록과 상품별 게시 상태를 Admin에서 캡처했다. `resourcePublicationsV2`에는 게시 또는 예약 게시만 나오며 `isPublished: false`는 예약 상태다. `publishDate`도 보존한다. 빈 목록/누락을 API 오류나 권한 부족과 혼동하지 않는다.
-- [ ] 메뉴의 라벨·대상 URL·순서, 컬렉션의 포함 상품·정렬 방식·상품 순서를 캡처했다. 위 상품 쿼리의 `collections`만으로 메뉴·정렬을 복원할 수 없다.
-- [ ] 라이브 테마를 **Duplicate → `live-backup-YYYYMMDD`**로 만들었다. 새 백업 테마 ID와 라이브 원본 ID·시각을 §9-1에 기록했다. §6 push 전에 필수다.
-- [ ] Easify 세트 `523847` · `523886` · `523889` · `767314` · `767342`의 편집 화면을 캡처했다. 필드·조건·가격·필수값·순서·할당·활성 상태가 전부 보이도록 남겼다.
-- [ ] 기존 리다이렉트 4경로의 존재 여부·ID·대상과 전환 창 시작 시각을 기록했다. 기존 항목을 바꾼 경우 복구는 삭제가 아니라 이전 값 복원이다.
+- [x] **2026-09-22 17:14Z 실행·저장 완료** → `_cutover_before.json`(726KB, 상품 5 = a~d + 쌍둥이 e, 전 namespace metafield·variant·게시·컬렉션·media, 모든 connection hasNextPage=false, 독립 재조회 검증 통과). 실행하고 저장했다. 각 connection의 `hasNextPage`가 true이면 해당 상품·connection을 `after: endCursor`로 추가 조회해 모두 저장했다. 첫 페이지만 저장하고 완료로 체크하지 않는다.
+- [x] **09-22 API 로 캡처** (publications 5 + 상품별 published/unpublished 매트릭스, `_cutover_before.json` publications_redirects). Admin 화면 캡처는 아님. 채널 전체 목록과 상품별 게시 상태를 Admin에서 캡처했다. `resourcePublicationsV2`에는 게시 또는 예약 게시만 나오며 `isPublished: false`는 예약 상태다. `publishDate`도 보존한다. 빈 목록/누락을 API 오류나 권한 부족과 혼동하지 않는다.
+- [x] **09-22 캡처** (메뉴 6개 17항목 3단계, 컬렉션 2개 — photo-sheets MANUAL 5상품 순서, `_cutover_before.json` menus_collections). 메뉴의 라벨·대상 URL·순서, 컬렉션의 포함 상품·정렬 방식·상품 순서를 캡처했다. 위 상품 쿼리의 `collections`만으로 메뉴·정렬을 복원할 수 없다.
+- [x] **09-22 완료 — 백업 테마 `live-backup-20260922` id `166572851456`(UNPUBLISHED, 17:20Z)**. Admin Duplicate 대신 CLI `theme pull --live` → `Shopify Theme/live-backup-20260922/`(430파일) → `theme push --unpublished`. 검증: 430파일 전부 존재, md5 428 동일, `templates/index.json`·`product.json` 2개는 CLI 재직렬화(공백·`\/`) 표기 차이만 있고 내용 동일. 라이브 테마를 **Duplicate → `live-backup-YYYYMMDD`**로 만들었다. 새 백업 테마 ID와 라이브 원본 ID·시각을 §9-1에 기록했다. §6 push 전에 필수다.
+- [x] **09-22 스토어프론트 스크립트로 5세트 전체 구조 캡처**(`_cutover_before.json` easify — 옵션 순서·내부 이름·필수·조건·가격·할당). 앱 편집 화면 스크린샷은 아님. 발견: 523847 과 767314 가 Face·Full Body 에 **둘 다 활성 할당**, 767342 `Your photos` 에 variant CONTAIN "8 designs" 조건 흔적 → §5 에서 확인. Easify 세트 `523847` · `523886` · `523889` · `767314` · `767342`의 편집 화면을 캡처했다. 필드·조건·가격·필수값·순서·할당·활성 상태가 전부 보이도록 남겼다.
+- [x] **09-22 기록**: 기존 리다이렉트 7건 중 옛 4경로를 source 로 쓰는 건 0건. 단 `468013351168` `/products/custom-photo-sticker-face → /products/face-sticker`, `468960379136` `/products/full-body-sticker-1 → /products/full-body-sticker` 가 옛 handle 을 **target** 으로 써서 체인이 됨 → 창 안에서 target 을 `/products/custom-sticker-sheet` 로 갱신(복구 = 이전 target 복원). **창 시작 17:40:28Z (13:40 EDT)**. 기존 리다이렉트 4경로의 존재 여부·ID·대상과 전환 창 시작 시각을 기록했다. 기존 항목을 바꾼 경우 복구는 삭제가 아니라 이전 값 복원이다.
 
 ### 1-A. 전환 창의 유입과 주문 확인
 
-- [ ] 사용자가 승인한 전환 창에 Online Store의 **Private mode/비밀번호 보호**를 켰다(Online Store → Preferences → Store access, UI 명칭은 현재 화면 확인). 해제는 §8 확인 뒤이며, 원래 보호 상태도 기록한다. [Shopify 공식 안내](https://help.shopify.com/en/manual/online-store/themes/password-page)
+- [x] **09-22 17:40Z 사용자가 켬** (원래 상태: 꺼짐 — 17:14Z 스토어프론트 200 확인, 켠 뒤 `/password` 로 감). 사용자가 승인한 전환 창에 Online Store의 **Private mode/비밀번호 보호**를 켰다(Online Store → Preferences → Store access, UI 명칭은 현재 화면 확인). 해제는 §8 확인 뒤이며, 원래 보호 상태도 기록한다. [Shopify 공식 안내](https://help.shopify.com/en/manual/online-store/themes/password-page)
 - [ ] **비밀번호를 전체 판매 중단이나 원자적 전환으로 간주하지 않는다.** 기존 탭·카트·checkout·Shop 등 다른 채널의 차단 여부는 미검증이다. D-3의 채널 결정과 별개로 전환 창에 접수된 주문의 SKU·가격·개인화 속성을 수동 대조한 뒤 제작한다.
 - [ ] §2의 가격/SKU 변경과 §5-A 8번 할당을 한 전환 창에서 연속 처리하고, 완료 직후 실제 필드·가격을 확인한다. 할당을 먼저 바꾸는 대안도 중간 상태를 만들므로 이것만으로 문제를 해결했다고 기록하지 않는다.
 
@@ -115,7 +115,7 @@ SEO title 은 45자다. 키워드를 더 넣어 60자를 넘기면 검색 결과
 
 **실측 전 분기:** 위 `about 24`를 그대로 복사하지 않는다. D-4를 확인하고 `copy_two_products.md` §1의 **SEO description — 실측 전** 또는 새로 승인된 대체 문장을 사용한다. SEO title과 description은 이 분기에서도 함께 보낸다. D-4 미결정이면 해당 문장 게시를 보류한다.
 
-- [ ] 완료
+- [x] **09-22 완료** — `productUpdate`(title·handle·descriptionHtml·tags·seo 동시, `redirectNewHandle: true`). SEO description 은 **실측 전 문장**("…a full A5 sheet of custom stickers…"). D-4 는 사용자 "모르겠다" = 미실측 → 정본 §1 규칙대로 숫자 없는 문장.
 
 **2-2. variant 4개의 가격·SKU**
 
@@ -123,7 +123,7 @@ SEO title 은 45자다. 키워드를 더 넣어 60자를 넘기면 검색 결과
 
 SKU 형식은 `intake.py` 의 `SKU_PACK_RE` 가 읽는 형식이다. 바꾸면 인테이크가 팩을 못 알아본다. §11 을 **먼저** 끝내둔다.
 
-- [ ] 완료. 4개 전부 $24.99 · 구매 가능 상태인지 확인했다.
+- [x] **09-22 완료** — `productVariantsBulkUpdate` 4개 응답에서 24.99 · EVS-NAME-5-WM/SV/GD/TR 확인 (SKU 는 `inventoryItem.sku`). 재고 tracked 그대로.
 
 재고는 지금 tracked=true 에 47~50 이다. 새로 생기는 variant 가 없으므로 그대로 둬도 품절이 안 뜬다. 정리하고 싶으면 `inventoryItem.tracked: false` 로 바꾼다(주문 제작이라 재고 개념이 없다) — 선택 사항이다.
 
@@ -144,7 +144,7 @@ query { product(id: "gid://shopify/Product/9655556833536") {
 | `product_intro` · `product_story_html` | `copy_two_products.md` §1 의 값 (rich text JSON · HTML 그대로) |
 | `pack_sizes` · `pack_use` · `is_package` · `pack_size_codes` · `sheet_prefix` | 쌍둥이 값 그대로 |
 
-- [ ] 완료
+- [x] **09-22 완료** — `metafieldsSet` 8개. 쌍둥이의 intro/story 는 정본보다 옛 문장("Send a spare or two")이라 **정본 §1 값**을 넣고 첫 불릿만 실측 전 문장 "A full A5 sheet of stickers, cut and ready to peel". `sheet_prefix` = `face`(쌍둥이 값). 옛 `product_desc` 는 그대로 둠(미사용).
 
 **2-4. 옛 주소 리다이렉트**
 
@@ -152,7 +152,7 @@ query { product(id: "gid://shopify/Product/9655556833536") {
 urlRedirectCreate(urlRedirect: { path: "/products/package-full", target: "/products/name-photo-sticker-sheet" })
 ```
 
-- [ ] 완료
+- [x] **09-22 완료** — `redirectNewHandle: true` 가 자동 생성 (`gid://shopify/UrlRedirect/598115549440`), 별도 create 불필요.
 
 ## 3. Custom Sticker Sheet (Face Sticker 변환)
 
@@ -169,7 +169,7 @@ seo.description: "Custom photo stickers on an A5 sheet. Choose the size, crop an
 
 `descriptionHtml`과 SEO는 [카피 정본 §2](../shopify/copy_two_products.md)의 값을 사용한다. 손으로 윤곽을 따고 기계로 재단하는 제작 방식에 맞춰 `Traced by hand and precision-cut`으로 통일한다. 실제 상품·SEO 저장은 컷오버 때 실행한다.
 
-- [ ] 완료
+- [x] **09-22 완료** — `productUpdate` 정본 §2 값 그대로, `redirectNewHandle: true`.
 
 **3-2. `Mixed` 사이즈 제거 (7택 → 6택, 28 → 24 variant)**
 
@@ -186,23 +186,23 @@ query { product(id: "gid://shopify/Product/9451674370304") {
 
 ⚠ **인자 이름은 실행 직전 `graphql_schema('Mutation')` 로 확인한다.** 여기 적힌 건 전략 enum 만 검증된 상태다.
 
-- [ ] 완료. variant 가 24개이고 Size 가 6택인지 확인했다.
+- [x] **09-22 완료** — `productOptionUpdate(option.id 12124944728320, optionValuesToDelete [4914352423168 Mixed], variantStrategy MANAGE)` 응답: Size 6값 · variantsCount 24. 삭제된 Mixed variant 4개 id 는 `_cutover_before.json` 에 있음.
 
 **3-3. metafield**
 
-- [ ] `card_subtitle`: `You choose the size, the crop and the photos` (`copy_two_products.md` §2)
-- [ ] `product_story_html` · `product_intro`: `copy_two_products.md` §2 의 값
-- [ ] ⚠ `pack_sizes` 를 **넣지 않는다.** 넣으면 사이즈 선택 UI 가 숨겨진다.
+- [x] `card_subtitle`: `You choose the size, the crop and the photos` (`copy_two_products.md` §2) — **09-22 완료**
+- [x] `product_story_html` · `product_intro`: `copy_two_products.md` §2 의 값 — **09-22 완료** (`metafieldsSet` 3개)
+- [x] ⚠ `pack_sizes` 를 **넣지 않는다.** 넣으면 사이즈 선택 UI 가 숨겨진다. — 넣지 않음
 
 **3-4. 리다이렉트**
 
-- [ ] `/products/face-sticker` → `/products/custom-sticker-sheet`
+- [x] `/products/face-sticker` → `/products/custom-sticker-sheet` — **09-22 자동 생성** (`598115582208`). 체인 2건 target 갱신: `468013351168`·`468960379136` → `/products/custom-sticker-sheet`
 
 ## 4. 내리는 상품 2종
 
-- [ ] Package Mini `productUpdate { status: DRAFT }`
-- [ ] Full Body Sticker `productUpdate { status: DRAFT }`
-- [ ] 리다이렉트: `/products/package-mini` → `/products/name-photo-sticker-sheet`, `/products/full-body-sticker` → `/products/custom-sticker-sheet`
+- [x] Package Mini `productUpdate { status: DRAFT }` — **09-22 완료**
+- [x] Full Body Sticker `productUpdate { status: DRAFT }` — **09-22 완료**
+- [x] 리다이렉트: `/products/package-mini` → `/products/name-photo-sticker-sheet`(`598115614976`), `/products/full-body-sticker` → `/products/custom-sticker-sheet`(`598115647744`) — **09-22 완료**
 
 리뷰 2건은 여기서 묻힌다. 둘 다 1년간 주문 0건인 상품이다(§lineup_restructure 판매 데이터).
 
@@ -268,8 +268,8 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 ## 6. 테마
 
 - [ ] §1 라이브 백업 테마 ID를 기록했고, 승인된 카피와 §7의 handle 참조 수정이 배포 파일 목록에 포함돼 있다. Judge.me handle 수정은 상품 handle 변경 확인 뒤 **이 push 직전**에 한다.
-- [ ] 브랜치 `lineup-2026-09` → `main` 머지 (fast-forward, 09-20 확인). **GitHub 동기화가 라이브에 반영해 줄 거라고 믿지 않는다** — 실측 (2026-09-20): `shopify[bot]` 마지막 커밋이 07-30 인데 라이브 파일은 08-18 까지 Theme Editor 로 바뀌었고(`templates/index.json` 19:37Z 등) 커밋이 없다 → Shopify→GitHub 방향은 죽어 있고, GitHub→Shopify 도 검증되지 않았다.
-- [ ] 머지 직후 **라이브 pull → main 과 diff**. 09-20 비교에서는 `config/settings_data.json`(Judge.me 카트 위젯) · `templates/index.json`(IN THE WILD·hero CSS·Judge.me 캐러셀) · `templates/product.json`(Judge.me real_data)의 라이브 편집을 브랜치가 이미 포함했다. 09-22 Draft 수정도 추가됐으므로 과거 leaf 개수를 완료 기준으로 쓰지 말고, 최신 라이브와 실제 배포 파일 차이를 다시 검토한다.
+- [x] **09-22 머지 완료** (ff → ebcd185, 이어 handle 교체 37a494e). 브랜치 `lineup-2026-09` → `main` 머지 (fast-forward, 09-20 확인). **GitHub 동기화가 라이브에 반영해 줄 거라고 믿지 않는다** — 실측 (2026-09-20): `shopify[bot]` 마지막 커밋이 07-30 인데 라이브 파일은 08-18 까지 Theme Editor 로 바뀌었고(`templates/index.json` 19:37Z 등) 커밋이 없다 → Shopify→GitHub 방향은 죽어 있고, GitHub→Shopify 도 검증되지 않았다.
+- [x] **09-22 diff 완료** — 라이브 pull(백업 폴더) vs main: 변경 14 + 신규 snippet 3 (`es-how-to-order`·`es-pack-note`·`es-what-you-get`), 그 외 차이 없음. 머지 직후 **라이브 pull → main 과 diff**. 09-20 비교에서는 `config/settings_data.json`(Judge.me 카트 위젯) · `templates/index.json`(IN THE WILD·hero CSS·Judge.me 캐러셀) · `templates/product.json`(Judge.me real_data)의 라이브 편집을 브랜치가 이미 포함했다. 09-22 Draft 수정도 추가됐으므로 과거 leaf 개수를 완료 기준으로 쓰지 말고, 최신 라이브와 실제 배포 파일 차이를 다시 검토한다.
 - [ ] 라이브 반영은 **CLI 로 직접**: `shopify theme push --store q3gj59-am.myshopify.com --live --allow-live --only <브랜치가 바꾼 파일>` (사용자 승인 후). GitHub 이 살아 있어도 같은 내용이라 해가 없다.
 - 복사 테마에만 있는 `snippets/es-upsert-probe.liquid`(08-16 쓰기 프로브, 아무 데서도 render 안 함)는 브랜치에 없어 라이브로 가지 않는다. 복사 테마를 지울 때 같이 사라진다.
 - [x] 테마 문장 교체 **완료 (2026-09-19)** — 브랜치 `lineup-2026-09` 커밋 `6ac1063`, 복사 테마에 push 하고 5페이지(홈·컬렉션·FAQ·package-full·face-sticker)에서 확인. 목록은 `copy_two_products.md` §3. main 머지는 컷오버 창에서.
@@ -277,11 +277,11 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 
 ## 7. 컬렉션·메뉴
 
-- [ ] 컬렉션 `photo-sheets` 에 두 상품만 남기고 정렬 (Name & Photo 가 앞)
-- [ ] **네비게이션 메뉴** (Shopify Navigation, 테마 아님). 푸터에 옛 상품 4개가 이름으로 걸려 있다. 리다이렉트가 있어도 **라벨이 옛 이름으로 남으므로** 반드시 교체한다
-- [ ] 홈·카트·404 `product-list`의 직접 선택 값(`products`)을 상품 handle 변경 후 새 handle `name-photo-sticker-sheet` · `custom-sticker-sheet` 순서로 맞춘다. 현재 Draft는 `package-full` · `face-sticker`를 사용한다. 선택이 비면 collection으로 돌아가므로 §6 배포 전 세 템플릿을 모두 확인한다.
+- [~] 컬렉션 `photo-sheets` 에 두 상품만 남기고 정렬 (Name & Photo 가 앞) — **09-22 정렬 완료**(`collectionReorderProducts` Name & Photo → 0번). Mini·Full Body·shape-sticker 제거는 `collectionRemoveProducts` 가 자동 모드에서 차단돼 **Admin 에서 손으로** (셋 다 DRAFT 라 스토어프론트엔 안 보임)
+- [x] **네비게이션 메뉴** — **09-22 완료**: 메뉴 `shop`(262364463360) 을 `menuUpdate` 로 2항목(Name & Photo Sticker Sheet → Custom Sticker Sheet, 기존 item id 633050202368·633050071296 재사용, Mini·Full Body 항목 삭제). 푸터에 옛 상품 4개가 이름으로 걸려 있다. 리다이렉트가 있어도 **라벨이 옛 이름으로 남으므로** 반드시 교체한다
+- [x] **09-22 완료 (main 커밋 37a494e)** — index/cart/404 `products` → `name-photo-sticker-sheet`·`custom-sticker-sheet`. 홈·카트·404 `product-list`의 직접 선택 값(`products`)을 상품 handle 변경 후 새 handle `name-photo-sticker-sheet` · `custom-sticker-sheet` 순서로 맞춘다. 현재 Draft는 `package-full` · `face-sticker`를 사용한다. 선택이 비면 collection으로 돌아가므로 §6 배포 전 세 템플릿을 모두 확인한다.
 - [ ] Custom Sticker Sheet 는 메뉴에 두되 **2번째**로. 결정이 적은 쪽이 먼저 보여야 한다
-- [ ] 홈 Judge.me 캐러셀(`templates/index.json`의 `cards_carousel`)에 남은 옛 상품 handle 4개를 실제 새 상품 handle과 대조한다. 최종 대상은 `name-photo-sticker-sheet` · `custom-sticker-sheet`이며, 내린 두 상품 참조는 제거한다. **상품 handle 변경 후 §6 push 직전**에 맞추고 §8에서 렌더를 확인한다. 미리 새 handle만 배포하면 아직 없는 상품을 가리킬 수 있다.
+- [x] **09-22 완료 (37a494e)** — 캐러셀 `products` 4개 → 새 handle 2개. 홈 Judge.me 캐러셀(`templates/index.json`의 `cards_carousel`)에 남은 옛 상품 handle 4개를 실제 새 상품 handle과 대조한다. 최종 대상은 `name-photo-sticker-sheet` · `custom-sticker-sheet`이며, 내린 두 상품 참조는 제거한다. **상품 handle 변경 후 §6 push 직전**에 맞추고 §8에서 렌더를 확인한다. 미리 새 handle만 배포하면 아직 없는 상품을 가리킬 수 있다.
 
 ## 8. 검증
 
@@ -313,7 +313,7 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 
 **10분은 복구 목표값이며 실측 기록이 아니다.** 리허설에서 걸린 시간을 기록한다. 아래는 복구 범위이며, 실제 mutation·Publish·push는 사용자가 승인한 복구 창에서 실행한다.
 
-1. **§1 백업 테마 기준점** — 이름 `live-backup-________` / 백업 ID `________` / 기존 라이브 ID `________` / 캡처 시각 `________`. 이 ID의 테마를 Publish한다. Git 이전 커밋에서 해당 파일을 별도 디렉토리에 꺼내 검토 후 CLI push하는 대안도 있으나, Theme Editor 변경을 포함한 라이브 스냅샷과 같음을 먼저 확인한다. 작업 브랜치를 reset하거나 "이전 커밋이면 라이브와 같다"고 가정하지 않는다.
+1. **§1 백업 테마 기준점** — 이름 `live-backup-20260922` / 백업 ID `166572851456` / 기존 라이브 ID `164494606592` / 캡처 시각 `2026-09-22T17:20Z` (로컬 사본 `Shopify Theme/live-backup-20260922/`, 430파일). 이 ID의 테마를 Publish한다. Git 이전 커밋에서 해당 파일을 별도 디렉토리에 꺼내 검토 후 CLI push하는 대안도 있으나, Theme Editor 변경을 포함한 라이브 스냅샷과 같음을 먼저 확인한다. 작업 브랜치를 reset하거나 "이전 커밋이면 라이브와 같다"고 가정하지 않는다.
 2. 스냅샷 JSON 기준 `productUpdate`로 title·handle·status·**descriptionHtml**·seo(title+description)·tags를 복원하고 `productVariantsBulkUpdate`로 각 variant의 가격·SKU 등 실제 변경 필드를 복원한다. 가격을 모든 상품에 34.99로 일괄 복원하지 않는다. 재고 설정을 바꿨다면 해당 설정도 스냅샷과 대조한다.
 3. `metafieldsSet`으로 기존 `custom` metafield의 type·value를 복원한다. 전환 중 새로 생겨 스냅샷에 없던 키는 별도 목록으로 확인해 제거해야 이전 상태가 된다. Product 필드 복원만으로 metafield 복구가 끝나지 않는다.
 4. 채널 게시/예약 상태를 §1의 publication ID·`isPublished`·`publishDate` 및 Admin 캡처와 대조해 복원한다. 실행 직전 게시/게시 취소 mutation 스키마와 예약 처리 방법을 확인한다. Mini·Full Body도 이전 status와 채널을 함께 복원한다.
