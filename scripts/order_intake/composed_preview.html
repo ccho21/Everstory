@@ -165,6 +165,8 @@
         <label>흰 테두리</label><div class="seg" id="fRim"></div>
       </div>
       <p class="hint" id="formHint"></p>
+      <p class="hint" id="orderContract" hidden></p>
+      <p class="hint" id="orderOptions" hidden></p>
     </div>
     <div class="sec" id="layoutSec" hidden>
       <h2>배치</h2>
@@ -222,6 +224,12 @@ const hasSizes = () => S.features.indexOf("sizes") >= 0;
 const hasNameStyles = () => S.features.indexOf("nameStyles") >= 0;
 const hasCounts = () => S.features.indexOf("counts") >= 0;
 const NAME_STYLE_KEY = "everstory.composed.nameStyle";   // 이 화면에서 마지막으로 고른 이름 스타일 (보는 사람 브라우저에만)
+function savedNameStyle() {
+  const keys = (E.COMPOSED_NAME_STYLES || []).map(st => st.key);
+  let saved = "";
+  try { saved = localStorage.getItem(NAME_STYLE_KEY) || ""; } catch (err) { saved = ""; }
+  return keys.indexOf(saved) >= 0 ? saved : (keys[0] || "");
+}
 const libStem = f => String(f || "").replace(/\.ai$/i, "");
 // 미리보기 그림 주소 — 서버 목록(S.art)에 있을 때만 (없으면 "" → 대략 모양으로 그린다).
 function artUrl(lib, name) {
@@ -361,6 +369,13 @@ async function loadFolder(name, fresh) {
   const keep = fresh ? null : new Map(S.pairs.map(p => [p.base, p]));
   S.folder = name;
   S.data = d;
+  const contract = d.prefill || {};
+  const quantity = contract.quantity == null ? "" : "수량 " + contract.quantity;
+  $("#orderContract").textContent = [contract.pack === "NAME" ? "Name & Photo · 최종 5디자인 · A5 1장" : "", quantity].filter(Boolean).join(" · ");
+  $("#orderContract").hidden = !$("#orderContract").textContent;
+  const options = (contract.options || []).map(o => o.key + " = " + o.value).join(" · ");
+  $("#orderOptions").textContent = options ? "주문 옵션: " + options : "";
+  $("#orderOptions").hidden = !options;
   S.features = Array.isArray(d.features) ? d.features : [];
   S.art = (d.art && typeof d.art === "object") ? d.art : {};
   $("#layoutSec").hidden = !hasLayouts();
@@ -382,10 +397,10 @@ async function loadFolder(name, fresh) {
     $("#fOrder").value = f.orderNumber || "";
     $("#fMat").value = f.material || E.MATERIAL_OPTIONS[0];
     $("#fDate").value = d.today || "";
-    // 주문에 Name style 이 있으면(job.name_style) 그 스타일을 먼저 고른다. 없으면 마지막에 고른 것 그대로 — 브라우저 저장값은 안 건드린다.
+    // 주문 스타일이 없으면 브라우저에 마지막으로 저장한 선택으로 돌아간다. 직전 주문의 스타일은 물려받지 않는다.
     const styleKeys = (E.COMPOSED_NAME_STYLES || []).map(st => st.key);
     const styleFromOrder = hasNameStyles() && styleKeys.indexOf(f.nameStyle || "") >= 0 ? f.nameStyle : "";
-    if (styleFromOrder) S.nameStyle = styleFromOrder;
+    S.nameStyle = styleFromOrder || savedNameStyle();
     const memo = (f.notes && f.notes.length) ? "주문 메모: " + f.notes.join(" / ") : "";
     const from = f.orderFrom === "folder" ? "주문번호는 폴더 이름에서 읽었어요 (_order.json 에 없음)." : "";
     const styleNote = styleFromOrder ? "이름 스타일 '" + E._nameStyle(styleFromOrder).label + "' 은 주문의 Name style 에서 읽었어요." : "";
@@ -541,6 +556,13 @@ function compute() {
   const noCanvas = sel.filter(p => !p.canvasAspect);
   if (noCanvas.length) blockers.push("실루엣(_sil.png)을 못 읽은 사진: " + noCanvas.map(p => p.nn).join(", "));
   // 알리기만 하는 것
+  const contract = (S.data && S.data.prefill) || {};
+  if (contract.pack === "NAME") {
+    if (contract.photosOrdered != null && sel.length !== contract.photosOrdered) notes.push(["warn",
+      `Name & Photo: 선택 ${sel.length}장 — 주문의 최종 ${contract.photosOrdered}디자인과 달라요. 제작할 사진을 확인하세요.`]);
+    if (S.results.length > 1) notes.push(["warn", "Name & Photo: 시트가 2장 이상이에요 — A5 1장 계약을 확인하세요."]);
+    if (!f.sticker) notes.push(["warn", "Name & Photo: 스티커 이름이 비어 있어요 — 이름 필수 주문을 확인하세요."]);
+  }
   const approx = sel.filter(p => p.cutState === "none" || p.cutState === "stale");
   if (approx.length) notes.push(["warn", `칼선 캐시가 없거나 오래된 사진 ${approx.length}장(${approx.map(p => p.nn).join(", ")}) — 실루엣으로 크기를 어림했어요. ` +
     "Illustrator 는 칼선을 새로 따므로 스티커 수가 조금 다를 수 있어요 (완료 창에 비교가 나와요)."]);
@@ -1034,10 +1056,7 @@ async function init() {
     `<button type="button" data-pos="${v}" title="${v === "auto" ? "스타일마다 어울리는 자리 (가운데 스타일은 왼쪽)" : "스티커 이름을 " + t + "에"}">${t}</button>`).join("");
   S.rim = E.COMPOSED_RIM_MM;
   // 이름 스타일 — 지난번에 고른 것 (엔진이 모르는 값이면 첫 번째 = 레트로).
-  const styleKeys = (E.COMPOSED_NAME_STYLES || []).map(st => st.key);
-  let saved = "";
-  try { saved = localStorage.getItem(NAME_STYLE_KEY) || ""; } catch (err) { saved = ""; }
-  S.nameStyle = styleKeys.indexOf(saved) >= 0 ? saved : (styleKeys[0] || "");
+  S.nameStyle = savedNameStyle();
   paintRim();
   paintNamePos();
   wire();

@@ -45,11 +45,17 @@ cp = _load("composed_preview")
 webui = _load("webui")
 
 OK = []
+SKIPPED = []
 
 
 def chk(name, cond, extra=""):
     OK.append(bool(cond))
     print(("✅" if cond else "❌") + " " + name + ("   " + str(extra) if extra else ""))
+
+
+def skip(name, reason):
+    SKIPPED.append(name)
+    print("⏭ " + name + "   " + reason)
 
 
 def png_bytes(w, h, box):
@@ -77,17 +83,22 @@ def write(path, data):
 HAVE_SIPS = os.path.exists("/usr/bin/sips")
 
 
+def psd_bytes(w, h):
+    """PSD v1 — RGB 3채널·8비트·비압축 합성 이미지. 레이어/고객 사진 없음.
+
+    Adobe PSD 명세: https://www.adobe.com/devnet-apps/photoshop/fileformatashtml/
+    PNG→PSD 쓰기를 지원하지 않는 sips 환경에서도 정상 입력을 만든다.
+    """
+    header = struct.pack(">4sH6sHIIHH", b"8BPS", 1, b"\x00" * 6, 3, h, w, 8, 3)
+    sections = struct.pack(">IIIH", 0, 0, 0, 0)  # 색상 정보·리소스·레이어 없음, raw 압축 코드
+    return header + sections + b"\x14" * (w * h * 3)
+
+
 def make_pair(cut, base, w=40, h=60):
     sil = os.path.join(cut, base + "_sil.png")
     write(sil, png_bytes(w, h, (5, 6, 35, 54)))
     psd = os.path.join(cut, base + "_clean.psd")
-    ok = False
-    if HAVE_SIPS:
-        r = subprocess.run(["/usr/bin/sips", "-s", "format", "psd", sil, "--out", psd],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        ok = r.returncode == 0 and os.path.isfile(psd)
-    if not ok:
-        write(psd, b"8BPS-not-really")
+    write(psd, psd_bytes(w, h))
     return sil, psd
 
 
@@ -108,6 +119,9 @@ def evface(cache, base, psd, probe="ok|1|0,0,0,0.6|1|0", kind="", src=None):
 root = tempfile.mkdtemp(prefix="composed-preview-test-")
 cache_root = tempfile.mkdtemp(prefix="composed-preview-cache-")
 cp.CACHE_DIR = cache_root
+webui.composed.CACHE_DIR = cache_root  # webui는 별도 모듈 인스턴스를 사용한다.
+srv = None
+server_thread = None
 try:
     NODE = shutil.which("node")
     NFD_HARIN = unicodedata.normalize("NFD", "하린")
@@ -382,10 +396,16 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     print("\n══ 주문 정보 · 화면 데이터 ══")
     write(os.path.join(order_a, "_order.json"), json.dumps({"job": {
         "customer": " Jennifer Test ", "order": "#EVS-1", "material": "Gold", "sticker_name": "LUCKY",
-        "name_style": "bubble", "notes": ["재질: SKU 에서 못 읽음"]}}))
+        "name_style": "bubble", "notes": ["재질: SKU 에서 못 읽음"], "pack": "NAME", "photos_ordered": 5,
+        "sheets": 1, "quantity": 2}, "options": [
+            {"key": "Extra sheets", "value": "Add 3 extra print", "line_item": 0},
+            {"key": "Special instructions", "value": " <keep & show> ", "line_item": 0}]}))
     pre = cp.order_prefill(order_a)
     chk("주문 정보 = job 블록 (주문번호 # 제거 · 이름 스타일)", pre == {"nameText": "Jennifer Test", "orderNumber": "EVS-1",
-        "material": "Gold", "stickerName": "LUCKY", "nameStyle": "bubble", "notes": ["재질: SKU 에서 못 읽음"], "orderFrom": "job"}, pre)
+        "material": "Gold", "stickerName": "LUCKY", "nameStyle": "bubble", "notes": ["재질: SKU 에서 못 읽음"], "orderFrom": "job",
+        "pack": "NAME", "photosOrdered": 5, "sheets": 1, "quantity": 2, "options": [
+            {"key": "Extra sheets", "value": "Add 3 extra print"},
+            {"key": "Special instructions", "value": " <keep & show> "}]}, pre)
     cases = [("Sanvi EVS-0000", ("EVS-0000", "Sanvi")), ("Jennifer Lee EVS-1008 (test)", ("EVS-1008", "Jennifer Lee (test)")),
              ("#evs-12 Kim", ("EVS-12", "Kim")), ("하린", ("", "하린")), ("Mary-Jane Park", ("", "Mary-Jane Park")),
              (NFD_HARIN + " EVS-2001", ("EVS-2001", "하린")), ("EVS-1 EVS-1100", ("EVS-1100", "EVS-1"))]
@@ -397,12 +417,20 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     pre_s = cp.order_prefill(order_s)
     chk("_order.json 이 없으면 폴더 이름에서 주문번호 · 고객 이름은 번호를 뺀 것",
         pre_s["orderNumber"] == "EVS-0000" and pre_s["nameText"] == "Sanvi" and pre_s["orderFrom"] == "folder", pre_s)
+    chk("매니페스트 없는 폴더에 계약·수량·옵션을 만들어 넣지 않는다",
+        all(pre_s[k] is None for k in ("pack", "photosOrdered", "sheets", "quantity")) and pre_s["options"] == [])
     order_j = os.path.join(projects, "Kim EVS-7777")
     os.makedirs(order_j)
     write(os.path.join(order_j, "_order.json"), json.dumps({"job": {"order": "#EVS-7001", "customer": "Kim J"}}))
     pre_j = cp.order_prefill(order_j)
     chk("job 에 주문번호가 있으면 그게 먼저 (폴더 이름보다)",
         pre_j["orderNumber"] == "EVS-7001" and pre_j["nameText"] == "Kim J" and pre_j["orderFrom"] == "job", pre_j)
+    write(os.path.join(order_j, "_order.json"), json.dumps({"job": {"quantity": 3, "sheets": 1}, "options": [
+        {"key": "Crop preference", "value": "Round"}]}))
+    pre_j = cp.order_prefill(order_j)
+    chk("일반 주문은 NAME 계약 없이 수량·옵션만 그대로 읽는다",
+        pre_j["pack"] is None and pre_j["photosOrdered"] is None and pre_j["quantity"] == 3 and
+        pre_j["sheets"] == 1 and pre_j["options"] == [{"key": "Crop preference", "value": "Round"}])
     write(os.path.join(order_h, "_order.json"), json.dumps({"job": {"material": "Plastic", "name_style": "gothic"}}))
     pre_h = cp.order_prefill(order_h)
     chk("매니페스트에 이름이 없으면 폴더 이름(NFC) · 모르는 재질·이름 스타일은 비움",
@@ -424,18 +452,22 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     chk("화면 데이터는 엄격한 JSON (NaN 없음)", True)
 
     print("\n══ 썸네일 ══")
-    if HAVE_SIPS and open(psd1, "rb").read(4) == b"8BPS":
+    if HAVE_SIPS:
         t1 = cp.thumbnail(psd1)
         size = cp.png_size(t1) if t1 else None
         chk("PSD → PNG 썸네일 (긴 변 ≤ %d)" % cp.THUMB_PX, t1 and size and max(size) <= cp.THUMB_PX and
             t1.startswith(cache_root), size)
-        before = os.stat(t1).st_mtime_ns
-        time.sleep(0.01)
-        chk("두 번째는 캐시 그대로", cp.thumbnail(psd1) == t1 and os.stat(t1).st_mtime_ns == before)
-        os.utime(psd1, (time.time() + 5, time.time() + 5))
-        chk("PSD 가 바뀌면 새 썸네일", cp.thumbnail(psd1) != t1)
+        if t1 and size:
+            before = os.stat(t1).st_mtime_ns
+            time.sleep(0.01)
+            chk("두 번째는 캐시 그대로", cp.thumbnail(psd1) == t1 and os.stat(t1).st_mtime_ns == before)
+            os.utime(psd1, (time.time() + 5, time.time() + 5))
+            t2 = cp.thumbnail(psd1)
+            chk("PSD 가 바뀌면 새 썸네일", t2 and t2 != t1 and cp.png_size(t2) == size)
+        else:
+            chk("썸네일 캐시 재사용·갱신", False, "선행 썸네일 생성 실패 — 후반 요청/HTTP 검사는 계속")
     else:
-        print("   (sips 없음 — 썸네일 생성은 건너뜀)")
+        skip("썸네일 생성·캐시·갱신", "sips 없음")
     broken = os.path.join(root, "broken_clean.psd")
     write(broken, b"not a psd")
     chk("PSD 가 아니면 None (서버가 404)", cp.thumbnail(broken) is None and cp.thumbnail(broken + "x") is None)
@@ -546,14 +578,16 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     webui.launch_illustrator = lambda script, launch: launches.append((script, launch))
     webui.STATE.emit = lambda text: None
     srv = http.server.HTTPServer(("127.0.0.1", 0), webui.Handler)
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    server_thread = threading.Thread(target=srv.serve_forever, daemon=True)
+    server_thread.start()
     base_url = "http://127.0.0.1:%d" % srv.server_address[1]
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))  # 외부 프록시 없이 loopback만 사용
 
     def get(path, token=True):
         sep = "&" if "?" in path else "?"
         url = base_url + path + (sep + "t=tok-test" if token else "")
         try:
-            with urllib.request.urlopen(url, timeout=20) as r:
+            with opener.open(url, timeout=20) as r:
                 return r.status, r.headers, r.read()
         except urllib.error.HTTPError as e:
             return e.code, e.headers, e.read()
@@ -563,7 +597,7 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
                                      data=json.dumps(body).encode("utf-8"),
                                      headers={"Content-Type": "application/json"}, method="POST")
         try:
-            with urllib.request.urlopen(req, timeout=20) as r:
+            with opener.open(req, timeout=20) as r:
                 return r.status, json.loads(r.read())
         except urllib.error.HTTPError as e:
             return e.code, json.loads(e.read() or b"{}")
@@ -583,7 +617,9 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     if HAVE_SIPS:
         st, hd, body = get("/api/composed/thumb?" + q(folder="Order A EVS-1", base="Order A EVS-1_01_BIG", v="1"))
         chk("썸네일 API: PNG · 캐시 허용", st == 200 and hd["Content-Type"] == "image/png" and body[:4] == b"\x89PNG" and
-            "max-age" in hd["Cache-Control"], hd["Cache-Control"])
+            "max-age" in hd.get("Cache-Control", ""), hd.get("Cache-Control", ""))
+    else:
+        skip("썸네일 API PNG 응답", "sips 없음")
     st, hd, body = get("/api/composed/sil?" + q(folder="Order A EVS-1", base="Order A EVS-1_02_SML"))
     chk("실루엣 API", st == 200 and body == open(sil2, "rb").read())
     chk("없는 사진·목록 밖 이름은 404",
@@ -612,13 +648,19 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     st, res = post("/api/composed/make", dict(good, material="Paper"))
     chk("잘못된 요청은 400 + 이유 · 안 넘김", st == 400 and "재질" in res.get("error", "") and len(launches) == 2, res)
     chk("만들기도 토큰 없으면 403", post("/api/composed/make", good, token=False)[0] == 403 and len(launches) == 2)
-    srv.shutdown()
     chk("Args 의 주문 폴더는 PROJECTS_DIR 을 따른다 (--projects)", webui.Args().projects_dir == projects)
 
 finally:
+    if srv is not None:
+        if server_thread is not None and server_thread.is_alive():
+            srv.shutdown()
+            server_thread.join()
+        srv.server_close()
     shutil.rmtree(root, ignore_errors=True)
     shutil.rmtree(cache_root, ignore_errors=True)
 
 passed = sum(1 for x in OK if x)
 print("\n%d/%d 통과  %s" % (passed, len(OK), "✅" if passed == len(OK) else "❌"))
+if SKIPPED:
+    print("건너뛴 검사 묶음 %d개: %s" % (len(SKIPPED), ", ".join(SKIPPED)))
 sys.exit(0 if passed == len(OK) else 1)

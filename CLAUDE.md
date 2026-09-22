@@ -26,7 +26,8 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 ├── scripts/face_probe/            # Composed 사진 종류 자동 판별 앱 (macOS Vision · JXA) — 파일명 버킷이 없는 사진용. range.jsx 가 File.execute() 로 띄운다 (README.md)
 ├── plugins/everstory_save/        # Phase A — UXP 패널 플러그인 (PS)
 ├── templates/
-│   ├── address_labels/            # 주소 라벨 칼선 시트 .ai 보관 — 한 번 만들어 계속 쓴다
+│   ├── address_label.ait          # 주소 라벨 기본 템플릿 인쇄 모드 (OPOS)
+│   ├── address_labels/            # 레거시 칼선 시트 .ai 보관용 — 현재 비어 있음(2026-09-21 조사)
 │   ├── alphabet_art_v1.ai         # range.jsx 전용 — 이름 스티커 아트 알파벳, 레트로 스타일 (`LTR A` … 이름 규칙)
 │   ├── deco_art_v1.ai             # range.jsx 전용 — 데코 스티커 12종 + 말풍선 6종(scripts/art_library), 레트로 스타일
 │   ├── alphabet_art_v2.ai         # range.jsx 전용 — 버블 스타일 알파벳 (`LTR A` + `SIL`·`SIDE L/R`·`FACE` + 색 그룹 `LTR A PINK`, scripts/art_library 로 다시 만든다)
@@ -40,7 +41,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 │   ├── _order.json                # 주문 매니페스트 — 고객·SKU·옵션·사진 원본URL + `job`(제작 잡티켓) + `shipping`(배송지). 인테이크가 생성, Phase B 가 읽어 다이얼로그를 채움. **개인정보 · gitignore**
 │   ├── 01_original/               # 원본 PSD/JPG/TIF
 │   ├── 02_cutout/                 # Phase A 산출 (_clean.psd + _sil.png 페어)
-│   │   └── _cutcache/             # 칼선 트레이스 디스크 캐시 (.evcut). 지워도 안전 — 다시 트레이스함
+│   │   └── _cutcache/             # .evcut = 재트레이스 캐시 · .evface = 사진 측정+확정 종류. 폴더 전체를 자동 정리 대상으로 보지 않는다
 │   └── 03_output/                 # Phase B 산출 (.ai 시트)
 └── docs/
     ├── business/                  # 사업·전략
@@ -52,6 +53,7 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
 0. **Phase -1 — 주문 인테이크 · 주문 보드** (`scripts/order_intake/`): Shopify 주문 JSON → 프로젝트 폴더 생성 + Easify 사진 다운로드 + `{NN}_{BUCKET}_{원본명}` 리네임 + `_order.json`. 같은 화면이 **주문 보드**다 — 주문별 진행(받음 / 누끼 / 시트)을 **폴더만 보고** 표시한다 (별도 상태 파일 없음, 2초마다 네트워크 없이 자동 갱신). 인쇄·발송은 디스크에 흔적이 없어 표시하지 않는다. 보드는 다음 단계 앱도 대상까지 챙겨서 열어준다 — 행별 `누끼`(안 된 원본만 Photoshop 으로) · `시트`(Everstory_mixed.jsx 를 폴더 선택 없이 Illustrator 로) · `구성`(Composed 미리보기 → Everstory_range.jsx 를 대화창 없이) · 툴바 `주소 라벨`(--labels + Everstory_address_labels.jsx). 폴더/파일 전달은 osascript 가 `$.global.__EVERSTORY_LAUNCH__` 에 넣고 .jsx 가 읽자마자 지운다 (consume-once — 다음 수동 실행 오염 방지). **Easify CDN(`cdn.tigren.com`)은 업로드 90일 후 사진을 삭제한다** — 이 단계가 유일한 아카이브 경로다.
 1. **Phase 0 — 수동 (Photoshop)**: `layers[0]` = 실루엣, `layers[1..N]` = 누끼+보정.
 2. **Phase A — UXP 패널** (`plugins/everstory_save/`): `_sil.png` + `_clean.psd` 저장, longest 1800px. `자동` 버튼이 원본 파일명의 `_BIG/_MED/_SML` 을 읽어 그대로 출력명에 넣는다 — 버킷은 주문에서 온 값이라 손으로 다시 정하지 않는다. 버킷이 없으면 멈추고 수동 버튼을 요구한다 — 이때는 **사진 종류로 고른다** (`SML` 얼굴 · `MED` 상반신 · `BIG` 전신, 버튼에 적혀 있음). range Composed 가 이 버킷으로 크기 범위를 정한다.
+   - **NAME 수동 권고(D-11 미결정):** 후보 5–7장 중 최종 5장을 먼저 고르고 그 사진만 누끼한다. `5/7` 표시는 현재 파일 집계일 수 있으므로 시트 존재만으로 완료로 보지 말고 최종 5디자인·이름·시트/주문 수량을 확인한다. 저장 순번은 `max+1`이라 원본 번호와 다를 수 있다. 상세는 [컷오버 런북](docs/business/cutover_runbook.md) §12.
 3. **Phase B — Illustrator** (`Everstory_mixed.jsx`): 폴더 → 페어 ListBox multiselect → 사이즈 (XS/S/M/L/XL/XXL · Package · 전 사이즈) → 시트 생성 → `03_output/` 자동 saveAs. 다이얼로그 5단계 (폴더 / 고객 정보 / 페어 / 사이즈+시트수 / 칼선 여백) — **고객 이름·주문번호·재질·사이즈·시트수·스티커 이름은 `_order.json` 의 `job` 블록에서 자동으로 채워지고 운영자는 확인만 한다** (SKU 해석은 인테이크가 한 번만 한다 — `job` 이 없는 구 매니페스트는 스크립트가 직접 해석하고, `intake.py --backfill-job` 으로 채울 수 있다). 받는 사람이 주문자와 다르면 (선물) 경고를 띄우되 헤더 이름은 자동으로 바꾸지 않는다. 값이 한 개로 안 좁혀지면 (매니페스트 없음, line item 마다 재질 다름 등) 그 칸은 기본값으로 두고 다이얼로그 상단에 이유를 띄운다 — 추측하지 않는다. **Package 입력은 파일명 `_BIG/_MED/_SML` 3버킷** — 정확한 인치는 스크립트가 시트 구성을 보고 배정한다 (레거시 6티어 토큰도 계속 읽음). Shopify `Mixed` 옵션 주문은 **전 사이즈 모드로 제작**.
 
 4. **Phase C — 인쇄·발송 (주소 라벨)** (`Everstory_address_labels.jsx`): 기본 = **템플릿 인쇄** (2026-08-25) — `templates/address_label.ait`(OPOS 마크 + cut_1~12, 격자 SOT 는 템플릿)에 주소를 채워 인쇄하고 Summa 가 마크를 읽어 컷. 안 쓴 칸 칼선은 지워 인쇄된 라벨만 잘린다. 본문 12pt(칸에 안 맞으면 자동 축소), 같은 시트 재급지 시 마크가 겹쳐 찍히니 한 시트는 한 번에. 레거시 모드 = **칼선 선(先) 일괄 · 인쇄 후(後) 분할.** 무지 방수 시트에 12분할(2×6) 칼선만 낸 빈 시트를 Summa 로 미리 만들어 재고로 두고(CUTLINE 모드, 한 번), 주문이 3건 오면 같은 시트의 1~3번 칸에만 인쇄한다(PRINT 모드). 다음에 2건 오면 4~5번 칸. 주문이 12건씩 들어오지 않아 시트를 채우려 기다리거나 9칸을 버리는 문제를 없앤다. 주소는 `intake.py --labels` 가 `_order.json` 의 `shipping` 에서 뽑아 텍스트 파일로 준다.
@@ -61,6 +63,8 @@ Adobe CC 2026 기반 스티커 시트 자동화. PSD 누끼/실루엣 → A5 그
    - Summa 는 무지 시트라 등록마크(OPOS)로 맞출 대상이 없다. 기계 원점 기준으로 자르므로 칼선 시트에 마크를 넣지 않는다.
 
 ## 고정 컨벤션 (변경 시 파이프라인 깨짐)
+
+`_cutcache/*.evface`에는 Vision 측정값과 운영자가 확인한 사진 종류가 함께 있다. 파일명 버킷이 있으면 종류는 파일명에서 먼저 정하고 이 캐시를 읽지 않는다. 버킷 없는 입력은 캐시 제거 뒤 재측정·재확인이 필요할 수 있다. `.evcut` 재생성 가능 여부와 `.evface` 보존 판단을 구분한다.
 
 - **AI 레이어**: `PrintData` (raster), `KissCut` (cutline), `info` (템플릿 디자인). z-order 위→아래 = `KissCut` → `info` → `PrintData` (+ trace 중 hidden `TraceStash` 임시 레이어).
 - **TextFrame (template_cutout_v2.ait)**: `info > header > header_right` (필수, **TextFrame** — PathItem 아님). 폰트/사이즈/우측 정렬은 .ait 가 보유, 스크립트는 `.contents` 만 inplace 교체.

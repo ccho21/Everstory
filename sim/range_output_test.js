@@ -20,8 +20,8 @@ function load(extra = {}) {
   vm.runInContext(code, sandbox);
   return sandbox;
 }
-function scenario(failure, inset = 0) {
-  const sandbox = load({failure, inset});
+function scenario(failure, inset = 0, mode = 'range') {
+  const sandbox = load({failure, inset, mode});
   vm.runInContext(`
     var saved=false, headerCount=0, fixes=[], calls=0;
     var app={userInteractionLevel:42,
@@ -31,8 +31,11 @@ function scenario(failure, inset = 0) {
     var UserInteractionLevel={DONTDISPLAYALERTS:0},ElementPlacement={PLACEATBEGINNING:0,PLACEATEND:1},Transformation={DOCUMENTORIGIN:0};
     var File=function(p){this.fsName=p;};
     _ensureCutContour=function(){return {};};
-    _safeRedrawAndGC=function(){};_cleanupTraceStash=function(){};
-    _buildCutlineCache=function(doc,pairs){return failure==='trace'?[{base:pairs[0].base,error:'injected trace error'}]:[];};
+    _safeRedrawAndGC=function(){};_cleanupTraceStash=function(){};_closeArtLibs=function(){};
+    _buildCutlineCache=function(doc,pairs){
+      for(var i=0;i<pairs.length;i++)pairs[i].cutInfo={relL:0,relT:0,relW:1,relH:1};
+      return failure==='trace'?[{base:pairs[0].base,error:'injected trace error'}]:[];
+    };
     function item(bounds,kind) {
       return {geometricBounds:bounds, hidden:failure==='hidden' && kind==='art',
         transform:function(matrix){
@@ -59,11 +62,24 @@ function scenario(failure, inset = 0) {
       if(failure==='nonfinite')cut.geometricBounds[0]=NaN;
       return {emb:item(b.slice(0),'art'),cut:cut};
     };
+    _placeComposedSticker=function(doc,p,x,y,w,h,rim){
+      return _placePhotoSticker(doc,p,x+rim,y-rim,w-2*rim,h-2*rim);
+    };
+    _drawDecoSticker=function(){if(failure==='deco')throw new Error('injected deco error');};
+    _drawArtLetterBlock=function(){if(failure==='name')throw new Error('injected name error');return {drawn:true};};
     _drawProductionHeader=function(options,count){headerCount=count;if(failure==='header')throw new Error('injected header error');};
     _resolveOutputFolder=function(){return {fsName:'/tmp'};};_saveAi=function(){saved=true;};
     var ctx={doc:{layers:{add:function(){return {move:function(){}};}}},binW:142*MM_TO_PT,binH:172*MM_TO_PT,bL:11,bT:172*MM_TO_PT+19,padXPt:0,padYPt:0};
     var pairs=[{base:'D0',aspect:1},{base:'D1',aspect:1},{base:'D2',aspect:1},{base:'D3',aspect:1}];
-    var result=_produceRangeSheet(ctx,pairs,{range:'large'},0,1,1.5*MM_TO_PT,inset*MM_TO_PT,{},'test');
+    var result, thrown=null;
+    try {
+      if(mode==='composed') {
+        var stickerName=['named','name','deco'].indexOf(failure)>=0?'MIA':'';
+        result=_produceComposedSheet(ctx,pairs,{stickerName:stickerName,nameStyle:'retro'},0,1.5*MM_TO_PT,inset*MM_TO_PT,{},'test',0,1);
+      } else {
+        result=_produceRangeSheet(ctx,pairs,{range:'large'},0,1,1.5*MM_TO_PT,inset*MM_TO_PT,{},'test');
+      }
+    } catch(error) { thrown=error; }
   `, sandbox);
   assert.equal(sandbox.app.userInteractionLevel, 42, 'Interaction setting restored');
   return sandbox;
@@ -93,6 +109,45 @@ for (const name of ['trace','placement','single-copy','cut-transform','art-trans
   if (name === 'trace' || name === 'placement') {
     assert.equal(s.headerCount, 3, 'Header uses actually placed photos');
     assert(s.result.drawnPlacements.length < s.result.packResult.placed.length);
+  }
+  checks++;
+}
+
+// The active Composed producer has a different trace failure path: it throws
+// before packing. Later placement/audit failures return a blocked-save result.
+// Exercise both with real packing/auditing and simulated Illustrator objects.
+for (const inset of [0, 1]) {
+  const s = scenario('normal', inset, 'composed');
+  assert.equal(s.thrown, null);
+  assert(s.saved, 'Composed valid output should save');
+  assert.equal(s.headerCount, 4);
+  assert.equal(s.result.failedItems.length, 0);
+  assert.equal(s.result.records.length, s.result.packResult.placed.length);
+  checks++;
+}
+{
+  const s = scenario('named', 0, 'composed');
+  assert.equal(s.thrown, null);
+  assert(s.saved && s.result.nameInfo.drawn, 'Valid named Composed sheet should save');
+  assert(s.result.decoDrawn > 0, 'Named fixture must exercise actual deco placements');
+  checks++;
+}
+for (const name of ['trace','placement','single-copy','cut-transform','art-transform','noop','nonfinite','hidden','header','name','deco']) {
+  const s = scenario(name, 0, 'composed');
+  assert(!s.saved, `Composed ${name}: invalid output saved`);
+  if (name === 'trace') {
+    assert(s.thrown && s.thrown.message.includes('칼선 준비 실패'));
+    assert.equal(s.calls, 0, 'Trace failure stops before any placement');
+    assert.equal(s.headerCount, 0);
+  } else {
+    assert.equal(s.thrown, null);
+    assert(s.result.failedItems.length > 0);
+    assert(s.result.saveError.includes('제작 검증 실패'));
+    assert.equal(s.result.savedPath, '');
+    if (name === 'placement') assert.equal(s.headerCount, 3);
+    if (name === 'name' || name === 'deco') {
+      assert(s.result.failedItems.some(item => item.error === `injected ${name} error`));
+    }
   }
   checks++;
 }

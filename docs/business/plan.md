@@ -1,6 +1,10 @@
 # Business Documentation Plan
 
+> **현재 Draft 테마 작업은 [Shopify 작업 순서](../shopify/plan.md) 하나에서 확인한다.** 사업상 미결정은 [pending.md](pending.md), 라이브 전환 절차는 [런북](cutover_runbook.md)을 사용한다.
+
 이 문서는 `docs/business/` 를 사업 판단용 문서로 정리하기 위한 기준이다. 실행 로그나 변경 이력은 남기지 않는다. 현재 기준만 남기고, Shopify 어드민·앱·페이지 카피·디자인 세부는 각 전용 디렉토리로 이관한다.
+
+두 상품 전환의 확정 사항과 실행 절차는 아래 전용 문서에 두고, 현재 운영 사실과 전환 목표를 구분한다.
 
 ## Priority Model
 
@@ -40,6 +44,12 @@
 | 3 · Open | `pending.md` | Layer 1/2 가 → pending 으로 위임한 미확정·측정·결정 보류 SOT. 닫히면 원래 SOT 로 이동 |
 | 0 · Meta | `plan.md` | 문서 목적·중요도·계층 (본 문서) |
 
+| 별도 층 | 문서 | 역할 |
+|---|---|---|
+| 전환기 결정 기록 | [lineup_restructure.md](lineup_restructure.md) | 2종 전환의 배경·사용자 확정 사항. 과거 제안과 확정 절을 구분 |
+| 전환기 실행표 | [cutover_runbook.md](cutover_runbook.md) | 스냅샷·전환·검증·복구의 실행 순서. 체크 미완료는 미실행 |
+| 현재 화면 작업 | [Shopify 작업 순서](../shopify/plan.md) | Draft 테마의 현재 상태와 화면별 다음 작업 |
+
 ## Document Purpose Table
 
 | 문서 | 역할 | 중요도 | 처리 |
@@ -51,7 +61,7 @@
 
 ## Remaining Work
 
-현재 open P0/P1 없음 — 4 문서(`products.md` · `expenses.md` · `business.md` · `pending.md`) 의존 계층 정합성 점검 완료 기준.
+현재 화면 작업은 [Shopify 작업 순서](../shopify/plan.md), 전환 전 확인과 실행은 [런북](cutover_runbook.md), 미확정 사실과 사업 결정은 [pending.md](pending.md)에서 관리한다.
 
 ## P2 Later
 

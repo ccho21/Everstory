@@ -16,6 +16,8 @@ import os
 import shutil
 import sys
 import tempfile
+from types import SimpleNamespace
+from unittest.mock import patch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 _spec = importlib.util.spec_from_file_location("intake", os.path.join(HERE, "intake.py"))
@@ -141,7 +143,8 @@ try:
         return intake.build_job({"order": {"name": "EVS-1011", "customer": "T"},
                                  "line_items": [{"index": 0, "title": "Name & Photo Sticker Sheet",
                                                  "sku": "EVS-NAME-5-WM", "quantity": 1}],
-                                 "options": options, "photos": []})
+                                 "options": options,
+                                 "photos": [{"file": "%02d_fixture.jpg" % n} for n in range(1, 6)]})
     jb = job_with([{"line_item": 0, "key": "Name", "value": "Mochi"},
                    {"line_item": 0, "key": "Name style", "value": "Bubble"}])
     chk("Name · Name style → sticker_name · name_style", (jb["sticker_name"], jb["name_style"]) == ("Mochi", "bubble"), jb)
@@ -156,9 +159,116 @@ try:
         ju["name_style"] == "" and any("이름 스타일" in n for n in ju["notes"]) and "이름 'Mochi'   ⚠" in intake.job_label(ju),
         intake.job_label(ju))
     jn = job_with([{"line_item": 0, "key": "Name", "value": "Mochi"}])
-    chk("옵션이 없으면 빈 값 · 경고 없음", jn["name_style"] == "" and not jn["notes"], jn["notes"])
+    chk("NAME 스타일 옵션이 없으면 빈 값 · 확인 노트",
+        jn["name_style"] == "" and jn["notes"] == ["이름 스타일 없음 — 보드에서 고를 것"], jn["notes"])
     je = job_with([{"line_item": 0, "key": "Name", "value": "  "}, {"line_item": 0, "key": "Name", "value": "Mochi"}])
     chk("빈 Name 은 건너뛰고 다음 Name 을 쓴다", je["sticker_name"] == "Mochi", je["sticker_name"])
+
+    print("\n══ NAME 계약 확인 — 값은 보존하고 노트만 ══")
+    def contract_manifest(name="MIA", style="Retro", n=5, sku="EVS-NAME-5-WM"):
+        return {
+            "order": {"name": "EVS-FIXTURE", "customer": "Fixture Buyer"},
+            "line_items": [{"index": 0, "title": "Fixture Product", "sku": sku, "quantity": 1}],
+            "options": [{"line_item": 0, "key": "Name", "value": name},
+                        {"line_item": 0, "key": "Name style", "value": style}],
+            "photos": [{"seq": i, "file": "%02d_fixture.jpg" % i, "bucket": None}
+                       for i in range(1, n + 1)],
+        }
+
+    def has_note(job, text):
+        return any(text in note for note in job["notes"])
+
+    multi = contract_manifest()
+    multi["line_items"].append({"index": 1, "title": "Fixture Product", "sku": "EVS-NAME-5-WM", "quantity": 1})
+    multi["options"].extend([{"line_item": 1, "key": "Name", "value": "LEO"},
+                             {"line_item": 1, "key": "Name style", "value": "Bubble"}])
+    before_multi = json.dumps(multi, sort_keys=True)
+    jm = intake.build_job(multi)
+    chk("다른 이름이면 두 이름을 노트에 표시", has_note(jm, "이름: line item 마다 다름 (MIA / LEO)"), jm["notes"])
+    chk("다른 스타일이면 두 스타일을 노트에 표시", has_note(jm, "이름 스타일: line item 마다 다름 (레트로 / 버블)"), jm["notes"])
+    chk("노트를 추가해도 첫 이름·스타일·수량 보존",
+        (jm["sticker_name"], jm["name_style"], jm["quantity"]) == ("MIA", "retro", 2))
+    chk("원 매니페스트 불변", json.dumps(multi, sort_keys=True) == before_multi)
+    multi["options"][-2]["value"] = " MIA "
+    multi["options"][-1]["value"] = " 레트로 "
+    same_values = intake.build_job(multi)
+    chk("같은 이름은 공백을 빼고 비교", not has_note(same_values, "이름: line item 마다 다름"), same_values["notes"])
+    chk("같은 스타일의 영문·한글은 충돌 아님", not has_note(same_values, "이름 스타일: line item 마다 다름"), same_values["notes"])
+
+    for name in ("Chloé", "MIA2", "O'BRIEN", "하린"):
+        j = intake.build_job(contract_manifest(name=name))
+        chk("NAME 비지원 문자 확인: %s" % name,
+            has_note(j, "A–Z·공백 외 글자") and j["sticker_name"] == name, j["notes"])
+    j = intake.build_job(contract_manifest(name="MIA ROSE"))
+    chk("영문·공백 이름은 문자 경고 없음", not has_note(j, "A–Z·공백 외 글자"), j["notes"])
+    j = intake.build_job(contract_manifest(name="A" * 25))
+    chk("25자는 폭 확인만 하고 이름 보존", has_note(j, "24자 초과 (25자)") and len(j["sticker_name"]) == 25, j["notes"])
+    chk("24자는 길이 경고 없음", not has_note(intake.build_job(contract_manifest(name="A" * 24)), "24자 초과"))
+    j = intake.build_job(contract_manifest(name="하린" * 13, sku="EVS-FACE-19-WM"))
+    chk("Custom 폰트 이름에는 NAME 문자·길이 제한을 적용하지 않음", not j["notes"], j["notes"])
+
+    for n in (4, 8):
+        j = intake.build_job(contract_manifest(n=n))
+        chk("NAME 후보 %d장은 확인 노트" % n, has_note(j, "사진 %d장 — Name & Photo 는 5–7장" % n), j["notes"])
+    for n in (5, 6, 7):
+        j = intake.build_job(contract_manifest(n=n))
+        chk("NAME 후보 %d장은 정상" % n, not has_note(j, "Name & Photo 는 5–7장") and j["photos_ordered"] == 5, j["notes"])
+    j = intake.build_job(contract_manifest(n=8, sku="EVS-FULL-8-WM"))
+    chk("옛 FULL 팩에는 NAME 후보 제한 없음", not j["notes"] and j["sheets"] == 2, j["notes"])
+    missing_download = contract_manifest()
+    missing_download["photos"][-1].update(file=None, unavailable=True)
+    j = intake.build_job(missing_download)
+    chk("다운로드 실패 사진은 수에서 빼고 확인", j["photos"] == 4 and has_note(j, "사진 4장"), j["notes"])
+
+    old_properties = contract_manifest()
+    old_properties["photos"][0]["bucket"] = "BIG"
+    j = intake.build_job(old_properties)
+    chk("NAME 에 남은 Package 사진 속성 경고", has_note(j, "구 Package 속성"), j["notes"])
+    chk("일반 NAME 업로드는 Package 경고 없음", not has_note(intake.build_job(contract_manifest()), "구 Package 속성"))
+    old_properties["line_items"][0]["sku"] = "EVS-PACKAGE-FULL-WM"
+    chk("옛 Package 의 버킷은 정상", not intake.build_job(old_properties)["notes"])
+    j = intake.build_job(contract_manifest(name="  "))
+    chk("NAME 빈 이름은 필수 확인", has_note(j, "이름 없음") and j["sticker_name"] == "", j["notes"])
+    chk("NAME 이름이 있으면 누락 경고 없음", not has_note(intake.build_job(contract_manifest()), "이름 없음"))
+    j = intake.build_job(contract_manifest(style=""))
+    chk("NAME 빈 스타일은 확인 노트", j["notes"] == ["이름 스타일 없음 — 보드에서 고를 것"], j["notes"])
+    chk("NAME 스타일이 있으면 누락 경고 없음", not has_note(intake.build_job(contract_manifest()), "이름 스타일 없음"))
+    j = intake.build_job(contract_manifest(style="Gothic"))
+    chk("모르는 스타일은 기존 경고 하나만 유지", len(j["notes"]) == 1 and has_note(j, "모르는 값 'Gothic'"), j["notes"])
+    j = intake.build_job(contract_manifest(name="", style="", sku="EVS-FACE-19-WM"))
+    chk("Custom 빈 이름·스타일에 NAME 필수 경고 없음", not j["notes"], j["notes"])
+
+    gift_manifest = contract_manifest()
+    gift_manifest["shipping"] = {"name": " Fixture Recipient "}
+    j = intake.build_job(gift_manifest)
+    chk("선물이면 받는 사람을 노트로만 표시",
+        j["customer"] == "Fixture Buyer" and j["notes"] == ["선물 — 받는 사람 Fixture Recipient (헤더 이름 확인)"], j["notes"])
+    gift_manifest["shipping"]["name"] = " Fixture Buyer "
+    chk("같은 수취인(앞뒤 공백 무시)이면 선물 아님", not intake.build_job(gift_manifest)["notes"])
+    gift_manifest["shipping"]["name"] = "   "
+    chk("빈 수취인이면 선물 경고 없음", not intake.build_job(gift_manifest)["notes"])
+    chk("배송지 없으면 선물 경고 없음", not intake.build_job(contract_manifest())["notes"])
+
+    print("\n══ process_order — shipping 이 잡티켓 생성 전에 반영됨 ══")
+    fixture_order = {
+        "name": "EVS-SYNTHETIC-GIFT", "customer": {"firstName": "Fixture", "lastName": "Buyer"},
+        "shippingAddress": {"name": "Fixture Recipient"},
+        "lineItems": {"nodes": [{"title": "Fixture Product", "sku": "EVS-NAME-5-WM", "quantity": 1,
+            "customAttributes": [{"key": "Name", "value": "MIA"}, {"key": "Name style", "value": "Retro"}] +
+                [{"key": "Your photos-%d" % i, "value": "https://example.invalid/fixture-%d.jpg" % i}
+                 for i in range(1, 6)]}]},
+    }
+    args = SimpleNamespace(folder="Synthetic Gift", dry_run=False, force=False)
+    # 다운로드 경계만 대체한다. 실제 Shopify/CDN 은 호출하지 않고 임시 폴더에 합성 바이트만 쓴다.
+    with patch.object(intake, "download", return_value=(b"\xff\xd8\xffsynthetic fixture", {})) as download_stub:
+        with patch("sys.stdout", new=io.StringIO()):
+            result = intake.process_order(fixture_order, args, root)
+    gift_doc = read_json(os.path.join(root, args.folder, "_order.json"))
+    chk("process_order 합성 다운로드 5회·성공", result is True and download_stub.call_count == 5)
+    chk("처음 기록한 job 에 선물 노트 포함", gift_doc["job"]["notes"] == ["선물 — 받는 사람 Fixture Recipient (헤더 이름 확인)"], gift_doc["job"]["notes"])
+    chk("shipping·고객·사진 계약 값 보존",
+        gift_doc["shipping"]["name"] == "Fixture Recipient" and gift_doc["job"]["customer"] == "Fixture Buyer"
+        and gift_doc["job"]["photos"] == 5 and gift_doc["job"]["sticker_name"] == "MIA")
 
     print("\n══ 구 SKU 회귀 (팩 정규식이 안 삼켰나) ══")
     for sku, want in [

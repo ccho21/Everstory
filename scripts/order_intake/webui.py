@@ -516,17 +516,17 @@ function checked() {
 function render(rows) {
   const keep = new Set(checked());
   $("#rows").innerHTML = rows.map(r => `<tr class="${r.kind}">
-    <td><input type="checkbox" value="${r.name}" ${keep.has(r.name)?"checked":""}></td>
-    <td>${r.name}</td><td>${r.customer}</td><td>${r.date}</td>
+    <td><input type="checkbox" value="${esc(r.name)}" ${keep.has(r.name)?"checked":""}></td>
+    <td>${esc(r.name)}</td><td>${esc(r.customer)}</td><td>${r.date}</td>
     <td class="num">${r.photos}</td><td class="state">${r.state}</td>
     <td class="prog ${r.cutKind}">${r.cutText}</td>
     <td class="prog ${r.sheetKind}">${r.sheetText}</td>
     <td class="act">${r.folderPath ? `
-      <button class="mini" data-act="photoshop" data-name="${r.name}">누끼</button>
-      <button class="mini" data-act="sheet" data-name="${r.name}">시트</button>
+      <button class="mini" data-act="photoshop" data-name="${esc(r.name)}">누끼</button>
+      <button class="mini" data-act="sheet" data-name="${esc(r.name)}">시트</button>
       <button class="mini" data-act="composed" data-folder="${esc(r.folder)}" ${r.pairs ? "" : "disabled"}
         title="Composed 미리보기 — 누끼 페어가 있어야 한다">구성</button>` : ""}</td>
-    <td class="folder">${r.folder}</td></tr>`).join("");
+    <td class="folder">${esc(r.folder)}</td></tr>`).join("");
 }
 // 표는 폴링마다 다시 그려져 버튼 요소가 바뀐다 — tbody 위임이라 핸들러는 한 번이면 된다.
 let leaving = false;

@@ -1,5 +1,7 @@
 # Stage 4 — Page Copy
 
+> **적용 범위:** 상품 소개·사진 수·입력 위치 안내는 Draft 테마와 맞춘다. 상품명·가격은 컷오버 목표값이며 공유 상품 데이터 반영은 별도다. 실사용 자재·내구성·사진 보존 정책의 미확정 사항은 [`../business/pending.md`](../business/pending.md)에 남긴다.
+
 Shopify pages copy SOT. Product-specific setup lives in [`product_descriptions.md`](product_descriptions.md).
 
 ## Home (`/`)
@@ -27,8 +29,8 @@ Trust bar:
 
 | Step | Label | Body |
 |------|-------|------|
-| 01 | CHOOSE YOUR PHOTOS | Upload your favourites. For Package Mini and Full, add candidate photos by size — Studio selects the final 4 or 8. |
-| 02 | WE SHAPE EACH ONE | Each photo is carefully cut out and finished by hand. |
+| 01 | CHOOSE YOUR PHOTOS | For a Name & Photo Sticker Sheet, upload 5–7 photos and a name; we choose the final five. For a Custom Sticker Sheet, choose one size and a photo count within that size's limit, then upload the number you chose. |
+| 02 | WE SHAPE EACH ONE | Each photo is traced and refined by hand. |
 | 03 | WE BUILD YOUR SHEET | We size and arrange every design to make the most of your A5 sheet. |
 | 04 | MADE TO KEEP | Printed on premium sticker paper, ready to peel, share, and keep close. |
 
@@ -38,10 +40,10 @@ Trust bar:
 
 | Card | Subtitle | Price |
 |------|----------|-------|
-| Face Sticker | A5 face cutout sticker sheet | $18.99 |
-| Full Body Sticker | A5 full-body cutout sticker sheet | $18.99 |
-| Package Full | Studio picks 8 photos · 2 A5 sheets | $34.99 |
-| Package Mini | Studio picks 4 photos · 1 A5 sheet | $24.99 |
+| Name & Photo Sticker Sheet | Their name and 5 photos, cut and ready to peel | $24.99 CAD |
+| Custom Sticker Sheet | You choose the size, the crop and the photos | From $18.99 CAD |
+
+Draft는 기존 Package Full·Face 상품을 두 카드로 표시한다. 이 표는 컷오버 후의 상품 데이터 목표값이며, 테마만 바꿔 현재 제목·가격을 덮어쓰지 않는다.
 
 ### Why Everstory
 
@@ -78,7 +80,7 @@ We are not a bulk sticker factory. We clean the subject edge by hand, check the 
 
 Our materials are Korean premium inkjet substrates finished with lamination. White Matte, Translucent, Silver, and Gold are selected for photographic print quality, durability, and a soft keepsake feel.
 
-When you order, you upload your photo and add the details that matter. Face Sticker and Full Body Sticker let you choose the exact print size and number of photos. Package Mini and Package Full let you upload options by print size, then Studio chooses the strongest final set.
+Choose a Name & Photo Sticker Sheet for five photos selected and arranged by the studio, with a name in Retro or Bubble style. Choose a Custom Sticker Sheet to pick the size, photo count and crop yourself.
 
 Made in Toronto. Free Canada-wide shipping. Toronto Studio pickup available.
 
@@ -96,15 +98,15 @@ White Matte, Translucent, Silver, and Gold — four Korean inkjet substrates, ea
 
 ### 03 — Say it in the notes
 
-**The order notes are the conversation.**
+**Tell us what matters in Special instructions.**
 
-When you place an order, you upload your photo and write a few lines about what matters — a face we should not crop, a tone you prefer, a detail we should keep crisp. Those notes are how we hear you. We check every upload before production and email if a photo needs replacing. Otherwise, we work from your order notes without a separate proof and send the next update when your sheet is on its way.
+On the product page, upload your photos and add any details in Special instructions — a face we should not crop, a tone you prefer, a detail we should keep crisp. Those notes are how we hear you. We check every upload before production. For Name & Photo sheets, we choose five suitable photos and email if we need a replacement. For Custom sheets, we email before printing if a photo cannot be used. We work from your photos and Special instructions without a separate proof and send the next update when your sheet is on its way.
 
 ### 04 — Made in Toronto
 
 **Hand-refined. Precision-cut. Packed by hand.**
 
-We print on Epson ET-8550, cut on Summa D75, and pack by hand in Toronto. Local pickup is available for nearby customers by arrangement — message us at checkout. For the Korean diaspora across the GTA: 한국어 주문 환영합니다. 주문 노트에 한국어로 디테일 적어주시거나 이메일로 한국어 회신 주시면 한국어로 응대해드립니다.
+We print on Epson ET-8550, cut on Summa D75, and pack by hand in Toronto. Local pickup is available for nearby customers by arrangement — add a note in Special instructions on the product page. For the Korean diaspora across the GTA: 한국어 주문 환영합니다. 상품 페이지의 Special instructions 칸에 한국어로 자세한 요청을 적어주시거나 이메일로 한국어 회신 주시면 한국어로 응대해드립니다.
 
 **SEO**
 
@@ -119,13 +121,13 @@ We print on Epson ET-8550, cut on Summa D75, and pack by hand in Toronto. Local 
 ### Ordering
 
 **Q. How does ordering work?**
-A. Choose Face Sticker, Full Body Sticker, Package Mini, or Package Full. For non-Package products, choose size, material, and Photos to include. For Package products, upload photos into Big / Medium / Small print sections and Studio picks the final set. We start cutting within one business day and ship within 2–5 business days. No mockup back-and-forth — the order notes are how we hear what matters to you.
+A. On the Name & Photo Sticker Sheet you choose a material and lettering style, upload 5–7 photos and add the name. We choose five photos and set the crop, size and layout, mixing sizes from 0.75" to 2.5" on one A5 sheet. On the Custom Sticker Sheet you choose the size, photo count and crop, then upload the number of photos you chose. Add any details in Special instructions on the product page.
 
 **Q. Can I cancel my order?**
 A. Yes, before we begin printing — typically within one business day of your order. Email studio.everstory@gmail.com as soon as possible.
 
 **Q. Can I request changes after I order?**
-A. The order notes at checkout are where we capture your details. If you missed something, reach out before printing starts (typically within one business day) and we will fold it in if we can. After printing, changes require a new order.
+A. Add your details in Special instructions on the product page. If you missed something, reach out before printing starts (typically within one business day) and we will fold it in if we can. After printing, changes require a new order.
 
 ### Photos
 
@@ -136,15 +138,15 @@ A. The clearer, the better. Bright lighting, the subject filling the frame, mini
 A. JPG, JPEG, PNG, HEIC. Up to 100 MB per file. Higher resolution is always better.
 
 **Q. Will my photo look exactly like the examples on your site?**
-A. Every photo is different. We do our best with the photo you upload and the details you share at checkout. The clearer your photo and the more specific your notes, the closer the result matches your expectation.
+A. Every photo is different. We do our best with the photo you upload and the details you share in Special instructions on the product page. The clearer your photo and the more specific your notes, the closer the result matches your expectation.
 
 **Q. Can I send multiple photos?**
-A. Face Sticker and Full Body Sticker accept 1–13 photos via the Photos to include option. Package Mini and Package Full accept candidate photos by Big / Medium / Small print tier and Studio picks the final set.
+A. Yes. For a Name & Photo Sticker Sheet, upload 5–7 photos; we choose the final five. For a Custom Sticker Sheet, choose a photo count within your size's limit, then upload the number you chose — up to 13 at 0.75", fewer as the size goes up.
 
 ### Sizes & Materials
 
 **Q. What size should I pick?**
-A. 1" / 25mm is the most popular — planners, journals, bottles, phone cases. 1.25"–1.5" for tumblers and laptops. 2" and 2.5" are statement sizes. 0.75" for collectors/calendars.
+A. On the Name & Photo Sticker Sheet you do not pick a size. We mix sizes from 0.75" to 2.5" on the sheet and choose which photo goes at which size. On the Custom Sticker Sheet you choose one size. 1" / 25mm suits planners, journals, bottles and phone cases. 1.25"–1.5" for tumblers and laptops. 2" and 2.5" are statement sizes. 0.75" for planners and calendars.
 
 **Q. What is the difference between the materials?**
 A. White matte is paper-like, best for indoor use. Translucent is semi-clear and lets the surface show through. Silver and gold have a slight metallic finish. All are laminated and waterproof — good for bottles, phone cases, and outdoor surfaces.
@@ -183,7 +185,7 @@ A. Indoor: 5+ years. Outdoor (UV-exposed): 2-3 years.
 ### Other
 
 **Q. Can I order in Korean?**
-A. 네. 결제는 영어로 진행되지만, 주문 노트에 한국어로 디테일 적어주시거나 이메일로 한국어 회신 주시면 한국어로 응대합니다.
+A. 네. 결제는 영어로 진행되지만, 상품 페이지의 Special instructions 칸에 한국어로 자세한 요청을 적어주시거나 이메일로 한국어 회신 주시면 한국어로 응대합니다.
 
 **Q. Do you offer wholesale or bulk pricing?**
 A. For orders of 20+ sheets, message us at studio.everstory@gmail.com for a custom quote.

@@ -137,6 +137,10 @@ function pyJob(man) {
 // **교차 검증**: 같은 매니페스트를 (a) python 이 해석한 job 블록으로 읽었을 때와
 // (b) jsx 가 SKU 를 직접 읽었을 때가 같아야 한다. 다르면 두 해석기가 갈라진 것이고,
 // 그 상태로는 언젠가 틀린 재질/사이즈로 인쇄된다.
+var nameContract = manifest('EVS-NAME-FIXTURE', 'Fixture Buyer',
+  [li(0, 'Name & Photo Sticker Sheet', 'EVS-NAME-5-WM')],
+  [opt(0, 'Name', 'MIA'), opt(0, 'Name style', 'Retro')]);
+for (var pi = 1; pi <= 5; pi++) nameContract.photos.push({ seq: pi, file: pi + '_fixture.jpg' });
 var CROSS = [
   ['Package Full', manifest('EVS-1007', 'Naekyung Seong',
      [li(0, 'Package Full', 'EVS-PACKAGE-FULL-WM')]), 'Naekyung Seong EVS-1007'],
@@ -151,7 +155,8 @@ var CROSS = [
   ['재질 엇갈림', manifest('EVS-1011', 'Z',
      [li(0, 'Face Sticker', 'EVS-FACE-25-WM'), li(1, 'Face Sticker', 'EVS-FACE-25-GD')]), 'Z EVS-1011'],
   ['사이즈 엇갈림', manifest('EVS-1012', 'W',
-     [li(0, 'Face Sticker', 'EVS-FACE-25-WM'), li(1, 'Face Sticker', 'EVS-FACE-51-WM')]), 'W EVS-1012']
+     [li(0, 'Face Sticker', 'EVS-FACE-25-WM'), li(1, 'Face Sticker', 'EVS-FACE-51-WM')]), 'W EVS-1012'],
+  ['NAME 5디자인', nameContract, 'Fixture Buyer EVS-NAME-FIXTURE']
 ];
 var FIELDS = ['customerName', 'orderNumber', 'stickerName', 'material', 'sizeMm', 'packageSheets'];
 CROSS.forEach(function (t) {
@@ -165,7 +170,19 @@ CROSS.forEach(function (t) {
                   : (withJob.material || '-') + ' / ' + withJob.sizeMm);
   chk('  경고 개수도 일치: ' + t[0], withoutJob.notes.length === withJob.notes.length,
       withoutJob.notes.length + ' vs ' + withJob.notes.length);
+  if (m2.job.pack === 'NAME') {
+    chk('NAME 양쪽 경로는 사이즈를 추측하지 않고 이유 표시',
+        withoutJob.sizeMm === null && withJob.sizeMm === null &&
+        withoutJob.notes.length > 0 && withJob.notes.length > 0);
+    chk('NAME job 경로는 구성 버튼을 안내', /Name & Photo\(pack\).*구성/.test(withJob.notes.join(' ')), withJob.notes.join(' | '));
+  }
 });
+
+var oldPack = manifest('EVS-FULL-FIXTURE', 'Fixture Buyer', [li(0, 'Old Full Set', 'EVS-FULL-8-WM')]);
+oldPack.job = pyJob(oldPack);
+var oldPackDefaults = P._orderDefaultsFrom(oldPack, 'Fixture Buyer EVS-FULL-FIXTURE');
+chk('레거시 팩도 구성 안내, NAME 으로 잘못 부르지 않음', oldPackDefaults.sizeMm === null &&
+    /팩\(pack\).*구성/.test(oldPackDefaults.notes.join(' ')) && !/Name & Photo/.test(oldPackDefaults.notes.join(' ')), oldPackDefaults.notes.join(' | '));
 
 var jobbed = JSON.parse(JSON.stringify(CROSS[0][1]));
 jobbed.job = pyJob(CROSS[0][1]);
@@ -188,6 +205,17 @@ same.shipping = { name: 'Naekyung Seong', address1: 'x' };
 chk('받는 사람이 같으면 조용함',
     P._orderDefaultsFrom(same, CROSS[0][2]).notes.length === 0);
 chk('shipping 없어도 안 터짐', P._orderDefaultsFrom(jobbed, CROSS[0][2]).shipTo === '');
+var giftInJob = JSON.parse(JSON.stringify(nameContract));
+giftInJob.shipping = { name: 'Fixture Recipient' };
+giftInJob.job = pyJob(giftInJob);
+var namedGift = P._orderDefaultsFrom(giftInJob, 'Fixture Buyer EVS-NAME-FIXTURE');
+chk('intake 가 선물 노트를 넣었으면 mixed 에서 중복하지 않음',
+    namedGift.notes.filter(function (n) { return n.indexOf('선물 — ') === 0; }).length === 1, namedGift.notes.join(' | '));
+chk('선물 노트 중복을 막아도 shipTo·헤더 이름 유지',
+    namedGift.shipTo === 'Fixture Recipient' && namedGift.customerName === 'Fixture Buyer');
+delete giftInJob.job;
+chk('job 없는 선물도 한 번만 안내',
+    P._orderDefaultsFrom(giftInJob, 'Fixture Buyer EVS-NAME-FIXTURE').notes.filter(function (n) { return n.indexOf('선물 — ') === 0; }).length === 1);
 
 var pass = ok.filter(Boolean).length;
 console.log('\n' + pass + '/' + ok.length + ' 통과  ' + (pass === ok.length ? '✅' : '❌'));

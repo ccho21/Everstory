@@ -1,8 +1,10 @@
 # Stage 1I + Stage 4 — Policies (정책 페이지 본문)
 
+> **아래 원고와 현재 게시본은 다르다.** 2026-09-21 라이브 확인에서 환불 `/pages/refund-policy`는 05-23판, `/policies/refund-policy`는 05-26판이며 아래 원고는 07-08 개정안이다. 푸터 환불·배송 링크는 `/pages/refund-policy`·`/pages/shipping-pickup`을 가리킨다. 정책을 바꿀 때 두 게시 경로를 함께 대조하고 사용자 확인을 받는다. 사진 보존의 미결정은 [pending.md D-6](../business/pending.md)에 둔다.
+
 Shopify 어드민 → Settings → Policies 에 4개 페이지로 등록. Refund / Shipping 은 made-to-order 운영 반영해서 직접 작성. Privacy / Terms 는 Shopify "Generate from template" 사용하고 사업장 정보만 채우면 됨 (PIPEDA / 토론토 관할 호환).
 
-본문은 Stage 1I 진입 시 그대로 붙여넣음. 한국어 footer 를 함께 붙이는 경우 [`footer_copy.md`](footer_copy.md) 의 해당 정책 섹션을 같은 본문 마지막에 추가한다.
+다음은 초기 설정용 원고다. 현재 게시본을 그대로 덮어쓰지 않으며, [`footer_copy.md`](footer_copy.md)는 미사용 초안이므로 함께 붙이지 않는다.
 
 대괄호 `[…]` 는 placeholder — 사용자 사업체 정보로 교체 후 publish.
 
@@ -117,6 +119,8 @@ Everstory Studio
 ---
 
 ## 3. Privacy Policy
+
+> **2026-09-21 라이브 확인:** **Photo Retention and Use** 절에 주문 이행 목적, fulfillment 후 90일 내 원본 사진 삭제, 주문 외 사용의 별도 서면 동의, 사진 제외 주문 메타데이터 보존이 게시돼 있다. 아래 초기 설정 안내의 "추가 본문 없이 publish"로 현재 정책을 대체하지 않는다. Easify CDN·로컬 사본·보드 캐시·백업의 실제 삭제와 기준일은 [pending.md D-6](../business/pending.md) 확인 대상이며, 자동 삭제나 법적 적합성을 검증한 것은 아니다.
 
 Shopify 어드민 → Settings → Policies → Privacy → **"Generate from template"** 클릭. 자동 생성된 본문은 PIPEDA 호환. 다음 항목만 교체:
 

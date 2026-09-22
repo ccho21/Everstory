@@ -2685,7 +2685,7 @@
   }
 
   // intake.py 의 job 블록 → 다이얼로그 값. 매니페스트는 일러스트 내부 sentinel(-2/-3) 을
-  // 몰라야 하므로 mode 문자열("single"/"package"/"all")로 오고, 그 매핑이 여기다.
+  // 몰라야 하므로 mode 문자열로 오고, 그 매핑이 여기다. pack 은 구성 화면에서 만든다.
   function _applyJobBlock(out, job) {
     out.via = "job";
     if (job.order) out.orderNumber = _trim(String(job.order)).replace(/^#/, "");
@@ -2700,6 +2700,10 @@
       out.sizeMm = ALLSIZES_SIZE_VALUE;
     } else if (job.mode === "single" && job.size_mm) {
       out.sizeMm = job.size_mm;
+    } else if (job.mode === "pack") {
+      var packLabel = "팩(pack)";
+      if (job.pack === "NAME") packLabel = "Name & Photo(pack)";
+      out.notes.push(packLabel + " 주문 — 이 화면(단일/Package/전 사이즈)이 아니라 보드의 '구성' 버튼으로 만들 것");
     }
     var notes = job.notes || [];
     for (var ji = 0; ji < notes.length; ji++) out.notes.push(String(notes[ji]));
@@ -2713,6 +2717,7 @@
     var to = _trim(String(ship.name));
     if (to === _trim(out.customerName)) return;
     out.shipTo = to;
+    for (var ni = 0; ni < out.notes.length; ni++) if (out.notes[ni].indexOf("선물 — ") === 0) return;
     out.notes.push("선물 — 받는 사람 " + to + " (헤더 이름 확인)");
   }
 

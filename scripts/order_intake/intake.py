@@ -221,19 +221,32 @@ def build_job(manifest):
 
     # 옵션 `Name` = 스티커에 넣을 이름. 고객 이름과 별개다 (선물이면 받는 사람 이름).
     # 옵션 `Name style` = 그 이름의 스타일 (retro | bubble). 모르는 값이면 비워 두고 notes 에 남긴다 — 보드에서 고른다.
+    names, styles = [], []
     for o in options:
         key, _ = split_key(o.get("key") or "")
         value = str(o.get("value") or "").strip()
         if not value:
             continue
-        if key == "name" and not job["sticker_name"]:
-            job["sticker_name"] = value
-        elif key in NAME_STYLE_OPTION_KEYS and not job["name_style"]:
+        if key == "name":
+            if value not in names:
+                names.append(value)
+            if not job["sticker_name"]:
+                job["sticker_name"] = value
+        elif key in NAME_STYLE_OPTION_KEYS:
             style = NAME_STYLE_VALUES.get(value.lower())
-            if style:
-                job["name_style"] = style
-            else:
-                job["notes"].append("이름 스타일: 모르는 값 '%s' — 보드에서 고를 것" % value)
+            label = NAME_STYLE_LABELS.get(style, value)
+            if label not in styles:
+                styles.append(label)
+            if not job["name_style"]:
+                if style:
+                    job["name_style"] = style
+                else:
+                    job["notes"].append("이름 스타일: 모르는 값 '%s' — 보드에서 고를 것" % value)
+
+    if len(names) > 1:
+        job["notes"].append("이름: line item 마다 다름 (%s) — 주문을 나눠 제작할 것" % " / ".join(names))
+    if len(styles) > 1:
+        job["notes"].append("이름 스타일: line item 마다 다름 (%s) — 주문을 나눠 제작할 것" % " / ".join(styles))
 
     titles, materials, sizes = [], [], []
     for it in items:
@@ -264,6 +277,26 @@ def build_job(manifest):
         job["notes"].append("사이즈: SKU 에서 못 읽음")
     else:
         job["notes"].append("사이즈: line item 마다 다름 — 주문을 나눠 제작할 것")
+
+    ship_to = ((manifest.get("shipping") or {}).get("name") or "").strip()
+    if ship_to and ship_to != job["customer"].strip():
+        job["notes"].append("선물 — 받는 사람 %s (헤더 이름 확인)" % ship_to)
+
+    # NAME 의 아트 이름·후보 사진 계약. mixed 의 폰트 이름(한글 포함)에는 적용하지 않는다.
+    if job["pack"] == "NAME":
+        name = job["sticker_name"]
+        if name and not re.fullmatch(r"[A-Za-z ]+", name):
+            job["notes"].append("이름: A–Z·공백 외 글자 ('%s') — 구성에서 이름·데코가 빠질 수 있음, 고객 확인" % name)
+        if len(name) > 24:
+            job["notes"].append("이름: 24자 초과 (%d자) — 폭에 안 들어갈 수 있음" % len(name))
+        if job["photos"] < 5 or job["photos"] > 7:
+            job["notes"].append("사진 %d장 — Name & Photo 는 5–7장 (구 Package 옵션으로 들어온 주문인지 확인)" % job["photos"])
+        if any(p.get("bucket") in ("BIG", "MED", "SML") for p in photos):
+            job["notes"].append("구 Package 속성(Big/Medium/Small)으로 받은 사진 — 전환 창 주문, 계약 확인")
+        if not name:
+            job["notes"].append("이름 없음 — Name & Photo 는 이름 필수")
+        if not job["name_style"] and not any(n.startswith("이름 스타일") for n in job["notes"]):
+            job["notes"].append("이름 스타일 없음 — 보드에서 고를 것")
     return job
 
 
@@ -1158,10 +1191,10 @@ def process_order(order, args, projects_dir):
         "photos": records,
         "warnings": warnings,
     }
-    # 제작 잡티켓 — SKU 해석을 여기서 한 번만 한다. 읽는 쪽(일러스트·포토샵)은 그대로 쓴다.
-    manifest["job"] = build_job(manifest)
     # 배송지 — 개인정보. `_order.json` 은 .gitignore 에 명시돼 있다.
     manifest["shipping"] = shipping_block(order)
+    # 제작 잡티켓 — SKU 해석·선물 노트를 여기서 한 번만 만든다. 읽는 쪽은 그대로 쓴다.
+    manifest["job"] = build_job(manifest)
 
     manifest_path = os.path.join(project_dir, "_order.json")
     with open(manifest_path, "w", encoding="utf-8") as f:

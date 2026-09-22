@@ -1,8 +1,10 @@
 # Stage 2 — Product Descriptions
 
-Shopify 상품 등록과 PDP description copy의 기준 문서다. 현재 launch product는 **Face Sticker / Full Body Sticker / Package Mini / Package Full** 4개다.
+> **전환 전 4상품의 작업 기록이다.** 2026-09-21 관측에서는 실제 옵션 순서·빈 `descriptionHtml`·구성품 문장·Shop 게시 범위가 아래 원고와 달랐다. 현재 게시본의 복원 원본으로 사용하지 않는다. 새 고객 문장은 [두 상품 카피](copy_two_products.md), 실제 전환은 [런북](../business/cutover_runbook.md)을 따른다.
 
-영어 단일 정책을 유지한다. 한국어 안내는 각 product description 마지막에 [`footer_copy.md`](footer_copy.md)의 product footer를 붙인다.
+**Face Sticker / Full Body Sticker / Package Mini / Package Full** 4상품을 등록할 때 사용한 설명·옵션 기록이다. 두 상품으로 전환한 뒤 실제 설정에 맞춰 갱신한다.
+
+영어 정본을 기준으로 한다. [`footer_copy.md`](footer_copy.md)는 미사용 초안이므로 상품 설명 끝에 자동으로 붙이지 않는다.
 
 ## Product Setup Baseline
 

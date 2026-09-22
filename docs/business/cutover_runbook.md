@@ -6,6 +6,8 @@
 
 > 2026-09-19 개정. `Designs` 1/4/8 옵션을 폐기하고 **5개 고정 + 이름 포함**으로 바뀌면서, 이전 판에서 유일하게 리허설 못 했던 `productOptionsCreate` 단계가 사라졌다. Package Full 은 지금도 Material 4 variant 뿐이라 **옵션을 건드릴 일이 없다.**
 
+> **라이브 전환 전 실행표다.** 현재 Draft 화면 작업은 [Shopify 작업 순서](../shopify/plan.md), 미결정은 [pending.md](pending.md), 고객 문장은 [카피 정본](../shopify/copy_two_products.md)을 따른다. 과거 완료 표시는 당시 기록이며, 아래 명령 예시는 컷오버 승인과 실행 직전 확인을 대신하지 않는다.
+
 ## 고정값
 
 | 대상 | 값 |
@@ -38,11 +40,15 @@ Package Full 의 현재 variant 4개 (가격·SKU 를 여기에 덮어쓴다):
 - [x] **Easify 세트 A** — `767342` 제자리 수정 **완료 (2026-09-19~20, §5 1~7)**. 할당을 쌍둥이 → Package Full 로 바꾸는 것만 컷오버 창.
 - [x] **Easify 세트 B** — `767314` 1~3 **완료 (2026-09-19, 라이브 반영)**. `Photos to include (Mixed)` 삭제·Full Body 할당 제거는 컷오버 창. §5.
 - [x] 브랜치 `lineup-2026-09` 머지 준비 **완료 (2026-09-20)**: origin 에 push 했고, `main` 과의 merge-base 가 main HEAD(c6e6d27) 라 **fast-forward, 충돌 없음**(`git merge-tree` 로 확인). 라이브 pull 과 비교하면 브랜치 = 라이브 + 의도한 수정뿐 (§6 실측).
-- [ ] **홈 product_list 가 5열·5개** (09-03 다섯 상품 계획의 잔재, `collection: all`). 최종 2종이면 5열에 카드 2장만 남는다. 컬렉션 페이지도 2개짜리 그리드는 본 적이 없다. 복사 테마에서 `columns`·`max_products` 를 2 로 바꿔 보고 정한다 (라이브 무영향).
+- [x] **홈 두 상품 배치 — Draft 완료(2026-09-22).** Package Full → Face 직접 선택, 데스크톱 2열·모바일 1열, `max_products: 2`. 홈 상품 목록을 How it works 앞으로 이동했고 1280px/390px에서 확인했다. 전환 뒤 컬렉션 두 상품 배치는 §8에서 확인한다.
+- [x] `templates/cart.json` · `templates/404.json`도 같은 두 상품·2열/모바일 1열로 Draft 반영하고 390px에서 확인했다. 라이브 배포는 §6에서 한다.
+- [ ] D-3(Shop 게시/판매 방식), D-4(실측 전 개수 문장), 고객 카피 승인 상태를 기록한다. 미결정 문장·채널 설정을 임의로 채택하지 않는다.
 
 ## 1. 창 열기 — 스냅샷 먼저
 
 **아무것도 바꾸기 전에** 되돌릴 근거를 만든다. 결과를 `docs/business/_cutover_before.json` 으로 저장한다.
+
+아래 `Product` 필드와 `ResourcePublicationV2` 하위 필드는 2026-09-21 [공식 Product 문서](https://shopify.dev/docs/api/admin-graphql/2026-07/objects/Product)·[ResourcePublicationV2 문서](https://shopify.dev/docs/api/admin-graphql/2026-07/objects/ResourcePublicationV2)로 대조했다. **실제 계정의 쿼리 실행·스키마 검증은 아직 하지 않았다.** 실행 직전 사용하는 API 버전에서 `graphql_schema('Product')` 등으로 다시 확인하고 쿼리를 검증한다.
 
 ```graphql
 query Snapshot {
@@ -52,15 +58,40 @@ query Snapshot {
   d: product(id: "gid://shopify/Product/9458539626752") { ...Snap }
 }
 fragment Snap on Product {
-  id title handle status descriptionHtml tags
+  id title handle status descriptionHtml tags onlineStoreUrl
   seo { title description }
   options { id name position optionValues { id name } }
-  variants(first: 40) { nodes { id title price sku inventoryPolicy inventoryItem { tracked } } }
-  metafields(first: 20, namespace: "custom") { nodes { key type value } }
+  variants(first: 40) {
+    nodes { id title price sku inventoryPolicy inventoryItem { tracked } }
+    pageInfo { hasNextPage endCursor }
+  }
+  metafields(first: 20, namespace: "custom") {
+    nodes { key type value }
+    pageInfo { hasNextPage endCursor }
+  }
+  resourcePublicationsV2(first: 10) {
+    nodes { isPublished publishDate publication { id name } }
+    pageInfo { hasNextPage endCursor }
+  }
+  collections(first: 10) {
+    nodes { id handle }
+    pageInfo { hasNextPage endCursor }
+  }
 }
 ```
 
-- [ ] 실행하고 저장했다.
+- [ ] 실행하고 저장했다. 각 connection의 `hasNextPage`가 true이면 해당 상품·connection을 `after: endCursor`로 추가 조회해 모두 저장했다. 첫 페이지만 저장하고 완료로 체크하지 않는다.
+- [ ] 채널 전체 목록과 상품별 게시 상태를 Admin에서 캡처했다. `resourcePublicationsV2`에는 게시 또는 예약 게시만 나오며 `isPublished: false`는 예약 상태다. `publishDate`도 보존한다. 빈 목록/누락을 API 오류나 권한 부족과 혼동하지 않는다.
+- [ ] 메뉴의 라벨·대상 URL·순서, 컬렉션의 포함 상품·정렬 방식·상품 순서를 캡처했다. 위 상품 쿼리의 `collections`만으로 메뉴·정렬을 복원할 수 없다.
+- [ ] 라이브 테마를 **Duplicate → `live-backup-YYYYMMDD`**로 만들었다. 새 백업 테마 ID와 라이브 원본 ID·시각을 §9-1에 기록했다. §6 push 전에 필수다.
+- [ ] Easify 세트 `523847` · `523886` · `523889` · `767314` · `767342`의 편집 화면을 캡처했다. 필드·조건·가격·필수값·순서·할당·활성 상태가 전부 보이도록 남겼다.
+- [ ] 기존 리다이렉트 4경로의 존재 여부·ID·대상과 전환 창 시작 시각을 기록했다. 기존 항목을 바꾼 경우 복구는 삭제가 아니라 이전 값 복원이다.
+
+### 1-A. 전환 창의 유입과 주문 확인
+
+- [ ] 사용자가 승인한 전환 창에 Online Store의 **Private mode/비밀번호 보호**를 켰다(Online Store → Preferences → Store access, UI 명칭은 현재 화면 확인). 해제는 §8 확인 뒤이며, 원래 보호 상태도 기록한다. [Shopify 공식 안내](https://help.shopify.com/en/manual/online-store/themes/password-page)
+- [ ] **비밀번호를 전체 판매 중단이나 원자적 전환으로 간주하지 않는다.** 기존 탭·카트·checkout·Shop 등 다른 채널의 차단 여부는 미검증이다. D-3의 채널 결정과 별개로 전환 창에 접수된 주문의 SKU·가격·개인화 속성을 수동 대조한 뒤 제작한다.
+- [ ] §2의 가격/SKU 변경과 §5-A 8번 할당을 한 전환 창에서 연속 처리하고, 완료 직후 실제 필드·가격을 확인한다. 할당을 먼저 바꾸는 대안도 중간 상태를 만들므로 이것만으로 문제를 해결했다고 기록하지 않는다.
 
 ## 2. Name & Photo Sticker Sheet (Package Full 변환)
 
@@ -81,6 +112,8 @@ seo.description: "Send us five photos and a name. We cut them into a sheet of ab
 
 SEO title 은 45자다. 키워드를 더 넣어 60자를 넘기면 검색 결과에서 잘린다.
 
+**실측 전 분기:** 위 `about 24`를 그대로 복사하지 않는다. D-4를 확인하고 `copy_two_products.md` §1의 **SEO description — 실측 전** 또는 새로 승인된 대체 문장을 사용한다. SEO title과 description은 이 분기에서도 함께 보낸다. D-4 미결정이면 해당 문장 게시를 보류한다.
+
 - [ ] 완료
 
 **2-2. variant 4개의 가격·SKU**
@@ -96,6 +129,8 @@ SKU 형식은 `intake.py` 의 `SKU_PACK_RE` 가 읽는 형식이다. 바꾸면 �
 **2-3. metafield**
 
 쌍둥이(`9655556833536`)의 값을 그대로 복사한다 — 2026-09-20 에 쌍둥이를 이미 5개 고정·이름 포함 카피로 바꿔 두었다 (`Designs` 옵션 삭제 = `productOptionsDelete(strategy: POSITION)` 리허설 완료, 첫 값 variant 4개만 남고 옛 8개 삭제).
+
+**실측 전 분기:** 쌍둥이에도 `about 24`가 남을 수 있다. 복사 전에 D-4에 따라 `custom.product_intro`의 개수 문장을 정본 §1의 숫자 없는 대체 문장 또는 새 승인안과 대조한다. 값이 승인안과 다른 쌍둥이는 그대로 복사하지 않는다.
 
 ```graphql
 query { product(id: "gid://shopify/Product/9655556833536") {
@@ -125,10 +160,13 @@ urlRedirectCreate(urlRedirect: { path: "/products/package-full", target: "/produ
 ```
 title: "Custom Sticker Sheet"
 handle: "custom-sticker-sheet"
+descriptionHtml: "<p>Die-cut stickers of your photos on an A5 sheet, your way: choose the size, how many photos, and how we crop them. We trace each one by hand and pack the sheet.</p>"
 tags: ["a5","photo-sticker","custom"]
 seo.title: "Custom Sticker Sheet | Everstory Studio"
-seo.description: "Custom die-cut photo stickers. Pick the size, the crop and how many photos; we cut them by hand in Toronto. Free Canada-wide shipping."
+seo.description: "Custom photo stickers on an A5 sheet. Choose the size, crop and photo count. Traced by hand and precision-cut in Toronto. Free Canada-wide shipping."
 ```
+
+`descriptionHtml`과 SEO는 [카피 정본 §2](../shopify/copy_two_products.md)의 값을 사용한다. 손으로 윤곽을 따고 기계로 재단하는 제작 방식에 맞춰 `Traced by hand and precision-cut`으로 통일한다. 실제 상품·SEO 저장은 컷오버 때 실행한다.
 
 - [ ] 완료
 
@@ -228,38 +266,59 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 
 ## 6. 테마
 
+- [ ] §1 라이브 백업 테마 ID를 기록했고, 승인된 카피와 §7의 handle 참조 수정이 배포 파일 목록에 포함돼 있다. Judge.me handle 수정은 상품 handle 변경 확인 뒤 **이 push 직전**에 한다.
 - [ ] 브랜치 `lineup-2026-09` → `main` 머지 (fast-forward, 09-20 확인). **GitHub 동기화가 라이브에 반영해 줄 거라고 믿지 않는다** — 실측 (2026-09-20): `shopify[bot]` 마지막 커밋이 07-30 인데 라이브 파일은 08-18 까지 Theme Editor 로 바뀌었고(`templates/index.json` 19:37Z 등) 커밋이 없다 → Shopify→GitHub 방향은 죽어 있고, GitHub→Shopify 도 검증되지 않았다.
-- [ ] 머지 직후 **라이브 pull → main 과 diff**. 09-20 기준 라이브와 main 의 차이는 3파일뿐 — `config/settings_data.json`(Judge.me 카트 위젯 블록) · `templates/index.json`(212 leaf: IN THE WILD·hero CSS·Judge.me 캐러셀) · `templates/product.json`(Judge.me real_data) — 그리고 **브랜치는 그 셋을 이미 라이브 값으로 갖고 있다**(09-03 복사 테마 pull 이 베이스). 머지 뒤 남는 차이는 의도한 수정(index 5 leaf · product 13 leaf + 스니펫)만이어야 한다.
+- [ ] 머지 직후 **라이브 pull → main 과 diff**. 09-20 비교에서는 `config/settings_data.json`(Judge.me 카트 위젯) · `templates/index.json`(IN THE WILD·hero CSS·Judge.me 캐러셀) · `templates/product.json`(Judge.me real_data)의 라이브 편집을 브랜치가 이미 포함했다. 09-22 Draft 수정도 추가됐으므로 과거 leaf 개수를 완료 기준으로 쓰지 말고, 최신 라이브와 실제 배포 파일 차이를 다시 검토한다.
 - [ ] 라이브 반영은 **CLI 로 직접**: `shopify theme push --store q3gj59-am.myshopify.com --live --allow-live --only <브랜치가 바꾼 파일>` (사용자 승인 후). GitHub 이 살아 있어도 같은 내용이라 해가 없다.
 - 복사 테마에만 있는 `snippets/es-upsert-probe.liquid`(08-16 쓰기 프로브, 아무 데서도 render 안 함)는 브랜치에 없어 라이브로 가지 않는다. 복사 테마를 지울 때 같이 사라진다.
 - [x] 테마 문장 교체 **완료 (2026-09-19)** — 브랜치 `lineup-2026-09` 커밋 `6ac1063`, 복사 테마에 push 하고 5페이지(홈·컬렉션·FAQ·package-full·face-sticker)에서 확인. 목록은 `copy_two_products.md` §3. main 머지는 컷오버 창에서.
+- [x] **2026-09-22 Draft 추가 반영:** 홈·카트·404 두 상품 선택, 카피 정합성, Easify 접근성 이름. 테마 13파일을 복사 테마에 적용했다. 확인 범위와 미실행 시험은 [Shopify 작업 문서](../shopify/plan.md)에 기록했다. 이번 변경은 아직 Git 커밋·push하지 않았다.
 
 ## 7. 컬렉션·메뉴
 
 - [ ] 컬렉션 `photo-sheets` 에 두 상품만 남기고 정렬 (Name & Photo 가 앞)
 - [ ] **네비게이션 메뉴** (Shopify Navigation, 테마 아님). 푸터에 옛 상품 4개가 이름으로 걸려 있다. 리다이렉트가 있어도 **라벨이 옛 이름으로 남으므로** 반드시 교체한다
-- [ ] 홈 product_list: 지금 `collection: all` · 5열 · 5개. `photo-sheets`(MANUAL 정렬, Name & Photo 앞)로 바꾸고 열 수를 2종에 맞춘다(§0). 09-20 실측: 활성 상품이 4종뿐이라 all = photo-sheets 와 같지만 정렬을 못 정한다. `photo-sheets` 에는 Draft `shape-sticker` 도 들어 있다(Draft 라 안 보임).
+- [ ] 홈·카트·404 `product-list`의 직접 선택 값(`products`)을 상품 handle 변경 후 새 handle `name-photo-sticker-sheet` · `custom-sticker-sheet` 순서로 맞춘다. 현재 Draft는 `package-full` · `face-sticker`를 사용한다. 선택이 비면 collection으로 돌아가므로 §6 배포 전 세 템플릿을 모두 확인한다.
 - [ ] Custom Sticker Sheet 는 메뉴에 두되 **2번째**로. 결정이 적은 쪽이 먼저 보여야 한다
+- [ ] 홈 Judge.me 캐러셀(`templates/index.json`의 `cards_carousel`)에 남은 옛 상품 handle 4개를 실제 새 상품 handle과 대조한다. 최종 대상은 `name-photo-sticker-sheet` · `custom-sticker-sheet`이며, 내린 두 상품 참조는 제거한다. **상품 handle 변경 후 §6 push 직전**에 맞추고 §8에서 렌더를 확인한다. 미리 새 handle만 배포하면 아직 없는 상품을 가리킬 수 있다.
 
 ## 8. 검증
 
+**Draft 미리보기와 주문 검증을 나눈다.** Draft 쌍둥이의 admin preview는 표시·옵션 점검용이며 카트·checkout까지 된다고 가정하지 않는다. 아래 구매·제작 시험은 사용자가 승인한 구매 가능한 상품·테스트 창에서 사업주가 실행한다. 아직 실행하지 않았다. 사업주 소유의 비민감 합성 사진을 쓰고 `시각 / 테마·상품 ID / 기기·브라우저 / 입력 / 기대값 / 실제값 / 통과·실패·접근불가`를 실행 항목 옆에 기록한다. 실제 사진 URL·주소·결제정보는 기록하지 않는다. 미리보기 쿠키·표시줄을 확인해 Draft와 라이브 결과를 구분한다.
+
 - [ ] Name & Photo PDP: 옵션이 **Material 하나뿐**, 가격 $24.99, 업로드 최소 5·최대 7, `Name` 필수, `Name style` 보임
+- [ ] NAME 후보 5·6·7장과 Retro/Bubble을 각각 확인한다. 재질 변경 뒤 사진·이름·스타일이 보존되며 업로드 완료 전 제출 동작이 안내와 일치한다.
 - [ ] Custom PDP: Size **6택**(Mixed 없음), `Crop preference` 보임, 팩 문구가 **안** 보임, `Photos to include` 가 사이즈별 상한대로 뜸(0.75″ 13 … 2.5″ 1)
+- [ ] Custom 각 크기의 상한 13/10/5/3/3/1에 대해 선택 N과 업로드 부족/동일/초과, 크기 변경 후 상태·금액을 확인한다. Crop preference와 Special instructions가 충돌할 때 두 값 모두 보존하고 [pending.md](pending.md)의 결정과 대조한다.
 - [ ] 두 PDP 모두 Judge.me 리뷰 위젯이 이전 개수 그대로 (6건 / 1건)
 - [ ] quick-add 모달이 다시 켜지지 않았는지 (사진 업로드 우회 재발 방지)
+- [ ] Easify 정상/지연/미로딩 상태에서 일반·sticky·빠른 결제 버튼을 각각 확인한다. 사진·이름 없이 결제가 가능한지는 실제 경로로 검증하며 D-2의 처리 방식을 따른다.
 - [ ] 옛 주소 4개가 전부 새 주소로 넘어감
-- [ ] **테스트 주문 1건** — 사진 5장 + 이름 + Name style → 결제 → `intake.py --order <번호>` 로 폴더·파일명·`sticker_name`·`name_style` 까지 확인 → 구성 보드에서 시트 생성
+- [ ] 두 상품의 Shop 게시 여부와 판매 방식이 D-3 결정과 일치한다. Admin 게시 체크만으로 Shop 고객 화면의 개인화 입력 검증을 대신하지 않는다.
+- [ ] 느린 네트워크에서 재질 변경 직후 즉시 담기 → `/cart.js`에서 NAME 라인에 `Name` · `Name style` · `Your photos`가 보존되는지 확인(결제 없음). 정상 속도 결과도 대조한다.
+- [ ] `Extra sheets` 없음/1 × 수량 1/2의 네 조합에서 상품·추가금 라인의 수량·단가·총액·약속한 총장수를 대조한다(결제 없음). Easify의 수량별 과금 동작은 실측 전 단정하지 않는다.
+- [ ] 같은 SKU로 `MIA/Retro`와 `LEO/Bubble`을 담았을 때 두 개인화가 라인별로 보존되는지 확인한다. 내부 도구가 두 사람의 제작을 자동 분리한다고 가정하지 않는다.
+- [ ] Name의 빈값/공백·`Chloé`·`MIA2`·`O'BRIEN`·24자 W·`MIA ROSE`를 Retro/Bubble 각각에서 확인한다. 제출 시 오류·초점·최종 주문값과 실제 이름 생성 결과를 대조하고, Custom 한글 이름의 별도 제작 방식과 혼동하지 않는다.
+- [ ] NAME PDP의 eyebrow가 승인 문구와 일치하고 다른 상품명으로 읽히지 않는다.
+- [ ] 홈 캐러셀·홈/컬렉션·카트/404 추천 그리드에서 새 상품 참조·2종 배치를 확인한다.
+- [ ] **테스트 주문 1건** — 사진 5장 + 이름 + Name style → 결제 → `intake.py --order <번호>` 로 폴더·파일명·`sticker_name`·`name_style`·`job.notes`·수량/옵션 확인 → 구성 보드에서 최종 5장을 선택해 시트 생성. 결제 방식과 환불 비용은 사업주가 실행 전에 확인한다.
+- [ ] 실제 출력·재단 결과의 최종 5디자인·이름·칼선·장수와 주문/미리보기를 대조하고 전체 스티커 개수를 실측한다. 자동 테스트 통과로 Adobe 제작·인쇄 성공을 대신하지 않는다.
 - [ ] 테스트 주문 환불·취소 처리
+- [ ] 결제 테스트 모드를 사용했다면 시험 종료 후 끄고, 결제 설정과 실결제 가능 상태가 시험 전 승인한 상태로 돌아왔는지 확인한다.
+- [ ] 변경 전 열린 PDP·카트·checkout과 변경 후 새 탭에서 구/신 SKU·가격·개인화 혼합을 확인하고 §9의 복구 리허설 시간·복원 결과를 기록한다. 비밀번호만으로 기존 세션·다른 채널이 차단됐다고 가정하지 않는다.
+- [ ] 전환 창의 접수 주문을 확인하고 누락 속성/옛 Package 속성/새 SKU 조합이 있으면 제작 전에 수동 확인한다. 확인이 끝난 뒤 §1-A의 Online Store 접근 상태를 승인한 상태로 되돌린다.
 
 ## 9. 되돌리기
 
-10분 안에 가능해야 한다.
+**10분은 복구 목표값이며 실측 기록이 아니다.** 리허설에서 걸린 시간을 기록한다. 아래는 복구 범위이며, 실제 mutation·Publish·push는 사용자가 승인한 복구 창에서 실행한다.
 
-1. 이전 테마 버전 재발행 (Shopify 테마 라이브러리에 이전 버전이 남아 있다)
-2. 스냅샷 JSON 을 보고 `productUpdate` 로 title·handle·seo·tags 복원, `productVariantsBulkUpdate` 로 가격 34.99·옛 SKU 복원
-3. Package Mini·Full Body `status: ACTIVE`
-4. `urlRedirectDelete` 로 리다이렉트 4개 제거
-5. Easify 옵션셋 할당 원복
+1. **§1 백업 테마 기준점** — 이름 `live-backup-________` / 백업 ID `________` / 기존 라이브 ID `________` / 캡처 시각 `________`. 이 ID의 테마를 Publish한다. Git 이전 커밋에서 해당 파일을 별도 디렉토리에 꺼내 검토 후 CLI push하는 대안도 있으나, Theme Editor 변경을 포함한 라이브 스냅샷과 같음을 먼저 확인한다. 작업 브랜치를 reset하거나 "이전 커밋이면 라이브와 같다"고 가정하지 않는다.
+2. 스냅샷 JSON 기준 `productUpdate`로 title·handle·status·**descriptionHtml**·seo(title+description)·tags를 복원하고 `productVariantsBulkUpdate`로 각 variant의 가격·SKU 등 실제 변경 필드를 복원한다. 가격을 모든 상품에 34.99로 일괄 복원하지 않는다. 재고 설정을 바꿨다면 해당 설정도 스냅샷과 대조한다.
+3. `metafieldsSet`으로 기존 `custom` metafield의 type·value를 복원한다. 전환 중 새로 생겨 스냅샷에 없던 키는 별도 목록으로 확인해 제거해야 이전 상태가 된다. Product 필드 복원만으로 metafield 복구가 끝나지 않는다.
+4. 채널 게시/예약 상태를 §1의 publication ID·`isPublished`·`publishDate` 및 Admin 캡처와 대조해 복원한다. 실행 직전 게시/게시 취소 mutation 스키마와 예약 처리 방법을 확인한다. Mini·Full Body도 이전 status와 채널을 함께 복원한다.
+5. 이번 창에 만든 리다이렉트는 ID를 확인해 제거하고, 이전부터 있던 리다이렉트는 §1의 대상 값으로 되돌린다. 메뉴 라벨·링크·순서와 컬렉션 포함 상품·정렬은 §1 캡처로 복원한다.
+6. Easify 세트의 할당뿐 아니라 삭제/수정한 필드·조건·가격·필수값·순서·활성 상태를 §1 캡처 기준으로 복원한다.
+7. 아래 Mixed variant 복원 한계를 처리한 뒤 옛 PDP·가격·옵션·개인화·리뷰·메뉴를 확인한다. 복구 중 유입 주문도 수동 대조하고, Online Store 접근 상태는 확인 뒤 원래 값으로 돌린다.
 
 ⚠ **3-2 의 `Mixed` 제거만 완전 복구가 아니다.** 값을 다시 추가하면 variant 4개가 새 id 로 생긴다. 판매 이력은 스냅샷이라 영향 없지만 id 는 달라진다. 되돌릴 일이 있으면 이 단계는 마지막에 손댄다.
 
@@ -286,6 +345,17 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 
 테스트: `python3 job_test.py` · `python3 composed_preview_test.py` · `node sim/ordertest.js`.
 
+Doctor 기본 검사와 자체 테스트는 구 4상품·7사이즈 중심이다. 해당 PASS만으로 NAME/Composed 계약과 실제 구매·제작 검증이 끝났다고 판단하지 않는다.
+
+## 12. NAME 제작 확인 — D-11 결정 전 수동 권고
+
+확정 계약은 **후보 5–7장 중 스튜디오가 최종 5디자인을 골라 A5 1장으로 제작**하는 것이다. 진행률 표시 정책(D-11)과 헤더 날짜 정책(D-12)은 아직 채택하지 않았다.
+
+- **수동 권고:** 먼저 최종 5장을 고른 다음 그 사진만 누끼한다. 스페어를 추가로 누끼했다면 구성 화면에서 최종 선택이 5개인지 다시 확인한다. 이는 D-11 답변을 대신하는 영구 운영 규칙이 아니다.
+- 보드는 현재 누끼 페어 수/원본 파일 수를 센다. 후보 7장 중 5장만 누끼하면 `5/7`로 남을 수 있다. 시트 파일이 있다는 이유만으로 주문 완료를 선언하지 않고 **선택된 최종 5디자인·이름/스타일·A5 1장·주문 수량/Extra sheets**를 함께 수동 대조한다. 인쇄·발송 여부는 보드가 증명하지 않는다.
+- 원본 번호와 누끼 저장 순번은 다를 수 있다(저장 플러그인은 기존 출력의 `max+1`). 번호만으로 사진을 대응시키지 말고 썸네일과 주문 옵션을 함께 확인한다.
+- 같은 원본을 재저장하면 옛 페어와 새 페어가 함께 남을 수 있다. 최종 선택 5개가 서로 다른 원본인지 눈으로 대조하고, 번호나 선택 개수만으로 확인을 끝내지 않는다.
+
 ## 아직 검증 안 된 것
 
 - ~~`productOptionUpdate` 의 정확한 **인자 이름**(§3-2)~~ → **09-20 validate 통과**: `productOptionUpdate(productId:, option: OptionUpdateInput!, optionValuesToDelete: [ID!], variantStrategy: MANAGE)`. 실행은 컷오버 창(Face 에는 쌍둥이가 없어 리허설은 못 했다).
@@ -293,4 +363,5 @@ MCP 로는 못 한다 (Easify 데이터는 Shopify API 밖). 방법은 셋 — �
 - ~~Easify 업로드 **최소 5 · 최대 7** 설정 위치~~ → 09-19 세트 A 에서 설정·확인 완료.
 - ~~**최소 5 가 맞는지**~~ → 사용자 확정 (09-19 "업로드는 7 최대로 받고 그중에 5디자인을 골라서 줄거야") = min 5 · max 7.
 - GitHub→Shopify 방향 동기화 생사. Shopify→GitHub 은 죽은 것으로 실측(§6). 라이브 반영을 CLI 기본으로 잡았으니 컷오버 절차에는 영향 없다.
-- 2종만 있을 때 홈·컬렉션 그리드 모양 (§0 의 5열 항목).
+- 전환 뒤 새 상품 데이터로 컬렉션 두 상품 배치와 메뉴·추천 링크. 홈·카트·404의 현재 두 상품 배치는 Draft에서 확인했다(09-22).
+- Draft 상품 admin preview에서 새 테마 선택이 유지되지 않아 Name & Photo의 새 테마 전체 흐름은 아직 실측하지 못했다. 테마 코드/카피 점검을 실제 업로드·주문 시험으로 간주하지 않는다.

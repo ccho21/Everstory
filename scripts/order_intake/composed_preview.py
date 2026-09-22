@@ -238,7 +238,8 @@ def order_prefill(folder):
     job 에 주문번호가 없으면 폴더 이름의 주문번호(2026-09-16 사용자), 고객 이름이 없으면 폴더 이름(주문번호는 뺀다).
     orderFrom = "job" | "folder" | "" — 화면이 어디서 채웠는지 알린다.
     """
-    out = {"nameText": "", "orderNumber": "", "material": "", "stickerName": "", "nameStyle": "", "notes": [], "orderFrom": ""}
+    out = {"nameText": "", "orderNumber": "", "material": "", "stickerName": "", "nameStyle": "", "notes": [], "orderFrom": "",
+           "pack": None, "photosOrdered": None, "sheets": None, "quantity": None, "options": []}
     doc = None
     try:
         with open(os.path.join(folder, "_order.json"), "r", encoding="utf-8") as f:
@@ -246,6 +247,10 @@ def order_prefill(folder):
     except (OSError, ValueError):
         doc = None
     job = (doc or {}).get("job") or {}
+    out.update(pack=job.get("pack"), photosOrdered=job.get("photos_ordered"),
+               sheets=job.get("sheets"), quantity=job.get("quantity"))
+    out["options"] = [{"key": str(o.get("key") or ""), "value": str(o.get("value") if o.get("value") is not None else "")}
+                      for o in ((doc or {}).get("options") or [])]
     if job.get("customer"):
         out["nameText"] = str(job["customer"]).strip()
     if job.get("order"):
