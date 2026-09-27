@@ -65,8 +65,9 @@ function scenario(failure, inset = 0, mode = 'range') {
     _placeComposedSticker=function(doc,p,x,y,w,h,rim){
       return _placePhotoSticker(doc,p,x+rim,y-rim,w-2*rim,h-2*rim);
     };
-    _drawDecoSticker=function(){if(failure==='deco')throw new Error('injected deco error');};
-    _drawArtLetterBlock=function(){if(failure==='name')throw new Error('injected name error');return {drawn:true};};
+    _drawDecoSticker=function(){if(failure==='deco')throw new Error('injected deco error');return {pieces:1};};
+    var nameBlocks=[];
+    _drawArtLetterBlock=function(doc,block){nameBlocks.push(block);if(failure==='name')throw new Error('injected name error');return {drawn:true};};
     _drawProductionHeader=function(options,count){headerCount=count;if(failure==='header')throw new Error('injected header error');};
     _resolveOutputFolder=function(){return {fsName:'/tmp'};};_saveAi=function(){saved=true;};
     var ctx={doc:{layers:{add:function(){return {move:function(){}};}}},binW:142*MM_TO_PT,binH:172*MM_TO_PT,bL:11,bT:172*MM_TO_PT+19,padXPt:0,padYPt:0};
@@ -74,8 +75,10 @@ function scenario(failure, inset = 0, mode = 'range') {
     var result, thrown=null;
     try {
       if(mode==='composed') {
-        var stickerName=['named','name','deco'].indexOf(failure)>=0?'MIA':'';
-        result=_produceComposedSheet(ctx,pairs,{stickerName:stickerName,nameStyle:'retro'},0,1.5*MM_TO_PT,inset*MM_TO_PT,{},'test',0,1);
+        var stickerName=['named','named-nosmall','name','deco'].indexOf(failure)>=0?'MIA':'';
+        var opts={stickerName:stickerName,nameStyle:'retro'};
+        if(failure==='named-nosmall') opts.smallName=false;
+        result=_produceComposedSheet(ctx,pairs,opts,0,1.5*MM_TO_PT,inset*MM_TO_PT,{},'test',0,1);
       } else {
         result=_produceRangeSheet(ctx,pairs,{range:'large'},0,1,1.5*MM_TO_PT,inset*MM_TO_PT,{},'test');
       }
@@ -130,6 +133,23 @@ for (const inset of [0, 1]) {
   assert.equal(s.thrown, null);
   assert(s.saved && s.result.nameInfo.drawn, 'Valid named Composed sheet should save');
   assert(s.result.decoDrawn > 0, 'Named fixture must exercise actual deco placements');
+  // Small name (2026-09-23): drawn right after the main name, joined, with its own layer tag.
+  assert.equal(s.nameBlocks.length, 2, 'main name + small name are both drawn');
+  assert.equal(s.nameBlocks[1], s.result.packResult.name2Spec);
+  assert.equal(s.nameBlocks[1].drawTag, '2');
+  assert.ok(!s.nameBlocks[0].joined && s.nameBlocks[1].joined === true, 'retro main name apart, second name joined');
+  assert.ok(s.result.name2Info && s.result.name2Info.drawn, 'small name result is reported');
+  checks++;
+}
+{
+  // Small name switched off on the order board (options.smallName === false): only the main name is drawn.
+  const s = scenario('named-nosmall', 0, 'composed');
+  assert.equal(s.thrown, null);
+  assert(s.saved && s.result.nameInfo.drawn, 'Named Composed sheet without the small name should save');
+  assert.equal(s.nameBlocks.length, 1, 'only the main name is drawn');
+  assert.equal(s.result.packResult.name2Box, null);
+  assert.equal(s.result.packResult.name2Missing, false);
+  assert.equal(s.result.name2Info, null);
   checks++;
 }
 for (const name of ['trace','placement','single-copy','cut-transform','art-transform','noop','nonfinite','hidden','header','name','deco']) {
@@ -261,6 +281,119 @@ function fakeShape(typename, areas) {
   assert.equal(cuts[0].name, 'Cutline_HEART');
   assert.deepEqual(cuts[0].pathItems.map(p => p.area), [71168], 'deco cut = outer contour only');
   assert.deepEqual(sb.printDup.pageItems[0].pathItems.map(p => p.area), [-65460, 71168], 'printed ring keeps its inner line');
+  checks++;
+}
+// Bubble decos (2026-09-22): the library 'SIL' is a white border around the doodle, so the cut is the union of the doodle
+// pieces with no margin — SIL leaves the print after sizing (size unchanged), the union moves to KissCut, pieces come back.
+{
+  const sb = load();
+  const cuts = [], unions = [];
+  sb.cuts = cuts;
+  sb.unions = unions;
+  vm.runInContext(`
+    var app = {}, ElementPlacement = {PLACEATEND: 1};
+    var printDup = null, resized = null;
+    function kid(name) {
+      var k = {typename: name === 'SIL' ? 'CompoundPathItem' : 'PathItem', name: name, pathItems: [],
+        remove: function() { printDup.pageItems.splice(printDup.pageItems.indexOf(k), 1); }};
+      return k;
+    }
+    function fakeDoodle() {
+      return {typename: 'GroupItem', pageItems: [kid('LINE'), kid('FILL'), kid('SIL')], geometricBounds: [0, 300, 300, 0],
+        resize: function(p) { resized = p; }, translate: function() {},
+        duplicate: function() { printDup = fakeDoodle(); return printDup; }};
+    }
+    _artLibDoc = function() { return {groupItems: {getByName: function() { return fakeDoodle(); }}}; };
+    _artOuterUnion = function(doc, sources, halo, layer) {
+      unions.push({kids: sources[0].pageItems.map(function(k) { return k.name; }), halo: halo, layer: layer});
+      var shape = {typename: 'CompoundPathItem', move: function(l) { shape.layer = l; }};
+      return {shape: shape, pieces: 9};
+    };
+    _forceCutContourStroke = function(cut) { cuts.push(cut); };
+    var got = _drawDecoSticker({}, {deco: 'SUN', style: 'bubble', pad: 2.8346}, 0, 0, 42, 42, 'print', 'kiss', {});
+  `, sb);
+  assert.equal(sb.unions.length, 1, 'one union per deco');
+  assert.deepEqual(sb.unions[0], {kids: ['LINE', 'FILL'], halo: 0, layer: 'print'}, 'union of the doodle without SIL, no offset');
+  assert.deepEqual(sb.printDup.pageItems.map(k => k.name), ['LINE', 'FILL'], 'white border SIL leaves the print');
+  assert.ok(Math.abs(sb.resized - (42 - 2 * 2.8346) / 300 * 100) < 1e-9, 'size still fits the box with SIL included');
+  assert.equal(cuts.length, 1);
+  assert.equal(cuts[0].layer, 'kiss');
+  assert.equal(cuts[0].name, 'Cutline_SUN');
+  assert.equal(sb.got.pieces, 9, 'separate pieces are reported');
+  assert.equal(sb.got.art, sb.printDup);
+  checks++;
+}
+// Name drawing (2026-09-23): the main name is apart in both styles — bubble letters get one cut per letter from their own
+// 'SIL' (side decorations dropped). The small name is joined in both styles = one merged outline named Cutline_name2
+// (bubble merges the letters' SILs, retro merges the whole letter groups — retro letters have no SIL).
+{
+  const sb = load();
+  const cuts = [], unions = [];
+  sb.cuts = cuts;
+  sb.unions = unions;
+  vm.runInContext(`
+    var app = {}, ElementPlacement = {PLACEATEND: 1}, dups = [];
+    function shape(name, kind) {
+      var s = {typename: kind || 'PathItem', name: name, pathItems: []};
+      s.duplicate = function(layer) { var d = shape(name, kind); d.layer = layer; d.copyOf = name; return d; };
+      return s;
+    }
+    function fakeLetter(group, withSil) {
+      var g = {typename: 'GroupItem', name: group, geometricBounds: [0, 100, 80, 0],
+        pageItems: withSil ? [shape('BODY', 'CompoundPathItem'), shape('FACE'), shape('SIL')] : [shape('TILE'), shape('INK')],
+        groupItems: withSil ? [{name: 'SIDE R', remove: function() { g.sideGone = true; }}] : [],
+        resize: function() {}, translate: function() {},
+        duplicate: function() { var d = fakeLetter(group, withSil); dups.push(d); return d; }};
+      return g;
+    }
+    var withSil = true;
+    _artLibDoc = function() { return {groupItems: {getByName: function(n) { return fakeLetter(n, withSil); }}}; };
+    _forceCutContourStroke = function(cut) { cuts.push(cut); };
+    _drawNameHalo = function(doc, sources, halo, p, k, spot, name) { unions.push({n: sources.length, name: name}); return {pieces: 1}; };
+    var hB = _composedHero('Vic', 142 * MM_TO_PT, 1.5 * MM_TO_PT, 'bubble').spec;
+    var infoB = _drawArtLetterBlock({selection: null}, hB, 0, 0, 'print', 'kiss', {});
+    var bubbleDups = dups.slice(0);
+    var infoB2 = _drawArtLetterBlock({selection: null}, _composedName2Spec(hB), 0, 0, 'print', 'kiss', {});
+    withSil = false;
+    var r2 = _composedName2Spec(_composedHero('Mia', 142 * MM_TO_PT, 1.5 * MM_TO_PT, 'retro').spec);
+    var infoR = _drawArtLetterBlock({selection: null}, r2, 0, 0, 'print', 'kiss', {});
+  `, sb);
+  assert.deepEqual(cuts.map(c => c.name), ['Cutline_V_00', 'Cutline_I_01', 'Cutline_C_02'], 'bubble main name: one cut per letter');
+  assert.ok(cuts.every(c => c.copyOf === 'SIL' && c.layer === 'kiss'), 'bubble letter cut = its own SIL on KissCut');
+  assert.ok(sb.bubbleDups.every(d => d.sideGone), 'side decorations removed from the separated bubble main name');
+  assert.ok(sb.infoB.piecesAreLetters && sb.infoB.pieces === 3);
+  assert.deepEqual(unions, [{n: 3, name: 'Cutline_name2'}, {n: 3, name: 'Cutline_name2'}],
+    'small name = one union of the 3 letters (bubble SILs, then retro letter groups)');
+  assert.ok(!sb.infoB2.piecesAreLetters && !sb.infoR.piecesAreLetters);
+  checks++;
+}
+// Style table: only bubble strips a deco border; retro deco art has no margin (its bubble SIL is the printed black edge).
+assert.equal(P._nameStyle('bubble').decoBorder, true);
+assert.equal(P._nameStyle('retro').decoBorder, false);
+checks++;
+// Photo cut line = the largest traced piece (2026-09-22 이준_02_MED: a 30×24px stray speck came first in the selection
+// and became the whole cut line — 3% of the photo width). Holes live inside the CompoundPathItem, so they stay.
+{
+  const shape = (typename, b) => ({typename, geometricBounds: b});
+  const speck = shape('PathItem', [647, 960, 677, 936]);
+  const body = shape('CompoundPathItem', [3, 1799, 902, 1]);
+  assert.strictEqual(P._largestTraceShape([speck, body]), body, 'a speck selected first must not become the cut line');
+  assert.strictEqual(P._largestTraceShape([{typename: 'GroupItem', pageItems: [speck, {typename: 'GroupItem', pageItems: [body]}]}]), body,
+    'looks inside groups');
+  assert.strictEqual(P._largestTraceShape([{typename: 'RasterItem', geometricBounds: [0, 2000, 2000, 0]}, speck]), speck, 'only paths count');
+  assert.strictEqual(P._largestTraceShape([]), null);
+  assert.strictEqual(P._largestTraceShape(null), null);
+  checks++;
+}
+// range.jsx and mixed.jsx share .evcut files — both must pick the same piece with the same code.
+{
+  const mixed = fs.readFileSync(path.join(root, 'Everstory_mixed.jsx'), 'utf8');
+  const fn = s => { const m = s.match(/\n  function _largestTraceShape\([\s\S]*?\n  \}\n/); return m ? m[0] : null; };
+  assert.ok(fn(source) && fn(source) === fn(mixed), '_largestTraceShape differs between range.jsx and mixed.jsx');
+  for (const s of [source, mixed]) {
+    assert.equal((s.match(/var cutShape = _largestTraceShape\(doc\.selection\);/g) || []).length, 1, '_traceAndUnite names the largest piece');
+    assert.ok(!/sel\[0\]\.name = "Cutline"/.test(s), 'old selection[0] naming is gone');
+  }
   checks++;
 }
 // Every art cut goes through the filter (decos and retro letters).

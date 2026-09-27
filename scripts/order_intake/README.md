@@ -64,8 +64,12 @@ x-amz-expiration: expiry-date="...", rule-id="ExpireAllObjectsAfterNinetyDays"
 - **크기 직접** (2026-09-16 사용자): 카드의 `최소 ~ 최대`(0.75~2.5″)를 바꾸면 그 사진만 종류 범위 대신 그 범위로 만든다
   (주황 = 직접 정함, ↺ = 되돌리기). 위 `크기 범위` 버튼 = 전부 종류대로 / 전부 0.75~2.5″. 표시 없는 사진은 크기만 정해도 된다(미분류로 보냄).
 - **이름 스타일** (2026-09-17 사용자): 스티커 이름 아래 버튼 — 버튼마다 그 스타일로 쓴 이름 앞 글자가 보인다.
-  **레트로** = 예전 그대로(v1 알파벳, 글자마다 따로 떼는 스티커 · 레트로 데코). **버블** = `알파벳 샘플_6` 글자를 살짝 겹쳐 쓰고
-  이름 전체를 흰 테두리 하나로 묶은 통짜 스티커(칼선 1개) · 데코는 `sticker sample 4` 두들(흰 테두리 포함, 글씨 두들은 큰 칸에만).
+  **레트로** = 예전 그대로(v1 알파벳, 글자마다 따로 떼는 스티커 · 레트로 데코). **버블** = `알파벳 샘플_6` 글자
+  (칼선 = 글자 윤곽, 여백 0 — 2026-09-22) · 데코는 `sticker sample 4` 두들(칼선 = 그림 윤곽, 여백 0 — 2026-09-22 · 글씨 두들은 큰 칸에만).
+  **이름은 두 장** (2026-09-23 사용자 "떨어진 글씨가 메인이고, 붙은 글씨는 보조"): 두 스타일 모두 첫 이름(위) = 떨어진 글자
+  (레트로 16mm · 버블 15mm, 버블은 옆 장식 없음) + **작은 이름** = 붙인 글자 10mm(이름 전체 칼선 하나, 시트 아래 첫 이름 반대쪽).
+  **작은 이름 `넣기 · 빼기`** 버튼(이름 스타일 아래)으로 주문마다 넣고 뺀다 — 새 주문을 열면 다시 넣기. 서버 기능 `smallName` 이라
+  **처음 한 번은 보드 앱을 다시 켜야** 버튼이 보인다 (예전 서버면 버튼이 숨고 늘 넣는다). 미리보기 요약 줄에 작은 이름 크기(또는 "작은 이름 뺌")가 나온다.
   두 단어 이름은 두 줄이 한 스티커로 이어진다. 주문에 `Name style` 이 있으면(`job.name_style`) 그 스타일이 먼저 골라지고 안내 문구가 뜬다 (2026-09-19);
   없으면 마지막에 고른 스타일(브라우저 저장)을 쓴다. 규칙은 `sim/README.md` "이름 스타일".
 - **배치 고르기** (2026-09-16 사용자): 시트 오른쪽 작은 그림 — **스타일**(가운데·양옆·모으기·가장자리·아래쪽)과 고른 스타일의
@@ -74,7 +78,7 @@ x-amz-expiration: expiry-date="...", rule-id="ExpireAllObjectsAfterNinetyDays"
 - **오른쪽**: 시트 미리보기. **배치는 range.jsx 엔진을 그대로 돌린 결과**라 시트 나눔·크기·자리가 Illustrator 결과와 같다
   (`/composed/engine.js` 가 .jsx 에서 함수·상수를 자동으로 뽑는다 — 엔진 사본이 없다). 이름 글자·데코는 라이브러리 그림
   (`templates/art_preview`, `/api/composed/art`)을 엔진이 정한 자리(`_artLetterBoxes`)에 놓는다 — 그림이 없으면 색 타일·이모지.
-  버블 이름의 흰 테두리·칼선(분홍)은 SVG 필터로 흉내 낸다(실제 두께는 Illustrator Offset Path).
+  버블 이름의 칼선(분홍)은 SVG 필터로 흉내 낸다 (여백 0 이라 글자 윤곽에 붙어 보인다).
   칼선 캐시(`.evcut`)가 없거나 오래된 사진은 실루엣으로 크기를 어림하고(주황 윤곽) 알린다 — Illustrator 가 칼선을 새로 따면
   스티커 수가 조금 다를 수 있다.
 - **Illustrator 에서 만들기**: 고른 값을 `$.global.__EVERSTORY_LAUNCH__ = {inputFolder, composed:{…}}` 로 넘기면 range.jsx 가
@@ -256,7 +260,7 @@ projects/{고객명 주문번호}/
 ```json
 "job": { "order":"EVS-1007", "customer":"Naekyung Seong", "product":"Package Full",
          "material":"White Matte", "mode":"package", "size_mm":null, "sheets":2,
-         "quantity":1, "photos":14, "sticker_name":"", "name_style":"", "notes":[] }
+         "quantity":1, "photos":14, "sticker_name":"", "name_style":"", "extra_sheets":0, "notes":[] }
 ```
 
 재질·사이즈는 SKU 문자열 안에 인코딩돼 있다 (`EVS-PACKAGE-FULL-WM`). 그대로 두면 **읽는
@@ -267,6 +271,10 @@ projects/{고객명 주문번호}/
   `pack` (그때 `pack`·`photos_ordered`·`sheets` — `EVS-NAME-5-WM` = Name & Photo Sticker Sheet, 사진 5 · 1시트)
 - `sticker_name` = 옵션 `Name`. `name_style` = 옵션 `Name style` (Retro / Bubble → `retro` / `bubble`, range.jsx
   `COMPOSED_NAME_STYLES` 키). 모르는 값이면 비우고 `notes` 에 남긴다 — 구성 보드가 이 값으로 이름 스타일을 미리 고른다 (2026-09-19).
+- `extra_sheets` = 옵션 `Extra sheets` (같은 시트 추가 인쇄, +$7/장 — `No extra print` → 0 · `Add 2 extra print` → 2, 라벨을
+  `2 extra sheets` 로 바꿔도 숫자로 읽는다). **같은 시트 인쇄 장수 = 수량 × (1 + extra_sheets)** (`print_count`) — 콘솔 한 줄과
+  구성 보드 요약 줄(`같은 시트 N장 인쇄`)·경고에 뜬다. 시트(.ai)는 한 번 만들고 인쇄 장수만 맞춘다. line item 마다 다르면
+  `null` + `notes` (2026-09-25 — 전에는 옵션 원문 한 줄에만 있어서 놓치기 쉬웠다).
 - **한 값으로 안 좁혀지면 채우지 않고 `notes` 에 이유를 남긴다.** line item 이 여럿이고
   재질이 엇갈리면 임의로 하나를 고르는 순간 절반이 틀린 재질로 나간다.
 - 일러스트(`Everstory_mixed.jsx`)는 `job` 이 있으면 그대로 쓰고, 없으면(구 매니페스트)

@@ -69,7 +69,8 @@
 //   · 이름·데코는 기존 엔진 그대로 쓰고 자리만 정한다.
 //   · **이름 스타일** (2026-09-17 사용자, 주문 보드에서 고른다 · 대화창 실행은 retro): COMPOSED_NAME_STYLES —
 //     retro = alphabet_art_v1 + deco_art_v1 (글자마다 칼선, 예전 그대로) · bubble = alphabet_art_v2 + deco_art_v2
-//     (글자를 살짝 겹쳐 쓰고 이름 전체를 흰 테두리 하나로 — _drawNameHalo, 칼선 1개. 옆 장식은 줄 맨 앞·끝 글자만).
+//     (글자를 살짝 겹쳐 쓰고 이름 전체 윤곽을 합친 칼선 하나 — _drawNameHalo. 옆 장식은 줄 맨 앞·끝 글자만).
+//     이름·데코 칼선은 그림 윤곽 그대로(여백 0, 2026-09-22 사용자) — 흰 테두리는 다른 칼선처럼 마지막 오프셋이 만든다.
 //     bubble 은 이름·데코 박스를 칼선 여백만큼 넓게 잡아, 나중에 칼선을 오프셋해도 이웃과 간격이 남는다.
 //     bubble 글자는 자리마다 색을 돌린다 (LETTER_PAINT_CYCLE_V2 · 색 그룹 'LTR A PINK').
 //     미리보기 그림은 templates/art_preview/<라이브러리>/ (라이브러리를 고치면 다시 뽑는다 — templates/art_preview/README.md).
@@ -236,6 +237,13 @@
   var COMPOSED_BUBBLE_MAX = 2;
   var COMPOSED_BUBBLE_SIZES_MM = [22, 19];
   var COMPOSED_BUBBLE_SPACING_MM = 45;     // 말풍선끼리 중심 최소 거리
+  // 작은 이름 (2026-09-23 사용자 — 코드에선 name2 · "두 번째 이름"): 첫 이름과 같은 알파벳을 **붙인 글자**로 한 장 더
+  // (이름 전체 칼선 하나). 사용자 "떨어진 글씨가 메인이고, 붙은 글씨는 보조" — 두 스타일 모두 첫 이름 = 떨어진 글자
+  // (스타일 표: 레트로 16mm · 버블 15mm), 작은 이름 = 붙인 글자 10mm ("10mm 는 붙은 글자, 15mm 는 떨어진 글자").
+  // 주문 보드에서 넣고 뺀다 (options.smallName === false → _composedHero 가 스펙에 싣는다). 자리 = 시트 아래, 첫 이름 반대쪽.
+  var COMPOSED_NAME2_JOIN_UNIT_MM = 10;
+  var COMPOSED_NAME2_JOIN_GAP = -0.03;       // 붙인 글자 — 글자 틀 겹침 (유닛 비율, 예전 버블 첫 이름과 같다)
+  var COMPOSED_NAME2_JOIN_LINE_GAP = 0.1;    // 붙인 글자 두 줄 사이 (유닛 비율, 예전 버블 첫 이름과 같다)
   var COMPOSED_CUT_REL_MIN = 0.2;          // 칼선 캐시 relW/relH 가 이보다 작으면 손상으로 본다
   var COMPOSED_FIT_TOL_MM = 0.05;          // 출력 검사: 실제 칼선 박스 = 계획 셀 허용 오차
 
@@ -315,8 +323,10 @@
   // ── 이름 스타일 (2026-09-17 사용자: 주문 보드에서 두 스타일 중 고른다) ─────────────────
   // retro  = alphabet_art_v1 + deco_art_v1. 글자마다 따로 떼는 스티커 — 예전 그대로이고 대화창 실행도 이것.
   // bubble = alphabet_art_v2 (shopify_assets "알파벳 샘플_6") + deco_art_v2 ("sticker sample 4").
-  //          글자를 살짝 겹쳐 쓰고 이름 전체를 흰 테두리 하나로 묶은 **통짜 스티커** (칼선 1개) —
-  //          레퍼런스 assets/style_refs/2026-09-11_bubble-alphabet_names.png. 데코 두들도 흰 테두리가 아트에 들어 있다.
+  //          첫 이름 = 레트로처럼 글자마다 떼는 스티커 (2026-09-23 사용자 "떨어진 글씨가 메인"), 작은 이름 = 글자를 살짝
+  //          겹쳐 쓰고 이름 전체 윤곽을 합친 **통짜 스티커** (칼선 = 글자 윤곽, 여백 0 — 2026-09-22) —
+  //          레퍼런스 assets/style_refs/2026-09-11_bubble-alphabet_names.png. 데코 두들 그림엔 흰 테두리(SIL)가 들어 있지만
+  //          칼선은 그림 윤곽에서 딴다 (decoBorder — 여백 0, 2026-09-22).
   // bubble 글자는 모두 **같은 배율**로 줄인다 (그린 크기 차이를 살린다): 틀 높이 = capPt × fh,
   // fh = 그 글자 틀 높이 ÷ 기준 높이 (몸통 높이 중앙값 198.3pt). aw = 틀 폭 ÷ 틀 높이, bl = 틀 위 → 몸통 바닥(글자 바닥선) ÷ 틀 높이.
   // 옆 장식(V 왼쪽 선 · C 오른쪽 선 · Z 별)은 라이브러리에서 SIDE L / SIDE R 묶음이고 **줄의 맨 앞 / 맨 끝 글자만** 쓴다 —
@@ -405,21 +415,29 @@
     MYFAVE: 1.3748,
     XOXO: 1.6276
   };
-  // unitMm = 큰 이름 한 줄 높이. gap · lineGap · halo = 한 줄 높이 비율 (gap 음수 = 글자 틀이 살짝 겹침 → 테두리 선이 붙는다).
-  // halo = 이름 전체 흰 테두리 (인쇄 + 칼선). rimBox = 칼선 여백만큼 이름 박스를 넓히고 데코·말풍선은 박스 안쪽으로 줄여 그린다 —
+  // 스타일 표 = 첫 이름(큰 이름). unitMm = 한 줄 높이. gap · lineGap · halo = 한 줄 높이 비율.
+  // 2026-09-23 사용자 "떨어진 글씨가 메인": 두 스타일 모두 첫 이름은 떨어진 글자(글자마다 칼선) — bubble 도 retro 간격 ·
+  // 15mm ("15mm 는 떨어진 글자") · 옆 장식 없음(coreOnly) · joined false. 예전 bubble 첫 이름(붙인 글자 · 겹침 −0.03 ·
+  // 줄 사이 0.1 · 옆 장식)은 이제 작은 이름이다 (COMPOSED_NAME2_JOIN_*, _composedName2Spec).
+  // halo = 이름 전체 흰 테두리 (인쇄 + 칼선). bubble 은 0 — 칼선 = 글자 윤곽 (2026-09-22 사용자: 1.04mm 테두리가 미리 들어가 있어
+  // 마지막 오프셋과 겹쳐 두 배가 됐다). rimBox = 칼선 여백만큼 이름 박스를 넓히고 데코·말풍선은 박스 안쪽으로 줄여 그린다 —
   // 나중에 칼선을 여백만큼 바깥으로 오프셋해도 이웃 사진 칼선과 간격이 남게 (retro 는 예전 배치를 지키려고 끈 채로 둔다).
   // 데코 박스 자체는 retro 와 같은 크기 (12.7 / 10mm) — 키웠더니 빈틈에 들어가는 데코가 평균 5.4 → 3.9개로 줄었다.
   // paints / paintCycle = 글자 색 돌리기 (없으면 라이브러리 원래 색 그대로 — retro).
   // bubbleOrder / bubbleAspect = 말풍선 모양 순서 · 그림 비율 (COMPOSED_BUBBLE_MAX 참고).
+  // decoBorder = 데코 라이브러리의 'SIL' 이 그림 둘레 흰 테두리(칼선 여백)다 → 인쇄에서 빼고 칼선은 그림 윤곽에서 딴다 (여백 0,
+  //   2026-09-22 사용자: 이름처럼 스티커도). bubble 두들은 최대 변의 5.4~9.7% 테두리였다. retro 는 여백이 이미 0 —
+  //   레트로 말풍선의 SIL 은 인쇄되는 검정 바깥 테두리라 그대로 칼선이다.
   var COMPOSED_NAME_STYLES = [
     { key: "retro", label: "레트로", whole: false, letterLib: LETTER_ART_LIB_NAME, decoLib: DECO_ART_LIB_NAME,
       metrics: LETTER_ART_METRICS, decoOrder: DECO_ORDER, bubbleOrder: DECO_BUBBLES_V1, bubbleAspect: DECO_BUBBLE_ASPECT_V1,
       unitMm: RANGE_HERO_UNIT_MM, gap: LETTER_GAP_RATIO, lineGap: LETTER_GAP_RATIO, halo: 0, rimBox: false, decoArt: null,
-      paints: null, paintCycle: null },
+      decoBorder: false, paints: null, paintCycle: null },
     { key: "bubble", label: "버블", whole: true, letterLib: "alphabet_art_v2.ai", decoLib: "deco_art_v2.ai",
       metrics: LETTER_ART_METRICS_V2, decoOrder: DECO_ORDER_V2, bubbleOrder: DECO_BUBBLES_V2, bubbleAspect: DECO_BUBBLE_ASPECT_V2,
-      unitMm: 13, gap: -0.03, lineGap: 0.1, halo: 0.08, rimBox: true, decoArt: COMPOSED_DECO_ART_V2_MM,
-      paints: LETTER_ART_PAINTS_V2, paintCycle: LETTER_PAINT_CYCLE_V2 }
+      unitMm: 15, gap: LETTER_GAP_RATIO, lineGap: LETTER_GAP_RATIO, joined: false, coreOnly: true,
+      halo: 0, rimBox: true, decoArt: COMPOSED_DECO_ART_V2_MM,
+      decoBorder: true, paints: LETTER_ART_PAINTS_V2, paintCycle: LETTER_PAINT_CYCLE_V2 }
   ];
   var ART_LIB_DOCS = {};                   // 라이브러리 파일 이름 → 이번 실행에서 열어 둔 문서 (_closeArtLibs 가 닫는다)
 
@@ -616,7 +634,10 @@
     return null;
   }
 
-  function _letterBlockSpec(nameText, unitMm, tag, styleKey) {
+  // arrange (선택) = 스타일 표와 다른 배열로 쓸 때 (작은 이름) — { joined, gapRatio, lineGapRatio, coreOnly }.
+  //   joined = 이름 전체 칼선 하나(붙인 글자) / 글자마다 칼선 · gapRatio · lineGapRatio = 글자·줄 사이 (유닛 비율) ·
+  //   coreOnly = 버블 옆 장식(SIDE L/R) 없이. 없으면 스타일 표 그대로 (두 스타일 모두 떨어진 글자 · bubble 은 옆 장식 없음).
+  function _letterBlockSpec(nameText, unitMm, tag, styleKey, arrange) {
     if (!nameText) return null;
     var style = _nameStyle(styleKey);
     if (!style) throw new Error("알 수 없는 이름 스타일: " + styleKey);
@@ -670,10 +691,25 @@
       maxLen: maxLen,    // 가장 긴 줄의 글자 수 = 폰트 모드의 블록 폭을 정한다
       isArt: isArt,      // true = 스타일의 아트 알파벳 라이브러리에서 꺼내 그린다
       nameStyle: style.key,
-      whole: !!(style.whole && isArt),   // true = 이름 전체를 흰 테두리 하나로 (칼선 1개)
+      whole: !!(style.whole && isArt),   // true = 스타일 치수표(bubble V2 틀 · 글자 SIL · 옆 장식 틀)
       aspect: 1
     };
+    if (arrange) {
+      spec.joined = !!arrange.joined;
+      spec.gapRatio = arrange.gapRatio;
+      spec.lineGapRatio = arrange.lineGapRatio;
+      spec.coreOnly = !!arrange.coreOnly;
+    } else if (spec.whole) {
+      spec.joined = !!style.joined;         // 스타일 표 배열 (bubble 첫 이름 = 떨어진 글자 · 옆 장식 없음)
+      spec.coreOnly = !!style.coreOnly;
+    }
     return _letterBlockResize(spec, unitMm);
+  }
+
+  // 붙인 글자(이름 전체 칼선 하나)인가 — 작은 이름(arrange.joined)만 그렇다. 첫 이름은 두 스타일 모두 떨어진 글자
+  // (2026-09-23 사용자 "떨어진 글씨가 메인" — retro 스펙엔 joined 가 없고, bubble 은 스타일 표 joined false).
+  function _nameJoined(spec) {
+    return spec.joined === true;
   }
 
   // 글자 틀 치수. retro 는 표 그대로({aw, cap, bl, …}), bubble 은 자리에 맞는 틀({aw, bl, fh}) — 줄 맨 앞은 L, 맨 끝은 R.
@@ -695,10 +731,11 @@
   // 틀 높이가 capPt × fh 라 줄 위·아래로 나가는 양도 fh 를 곱해 잰다.
   function _letterArtWCoefWhole(spec, style) {
     var i, j, m, line, sum, coef, above = 0, below = 0, best = 0;
+    var sides = !spec.coreOnly, gapRatio = (typeof spec.gapRatio === "number") ? spec.gapRatio : style.gap;
     for (i = 0; i < spec.lines.length; i++) {
       line = spec.lines[i];
       for (j = 0; j < line.length; j++) {
-        m = _artLetterMetric(style, line[j], j === 0, j === line.length - 1);
+        m = _artLetterMetric(style, line[j], sides && j === 0, sides && j === line.length - 1);
         if (!m) return null;
         if (m.bl * m.fh > above) above = m.bl * m.fh;
         if ((1 - m.bl) * m.fh > below) below = (1 - m.bl) * m.fh;
@@ -710,10 +747,10 @@
       line = spec.lines[i];
       sum = 0;
       for (j = 0; j < line.length; j++) {
-        m = _artLetterMetric(style, line[j], j === 0, j === line.length - 1);
+        m = _artLetterMetric(style, line[j], sides && j === 0, sides && j === line.length - 1);
         sum += m.aw * m.fh;
       }
-      coef = sum / hCoef + (line.length - 1) * style.gap;
+      coef = sum / hCoef + (line.length - 1) * gapRatio;
       if (coef > best) best = coef;
     }
     spec.artHCoef = hCoef;
@@ -744,7 +781,7 @@
         m = LETTER_ART_METRICS[spec.lines[i][j]];
         sum += m.aw / m.cap;
       }
-      var coef = sum / hCoef + (spec.lines[i].length - 1) * LETTER_GAP_RATIO;
+      var coef = sum / hCoef + (spec.lines[i].length - 1) * ((typeof spec.gapRatio === "number") ? spec.gapRatio : LETTER_GAP_RATIO);
       if (coef > best) best = coef;
     }
     spec.artHCoef = hCoef;
@@ -756,11 +793,14 @@
   function _letterBlockResize(spec, unitMm) {
     var unit = unitMm * MM_TO_PT;
     var style = spec.whole ? _nameStyle(spec.nameStyle) : null;
-    var gap = unit * (style ? style.gap : LETTER_GAP_RATIO);
+    // 글자·줄 사이 비율 — 배열을 바꾼 스펙(두 번째 이름)은 스펙 값, 아니면 스타일 값 (retro 는 줄 사이 = 글자 사이).
+    var gapRatio = (typeof spec.gapRatio === "number") ? spec.gapRatio : (style ? style.gap : LETTER_GAP_RATIO);
+    var lineRatio = (typeof spec.lineGapRatio === "number") ? spec.lineGapRatio : (style ? style.lineGap : gapRatio);
+    var gap = unit * gapRatio;
     spec.unitMm = unitMm;
     spec.unit = unit;
     spec.innerGap = gap;
-    spec.lineGap = style ? unit * style.lineGap : gap;   // 줄 사이 (retro 는 글자 간격과 같다)
+    spec.lineGap = unit * lineRatio;   // 줄 사이
     spec.halo = style ? unit * style.halo : 0;          // 통짜 흰 테두리 두께 (블록 치수에 들어 있다)
     var artCoef = null;
     if (spec.isArt) artCoef = _letterArtWCoef(spec);
@@ -775,7 +815,7 @@
     }
     // 높이는 두 모드가 같다 — 아트도 가장 불리한 글자의 프레임이 딱 unit 이다.
     if (style) spec.cellH = spec.lines.length * unit + (spec.lines.length - 1) * spec.lineGap + 2 * spec.halo;
-    else spec.cellH = spec.lines.length * unit + (spec.lines.length - 1) * gap;
+    else spec.cellH = spec.lines.length * unit + (spec.lines.length - 1) * spec.lineGap;
     return spec;
   }
 
@@ -840,6 +880,7 @@
   }
 
   // payload = { deco, style (없으면 retro), pad (pt — bubble 은 칼선 여백만큼 박스 안쪽에 그린다) }
+  // 반환 { art, cut, pieces } — pieces = 칼선 조각 수 (style.decoBorder 면 떨어진 장식마다 조각이 따로).
   function _drawDecoSticker(sheetDoc, payload, x, y, w, h, printL, kissL, cutSpot) {
     var style = _nameStyle(payload.style);
     if (!style) throw new Error("알 수 없는 이름 스타일: " + payload.style);
@@ -865,15 +906,31 @@
     var cw = gb[2] - gb[0], chh = gb[1] - gb[3];
     dup.translate(x + (w - cw) / 2 - gb[0], y - (h - chh) / 2 - gb[1]);
     try { dup.name = "Deco_" + payload.deco; } catch (eNm) {}
-    var outline = _artOutlinePath(dup);
-    if (!outline) {
-      throw new Error("데코 '" + payload.deco + "' 의 칼선을 못 만들었습니다 — " +
-        "라이브러리에 바깥 실루엣 도형 1개가 있어야 합니다");
+    var cut, pieces = 1;
+    if (style.decoBorder) {
+      // 여백 0: 크기·자리는 위에서 흰 테두리(SIL)까지 넣은 틀로 정했다(그림 크기 그대로). 이제 SIL 을 인쇄에서 빼고
+      // 남은 그림 조각을 합친 바깥 윤곽을 칼선으로 — 떨어진 장식(해 빛살 등)은 조각이 따로 남는다 (이름과 같다).
+      var sils = [], k;
+      _artSilhouettes(dup, sils);
+      if (!sils.length) {
+        throw new Error("데코 '" + payload.deco + "' 에 흰 테두리(SIL)가 없습니다 — 라이브러리 구조가 바뀌었는지 확인 (" + style.decoLib + ")");
+      }
+      for (k = 0; k < sils.length; k++) sils[k].remove();
+      var u = _artOuterUnion(sheetDoc, [dup], 0, printL);
+      u.shape.move(kissL, ElementPlacement.PLACEATEND);
+      cut = u.shape;
+      pieces = u.pieces;
+    } else {
+      var outline = _artOutlinePath(dup);
+      if (!outline) {
+        throw new Error("데코 '" + payload.deco + "' 의 칼선을 못 만들었습니다 — " +
+          "라이브러리에 바깥 실루엣 도형 1개가 있어야 합니다");
+      }
+      cut = _artCutOuterOnly(outline.duplicate(kissL, ElementPlacement.PLACEATEND));
     }
-    var cut = _artCutOuterOnly(outline.duplicate(kissL, ElementPlacement.PLACEATEND));
     try { cut.name = "Cutline_" + payload.deco; } catch (eCn) {}
     _forceCutContourStroke(cut, cutSpot);
-    return dup;
+    return { art: dup, cut: cut, pieces: pieces };
   }
 
   function _artShapeCandidates(item, out) {
@@ -926,15 +983,16 @@
   function _artLetterBoxes(block) {
     var style = block.whole ? _nameStyle(block.nameStyle) : null;
     var halo = block.halo ? block.halo : 0, out = [], ln, ci, line, lineW, m, fh, cur, baseY, first, last;
-    var paintPtr = 0, prevPaint, pick, paint;
-    var lineStep = block.unit + (style ? block.lineGap : block.innerGap);
+    var paintPtr = 0, prevPaint, pick, paint, sides = !block.coreOnly;
+    // 줄 사이 = lineGap (retro 기본 스펙은 lineGap = innerGap 이라 예전과 같다 · 손으로 만든 블록은 innerGap).
+    var lineStep = block.unit + ((typeof block.lineGap === "number") ? block.lineGap : block.innerGap);
     for (ln = 0; ln < block.lines.length; ln++) {
       line = block.lines[ln];
       prevPaint = null;
       lineW = (line.length - 1) * block.innerGap;
       for (ci = 0; ci < line.length; ci++) {
         if (style) {
-          m = _artLetterMetric(style, line[ci], ci === 0, ci === line.length - 1);
+          m = _artLetterMetric(style, line[ci], sides && ci === 0, sides && ci === line.length - 1);
           if (m) lineW += m.aw * block.capPt * m.fh;
         } else {
           m = LETTER_ART_METRICS[line[ci]];
@@ -944,8 +1002,8 @@
       cur = style ? halo + (block.cellW - 2 * halo - lineW) / 2 : (block.cellW - lineW) / 2;
       baseY = style ? halo + ln * lineStep + block.baselinePt : ln * lineStep + block.baselinePt;
       for (ci = 0; ci < line.length; ci++) {
-        first = ci === 0;
-        last = ci === line.length - 1;
+        first = sides && ci === 0;          // 옆 장식은 줄 맨 앞·끝 글자만 (coreOnly 면 없음)
+        last = sides && ci === line.length - 1;
         m = style ? _artLetterMetric(style, line[ci], first, last) : LETTER_ART_METRICS[line[ci]];
         if (!m) {
           // 라이브러리에 글자가 없다 — 그리기가 missingGlyphs 로 보고한다 (조용히 건너뛰면 이름에 구멍이 난다).
@@ -1032,39 +1090,43 @@
     else if (item.typename === "GroupItem") { for (var i = 0; i < item.pageItems.length; i++) _artGatherPaths(item.pageItems[i], out); }
   }
 
-  // 버블 이름 흰 테두리 = 글자 실루엣(SIL)을 haloPt 만큼 부풀려 합친 바깥 윤곽. 인쇄(흰색, 글자 아래)와 칼선이 **같은 도형**이라
-  // 정합 오차가 없다. Offset Path 라이브 이펙트(jntp 0 = 라운드) → 확장 → 단색 복사 → Pathfinder 더하기 → 구멍 버림
-  // (Everstory_calligraphy.jsx _offsetShape 와 같은 방식 — 굵은 획 + expandStyle 은 여백이 사라진다). 반환 { shape, cut, pieces }.
-  function _drawNameHalo(sheetDoc, dups, haloPt, printL, kissL, cutSpot) {
-    var sils = [], i, sel, expanded, united, paths, big, sign, outer, shape, white;
-    for (i = 0; i < dups.length; i++) _artSilhouettes(dups[i], sils);
-    if (!sils.length) throw new Error("버블 글자에 SIL(바깥 윤곽) 도형이 없습니다 — 라이브러리 구조가 바뀌었는지 확인");
+  // 도형들(sources)을 합친 바깥 윤곽 — 이름·데코 칼선 공용. haloPt > 0 이면 그만큼 부풀려 합친다.
+  // 단색 복사 → (Offset Path 라이브 이펙트, jntp 0 = 라운드 → 확장 → 단색 복사) → Pathfinder 더하기 → 구멍 버림
+  // (Everstory_calligraphy.jsx _offsetShape 와 같은 방식 — 굵은 획 + expandStyle 은 여백이 사라진다).
+  // 결과는 printL 에 새 도형 하나(조각이 여럿이면 컴파운드) — 호출부가 칠하거나 KissCut 으로 옮긴다. 반환 { shape, pieces }.
+  function _artOuterUnion(sheetDoc, sources, haloPt, printL) {
+    var i, sel, expanded, united, paths, big, sign, outer, shape;
     var src = printL.groupItems.add();
-    for (i = 0; i < sils.length; i++) _artCopySolid(sils[i], src);
-    src.applyEffect('<LiveEffect name="Adobe Offset Path"><Dict data="R mlim 4 R ofst ' + haloPt + ' I jntp 0 "/></LiveEffect>');
-    sheetDoc.selection = null;
-    src.selected = true;
-    app.executeMenuCommand("expandStyle");
-    sel = sheetDoc.selection;
-    if (!sel || sel.length === 0) throw new Error("흰 테두리 확장 실패 (Offset Path)");
-    expanded = sel[0];
-    sheetDoc.selection = null;
+    for (i = 0; i < sources.length; i++) _artCopySolid(sources[i], src);
+    if (haloPt > 0) {
+      src.applyEffect('<LiveEffect name="Adobe Offset Path"><Dict data="R mlim 4 R ofst ' + haloPt + ' I jntp 0 "/></LiveEffect>');
+      sheetDoc.selection = null;
+      src.selected = true;
+      app.executeMenuCommand("expandStyle");
+      sel = sheetDoc.selection;
+      if (!sel || sel.length === 0) throw new Error("윤곽 부풀리기 실패 (Offset Path)");
+      expanded = sel[0];
+      sheetDoc.selection = null;
+    } else {
+      expanded = src;
+    }
     var solid = printL.groupItems.add();
     _artCopySolid(expanded, solid);
     try { expanded.remove(); } catch (eEx) {}
+    sheetDoc.selection = null;
     solid.selected = true;
     app.executeMenuCommand("group");
     app.executeMenuCommand("Live Pathfinder Add");
     app.executeMenuCommand("expandStyle");
     sel = sheetDoc.selection;
-    if (!sel || sel.length === 0) throw new Error("흰 테두리 합치기 실패 (Pathfinder)");
+    if (!sel || sel.length === 0) throw new Error("윤곽 합치기 실패 (Pathfinder)");
     united = sel[0];
     sheetDoc.selection = null;
     paths = [];
     _artGatherPaths(united, paths);
     big = null;
     for (i = 0; i < paths.length; i++) if (!big || Math.abs(paths[i].area) > Math.abs(big.area)) big = paths[i];
-    if (!big) throw new Error("흰 테두리 결과가 비었습니다");
+    if (!big) throw new Error("윤곽 합치기 결과가 비었습니다");
     // 구멍(감긴 방향이 가장 큰 윤곽과 반대)은 버린다 — 칼선은 바깥만 딴다.
     sign = big.area >= 0 ? 1 : -1;
     outer = [];
@@ -1080,26 +1142,44 @@
       shape = sheetDoc.selection[0];
       sheetDoc.selection = null;
     }
-    white = new RGBColor();
-    white.red = 255; white.green = 255; white.blue = 255;
-    if (shape.typename === "CompoundPathItem") {
-      for (i = 0; i < shape.pathItems.length; i++) {
-        shape.pathItems[i].stroked = false; shape.pathItems[i].filled = true; shape.pathItems[i].fillColor = white;
-      }
-    } else {
-      shape.stroked = false; shape.filled = true; shape.fillColor = white;
-    }
-    shape.move(printL, ElementPlacement.PLACEATEND);   // 맨 아래 = 글자 밑
-    try { shape.name = "NameHalo"; } catch (eNm) {}
-    var cut = shape.duplicate(kissL, ElementPlacement.PLACEATEND);
-    try { cut.name = "Cutline_name"; } catch (eCn) {}
-    _forceCutContourStroke(cut, cutSpot);
-    return { shape: shape, cut: cut, pieces: outer.length };
+    return { shape: shape, pieces: outer.length };
   }
 
-  // 이름 블록 그리기. (x, y) = 블록 좌상단 (Illustrator 좌표, y 위로).
-  // retro = 글자마다 칼선 (바깥 실루엣 복제, 여백 0 — 오프셋은 나중에 수동).
-  // bubble = 글자는 칼선 없이 그리고, 이름 전체 흰 테두리(_drawNameHalo) 하나가 칼선.
+  // 붙인 글자 이름 칼선 = sources(bubble 글자는 SIL, retro 글자는 글자 그룹 통째)를 haloPt 만큼 부풀려 합친 바깥 윤곽
+  // (_artOuterUnion). haloPt > 0 이면 같은 도형을 흰색으로 글자 밑에 깔아 인쇄와 칼선의 정합 오차가 없다.
+  // haloPt 0 (지금) = 부풀리지 않고 합친 글자 윤곽이 곧 칼선 — 흰 도형은 글자에 가려 안 보이니 만들지 않는다 (shape = null).
+  // 글자가 안 닿는 자리·옆 장식은 조각이 따로 남는다 (pieces). cutName 없으면 "Cutline_name". 반환 { shape, cut, pieces }.
+  function _drawNameHalo(sheetDoc, sources, haloPt, printL, kissL, cutSpot, cutName) {
+    var i, shape, white, cut, u;
+    u = _artOuterUnion(sheetDoc, sources, haloPt, printL);
+    shape = u.shape;
+    if (haloPt > 0) {
+      white = new RGBColor();
+      white.red = 255; white.green = 255; white.blue = 255;
+      if (shape.typename === "CompoundPathItem") {
+        for (i = 0; i < shape.pathItems.length; i++) {
+          shape.pathItems[i].stroked = false; shape.pathItems[i].filled = true; shape.pathItems[i].fillColor = white;
+        }
+      } else {
+        shape.stroked = false; shape.filled = true; shape.fillColor = white;
+      }
+      shape.move(printL, ElementPlacement.PLACEATEND);   // 맨 아래 = 글자 밑
+      try { shape.name = "NameHalo"; } catch (eNm) {}
+      cut = shape.duplicate(kissL, ElementPlacement.PLACEATEND);
+    } else {
+      shape.move(kissL, ElementPlacement.PLACEATEND);
+      cut = shape;
+      shape = null;
+    }
+    try { cut.name = cutName || "Cutline_name"; } catch (eCn) {}
+    _forceCutContourStroke(cut, cutSpot);
+    return { shape: shape, cut: cut, pieces: u.pieces };
+  }
+
+  // 이름 블록 그리기. (x, y) = 블록 좌상단 (Illustrator 좌표, y 위로). 배열은 _nameJoined(block):
+  //   떨어진 글자 (첫 이름 — 두 스타일 모두) = 글자마다 칼선 — bubble 글자는 'SIL'(글자 바깥 윤곽), retro 는 가장 큰 도형.
+  //   붙인 글자 (작은 이름 — 두 스타일 모두) = 글자는 칼선 없이 그리고, 이름 전체를 합친 윤곽(_drawNameHalo)이 칼선.
+  //   여백은 모두 0 (오프셋은 나중에 수동). block.drawTag = 두 번째 이름의 레이어 이름 표시 ("2" → Letter2_A_00 · Cutline_name2).
   function _drawArtLetterBlock(sheetDoc, block, x, y, printL, kissL, cutSpot) {
     var style = _nameStyle(block.nameStyle);
     if (!style) throw new Error("알 수 없는 이름 스타일: " + block.nameStyle);
@@ -1107,7 +1187,8 @@
     app.activeDocument = sheetDoc;
     sheetDoc.activeLayer = printL;
     sheetDoc.selection = null;
-    var boxes = _artLetterBoxes(block), missing = [], noCut = [], dups = [], halo = null, i, b, src, dup, gb, s;
+    var boxes = _artLetterBoxes(block), missing = [], noCut = [], dups = [], halo = null, i, b, src, dup, gb, s, srcs;
+    var joined = _nameJoined(block), tag = block.drawTag ? String(block.drawTag) : "";
     for (i = 0; i < boxes.length; i++) {
       b = boxes[i];
       src = null;
@@ -1130,14 +1211,17 @@
       // resize 후 bounds 는 **다시 읽어야 한다** — 앵커가 문서 기준이라 위치가 같이 변한다.
       gb = dup.geometricBounds;
       dup.translate((x + b.x) - gb[0], (y - b.y) - gb[1]);
-      try { dup.name = "Letter_" + b.ch + "_" + _pad2(i); } catch (eL) {}
+      try { dup.name = "Letter" + tag + "_" + b.ch + "_" + _pad2(i); } catch (eL) {}
       dups.push(dup);
-      if (block.whole) continue;
+      if (joined) continue;
       // 칼선 — 인쇄 실루엣과 같은 기하를 KissCut 에 복제한다 (여백 0, 오프셋은 나중에 수동).
-      var outline = _artOutlinePath(dup);
+      // bubble 글자는 'SIL'(글자 바깥 윤곽 — 옆 장식은 위에서 뺐다)이 칼선, retro 글자는 가장 큰 도형.
+      var letterSils = [];
+      _artSilhouettes(dup, letterSils);
+      var outline = (letterSils.length === 1) ? letterSils[0] : _artOutlinePath(dup);
       if (outline) {
         var cut = _artCutOuterOnly(outline.duplicate(kissL, ElementPlacement.PLACEATEND));
-        try { cut.name = "Cutline_" + b.ch + "_" + _pad2(i); } catch (eC) {}
+        try { cut.name = "Cutline" + tag + "_" + b.ch + "_" + _pad2(i); } catch (eC) {}
         _forceCutContourStroke(cut, cutSpot);
       } else {
         noCut.push(b.ch);
@@ -1145,7 +1229,15 @@
     }
     // **칼선 없는 이름은 절대 조용히 넘기지 않는다.** 인쇄는 멀쩡한데 안 잘리는 시트가
     // 나가면 실물을 보기 전엔 모른다. 글자는 다 그려 놓고(눈으로 확인 가능) 여기서 터뜨린다.
-    if (block.whole && dups.length > 0) halo = _drawNameHalo(sheetDoc, dups, block.halo, printL, kissL, cutSpot);
+    if (joined && dups.length > 0) {
+      srcs = dups;                  // retro 글자 = 글자 그룹 통째를 합친다 (라이브러리에 SIL 이 없다)
+      if (block.whole) {            // bubble 글자 = SIL(글자+장식 바깥 윤곽)끼리 — 없으면 라이브러리 구조가 바뀐 것
+        srcs = [];
+        for (i = 0; i < dups.length; i++) _artSilhouettes(dups[i], srcs);
+        if (!srcs.length) throw new Error("버블 글자에 SIL(바깥 윤곽) 도형이 없습니다 — 라이브러리 구조가 바뀌었는지 확인");
+      }
+      halo = _drawNameHalo(sheetDoc, srcs, block.halo, printL, kissL, cutSpot, "Cutline_name" + tag);
+    }
     sheetDoc.selection = null;
     try { $.gc(); } catch (eGc) {}
     if (noCut.length > 0) {
@@ -1155,7 +1247,7 @@
     return {
       count: block.chars.length,
       pieces: halo ? halo.pieces : block.chars.length,
-      piecesAreLetters: !block.whole,
+      piecesAreLetters: !joined,
       missingGlyphs: missing,
       style: style.key,
       // 아트는 글자 속구멍이 아니라 그림 디테일(체커보드·줄무늬)이 최소 도형이라
@@ -2199,6 +2291,7 @@
     }
     for (i = 0; i < res.decos.length; i++) parts.push("d@" + _composedSigBox(res.decos[i]));
     if (res.nameBox) parts.push("n@" + _composedSigBox(res.nameBox));
+    if (res.name2Box) parts.push("m@" + _composedSigBox(res.name2Box));   // 두 번째 이름 (없는 판은 지문이 예전과 같다)
     s = parts.join(";");
     for (i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) % 4294967291;
     return h.toString(16);
@@ -2450,7 +2543,7 @@
   }
 
   // 배치 한 판 — 결정적. input.layout = _composedLayoutSpec 결과 (스타일 · 이름 위치 · 섞기. 뒤집기는 _packComposed 가 한다).
-  // 순서 = 이름(위 · 왼쪽/가운데/오른쪽) → 등급 내림차순 슬롯(큰 것부터) → 말풍선 → 빈틈 추가 사진 → 데코.
+  // 순서 = 이름(위 · 왼쪽/가운데/오른쪽) → 두 번째 이름(아래 · 반대쪽) → 등급 내림차순 슬롯(큰 것부터) → 말풍선 → 빈틈 추가 사진 → 데코.
   function _composedLayout(input) {
     var spec = input.layout ? input.layout : _composedLayoutSpec(null);
     var si = _composedStyleIndex(spec.style);
@@ -2471,6 +2564,17 @@
       ctx.repel.push(nm);
       ctx.nameBottom = input.name.h;
     }
+    // 두 번째 이름 (2026-09-23 사용자 — 첫 이름과 따로) — 사진보다 먼저 시트 아래 가장자리, 첫 이름의 반대쪽에 자리를 잡는다
+    // (이름 왼쪽 → 오른쪽 아래 · 오른쪽 → 왼쪽 아래 · 가운데 → 가운데 아래). 사진을 다 놓은 뒤 빈틈에 넣어 보니
+    // 47~105mm 폭이 들어갈 틈이 없어 18~35% 만 들어갔다. 큰 조각은 두 이름 모두에서 멀리 간다 (반발점).
+    if (input.name && input.name2) {
+      nx = (ctx.W - input.name2.w) / 2;
+      if (spec.namePos === "left") nx = ctx.W - input.name2.w;
+      else if (spec.namePos === "right") nx = 0;
+      nm = { kind: "name2", x: nx, y: ctx.H - input.name2.h, w: input.name2.w, h: input.name2.h };
+      _composedPut(ctx, nm);
+      ctx.repel.push(nm);
+    }
     // 시트 네 모서리를 반발점으로 — 없으면 "가장 먼 자리"가 늘 구석이라 큰 조각이 귀퉁이로 몰린다.
     // 모으기·가장자리는 큰 조각이 가운데·가장자리로 가야 하므로 모서리를 막지 않는다.
     cx4 = [0, ctx.W, 0, ctx.W];
@@ -2478,7 +2582,8 @@
     if (ctx.style !== "cluster" && ctx.style !== "frame") {
       for (i = 0; i < 4; i++) ctx.repel.push({ x: cx4[i], y: cy4[i], w: 0, h: 0 });
     }
-    usable = ctx.W * ctx.H - (input.name ? input.name.w * input.name.h : 0);
+    // 두 번째 이름 자리도 미리 빼 둔다 — 사다리가 시트를 다 채우면 들어갈 빈 곳이 없다.
+    usable = ctx.W * ctx.H - (input.name ? input.name.w * input.name.h : 0) - (input.name2 ? input.name2.w * input.name2.h : 0);
     var plan = _composedPlanSlots(ctx.photos, input.mainIndex, usable, ctx.rim, input.spreadCount, input.dropCount);
     ctx.gradeCounts = plan.counts;
     slots = plan.slots;
@@ -2625,7 +2730,8 @@
   }
 
   // 칼선 비율 = (relW / relH) × 캔버스 비율. 캐시 값이 비정상이면 null — 호출부가 사진 이름과 함께 멈춘다.
-  // (하린_25_S.evcut 처럼 relW/relH 가 0.0001 인 손상 기록이 실제로 있다. 크기를 여기서 정하므로 그냥 쓰면 안 된다.)
+  // (하린_25_S.evcut 처럼 relW/relH 가 0.0001 인 손상 기록이 실제로 있다. 크기를 여기서 정하므로 그냥 쓰면 안 된다.
+  //  이준_02_MED.evcut 은 실루엣에서 떨어진 얼룩을 칼선으로 잡아 폭 3% 였다 — 2026-09-22 _largestTraceShape 로 고침.)
   function _composedCutAspect(canvasAspect, cutInfo) {
     if (!cutInfo || !(canvasAspect > 0) || !isFinite(canvasAspect)) return 0;
     var rw = cutInfo.relW, rh = cutInfo.relH;
@@ -2691,6 +2797,11 @@
       if (a.x < -eps || a.y < -eps || a.x + a.w > binW + eps || a.y + a.h > binH + eps) return "이름이 시트 영역을 벗어남";
       boxes.push({ x: a.x, y: a.y, w: a.w, h: a.h, name: "이름" });
     }
+    if (res.name2Box) {
+      a = res.name2Box;
+      if (a.x < -eps || a.y < -eps || a.x + a.w > binW + eps || a.y + a.h > binH + eps) return "작은 이름이 시트 영역을 벗어남";
+      boxes.push({ x: a.x, y: a.y, w: a.w, h: a.h, name: "작은 이름" });
+    }
     for (i = 0; i < boxes.length; i++) {
       for (j = 0; j < i; j++) {
         ba = boxes[i];
@@ -2715,7 +2826,8 @@
   // Composed 배치 입구 (시트 한 장). pairsArg = 이 시트의 사진 1~COMPOSED_PER_SHEET 장(선택 순서),
   // 각 pair.cutAspect(없으면 pair.aspect). 더 많으면 호출부가 _composedDeal 로 먼저 나눈다.
   // extras = { hero: {w, h} (pt) | null, decoWant, rimPt, layout (배치 선택 — 없으면 기본),
-  //            bubbleWant · bubbleStart (말풍선 개수 · 시작 자리 — 없으면 말풍선 없음, 데코 개수 안에서 센다) }.
+  //            bubbleWant · bubbleStart (말풍선 개수 · 시작 자리 — 없으면 말풍선 없음, 데코 개수 안에서 센다),
+  //            name2: { w, h, pad, spec } | null (두 번째 이름 — 없으면 예전 판 그대로) }.
   // 반환 좌표·치수는 pt (body 좌상단 원점, y 아래로). res.layout = 정리된 배치 선택, res.sig = 배치 지문.
   function _packComposed(pairsArg, mainIndex, binW, binH, gap, extras) {
     if (!pairsArg || pairsArg.length < 1 || pairsArg.length > COMPOSED_PER_SHEET) {
@@ -2746,8 +2858,12 @@
                     type: pairsArg[i].shotType || COMPOSED_TYPE_NONE, range: rng, maxCopies: cap,
                     window: rng ? _composedRangeWindow(rng) : _composedTypeWindow(pairsArg[i].shotType || COMPOSED_TYPE_NONE) });
     }
-    var hero = null;
+    var hero = null, name2 = null;
     if (extras.hero && extras.hero.w > 0 && extras.hero.h > 0) hero = { w: extras.hero.w / MM_TO_PT, h: extras.hero.h / MM_TO_PT };
+    // 두 번째 이름은 첫 이름이 있을 때만 (_composedPackExtras 가 스펙과 함께 준다 — 없거나 null 이면 예전 판 그대로).
+    if (hero && extras.name2 && extras.name2.w > 0 && extras.name2.h > 0) {
+      name2 = { w: extras.name2.w / MM_TO_PT, h: extras.name2.h / MM_TO_PT };
+    }
     var decoWant = 0;
     if (hero && extras.decoWant > 0) decoWant = extras.decoWant;
     var rimMm = (extras.rimPt > 0) ? extras.rimPt / MM_TO_PT : 0;
@@ -2761,7 +2877,7 @@
     var bubble = _composedBubblePlan(nameStyle, bubbleStart, bubbleWant);
     bubble.pad = decoPad / MM_TO_PT;
     var input = { W: binW / MM_TO_PT, H: binH / MM_TO_PT, gap: gap / MM_TO_PT, rim: rimMm, photos: photos,
-                  mainIndex: mainIndex, name: hero, decoWant: decoWant, layout: layout, bubble: bubble,
+                  mainIndex: mainIndex, name: hero, name2: name2, decoWant: decoWant, layout: layout, bubble: bubble,
                   decoSizes: _composedDecoSizes(nameStyle, decoPad / MM_TO_PT) };   // decoPad 는 pt — 박스 계산은 mm
     // 계획한 조각이 다 안 들어가면(빠진 슬롯) 먼저 ④에서 마지막에 넣은 조각을 1~2장 빼고 다시 돌린다 —
     // 곧장 분산을 줄이면 작은 얼굴들이 한곳에 뭉쳤다(EVS-1007 실측 21mm). 그래도 안 되면 분산을 줄인다.
@@ -2778,7 +2894,7 @@
       if (st.missing.length === 0) break;
     }
     var ev = _composedEvaluate(st);
-    var placed = [], decos = [], nameBox = null, counts = [], area = 0, extraCount = 0, p, box, types = [], windows = [], ranges = [];
+    var placed = [], decos = [], nameBox = null, name2Box = null, counts = [], area = 0, extraCount = 0, p, box, types = [], windows = [], ranges = [];
     var decoUsed = {}, bubbleCount = 0;
     for (i = 0; i < photos.length; i++) {
       counts.push(0);
@@ -2809,18 +2925,25 @@
         bubbleCount++;
       } else if (p.kind === "name") {
         nameBox = box;
+      } else if (p.kind === "name2") {
+        name2Box = box;
       }
     }
     if (layout.mirror) {
       _composedMirrorBoxes(placed, binW);
       _composedMirrorBoxes(decos, binW);
       if (nameBox) _composedMirrorBoxes([nameBox], binW);
+      if (name2Box) _composedMirrorBoxes([name2Box], binW);
     }
     var res = { placed: placed, decos: decos, nameBox: nameBox, counts: counts, area: area, rimPt: rimMm * MM_TO_PT,
                 fill: area / (binW * binH), extras: extraCount, missing: st.missing, skipped: st.skipped,
                 gradeCounts: st.gradeCounts, types: types, windows: windows, ranges: ranges, evaluation: ev, ops: opsAll,
                 runs: runs, spreadCount: st.spreadCount, layout: layout, nameStyle: nameStyle.key, namePad: namePad,
                 decoStart: decoStart, bubbleStart: bubbleStart, bubbles: bubbleCount,
+                // 두 번째 이름 — name2Box 가 없으면 자리가 없어 못 넣은 것 (name2Missing, 완료 창이 알린다)
+                name2Box: name2Box, name2Pad: (name2 && extras.name2.pad > 0) ? extras.name2.pad : 0,
+                name2Spec: (name2 && extras.name2.spec) ? extras.name2.spec : null,
+                name2Missing: !!(name2 && !name2Box),
                 mainIndex: mainIndex, method: "composed", ms: new Date().getTime() - start };
     var error = _composedValidate(res, pairsArg, binW, binH, gap);
     if (error) throw new Error("Composed 배치 검증 실패: " + error);
@@ -3264,7 +3387,7 @@
       sheetPairs[i].symbolError = null;
       sheetPairs[i].cutCacheHit = false;
     }
-    var hero = _composedHero(options.stickerName, ctx.binW, gapPt, options.nameStyle);
+    var hero = _composedHero(options.stickerName, ctx.binW, gapPt, options.nameStyle, options.smallName);
     var nameSkipped = hero.skipped, heroSpec = hero.spec;
     // 배치 선택은 주문 보드가 시트마다 넘긴다 (대화창 실행이면 없음 = 기본 배치).
     var layout = (options.layouts && sIdx < options.layouts.length) ? options.layouts[sIdx] : null;
@@ -3274,8 +3397,8 @@
     var kissLayer = doc.layers.add();
     kissLayer.name = "KissCut";
     var cutSpot = _ensureCutContour(doc);
-    var packResult = null, packMs = 0, records = [], failedItems = [], fitCount = 0, decoDrawn = 0;
-    var nameInfo = null, drawnDesigns = 0, drawnBases = {};
+    var packResult = null, packMs = 0, records = [], failedItems = [], fitCount = 0, decoDrawn = 0, decoMulti = [];
+    var nameInfo = null, name2Info = null, drawnDesigns = 0, drawnBases = {};
     var prevInteraction = app.userInteractionLevel;
     app.userInteractionLevel = UserInteractionLevel.DONTDISPLAYALERTS;
     try {
@@ -3287,8 +3410,16 @@
       for (i = 0; i < sheetPairs.length; i++) {
         var cutAspect = _composedCutAspect(sheetPairs[i].aspect, sheetPairs[i].cutInfo);
         if (!cutAspect) {
-          throw new Error("칼선 캐시 값이 비정상입니다 — " + sheetPairs[i].base +
-            " (02_cutout/_cutcache 의 해당 .evcut 을 지우고 다시 실행하세요)");
+          // 트레이스는 실루엣에서 가장 큰 조각을 칼선으로 쓴다 (_largestTraceShape) — 그래도 작으면 실루엣 자체를 먼저 의심한다.
+          // 캐시에서 온 값이면 옛 기록·손상일 수 있다 — 지우면 다시 딴다.
+          var badCut = sheetPairs[i].cutInfo, badWhy = "칼선 값이 비정상입니다";
+          if (badCut && isFinite(badCut.relW) && isFinite(badCut.relH) &&
+              (badCut.relW < COMPOSED_CUT_REL_MIN || badCut.relH < COMPOSED_CUT_REL_MIN)) {
+            badWhy = "칼선이 사진에 비해 너무 작습니다 (사진 폭의 " + Math.round(badCut.relW * 100) + "% · 높이의 " +
+              Math.round(badCut.relH * 100) + "%)";
+          }
+          throw new Error(badWhy + " — " + sheetPairs[i].base + ". 실루엣(_sil.png)이 검게 제대로 칠해졌는지 확인하고, " +
+            "이상 없으면 02_cutout/_cutcache 의 해당 .evcut 을 지우고 다시 실행하세요");
         }
         sheetPairs[i].cutAspect = cutAspect;
       }
@@ -3316,9 +3447,10 @@
       for (i = 0; i < packResult.decos.length; i++) {
         var dp = packResult.decos[i];
         try {
-          _drawDecoSticker(doc, dp.payload, ctx.bL + ctx.padXPt + dp.x, ctx.bT - ctx.padYPt - dp.y,
-                           dp.w, dp.h, printLayer, kissLayer, cutSpot);
+          var dr = _drawDecoSticker(doc, dp.payload, ctx.bL + ctx.padXPt + dp.x, ctx.bT - ctx.padYPt - dp.y,
+                                    dp.w, dp.h, printLayer, kissLayer, cutSpot);
           decoDrawn++;
+          if (dr.pieces > 1) decoMulti.push(dp.payload.deco + " " + dr.pieces);
         } catch (eDeco) {
           failedItems.push({ base: "데코 " + dp.payload.deco, error: (eDeco && eDeco.message) ? eDeco.message : String(eDeco) });
         }
@@ -3330,6 +3462,15 @@
                                          ctx.bT - ctx.padYPt - packResult.nameBox.y - packResult.namePad, printLayer, kissLayer, cutSpot);
         } catch (eName) {
           failedItems.push({ base: "이름", error: (eName && eName.message) ? eName.message : String(eName) });
+        }
+      }
+      // ⑤-2 작은 이름 — 붙인 글자 (두 스타일 모두, 뺀 판은 없음). 박스 안쪽 여백만큼 들여 그린다.
+      if (packResult.name2Box && packResult.name2Spec) {
+        try {
+          name2Info = _drawArtLetterBlock(doc, packResult.name2Spec, ctx.bL + ctx.padXPt + packResult.name2Box.x + packResult.name2Pad,
+                                          ctx.bT - ctx.padYPt - packResult.name2Box.y - packResult.name2Pad, printLayer, kissLayer, cutSpot);
+        } catch (eName2) {
+          failedItems.push({ base: "작은 이름", error: (eName2 && eName2.message) ? eName2.message : String(eName2) });
         }
       }
       _safeRedrawAndGC();
@@ -3396,7 +3537,8 @@
     }
     return { doc: doc, pairs: sheetPairs, mainIndex: mainIndex, packResult: packResult, packMs: packMs, records: records,
              savedPath: savedPath, saveError: saveError, failedItems: failedItems, fitCount: fitCount,
-             decoDrawn: decoDrawn, decoWant: decoWant, nameSpec: heroSpec, nameSkipped: nameSkipped,
+             decoDrawn: decoDrawn, decoWant: decoWant, decoMulti: decoMulti, nameSpec: heroSpec, nameSkipped: nameSkipped,
+             name2Info: name2Info,
              nameInfo: nameInfo, drawnDesigns: drawnDesigns, cutCacheHits: cutCacheHits, symbolOk: symbolOk };
   }
 
@@ -3667,6 +3809,22 @@
     return out;
   }
 
+  // 완료 창 — 작은 이름 한 줄. pr = 배치 결과, info = _drawArtLetterBlock 결과 (그리기 실패면 null). 뺀 판은 "" (머리 줄이 알린다).
+  function _composedName2Line(pr, info) {
+    var n2 = pr.name2Spec, joined, line;
+    if (!n2) return "";
+    if (!pr.name2Box) return "    ⚠ 작은 이름: 들어갈 자리가 없어 못 넣음\n";
+    joined = _nameJoined(n2);
+    line = "    작은 이름 (" + (joined ? "붙인 글자" : "떨어진 글자") + "): 글자 " + (Math.round(n2.unitMm * 10) / 10) + "mm · " +
+      (Math.round(n2.cellW / MM_TO_PT * 10) / 10) + " × " + (Math.round(n2.cellH / MM_TO_PT * 10) / 10) + "mm · 칼선 = 글자 윤곽 (여백 0";
+    if (info && joined && info.pieces > 1) line += " · " + info.pieces + "조각";
+    if (info && !joined) line += " · 글자마다";
+    line += ")";
+    if (info && info.missingGlyphs && info.missingGlyphs.length) line += "  ⚠ 라이브러리에 없는 글자: " + info.missingGlyphs.join(",");
+    if (!info) line += "  ⚠ 그리기 실패";
+    return line + "\n";
+  }
+
   // 완료 메시지 — 운영자가 "계획대로 나왔는지" 를 한 화면에서 확인한다. 시트마다 한 덩어리.
   // outs = 만들어진 시트들 (_produceComposedSheet 결과), plan = _composedDeal 결과, err = 중단 이유.
   // notes = { preview: [미리보기와 다른 점…], body: "템플릿 크기 경고" } (없으면 null).
@@ -3674,11 +3832,17 @@
     var rim = _composedRimMm(options), saved = 0, i, j, s;
     var nameStyle = _nameStyle(options.nameStyle) || COMPOSED_NAME_STYLES[0];
     for (s = 0; s < outs.length; s++) if (outs[s].savedPath) saved++;
+    // 여러 줄 중첩 삼항은 ExtendScript 에서 틀린 값이 나온 적이 있다 — if/else 로 만든다.
+    var stickerLine = "(없음 — 이름·데코 안 넣음)";
+    if (options.stickerName) {
+      stickerLine = options.stickerName + " · 스타일 " + nameStyle.label + " (글자마다 따로)";
+      if (options.smallName === false) stickerLine += " · 작은 이름 뺌";
+      else stickerLine += " + 작은 이름 붙인 글자 " + COMPOSED_NAME2_JOIN_UNIT_MM + "mm";
+    }
     var msg = "완료: Composed 시트 " + saved + "/" + plan.length + "장 생성\n\n" +
       "스크립트: " + SCRIPT_VARIANT + "\n" +
       "고객 이름: " + options.nameText + "\n" +
-      "스티커 이름: " + (options.stickerName ? options.stickerName + " · 스타일 " + nameStyle.label +
-        (nameStyle.whole ? " (이름 통짜 · 흰 테두리 포함)" : " (글자마다 따로)") : "(없음 — 이름·데코 안 넣음)") + "\n" +
+      "스티커 이름: " + stickerLine + "\n" +
       "구성: 사진 " + pairsArg.length + "장 → " + plan.length + "시트 (시트당 최대 " + COMPOSED_PER_SHEET + "장 · 큰 사진 고르게)" +
       " · 크기 = 인치 사다리 긴 변 " + COMPOSED_GRADES_IN.join("·") + "\" · 종류 범위보다 작게 줄이지 않음\n" +
       "       흰 테두리 " + rim + "mm (칼선 = 사진 윤곽 · 테두리만큼 바깥으로 오프셋해도 이웃과 " +
@@ -3727,14 +3891,17 @@
       if (out.nameSpec) {
         msg += "    이름 스티커 (" + nameStyle.label + "): 아트 알파벳 유닛 " + (Math.round(out.nameSpec.unitMm * 10) / 10) + "mm · " +
           (Math.round(out.nameSpec.cellW / MM_TO_PT * 10) / 10) + " × " + (Math.round(out.nameSpec.cellH / MM_TO_PT * 10) / 10) + "mm";
-        if (out.nameSpec.whole) {
+        if (out.nameSpec.whole && out.nameSpec.halo > 0) {
           msg += " (흰 테두리 " + (Math.round(out.nameSpec.halo / MM_TO_PT * 10) / 10) + "mm 포함)";
           if (out.nameInfo && out.nameInfo.pieces !== 1) msg += "  ⚠ 흰 테두리가 " + out.nameInfo.pieces + "조각 — 칼선이 여러 개";
+        } else if (out.nameSpec.whole) {
+          msg += " · 칼선 = 글자 윤곽 (여백 0 · 글자마다)";   // bubble 첫 이름 = 떨어진 글자 (글자 SIL)
         }
         if (out.nameInfo && out.nameInfo.missingGlyphs && out.nameInfo.missingGlyphs.length) {
           msg += "  ⚠ 라이브러리에 없는 글자: " + out.nameInfo.missingGlyphs.join(",");
         }
         msg += (out.nameInfo ? "" : "  ⚠ 그리기 실패") + "\n";
+        msg += _composedName2Line(pr, out.name2Info);
       } else if (out.nameSkipped) {
         msg += "    ⚠ 이름 스티커 없음: " + out.nameSkipped + "\n";
       }
@@ -3745,7 +3912,11 @@
           else decoNames.push(pr.decos[i].payload.deco);
         }
         msg += "    데코 스티커 (" + nameStyle.label + "): " + out.decoDrawn + "/" + out.decoWant + "개 (말풍선 포함 · 빈틈에만) — 말풍선 " +
-          (bubbleNames.length ? bubbleNames.join(", ") : "0 (들어갈 자리 없음)") + (decoNames.length ? " · " + decoNames.join(", ") : "") + "\n";
+          (bubbleNames.length ? bubbleNames.join(", ") : "0 (들어갈 자리 없음)") + (decoNames.length ? " · " + decoNames.join(", ") : "");
+        if (nameStyle.decoBorder) {
+          msg += " · 칼선 = 그림 윤곽 (여백 0" + (out.decoMulti && out.decoMulti.length ? " · 여러 조각: " + out.decoMulti.join(", ") : "") + ")";
+        }
+        msg += "\n";
       }
       msg += "    칼선 캐시 " + out.cutCacheHits + "/" + sp.length + " 히트 · 심볼 " + out.symbolOk + "/" + sp.length +
         (out.fitCount > 0 ? " · 칼선 맞춤 " + out.fitCount + "장" : "") + "\n";
@@ -3757,9 +3928,18 @@
     if (outs.length > 0) {
       msg += "\n손볼 때: 사진(Photo_…)과 칼선(Cutline_…)은 같은 이름끼리 함께 옮기고, 칼선끼리 " + (GAP_DEFAULT_MM + 2 * rim) + "mm 이상 띄우세요.\n" +
         "마지막에 KissCut 칼선을 " + rim + "mm 바깥으로 오프셋하면 흰 테두리가 됩니다.\n";
-      if (options.stickerName && nameStyle.whole) {
-        msg += nameStyle.label + " 이름(NameHalo · Cutline_name)과 두들 데코는 흰 테두리가 이미 들어 있어요 — 같이 오프셋해도 " +
-          "이웃과 간격이 남도록 칼선 여백만큼 자리를 더 잡아 두었어요.\n";
+      if (options.stickerName) {
+        if (nameStyle.whole && nameStyle.halo > 0) {
+          msg += nameStyle.label + " 이름(NameHalo · Cutline_name)은 흰 테두리가 이미 들어 있어요 — 같이 오프셋해도 " +
+            "이웃과 간격이 남도록 칼선 여백만큼 자리를 더 잡아 두었어요.\n";
+        }
+        // 붙인 글자 = 작은 이름 (Cutline_name2 — 두 스타일 모두, 뺀 판은 없다) · bubble 데코.
+        var multiCut = [];
+        if (options.smallName !== false) multiCut.push("붙인 글자 이름");
+        if (nameStyle.decoBorder) multiCut.push("데코");
+        if (multiCut.length > 0) {
+          msg += multiCut.join("·") + " 칼선이 여러 조각이면 오프셋 뒤에도 겹친 채 따로 남으니 합치세요 (Pathfinder 더하기).\n";
+        }
       }
     }
     if (failed.length > 0) {
@@ -3963,24 +4143,49 @@
   // 스티커 이름 → 이름 스펙 (시트 생성·주문 보드 미리보기 공용). 반환 { spec, skipped } —
   // 한글·숫자·너무 긴 이름은 spec 없이 skipped 에 이유 (그 시트는 이름·데코 없이 사진만).
   // nameStyle = COMPOSED_NAME_STYLES 키 (비우면 retro, 모르는 키면 예외). 스펙에 스타일이 실려 데코·그리기까지 따라간다.
-  function _composedHero(stickerName, binW, gapPt, nameStyle) {
+  // smallName === false = 작은 이름(붙인 글자)을 뺀다 (주문 보드 옵션, 2026-09-23) — spec.smallName 으로 실려
+  // _composedPackExtras 가 본다 (미리보기·시트 생성 모두 이 함수로 스펙을 만든다). 그 밖의 값이면 넣는다.
+  function _composedHero(stickerName, binW, gapPt, nameStyle, smallName) {
     if (!_nameStyle(nameStyle)) throw new Error("알 수 없는 이름 스타일: " + nameStyle);
     if (!stickerName) return { spec: null, skipped: "" };
     var ns = _rangeNameSpec(stickerName, binW, gapPt, nameStyle);
     if (!ns) return { spec: null, skipped: "" };
     if (ns.skipped) return { spec: null, skipped: ns.skipped };
     var maxW = Math.min(RANGE_HERO_MAX_W_MM, binW / MM_TO_PT - 2 * RANGE_MARGIN_X_MM) * MM_TO_PT;
-    return { spec: _rangeHeroSpec(stickerName, maxW, nameStyle) || ns, skipped: "" };
+    var spec = _rangeHeroSpec(stickerName, maxW, nameStyle) || ns;
+    if (smallName === false) spec.smallName = false;
+    return { spec: spec, skipped: "" };
+  }
+
+  // 작은 이름 스펙 (2026-09-23 사용자) — 첫 이름(떨어진 글자)과 같은 글자·알파벳을 **붙인 글자**로: 글자 틀 겹침
+  // COMPOSED_NAME2_JOIN_GAP · 줄 사이 COMPOSED_NAME2_JOIN_LINE_GAP · 이름 전체 칼선 하나 · bubble 옆 장식 있음 (예전 버블
+  // 첫 이름 모양). 글자 높이 COMPOSED_NAME2_JOIN_UNIT_MM, 폭이 RANGE_HERO_MAX_W_MM 을 넘으면 유닛을 낮춘다.
+  // 아트 이름이 아니거나(한글·숫자 — 첫 이름도 없다) 첫 이름이 이미 붙인 글자면 null.
+  // drawTag "2" = 레이어 이름 표시 (Letter2_… · Cutline_name2). 넣을지는 _composedPackExtras 가 정한다 (spec.smallName).
+  function _composedName2Spec(heroSpec) {
+    if (!heroSpec || !heroSpec.isArt || _nameJoined(heroSpec)) return null;
+    var words = [], i, spec, maxW = RANGE_HERO_MAX_W_MM * MM_TO_PT;
+    for (i = 0; i < heroSpec.lines.length; i++) words.push(heroSpec.lines[i].join(""));
+    spec = _letterBlockSpec(words.join(" "), COMPOSED_NAME2_JOIN_UNIT_MM, "NAME2", heroSpec.nameStyle,
+      { joined: true, gapRatio: COMPOSED_NAME2_JOIN_GAP, lineGapRatio: COMPOSED_NAME2_JOIN_LINE_GAP, coreOnly: false });
+    if (!spec || !spec.isArt) return null;
+    if (spec.cellW > maxW) spec = _letterBlockResize(spec, _letterUnitToFit(spec, maxW));
+    spec.drawTag = "2";
+    return spec;
   }
 
   // _packComposed 의 extras (시트 생성·미리보기 공용) — 데코는 이름이 있을 때만. layout = 배치 선택 (없으면 기본).
   // 이름 스타일은 heroSpec 에서 온다. rimBox 스타일(bubble)은 이름·데코 박스를 칼선 여백(rimPt)만큼 넓히고 그 안쪽에 그린다 (pad).
   // sheetIndex = 몇 번째 시트인지 (0부터, 없으면 0) — 데코·말풍선 시작 자리 (_composedDecoStart · _composedBubbleStart).
+  // name2 = 작은 이름 박스 { w, h, pad, spec } — 두 스타일 모두 칼선 여백만큼 박스를 넓힌다 (마지막 오프셋 자리).
+  //   첫 이름 스펙이 smallName === false (주문 보드에서 뺌)면 null = 예전 판 그대로.
   function _composedPackExtras(heroSpec, rimPt, layout, sheetIndex) {
     var style = heroSpec ? _nameStyle(heroSpec.nameStyle) : null;
     var pad = (style && style.rimBox && rimPt > 0) ? rimPt : 0;
+    var name2 = (heroSpec && heroSpec.smallName === false) ? null : _composedName2Spec(heroSpec), pad2 = (rimPt > 0) ? rimPt : 0;
     return { hero: heroSpec ? { w: pad ? heroSpec.cellW + 2 * pad : heroSpec.cellW,
                                 h: pad ? heroSpec.cellH + 2 * pad : heroSpec.cellH, pad: pad } : null,
+             name2: name2 ? { w: name2.cellW + 2 * pad2, h: name2.cellH + 2 * pad2, pad: pad2, spec: name2 } : null,
              decoWant: heroSpec ? COMPOSED_DECO_MAX : 0, rimPt: rimPt, layout: layout ? layout : null,
              nameStyle: style ? style.key : null, decoPad: pad, decoStart: _composedDecoStart(heroSpec, sheetIndex),
              bubbleWant: heroSpec ? COMPOSED_BUBBLE_MAX : 0, bubbleStart: _composedBubbleStart(heroSpec, sheetIndex) };
@@ -4051,6 +4256,14 @@
       }
       nameStyle = cfg.nameStyle;
     }
+    // 작은 이름(붙인 글자) 넣기 — 없으면 넣는다 (2026-09-23). true/false 가 아니면 만들지 않는다.
+    var smallName = true;
+    if (cfg.smallName !== undefined && cfg.smallName !== null) {
+      if (typeof cfg.smallName !== "boolean") {
+        return { error: "작은 이름 값이 이상합니다: " + cfg.smallName + " — 보드에서 미리보기를 새로 고친 뒤 다시 만드세요." };
+      }
+      smallName = cfg.smallName;
+    }
     // 시트마다 고른 배치 (없으면 기본). 이상한 값이면 만들지 않는다 — 미리보기와 다른 시트가 조용히 나오면 안 된다.
     if (cfg.layouts !== undefined && cfg.layouts !== null) {
       if (!(cfg.layouts instanceof Array)) return { error: "배치 선택 값이 이상합니다." };
@@ -4066,6 +4279,7 @@
       mainBase: mainBase,
       stickerName: _trim(cfg.stickerName || ""),
       nameStyle: nameStyle,
+      smallName: smallName,
       material: material,
       orderNumber: _trim(cfg.orderNumber || ""),
       orderDate: _trim(cfg.orderDate || "") || _todayIso(),
@@ -5004,13 +5218,36 @@
     app.executeMenuCommand("Live Pathfinder Add");
     app.executeMenuCommand("expandStyle");
 
-    var sel = doc.selection;
-    if (sel && sel.length > 0) {
-      try { sel[0].name = "Cutline"; } catch (eName) {}
+    // 칼선 = 가장 큰 조각. selection[0] 에 이름을 붙이면 떨어진 얼룩이 칼선이 될 수 있다 (_largestTraceShape).
+    var cutShape = _largestTraceShape(doc.selection);
+    if (cutShape) {
+      try { cutShape.name = "Cutline"; } catch (eName) {}
     }
 
     doc.layers[0].name = "KissCut";
     app.executeMenuCommand("deselectall");
+  }
+
+  // 트레이스 결과 중 칼선으로 쓸 조각 = 박스 면적이 가장 큰 PathItem · CompoundPathItem (그룹 안까지 본다).
+  // 실루엣에 몸과 떨어진 얼룩이 있으면 위 합치기 뒤에도 조각이 여럿 남는다 — 예전엔 selection[0] 을 칼선으로 써서
+  // 얼룩이 칼선이 됐다 (2026-09-22 이준_02_MED: 30×24px 얼룩 = 사진 폭의 3%). 작은 조각은 칼선에서 빠지고,
+  // 사진 속 구멍은 CompoundPathItem 안에 있으니 그대로 남는다. mixed.jsx 와 같은 코드 (.evcut 공유).
+  function _largestTraceShape(items) {
+    var best = null, bestA = -1, stack = [], it, b, a, i, j;
+    if (!items) return null;
+    for (i = 0; i < items.length; i++) stack.push(items[i]);
+    while (stack.length > 0) {
+      it = stack.pop();
+      if (it.typename === "GroupItem") {
+        for (j = 0; j < it.pageItems.length; j++) stack.push(it.pageItems[j]);
+        continue;
+      }
+      if (it.typename !== "PathItem" && it.typename !== "CompoundPathItem") continue;
+      try { b = it.geometricBounds; } catch (eB) { continue; }
+      a = (b[2] - b[0]) * (b[1] - b[3]);
+      if (a > bestA) { bestA = a; best = it; }
+    }
+    return best;
   }
 
   function _ensureCutContour(doc) {

@@ -11,6 +11,7 @@
 - **스티커 개수는 실측 뒤에만.** "about 24" 는 200시트 시뮬(24.0장)이고, 실물 1장을 재단해 센 값으로 바꾼다. 실측 전에 게시하면 숫자 없는 대체 문장을 쓴다(아래 표시).
 - **NAME은 후보 5–7장 중 스튜디오가 최종 5장을 선택**한다. 못 쓰는 사진은 다른 적합한 업로드로 대체하고, 5장을 만들 수 없으면 인쇄 전에 이메일한다. Custom은 선택한 수만 업로드하고, 못 쓰는 사진이 있으면 인쇄 전에 이메일한다. "Fewer is fine — we repeat favourites"는 사용하지 않는다.
 - NAME 이름 안내는 **A–Z와 공백만**, 대문자로 새김, 공백 = 줄바꿈. 폼 도움말과 Name tip에 표시하고, 규칙 밖 입력은 인테이크 notes에서 확인한다. 이 안내를 Custom의 이름 정책으로 확대하지 않는다.
+- **이름은 선택이다 (2026-09-24 사용자 결정).** Easify `Name style` 에 `No name` 을 고르면 Name 칸이 숨고 시트는 사진만 채운다(데코·말풍선 없음, 같은 가격). 이름을 말하는 문장은 `with or without their name` · `if you like` 로 쓰고, 이름이 늘 들어가는 것처럼 쓰지 않는다. 상품명은 나중에 `Photo Sticker Sheet` 로 바꿀 예정 — handle·리다이렉트·리뷰·인테이크를 따로 본다.
 - 영어 단일. 개수·크기 비유는 실측 없이 쓰지 않는다. Materials / Care / Lead time / Safety 공용 섹션은 손대지 않는다.
 - `product_intro` 는 rich text JSON, `product_story_html` 은 정적 HTML + 절대 URL (metafield 안 Liquid 는 실행 안 됨).
 
@@ -22,17 +23,17 @@
 | Handle | `name-photo-sticker-sheet` |
 | Tags | `a5, photo-sticker, sheet, name-sticker` |
 | 가격 | $24.99 CAD (Material 4종, 단일 가격) |
-| `card_subtitle` | `Their name and 5 photos, cut and ready to peel` |
-| descriptionHtml | `<p>Five of your photos as die-cut stickers, plus their name and a few small extras, all on one A5 sheet. You pick the material; we choose every size, crop and position and lay the sheet out by hand.</p>` |
+| `card_subtitle` | `5 photos, with or without their name, cut and ready to peel` |
+| descriptionHtml | `<p>Five of your photos as die-cut stickers on one A5 sheet — with their name and a few small extras, or just the photos. You pick the material; we choose every size, crop and position and lay the sheet out by hand.</p>` |
 | SEO title (45자) | `Name & Photo Sticker Sheet | Everstory Studio` |
-| SEO description (152자) | `Send us five photos and a name. We cut them into a sheet of about 24 custom stickers, laid out by hand in our Toronto studio. Free Canada-wide shipping.` |
-| SEO description — 실측 전 | `Send us five photos and a name. We cut them into a full A5 sheet of custom stickers, laid out by hand in our Toronto studio. Free Canada-wide shipping.` |
+| SEO description (153자 · 09-24 라이브) | `Send us five photos, and a name if you like. We cut them into a full A5 sheet of custom stickers, laid out by hand in Toronto. Free Canada-wide shipping.` |
+| SEO description — 개수 실측 뒤 (154자) | `Send us five photos, and a name if you like. We cut them into a sheet of about 24 custom stickers, laid out by hand in Toronto. Free Canada-wide shipping.` |
 
 ### Story block — `custom.product_story_html`
 
 > *Name & photo sticker sheet*
 > ## Their name, their photos.
-> Upload 5–7 photos and the name you want on the sheet. We choose five photos, trace each by hand, choose its size and crop, letter the name in the style you picked, and fill the gaps with a few small extras so the sheet comes out full. The layout is ours; the name and the photos are yours.
+> Upload 5–7 photos, and the name you want on the sheet if you'd like one. We choose five photos, trace each by hand and choose its size and crop. With a name, we letter it in the style you picked and fill the gaps with a few small extras; without one, we fill the sheet with more of your photos. The layout is ours; the photos and the name are yours.
 
 대안 헤드라인: `Five photos and their name.` · `Their name, kept.` (Face 의 "Their face, kept." 와 짝 — 다만 사진이 주인공이라 두 번째 안은 약하다).
 
@@ -47,8 +48,8 @@
         </div>
 
         <p class="copy">
-          Upload 5–7 photos and the name you want on the sheet. We choose five photos, trace each by hand, choose its size and crop, letter the name in the style you picked, and fill the gaps with a few small extras so the sheet comes out full.
-          The layout is ours; the name and the photos are yours.
+          Upload 5–7 photos, and the name you want on the sheet if you'd like one. We choose five photos, trace each by hand and choose its size and crop. With a name, we letter it in the style you picked and fill the gaps with a few small extras; without one, we fill the sheet with more of your photos.
+          The layout is ours; the photos and the name are yours.
         </p>
       </div>
     </section>
@@ -58,39 +59,40 @@
 
 ### What you get — `custom.product_intro`
 
-> - One A5 sheet of about 24 stickers, cut and ready to peel
-> - Five different photos, each at the size that suits it — 0.75″ to 2.5″, mixed on one sheet
-> - Their name as its own sticker, lettered in capitals in Retro or Bubble style
-> - A few small decorative stickers to fill the gaps — the set changes with the name
-> - Upload 5–7 photos. We choose five suitable photos for your sheet and email you before printing if we need a replacement.
-> - You upload; we choose the crop, the size of each photo and the layout
-> - Your name and the order date printed on the sheet header
+> - A full A5 sheet of stickers, cut and ready to peel
+> - Five of your photos, each at the size that suits it — 0.75″ to 2.5″
+> - Their name in Retro or Bubble letters, each letter its own sticker — or choose No name for a sheet of just photos
+> - With a name, a few small decorative stickers fill the gaps
+> - Your name and the order date along the top of the sheet
 > - Hand-refined and precision-cut in Toronto
 >
 > **Name tip**
-> Letters A to Z and spaces only, up to 24 letters — no accents, numbers or punctuation. A space starts a new line, so MIA ROSE comes out as two lines.
+> A to Z and spaces, up to 24 letters. A space starts a new line, so MIA ROSE comes out as two lines.
 >
 > **Best for**
 > Kids, pets, couples, and gifts. The sizes are mixed, so one sheet covers a planner, a phone, a bottle and a laptop.
 
-- 첫 줄의 **about 24** 는 실측값으로 바꾼다. 실측 전이면 `A full A5 sheet of stickers, cut and ready to peel`.
-- "the set changes with the name" — 데코 시작 자리가 스티커 이름 해시로 정해지는 실제 동작이다 (`_composedDecoStart`).
+- 09-25 8줄 → 6줄 (UX 검토): 사진 규칙(Your photos 안내에 있음)·배치 설명(상품 설명에 있음)을 빼고, 헤더 줄은 `Their name`(스티커)과 헷갈리지 않게 `along the top of the sheet`. Name tip 은 폼 안내와 겹치는 No name 문장을 뺌(No name 은 버튼으로 보인다).
+- 첫 줄의 스티커 개수(about 24)는 실측 뒤에만 넣는다.
 
 ```json
-{"type": "root", "children": [{"type": "list", "listType": "unordered", "children": [{"type": "list-item", "children": [{"type": "text", "value": "One A5 sheet of about 24 stickers, cut and ready to peel"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Five different photos, each at the size that suits it — 0.75″ to 2.5″, mixed on one sheet"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Their name as its own sticker, lettered in capitals in Retro or Bubble style"}]}, {"type": "list-item", "children": [{"type": "text", "value": "A few small decorative stickers to fill the gaps — the set changes with the name"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Upload 5–7 photos. We choose five suitable photos for your sheet and email you before printing if we need a replacement."}]}, {"type": "list-item", "children": [{"type": "text", "value": "You upload; we choose the crop, the size of each photo and the layout"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Your name and the order date printed on the sheet header"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Hand-refined and precision-cut in Toronto"}]}]}, {"type": "heading", "level": 5, "children": [{"type": "text", "value": "Name tip"}]}, {"type": "paragraph", "children": [{"type": "text", "value": "Letters A to Z and spaces only, up to 24 letters — no accents, numbers or punctuation. A space starts a new line, so MIA ROSE comes out as two lines."}]}, {"type": "heading", "level": 5, "children": [{"type": "text", "value": "Best for"}]}, {"type": "paragraph", "children": [{"type": "text", "value": "Kids, pets, couples, and gifts. The sizes are mixed, so one sheet covers a planner, a phone, a bottle and a laptop."}]}]}
+{"type": "root", "children": [{"type": "list", "listType": "unordered", "children": [{"type": "list-item", "children": [{"type": "text", "value": "A full A5 sheet of stickers, cut and ready to peel"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Five of your photos, each at the size that suits it — 0.75″ to 2.5″"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Their name in Retro or Bubble letters, each letter its own sticker — or choose No name for a sheet of just photos"}]}, {"type": "list-item", "children": [{"type": "text", "value": "With a name, a few small decorative stickers fill the gaps"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Your name and the order date along the top of the sheet"}]}, {"type": "list-item", "children": [{"type": "text", "value": "Hand-refined and precision-cut in Toronto"}]}]}, {"type": "heading", "level": 5, "children": [{"type": "text", "value": "Name tip"}]}, {"type": "paragraph", "children": [{"type": "text", "value": "A to Z and spaces, up to 24 letters. A space starts a new line, so MIA ROSE comes out as two lines."}]}, {"type": "heading", "level": 5, "children": [{"type": "text", "value": "Best for"}]}, {"type": "paragraph", "children": [{"type": "text", "value": "Kids, pets, couples, and gifts. The sizes are mixed, so one sheet covers a planner, a phone, a bottle and a laptop."}]}]}
 ```
 
 ### 구매 박스 · 폼 문장
 
 | 자리 | 문장 |
 |---|---|
-| 구매 박스 Sizes (`es-pack-note.liquid`) | `{{ pack_sizes }}, mixed on one sheet and measured by the longest edge. Nothing to choose here; we size each photo.` |
-| 구매 박스 Photos | `Upload 5–7 photos. We choose the final five and set the crop, size and layout. If a photo cannot be used, we use another suitable upload and email you only if we need a replacement.` · `What you'll get` 링크 유지 |
-| 구매 박스 Name | `Lettered in capitals as its own sticker, in the style you pick. Letters A–Z and spaces only; a space starts a new line.` |
-| Easify `Name` 도움말 | `Printed as its own sticker, in capitals. Letters A–Z and spaces only; a space starts a new line.` |
-| Easify `Name style` 도움말 | `Retro — chunky letters, each its own sticker, with retro doodles. Bubble — rounded letters joined into one sticker with a white outline, with doodle stickers.` |
-| Easify `Your photos` 도움말 | `Upload 5–7 photos. We choose five suitable photos for your sheet and email you before printing if we need a replacement.` |
-| `es-how-to-order` 01 (팩 분기, `pack_sizes` 있음) | `Choose the material and lettering style. We choose five photos and arrange them at mixed sizes on one A5 sheet.` |
+| 구매 박스 소재 사진 아래 (`es-pack-note.liquid`, 팩) | (없음) — 09-24 네 문단을 `All four are laminated and waterproof.` 한 줄로 줄였다가 09-25 그 줄도 뺌(사용자 "필요 없음"). 소재 차이는 비교 사진·Materials 접이식이 말한다 |
+| Easify `Name style` 도움말 (첫 칸 · 값 `Retro`* · `Bubble` · `No name`) | `Retro — chunky block letters. Bubble — soft rounded letters. Each letter is its own sticker. No name — the sheet is all photos.` |
+| Easify `Name` 도움말 (Name style 이 No name 이 아닐 때만 보임) | `Capital letters A–Z. A space starts a new line.` |
+| Easify `Your photos` 도움말 | `Upload 5–7. We pick the best five and email you only if we need another.` |
+| Easify `Extra sheets` 도움말 | `The same sheet, printed again.` |
+| `es-how-to-order` (팩) | (없음) — 09-24 한 줄 `We make it.` 로 줄였다가 09-25 약속 상자(`es-required-gate`) 셋째 줄 **We make it** `Traced and laid out by hand, precision-cut and packed in Toronto.` 로 옮김(Made-right promise·Clear delivery timing 과 같은 모양) |
+| 카트 줄 요약 (`es-cart-line`, 두 상품 · 09-25) | 속성 목록 대신: `HARIN · Bubble letters` / `No name — photos only` / Custom `Name: …` · `5 photos uploaded` (Custom `3 photos on the sheet · 3 uploaded`) · `Crop: Round` · `+1 extra sheet` · `Note: …`(70자). 주문 속성은 그대로 |
+| 개인정보 안내 (`es-required-gate`, 두 상품 공통) | **Your photos stay private** `— used only for your order, never shared without your consent, and deleted within 90 days of fulfillment.` + `Privacy policy` 링크 (09-24 상자 → 한 줄) |
+| 장바구니 버튼 바로 아래 (`es-required-gate`, 두 상품 공통 · 필수 칸이 비었을 때만, 클레이색) | `Add a name and your photos to continue.` · No name 이면 `Add your photos to continue.` (09-25 — 전 `Please complete: Name *, Your photos *`) |
+| 수량 칸 · Shop Pay(Buy it now) 버튼 | 두 상품 모두 숨김 (09-25). 같은 시트를 더 받는 길은 Extra sheets 하나 — 수량 2 는 같은 디자인에 정가 두 번이었다. Shop Pay 는 결제 단계에서 그대로 |
 
 ## 2. Custom Sticker Sheet
 
@@ -177,15 +179,17 @@
 
 ## 3. Draft 테마 공통 문장
 
-작업 대상은 `Copy of everstory-theme/main` (`165897306368`)이다. 테마 문장과 공유 상품 데이터는 따로 적용한다. 홈은 Package Full·Face의 두 카드로 구성하며, 아래 최종 상품명·가격·부제는 상품 데이터 컷오버 후 표시된다. 라이브 전환 절차는 런북을 따른다.
+작업 대상은 `Copy of everstory-theme/main` (`165897306368`)이었다 — 09-22 컷오버로 라이브, 09-24 아래 값을 라이브 기준으로 갱신. 테마 문장과 공유 상품 데이터는 따로 적용한다. 홈은 Package Full·Face의 두 카드로 구성하며, 아래 최종 상품명·가격·부제는 상품 데이터 컷오버 후 표시된다. 라이브 전환 절차는 런북을 따른다.
 
 | 위치 | 문장 |
 |---|---|
-| 홈 How it works 01 | `For a Name & Photo Sticker Sheet, upload 5–7 photos and a name; we choose the final five. For a Custom Sticker Sheet, choose one size and a photo count within that size's limit, then upload the number you chose.` |
-| How to order 02 — NAME | `Upload 5–7 photos and add the name. We choose the final five. If we cannot use enough of your uploads, we email you before printing.` |
+| 홈 How it works 01 | `For a Name & Photo Sticker Sheet, upload 5–7 photos and add a name if you like; we choose the final five. For a Custom Sticker Sheet, choose one size and a photo count within that size's limit, then upload the number you chose.` |
+| How to order 02 — NAME | (09-24 뺌 — 팩은 03 한 줄만. 사진 안내는 Easify `Your photos` 도움말이 한다) |
 | How to order 02 — Custom | `Upload the number of photos you chose. If one cannot be used, we email you before printing. Add any details in Special instructions.` |
-| How to order 03 | `Traced and laid out by hand, precision-cut and packed in Toronto. Ships in 2–5 business days, free across Canada.` |
-| 사진 검토 — 개인정보 안내 아래 공통 | `Every upload is checked before production.` · 상품별 사진 대체는 How to order와 What you'll get에서 설명 |
+| How to order 03 | `Traced and laid out by hand, precision-cut and packed in Toronto. Ships in 2–5 business days, free across Canada.` (Custom · 팩은 배송 문장 없이) |
+| 컬렉션 설명 (`collection.json`) | `A5 die-cut sheets, hand-refined and precision-cut in our Toronto studio. The Name & Photo Sticker Sheet takes five photos, and a name if you like; we mix the sizes and lay it out. Choose the Custom Sticker Sheet if you would rather pick one size, the crop and how many photos yourself.` |
+| Custom 상품 크기 안내 끝 (`es-pdp-general`) | `Want the sizes mixed instead? That is the Name & Photo Sticker Sheet — five photos (and a name, if you like), sized and laid out by us on one sheet.` |
+| 사진 검토 — 개인정보 안내 아래 공통 | (09-24 뺌 — 개인정보 안내를 한 줄로 줄이며) · 상품별 사진 대체는 Easify 도움말과 What you'll get에서 설명 |
 | What you'll get — NAME 사진 대체 | `We use another suitable photo from your uploads. If we cannot make the final set of five, we email before printing.` |
 | What you'll get — Custom 사진 대체 | `We email you before printing so you can send a replacement.` |
 | Custom 크롭 | `Choose a crop in Crop preference: Studio's choice, Face & shoulders, Full body or Round. Use Special instructions for any extra details.` |

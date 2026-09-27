@@ -5,7 +5,7 @@
   주문 보드 '구성' 화면. 배치는 Everstory_range.jsx 의 엔진을 그대로 돌린다 (/composed/engine.js — .jsx 에서 자동 추출).
   그래서 여기서 보이는 시트 나눔·크기·자리가 Illustrator 가 만드는 것과 같다. 이름 글자·데코는 라이브러리 그림
   (templates/art_preview, /api/composed/art) 을 엔진이 정한 자리에 놓는다 — 그림이 없으면 대략 모양(타일·이모지).
-  버블(통짜) 이름의 흰 테두리·칼선은 SVG 필터로 흉내 낸다 (실제는 Illustrator Offset Path).
+  붙인 글자 이름(작은 이름)의 칼선은 SVG 필터로 흉내 낸다 (실제는 Illustrator 가 글자 윤곽을 합친다).
   앱 창(WKWebView)은 alert·새 창을 못 띄운다 — 알림은 화면 위 한 줄(#msg)로만.
 -->
 <style>
@@ -159,6 +159,8 @@
         <label for="fName">고객 이름</label><input id="fName" autocomplete="off" spellcheck="false">
         <label for="fSticker">스티커 이름</label><input id="fSticker" autocomplete="off" spellcheck="false" placeholder="비우면 이름·데코 없음">
         <label id="fNameStyleLab" hidden>이름 스타일</label><div class="nsty" id="fNameStyle" hidden></div>
+        <label id="fSmallLab" hidden>작은 이름</label><div class="seg" id="fSmall" hidden
+          title="첫 이름(떨어진 글자)과 같은 글자를 붙인 글자 10mm 로 한 장 더 — 시트 아래, 첫 이름 반대쪽"></div>
         <label for="fOrder">주문번호</label><input id="fOrder" autocomplete="off" spellcheck="false">
         <label for="fMat">재질</label><select id="fMat"></select>
         <label for="fDate">날짜</label><input id="fDate" autocomplete="off" spellcheck="false" placeholder="2026-09-16">
@@ -217,12 +219,14 @@ let E = null;                 // 배치 엔진 (Everstory_range.jsx 에서 추�
 let leaving = false;
 const S = { folder: "", data: null, pairs: [], main: "", rim: 1, sel: [], results: [], hero: null,
             blockers: [], busy: false, timer: 0, hot: -1,
-            features: [], namePos: "auto", choice: [], geo: null, gen: 0, nameStyle: "", art: {} };
+            features: [], namePos: "auto", choice: [], geo: null, gen: 0, nameStyle: "", smallName: true, art: {} };
 // 배치 고르기는 서버가 그 값을 받을 때만 (예전 서버는 배치 선택을 버린다 — 그러면 미리보기와 다른 시트가 나온다).
 const hasLayouts = () => S.features.indexOf("layouts") >= 0;
 const hasSizes = () => S.features.indexOf("sizes") >= 0;
 const hasNameStyles = () => S.features.indexOf("nameStyles") >= 0;
 const hasCounts = () => S.features.indexOf("counts") >= 0;
+// 작은 이름 넣기/빼기 (2026-09-23) — 예전 서버는 값을 버리니(= 늘 넣음) 그때는 버튼을 숨긴다.
+const hasSmallName = () => S.features.indexOf("smallName") >= 0;
 const NAME_STYLE_KEY = "everstory.composed.nameStyle";   // 이 화면에서 마지막으로 고른 이름 스타일 (보는 사람 브라우저에만)
 function savedNameStyle() {
   const keys = (E.COMPOSED_NAME_STYLES || []).map(st => st.key);
@@ -305,6 +309,8 @@ function preparePair(raw, keep) {
 const typeOf = p => p.nameType ? p.nameType.key : (p.userType || E.COMPOSED_TYPE_NONE);
 const customSize = p => hasSizes() && p.sizeMin != null;
 const cappedCount = p => hasCounts() && p.maxCopies > 0;
+// 같은 시트 인쇄 장수 = 수량 × (1 + Extra sheets) — intake.print_count 와 같은 규칙. 수량을 모르면 1.
+const printCount = c => Math.max(c.quantity || 0, 1) * (1 + (c.extraSheets || 0));
 function typeRange(key) {
   const t = E.COMPOSED_SHOT_TYPES[E._composedTypeIndex(key)];
   const lad = E.COMPOSED_GRADES_IN;
@@ -371,7 +377,10 @@ async function loadFolder(name, fresh) {
   S.data = d;
   const contract = d.prefill || {};
   const quantity = contract.quantity == null ? "" : "수량 " + contract.quantity;
-  $("#orderContract").textContent = [contract.pack === "NAME" ? "Name & Photo · 최종 5디자인 · A5 1장" : "", quantity].filter(Boolean).join(" · ");
+  const extra = contract.extraSheets ? "추가 인쇄 +" + contract.extraSheets : "";
+  const prints = printCount(contract) > 1 ? "같은 시트 " + printCount(contract) + "장 인쇄" : "";
+  $("#orderContract").textContent = [contract.pack === "NAME" ? "Name & Photo · 최종 5디자인 · A5 1장" : "", quantity, extra, prints]
+    .filter(Boolean).join(" · ");
   $("#orderContract").hidden = !$("#orderContract").textContent;
   const options = (contract.options || []).map(o => o.key + " = " + o.value).join(" · ");
   $("#orderOptions").textContent = options ? "주문 옵션: " + options : "";
@@ -381,6 +390,7 @@ async function loadFolder(name, fresh) {
   $("#layoutSec").hidden = !hasLayouts();
   $("#sizeTools").hidden = $("#sizeHint").hidden = !hasSizes();
   $("#fNameStyle").hidden = $("#fNameStyleLab").hidden = !hasNameStyles();
+  $("#fSmall").hidden = $("#fSmallLab").hidden = !hasSmallName();
   $("#folder").value = name;
   history.replaceState(null, "", url("/composed", { folder: name }));
   S.pairs = d.pairs.map(raw => preparePair(raw, keep));
@@ -390,7 +400,9 @@ async function loadFolder(name, fresh) {
     S.rim = E.COMPOSED_RIM_MM;
     S.namePos = "auto";
     S.choice = [];
+    S.smallName = true;
     paintNamePos();
+    paintSmall();
     const f = d.prefill || {};
     $("#fName").value = f.nameText || "";
     $("#fSticker").value = f.stickerName || "";
@@ -490,7 +502,7 @@ function updateList() {
     const fl = el.querySelector(".flag");
     let flag = "", bad = false;
     if (!p.canvasAspect) { flag = "실루엣을 못 읽음"; bad = true; }
-    else if (p.cutState === "bad") { flag = "칼선 캐시 손상"; bad = true; }
+    else if (p.cutState === "bad") { flag = "칼선 크기 이상"; bad = true; }
     else if (p.cutState !== "ok") flag = p.est ? "칼선 어림" : "칼선 재는 중…";
     else if (!p.nameType && p.guess && p.guess.confirm && p.userType === p.guess.key) flag = p.guess.note + " — 확인";
     fl.textContent = flag;
@@ -525,7 +537,9 @@ function compute() {
     const binW = bin.w, binH = bin.h;
     const gapPt = E.GAP_DEFAULT_MM * M;
     // 이름 스타일은 스펙에 실려 데코·지문까지 따라간다 (예전 서버면 넘기지 않는다 = retro).
-    S.hero = hasNameStyles() ? E._composedHero(f.sticker, binW, gapPt, S.nameStyle) : E._composedHero(f.sticker, binW, gapPt);
+    // 작은 이름을 뺐으면 스펙에 실린다 (_composedHero → _composedPackExtras) — 예전 서버면 넘기지 않는다 = 넣음.
+    S.hero = hasNameStyles() ? E._composedHero(f.sticker, binW, gapPt, S.nameStyle, hasSmallName() ? S.smallName : undefined)
+                             : E._composedHero(f.sticker, binW, gapPt);
     S.geo = { binW, binH, gapPt, rimPt: S.rim * M, hero: S.hero.spec };
     const plan = E._composedDeal(eng.map(p => E._composedPairMaxIn(p)), mainIdx);
     plan.forEach((sh, s) => {
@@ -551,8 +565,9 @@ function compute() {
   if (noType.length) blockers.push("종류를 고르세요 (파일명 표시 없음" + (hasSizes() ? " — 크기를 직접 정해도 돼요" : "") + "): " +
     noType.map(p => p.nn).join(", "));
   const badCut = sel.filter(p => p.cutState === "bad");
-  if (badCut.length) blockers.push("칼선 캐시가 손상된 사진: " + badCut.map(p => p.nn).join(", ") +
-    " — 02_cutout/_cutcache 의 해당 .evcut 을 지우고 새로고침하세요 (Illustrator 가 칼선을 다시 딴다).");
+  if (badCut.length) blockers.push("칼선 크기가 이상한 사진(사진에 비해 너무 작거나 값이 깨짐): " + badCut.map(p => p.nn).join(", ") +
+    " — 실루엣(_sil.png)이 검게 제대로 칠해졌는지 확인하고, 이상 없으면 02_cutout/_cutcache 의 해당 .evcut 을 지우고" +
+    " 새로고침하세요 (Illustrator 가 칼선을 다시 딴다).");
   const noCanvas = sel.filter(p => !p.canvasAspect);
   if (noCanvas.length) blockers.push("실루엣(_sil.png)을 못 읽은 사진: " + noCanvas.map(p => p.nn).join(", "));
   // 알리기만 하는 것
@@ -561,8 +576,18 @@ function compute() {
     if (contract.photosOrdered != null && sel.length !== contract.photosOrdered) notes.push(["warn",
       `Name & Photo: 선택 ${sel.length}장 — 주문의 최종 ${contract.photosOrdered}디자인과 달라요. 제작할 사진을 확인하세요.`]);
     if (S.results.length > 1) notes.push(["warn", "Name & Photo: 시트가 2장 이상이에요 — A5 1장 계약을 확인하세요."]);
-    if (!f.sticker) notes.push(["warn", "Name & Photo: 스티커 이름이 비어 있어요 — 이름 필수 주문을 확인하세요."]);
+    // 고객이 No name 을 고른 주문(2026-09-24)이면 이름이 비어 있는 게 맞다 — 사진만 채운다.
+    if (contract.noName) {
+      if (f.sticker) notes.push(["warn", "Name & Photo: 주문은 이름 없음(No name)인데 스티커 이름이 들어 있어요 — 이름 없이 만들려면 비우세요."]);
+      else notes.push(["info", "Name & Photo: 이름 없음(No name) 주문 — 이름·데코 없이 사진만 채워요."]);
+    } else if (!f.sticker) {
+      notes.push(["warn", "Name & Photo: 스티커 이름이 비어 있어요 — 주문이 No name 인지 확인하세요."]);
+    }
   }
+  // 같은 시트를 여러 장 인쇄하는 주문(수량 · Extra sheets, 2026-09-25) — 시트는 한 번 만들고 인쇄 장수만 맞춘다.
+  if (printCount(contract) > 1) notes.push(["warn", `인쇄: 같은 시트 ${printCount(contract)}장 (` +
+    [contract.quantity > 1 ? "수량 " + contract.quantity : "", contract.extraSheets ? "추가 인쇄 +" + contract.extraSheets : ""]
+      .filter(Boolean).join(" · ") + ") — 인쇄할 때 장수를 맞추세요."]);
   const approx = sel.filter(p => p.cutState === "none" || p.cutState === "stale");
   if (approx.length) notes.push(["warn", `칼선 캐시가 없거나 오래된 사진 ${approx.length}장(${approx.map(p => p.nn).join(", ")}) — 실루엣으로 크기를 어림했어요. ` +
     "Illustrator 는 칼선을 새로 따므로 스티커 수가 조금 다를 수 있어요 (완료 창에 비교가 나와요)."]);
@@ -676,8 +701,8 @@ function miniHtml(x, r, attrs, label, title, on, err) {
       items.push(`<div class="mst" style="left:${px(ax)};top:${px(ay)};width:${px(aw)};height:${px(ah)}">` +
         `<i style="left:${px(-rel.relL * iw)};top:${px(-rel.relT * ih)};width:${px(iw)};height:${px(ih)};background-image:url('${thumbUrl(p)}')"></i></div>`);
     }
-    if (r.nameBox) {
-      const nb = r.nameBox;
+    for (const nb of [r.nameBox, r.name2Box]) {
+      if (!nb) continue;
       items.push(`<div class="mnm" style="left:${px(padX + nb.x / M)};top:${px(padY + nb.y / M)};width:${px(nb.w / M)};height:${px(nb.h / M)}"></div>`);
     }
     for (const d of r.decos) {
@@ -718,11 +743,11 @@ function picksHtml(x, s) {
 
 // 이름 스티커 — 엔진이 정한 글자 자리(_artLetterBoxes)에 그 스타일 라이브러리 그림을 놓는다.
 // 그림 이름 = 엔진이 고른 라이브러리 그룹(버블은 자리마다 색이 돈다 — 'LTR A PINK' → LTR_A_PINK) + 옆 장식(_L/_R).
-// 통짜(bubble)는 이름 전체 흰 테두리 + 칼선(분홍)을 SVG 필터로, 레트로는 글자마다 칼선. 그림이 없으면 색 타일.
-// s = 시트 번호 (필터 id), k = px/mm, px = mm → "Npx".
-function nameBlockHtml(spec, r, s, k, px) {
-  const M = E.MM_TO_PT, st = E._nameStyle(spec.nameStyle), lib = libStem(st.letterLib);
-  const pad = (r.namePad || 0) / M, nb = r.nameBox;
+// 붙인 글자(_nameJoined — 작은 이름, 두 스타일 모두)는 이름 전체 칼선(분홍)을 SVG 필터로, 떨어진 글자는 글자마다 칼선.
+// 그림이 없으면 색 타일. nb = 이름 박스 (pt), padPt = 박스 안쪽 여백 (pt), id = 필터 id, k = px/mm, px = mm → "Npx".
+function nameBlockHtml(spec, nb, padPt, id, k, px, label) {
+  const M = E.MM_TO_PT, st = E._nameStyle(spec.nameStyle), lib = libStem(st.letterLib), joined = E._nameJoined(spec);
+  const pad = (padPt || 0) / M;
   const left = E.BODY_PADDING_X_MM + nb.x / M + pad, top = E.BODY_PADDING_Y_MM + nb.y / M + pad;
   let body = "", tiles = false;
   E._artLetterBoxes(spec).forEach((b, i) => {
@@ -737,12 +762,12 @@ function nameBlockHtml(spec, r, s, k, px) {
         `font-size:${px(b.h / M * 0.7)}">${esc(b.ch)}</span>`;
     }
   });
-  const title = "이름 스티커 · " + st.label + (spec.whole ? " (이름 통짜 · 흰 테두리 포함 · 칼선 1개)" : " (글자마다 칼선)") +
+  const title = (label || "이름 스티커") + " · " + st.label +
+    (joined ? (spec.halo > 0 ? " (이름 통짜 · 흰 테두리 포함 · 칼선 1개)" : " (붙인 글자 · 칼선 = 글자 윤곽)") : " (떨어진 글자 · 글자마다 칼선)") +
     (tiles ? " — 그림이 없어 모양은 대략" : "");
-  const id = "nh" + s;
-  return (spec.whole ? haloFilter(id, spec.halo / M * k) : "") +
-    `<div class="nameblk ${spec.whole ? "whole" : "cut"}" style="left:${px(left)};top:${px(top)};width:${px(spec.cellW / M)};` +
-    `height:${px(spec.cellH / M)}${spec.whole ? `;filter:url(#${id})` : ""}" title="${esc(title)}">${body}</div>`;
+  return (joined ? haloFilter(id, (spec.halo || 0) / M * k) : "") +
+    `<div class="nameblk ${joined ? "whole" : "cut"}" style="left:${px(left)};top:${px(top)};width:${px(spec.cellW / M)};` +
+    `height:${px(spec.cellH / M)}${joined ? `;filter:url(#${id})` : ""}" title="${esc(title)}">${body}</div>`;
 }
 
 // 라이브러리 그룹 이름 → 미리보기 그림 이름 ('LTR A PINK' → LTR_A_PINK, templates/art_preview README).
@@ -791,8 +816,8 @@ function paintNameStyle(sticker) {
     const lib = libStem(st.letterLib), spec = E._letterBlockSpec(letters.join(""), st.unitMm, "SAMPLE", st.key);
     const groups = spec ? E._artLetterBoxes(spec).filter(b => !b.missing).map(b => b.group) : letters.map(c => "LTR " + c);
     const imgs = groups.map(g => artUrl(lib, artName(g))).filter(Boolean).map(src => `<img src="${src}" alt="">`).join("");
-    const tip = st.label + (st.whole ? " — 글자를 붙여 쓰고 이름 전체를 흰 테두리 하나로 (칼선 1개) · 두들 데코"
-      : " — 글자마다 따로 떼는 스티커 · 레트로 데코");
+    const tip = st.label + " — 떨어진 글자 이름(" + st.unitMm + "mm) + 작은 이름 붙인 글자(" + E.COMPOSED_NAME2_JOIN_UNIT_MM + "mm) · " +
+      (st.whole ? "두들 데코" : "레트로 데코");
     return `<button type="button" data-nstyle="${esc(st.key)}" class="${st.key === S.nameStyle ? "on" : ""}" title="${esc(tip)}">` +
       (imgs ? `<span class="nsamp">${imgs}</span>` : "") + `${esc(st.label)}</button>`;
   }).join("");
@@ -826,7 +851,10 @@ function renderSheets() {
           `style="left:${px(ax)};top:${px(ay)};width:${px(aw)};height:${px(ah)}" title="${esc(p.nn)} · ${a.inch}″${a.extra ? " · 빈틈 추가" : ""}">` +
           `<i style="left:${px(-rel.relL * iw)};top:${px(-rel.relT * ih)};width:${px(iw)};height:${px(ih)};background-image:url('${thumbUrl(p)}')"></i></div>`);
       }
-      if (x.r.nameBox && S.hero && S.hero.spec) items.push(nameBlockHtml(S.hero.spec, x.r, s, k, px));
+      if (x.r.nameBox && S.hero && S.hero.spec) items.push(nameBlockHtml(S.hero.spec, x.r.nameBox, x.r.namePad, "nh" + s, k, px));
+      if (x.r.name2Box && x.r.name2Spec) {
+        items.push(nameBlockHtml(x.r.name2Spec, x.r.name2Box, x.r.name2Pad, "nh2_" + s, k, px, "작은 이름"));
+      }
       for (const d of x.r.decos) items.push(decoHtml(d, px));
     }
     parts.push(`<div class="body" style="left:${px(bx)};top:${px(by)};width:${px(bodyW)};height:${px(bodyH)}">${items.join("")}</div>`);
@@ -841,7 +869,11 @@ function renderSheets() {
         (x.r.missing.length ? ` · <span class="miss">못 넣음 ${esc(x.r.missing.join(", "))}</span>` : "") +
         (hasLayouts() && x.layout ? `<br>배치 ${esc(E._composedLayoutLabel(x.layout))}` : "") +
         (x.r.nameBox && S.hero && S.hero.spec ? `<br>이름 ${esc(E._nameStyle(S.hero.spec.nameStyle).label)} ` +
-          `${(S.hero.spec.cellW / M).toFixed(1)}×${(S.hero.spec.cellH / M).toFixed(1)}mm · 데코 ${x.r.decos.length}개 (말풍선 ${x.r.bubbles || 0})` : "");
+          `${(S.hero.spec.cellW / M).toFixed(1)}×${(S.hero.spec.cellH / M).toFixed(1)}mm` +
+          (x.r.name2Spec ? (x.r.name2Box ? ` + 작은 이름(${E._nameJoined(x.r.name2Spec) ? "붙인" : "떨어진"} 글자) ` +
+            `${(x.r.name2Spec.cellW / M).toFixed(1)}×${(x.r.name2Spec.cellH / M).toFixed(1)}mm` : ` · <span class="miss">작은 이름 자리 없음</span>`)
+            : (S.hero.spec.smallName === false ? " · 작은 이름 뺌" : "")) +
+          ` · 데코 ${x.r.decos.length}개 (말풍선 ${x.r.bubbles || 0})` : "");
     } else {
       stats = `<b>시트 ${s + 1}</b> · <span class="miss">${esc(x.error)}</span>`;
     }
@@ -891,6 +923,7 @@ async function make() {
   if (hasSizes()) body.sizeRanges = sizeRanges;
   if (hasCounts()) body.maxCopies = maxCopies;
   if (hasNameStyles()) body.nameStyle = S.nameStyle;
+  if (hasSmallName()) body.smallName = S.smallName;
   if (hasLayouts()) {
     // 시트마다 고른 배치 + 배치 지문 — Illustrator 가 같은 자리에 만들었는지 완료 창에서 확인한다.
     body.layouts = S.results.map(x => x.layout);
@@ -1023,6 +1056,13 @@ function wire() {
   }));
   ["#fName", "#fSticker", "#fOrder", "#fDate"].forEach(id => $(id).addEventListener("input", schedule));
   $("#fMat").addEventListener("change", compute);
+  $("#fSmall").addEventListener("click", e => {
+    const b = e.target.closest("[data-small]");
+    if (!b || (b.dataset.small === "1") === S.smallName) return;
+    S.smallName = b.dataset.small === "1";
+    paintSmall();
+    compute();
+  });
   $("#fRim").addEventListener("click", e => {
     const b = e.target.closest("[data-rim]");
     if (!b) return;
@@ -1040,6 +1080,10 @@ function paintRim() {
   document.querySelectorAll("#fRim [data-rim]").forEach(b => b.classList.toggle("on", +b.dataset.rim === S.rim));
 }
 
+function paintSmall() {
+  document.querySelectorAll("#fSmall [data-small]").forEach(b => b.classList.toggle("on", (b.dataset.small === "1") === S.smallName));
+}
+
 function paintNamePos() {
   document.querySelectorAll("#fNamePos [data-pos]").forEach(b => b.classList.toggle("on", b.dataset.pos === S.namePos));
 }
@@ -1052,6 +1096,7 @@ async function init() {
   catch (e) { say(e.message + " — 보드를 다시 켜 보세요.", "err"); $("#sheets").innerHTML = ""; return; }
   $("#fMat").innerHTML = E.MATERIAL_OPTIONS.map(m => `<option>${esc(m)}</option>`).join("");
   $("#fRim").innerHTML = E.CUT_MARGIN_VALUES.map(v => `<button type="button" data-rim="${v}">${v}mm</button>`).join("");
+  $("#fSmall").innerHTML = `<button type="button" data-small="1">넣기</button><button type="button" data-small="0">빼기</button>`;
   $("#fNamePos").innerHTML = NAME_POS_CHOICES.map(([v, t]) =>
     `<button type="button" data-pos="${v}" title="${v === "auto" ? "스타일마다 어울리는 자리 (가운데 스타일은 왼쪽)" : "스티커 이름을 " + t + "에"}">${t}</button>`).join("");
   S.rim = E.COMPOSED_RIM_MM;
@@ -1059,6 +1104,7 @@ async function init() {
   S.nameStyle = savedNameStyle();
   paintRim();
   paintNamePos();
+  paintSmall();
   wire();
   const name = await loadFolders(new URLSearchParams(location.search).get("folder") || "");
   if (name) {

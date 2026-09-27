@@ -54,12 +54,16 @@ async function main() {
     payload = fixture(n, prefill);
     await read('loadFolder("SYNTHETIC", ' + fresh + ')');
   }
-  const contract = {pack: 'NAME', photosOrdered: 5, sheets: 1, quantity: 2, nameStyle: 'bubble',
+  const contract = {pack: 'NAME', photosOrdered: 5, sheets: 1, quantity: 2, extraSheets: 3, nameStyle: 'bubble',
     options: [{key: 'Extra sheets', value: 'Add 3 extra print'}, {key: 'Special instructions', value: '<keep & show>'}]};
   saved.set(key, 'retro');
   await load(5, contract);
   check('NAME 주문 스타일이 저장한 스타일보다 먼저', read('S.nameStyle') === 'bubble' && saved.get(key) === 'retro');
-  check('주문 계약·수량을 읽기 전용으로 표시', element('#orderContract').textContent === 'Name & Photo · 최종 5디자인 · A5 1장 · 수량 2');
+  check('주문 계약·수량·추가 인쇄를 읽기 전용으로 표시',
+    element('#orderContract').textContent === 'Name & Photo · 최종 5디자인 · A5 1장 · 수량 2 · 추가 인쇄 +3 · 같은 시트 8장 인쇄');
+  // Extra sheets (2026-09-25): 인테이크가 읽은 추가 장수 × 수량 = 같은 시트 인쇄 장수 — 요약 줄 + 경고 한 줄
+  check('같은 시트 여러 장 인쇄는 경고 한 줄 (만들기는 막지 않음)',
+    element('#notes').innerHTML.includes('인쇄: 같은 시트 8장 (수량 2 · 추가 인쇄 +3)') && read('S.blockers.length') === 0);
   check('옵션 특수문자를 textContent에 그대로 표시', element('#orderOptions').textContent.includes('<keep & show>') && element('#orderOptions').innerHTML === '');
   check('정상 NAME 5장에는 계약 경고 없음', !element('#notes').innerHTML.includes('Name &amp; Photo:'));
   check('정상 NAME 주문은 만들기 가능', read('S.blockers.length') === 0 && element('#make').disabled === false);
@@ -68,11 +72,11 @@ async function main() {
   check('계약·옵션은 제작 launch에 새로 넣지 않음', !('pack' in submitted) && !('options' in submitted) && submitted.bases.length === 5);
   read('S.busy = false');
   const initialSig = submitted.expect.sigs.join();
-  payload = fixture(5, {...contract, quantity: 8, options: []});
+  payload = fixture(5, {...contract, quantity: 8, extraSheets: 0, options: []});
   await read('loadFolder("SYNTHETIC", false)');
   await read('make()');
   check('수량·옵션 표시는 배치 지문에 영향 없음', submitted.expect.sigs.join() === initialSig);
-  check('새로고침하면 계약 수량과 빈 옵션 표시 갱신', element('#orderContract').textContent.endsWith('수량 8') && element('#orderOptions').hidden && !element('#orderOptions').textContent);
+  check('새로고침하면 계약 수량과 빈 옵션 표시 갱신', element('#orderContract').textContent.endsWith('수량 8 · 같은 시트 8장 인쇄') && element('#orderOptions').hidden && !element('#orderOptions').textContent);
   read('S.busy = false');
   await load(6, contract);
   check('NAME 6장 선택은 경고만, 6장을 자동으로 줄이지 않음', element('#notes').innerHTML.includes('선택 6장') && read('S.sel.length') === 6 && read('S.blockers.length') === 0 && !element('#make').disabled);
@@ -81,12 +85,21 @@ async function main() {
   check('NAME 2시트는 경고만', read('S.results.length') === 2 && element('#notes').innerHTML.includes('시트가 2장 이상') && read('S.blockers.length') === 0);
   await load(5, {...contract, stickerName: ''});
   check('NAME 이름 없음은 경고만', element('#notes').innerHTML.includes('이름이 비어') && read('S.blockers.length') === 0);
+  // No name 주문 (2026-09-24): 이름 빈 칸이 정상 — 경고 대신 안내, 이름을 넣으면 경고
+  await load(5, {...contract, stickerName: '', noName: true});
+  check('No name 주문은 경고 대신 사진만 안내 · 막지 않음', element('#notes').innerHTML.includes('이름 없음(No name) 주문') &&
+    !element('#notes').innerHTML.includes('이름이 비어') && read('S.blockers.length') === 0 && read('S.hero.spec') === null);
+  await load(5, {...contract, stickerName: 'MIA', noName: true});
+  check('No name 주문에 이름이 들어 있으면 경고', element('#notes').innerHTML.includes('No name)인데 스티커 이름'));
   await load(5, {...contract, stickerName: 'Chloé'});
   check('엔진이 이름을 생략하면 기존 경고 한 번', read('!!S.hero.skipped') && (element('#notes').innerHTML.match(/스티커 이름:/g) || []).length === 1 && read('S.blockers.length') === 0);
   await load(6, {quantity: 3, options: [{key: 'Crop preference', value: 'Round'}]});
   check('일반 주문으로 이동하면 저장한 스타일 복원', read('S.nameStyle') === 'retro');
   check('일반 6사진 흐름에는 NAME 경고 없음', read('S.sel.length') === 6 && !element('#notes').innerHTML.includes('Name &amp; Photo:'));
-  check('일반 주문은 NAME 계약 없이 수량·옵션만 표시', element('#orderContract').textContent === '수량 3' && element('#orderOptions').textContent === '주문 옵션: Crop preference = Round');
+  check('일반 주문은 NAME 계약 없이 수량·옵션만 표시', element('#orderContract').textContent === '수량 3 · 같은 시트 3장 인쇄' && element('#orderOptions').textContent === '주문 옵션: Crop preference = Round');
+  await load(5, {...contract, quantity: 1, extraSheets: 0});
+  check('한 장짜리 주문은 인쇄 장수 표시·경고 없음', element('#orderContract').textContent === 'Name & Photo · 최종 5디자인 · A5 1장 · 수량 1' &&
+    !element('#notes').innerHTML.includes('인쇄: 같은 시트'));
   saved.set(key, 'bubble');
   await load(5, {...contract, nameStyle: 'retro'});
   await load(5, {});
@@ -98,6 +111,30 @@ async function main() {
   saved.clear();
   await load(5, {});
   check('저장 스타일이 없어도 엔진 첫 스타일', read('S.nameStyle') === engine.COMPOSED_NAME_STYLES[0].key);
+
+  // 작은 이름 넣기/빼기 (2026-09-23) — 서버가 받을 때만 보이고 보낸다. 주문을 새로 열면 다시 넣기.
+  saved.clear();
+  await load(5, {});
+  read('S.busy = false');
+  await read('make()');
+  check('예전 서버(smallName 기능 없음)면 작은 이름 버튼을 숨기고 값도 안 보낸다 (미리보기·Illustrator 모두 넣음)',
+    element('#fSmall').hidden === true && !('smallName' in submitted) && read('S.results[0].r.name2Box !== null'));
+  read('S.busy = false');
+  payload = {...fixture(5, {}), features: ['layouts', 'sizes', 'nameStyles', 'counts', 'smallName']};
+  await read('loadFolder("SYNTHETIC", true)');
+  await read('make()');
+  const smallOnSig = submitted.expect.sigs.join();
+  check('작은 이름 기본 = 넣기 · 버튼 보임 · launch 에 smallName true',
+    element('#fSmall').hidden === false && read('S.smallName') === true && submitted.smallName === true &&
+    read('S.results[0].r.name2Box !== null'));
+  read('S.busy = false; S.smallName = false; compute()');
+  await read('make()');
+  check('빼기 → 미리보기에서 작은 이름이 빠지고 launch 에 smallName false · 배치 지문도 달라진다',
+    submitted.smallName === false && read('S.results[0].r.name2Box === null && S.hero.spec.smallName === false') &&
+    submitted.expect.sigs.join() !== smallOnSig);
+  read('S.busy = false');
+  await read('loadFolder("SYNTHETIC", true)');
+  check('다른 주문을 새로 열면 다시 넣기', read('S.smallName') === true && read('S.results[0].r.name2Box !== null'));
 
   // 실제 보드 render를 실행한 뒤 표 HTML을 표준 HTML 파서로 읽어 텍스트·속성 값을 확인한다.
   const boardSource = fs.readFileSync(path.join(__dirname, 'webui.py'), 'utf8');

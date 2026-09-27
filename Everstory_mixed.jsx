@@ -2339,13 +2339,36 @@
     app.executeMenuCommand("Live Pathfinder Add");
     app.executeMenuCommand("expandStyle");
 
-    var sel = doc.selection;
-    if (sel && sel.length > 0) {
-      try { sel[0].name = "Cutline"; } catch (eName) {}
+    // 칼선 = 가장 큰 조각. selection[0] 에 이름을 붙이면 떨어진 얼룩이 칼선이 될 수 있다 (_largestTraceShape).
+    var cutShape = _largestTraceShape(doc.selection);
+    if (cutShape) {
+      try { cutShape.name = "Cutline"; } catch (eName) {}
     }
 
     doc.layers[0].name = "KissCut";
     app.executeMenuCommand("deselectall");
+  }
+
+  // 트레이스 결과 중 칼선으로 쓸 조각 = 박스 면적이 가장 큰 PathItem · CompoundPathItem (그룹 안까지 본다).
+  // 실루엣에 몸과 떨어진 얼룩이 있으면 위 합치기 뒤에도 조각이 여럿 남는다 — 예전엔 selection[0] 을 칼선으로 써서
+  // 얼룩이 칼선이 됐다 (2026-09-22 이준_02_MED: 30×24px 얼룩 = 사진 폭의 3%). 작은 조각은 칼선에서 빠지고,
+  // 사진 속 구멍은 CompoundPathItem 안에 있으니 그대로 남는다. range.jsx 와 같은 코드 (.evcut 공유).
+  function _largestTraceShape(items) {
+    var best = null, bestA = -1, stack = [], it, b, a, i, j;
+    if (!items) return null;
+    for (i = 0; i < items.length; i++) stack.push(items[i]);
+    while (stack.length > 0) {
+      it = stack.pop();
+      if (it.typename === "GroupItem") {
+        for (j = 0; j < it.pageItems.length; j++) stack.push(it.pageItems[j]);
+        continue;
+      }
+      if (it.typename !== "PathItem" && it.typename !== "CompoundPathItem") continue;
+      try { b = it.geometricBounds; } catch (eB) { continue; }
+      a = (b[2] - b[0]) * (b[1] - b[3]);
+      if (a > bestA) { bestA = a; best = it; }
+    }
+    return best;
   }
 
 

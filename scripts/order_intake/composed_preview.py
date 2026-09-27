@@ -40,8 +40,8 @@ NAME_POSITIONS = ("left", "center", "right")                       # COMPOSED_NA
 SHUFFLE_MAX = 999                                                  # COMPOSED_SHUFFLE_MAX
 NAME_STYLE_KEYS = ("retro", "bubble")                              # COMPOSED_NAME_STYLES (이름 스타일)
 COPIES_MAX = 24                                                    # COMPOSED_COPIES_MAX (사진별 장수 상한)
-# 이 서버가 받는 값 — 화면은 이 목록에 있는 기능만 보여 준다 (예전 서버가 배치 선택·크기·이름 스타일·장수를 조용히 버리지 않게).
-FEATURES = ("layouts", "sizes", "nameStyles", "counts")
+# 이 서버가 받는 값 — 화면은 이 목록에 있는 기능만 보여 준다 (예전 서버가 배치 선택·크기·이름 스타일·장수·작은 이름을 조용히 버리지 않게).
+FEATURES = ("layouts", "sizes", "nameStyles", "counts", "smallName")
 
 # 이름 글자·데코 미리보기 그림 (라이브러리 그룹을 투명 PNG 로 뽑은 것 — templates/art_preview/README.md).
 ART_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "templates", "art_preview"))
@@ -159,7 +159,8 @@ def read_cut_cache(cache_dir, base, sil_path):
     """.evcut → {sig, srcOk, rel:[L,T,W,H] | None, bad}. 파일이 없거나 형식이 틀리면 None.
 
     range.jsx 는 sig(트레이스 설정)와 src(실루엣 크기·시각)가 둘 다 맞아야 캐시를 쓰고, 아니면 칼선을 새로 딴다.
-    info 가 숫자가 아니면(손상) bad=True — 그 캐시를 쓰는 Illustrator 는 "칼선 캐시 값이 비정상" 으로 멈춘다.
+    info 가 숫자가 아니면(손상) bad=True — 그 캐시를 쓰는 Illustrator 는 "칼선 값이 비정상" 으로 멈춘다
+    (숫자지만 사진에 비해 너무 작은 칼선은 미리보기가 _composedCutAspect 로 걸러 같은 "bad" 로 보인다).
     """
     lines = _read_lines(os.path.join(cache_dir, base + ".evcut"), "EVCUT1")
     if lines is None:
@@ -238,8 +239,8 @@ def order_prefill(folder):
     job 에 주문번호가 없으면 폴더 이름의 주문번호(2026-09-16 사용자), 고객 이름이 없으면 폴더 이름(주문번호는 뺀다).
     orderFrom = "job" | "folder" | "" — 화면이 어디서 채웠는지 알린다.
     """
-    out = {"nameText": "", "orderNumber": "", "material": "", "stickerName": "", "nameStyle": "", "notes": [], "orderFrom": "",
-           "pack": None, "photosOrdered": None, "sheets": None, "quantity": None, "options": []}
+    out = {"nameText": "", "orderNumber": "", "material": "", "stickerName": "", "nameStyle": "", "noName": False, "notes": [], "orderFrom": "",
+           "pack": None, "photosOrdered": None, "sheets": None, "quantity": None, "extraSheets": None, "options": []}
     doc = None
     try:
         with open(os.path.join(folder, "_order.json"), "r", encoding="utf-8") as f:
@@ -248,7 +249,7 @@ def order_prefill(folder):
         doc = None
     job = (doc or {}).get("job") or {}
     out.update(pack=job.get("pack"), photosOrdered=job.get("photos_ordered"),
-               sheets=job.get("sheets"), quantity=job.get("quantity"))
+               sheets=job.get("sheets"), quantity=job.get("quantity"), extraSheets=job.get("extra_sheets"))
     out["options"] = [{"key": str(o.get("key") or ""), "value": str(o.get("value") if o.get("value") is not None else "")}
                       for o in ((doc or {}).get("options") or [])]
     if job.get("customer"):
@@ -263,6 +264,8 @@ def order_prefill(folder):
     # 주문의 `Name style` (intake job.name_style = range.jsx 키). 모르는 값은 비운다 — 화면이 마지막에 고른 스타일을 쓴다.
     if job.get("name_style") in NAME_STYLE_KEYS:
         out["nameStyle"] = job["name_style"]
+    # `No name` 주문 (intake name_style "none", 2026-09-24) — 화면은 이름 필수 경고 대신 "사진만" 안내를 띄운다.
+    out["noName"] = job.get("name_style") == "none"
     out["notes"] = [str(n) for n in (job.get("notes") or [])]
     num, rest = order_from_folder(os.path.basename(folder))
     if not out["orderNumber"] and num:
@@ -547,6 +550,12 @@ def build_launch(projects_dir, body):
         if not isinstance(style, str) or style not in NAME_STYLE_KEYS:
             raise ValueError("알 수 없는 이름 스타일이에요: %s" % style)
         composed["nameStyle"] = style
+    # 작은 이름(붙인 글자) 넣기 — range.jsx _composedLaunchOptions 와 같은 규칙: true/false 만. 없으면 보내지 않는다 = 넣음.
+    small = body.get("smallName")
+    if small is not None:
+        if not isinstance(small, bool):
+            raise ValueError("작은 이름 값이 이상해요: %s" % small)
+        composed["smallName"] = small
     summary = "사진 %d장 · 시트 %d장 예상" % (len(picked), len(expect["sheets"]))
     return {"inputFolder": cut, "composed": composed}, summary
 

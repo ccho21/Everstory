@@ -191,7 +191,8 @@ function run3(X) {
   const r = X._packComposed(pairs.slice(0, 5), 0, 142 * M, 172 * M, 1.5 * M, X._composedPackExtras(hero.spec, 1 * M));
   return { sig: r.sig, style: r.nameStyle, pad: r.namePad, name: r.nameBox,
            decos: r.decos.map(dd => [dd.payload.deco, dd.payload.style, dd.payload.pad]),
-           letters: X._artLetterBoxes(hero.spec).map(b => [b.ch, b.variant, +b.x.toFixed(4), +b.y.toFixed(4), +b.w.toFixed(4), b.group]) };
+           letters: X._artLetterBoxes(hero.spec).map(b => [b.ch, b.variant, +b.x.toFixed(4), +b.y.toFixed(4), +b.w.toFixed(4), b.group]),
+           small: r.name2Spec ? X._artLetterBoxes(r.name2Spec).map(b => [b.ch, b.variant, +b.x.toFixed(4), b.group]) : [] };
 }
 const e3 = run3(E), p3 = run3(P);
 // 여러 시트 — 시트 번호마다 데코 시작 자리가 달라지고(변형 줄 포함) 두 추출본이 같은 모양을 고른다
@@ -216,11 +217,14 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
         chk("배치 선택·크기 직접도 두 추출본이 같은 판·같은 지문", res.get("sameLayouts") is True and
             all(re.match(r"^[0-9a-f]{1,16}$", s) for s in res.get("sigs") or ["?"]), res.get("sigs"))
         bub = res.get("bubble") or {}
-        chk("이름 스타일 버블도 두 추출본이 같은 판 (이름 박스 · 글자 자리 · 데코 스타일)",
+        # 2026-09-23: 첫 이름 = 떨어진 글자(옆 장식 없음) · 작은 이름 = 붙인 글자(맨 앞 V 는 왼쪽 장식)
+        chk("이름 스타일 버블도 두 추출본이 같은 판 (이름 박스 · 글자 자리 · 데코 스타일 · 첫 이름 떨어진 글자 · 작은 이름 붙인 글자)",
             res.get("sameBubble") is True and bub.get("style") == "bubble" and bub.get("pad", 0) > 0 and
             all(dd[1] == "bubble" and dd[2] > 0 for dd in bub.get("decos") or [["?", "", 0]]) and
-            [x[0] + x[1] for x in bub.get("letters") or []][:3] == ["VL", "Icore", "Vcore"],
-            "데코 %s · 글자 %s" % ([dd[0] for dd in bub.get("decos") or []], [x[0] + x[1] for x in bub.get("letters") or []]))
+            [x[0] + x[1] for x in bub.get("letters") or []][:3] == ["Vcore", "Icore", "Vcore"] and
+            [x[0] + x[1] for x in bub.get("small") or []][:1] == ["VL"],
+            "데코 %s · 글자 %s · 작은 이름 %s" % ([dd[0] for dd in bub.get("decos") or []], [x[0] + x[1] for x in bub.get("letters") or []],
+                                         [x[0] + x[1] for x in bub.get("small") or []]))
         chk("버블 글자 색 그룹도 두 추출본이 같다 (VIVIAN LIZ = 흰·노랑·흰·하늘·분홍·노랑 / 하늘·흰·분홍)",
             [x[5] for x in bub.get("letters") or []] == ["LTR V", "LTR I", "LTR V", "LTR I SKY", "LTR A PINK", "LTR N YELLOW",
                                                         "LTR L SKY", "LTR I WHITE", "LTR Z"],
@@ -397,13 +401,13 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     write(os.path.join(order_a, "_order.json"), json.dumps({"job": {
         "customer": " Jennifer Test ", "order": "#EVS-1", "material": "Gold", "sticker_name": "LUCKY",
         "name_style": "bubble", "notes": ["재질: SKU 에서 못 읽음"], "pack": "NAME", "photos_ordered": 5,
-        "sheets": 1, "quantity": 2}, "options": [
+        "sheets": 1, "quantity": 2, "extra_sheets": 3}, "options": [
             {"key": "Extra sheets", "value": "Add 3 extra print", "line_item": 0},
             {"key": "Special instructions", "value": " <keep & show> ", "line_item": 0}]}))
     pre = cp.order_prefill(order_a)
     chk("주문 정보 = job 블록 (주문번호 # 제거 · 이름 스타일)", pre == {"nameText": "Jennifer Test", "orderNumber": "EVS-1",
-        "material": "Gold", "stickerName": "LUCKY", "nameStyle": "bubble", "notes": ["재질: SKU 에서 못 읽음"], "orderFrom": "job",
-        "pack": "NAME", "photosOrdered": 5, "sheets": 1, "quantity": 2, "options": [
+        "material": "Gold", "stickerName": "LUCKY", "nameStyle": "bubble", "noName": False, "notes": ["재질: SKU 에서 못 읽음"], "orderFrom": "job",
+        "pack": "NAME", "photosOrdered": 5, "sheets": 1, "quantity": 2, "extraSheets": 3, "options": [
             {"key": "Extra sheets", "value": "Add 3 extra print"},
             {"key": "Special instructions", "value": " <keep & show> "}]}, pre)
     cases = [("Sanvi EVS-0000", ("EVS-0000", "Sanvi")), ("Jennifer Lee EVS-1008 (test)", ("EVS-1008", "Jennifer Lee (test)")),
@@ -418,7 +422,7 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     chk("_order.json 이 없으면 폴더 이름에서 주문번호 · 고객 이름은 번호를 뺀 것",
         pre_s["orderNumber"] == "EVS-0000" and pre_s["nameText"] == "Sanvi" and pre_s["orderFrom"] == "folder", pre_s)
     chk("매니페스트 없는 폴더에 계약·수량·옵션을 만들어 넣지 않는다",
-        all(pre_s[k] is None for k in ("pack", "photosOrdered", "sheets", "quantity")) and pre_s["options"] == [])
+        all(pre_s[k] is None for k in ("pack", "photosOrdered", "sheets", "quantity", "extraSheets")) and pre_s["options"] == [])
     order_j = os.path.join(projects, "Kim EVS-7777")
     os.makedirs(order_j)
     write(os.path.join(order_j, "_order.json"), json.dumps({"job": {"order": "#EVS-7001", "customer": "Kim J"}}))
@@ -436,13 +440,18 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     chk("매니페스트에 이름이 없으면 폴더 이름(NFC) · 모르는 재질·이름 스타일은 비움",
         pre_h["nameText"] == "하린" and pre_h["material"] == "" and pre_h["nameStyle"] == "", pre_h)
     chk("매니페스트가 없어도 폴더 이름", cp.order_prefill(empty)["nameText"] == "빈 주문")
+    # No name 주문 (2026-09-24) — intake name_style "none" → noName, 스타일은 비움 (range.jsx 스타일 키가 아니다)
+    write(os.path.join(order_h, "_order.json"), json.dumps({"job": {"pack": "NAME", "name_style": "none", "sticker_name": ""}}))
+    pre_n = cp.order_prefill(order_h)
+    chk("No name 주문은 noName · 스타일·이름 빈 값", pre_n["noName"] is True and pre_n["nameStyle"] == "" and pre_n["stickerName"] == "", pre_n)
+    chk("일반 주문은 noName 이 거짓", cp.order_prefill(empty)["noName"] is False)
     pay = cp.pairs_payload(projects, "Order A EVS-1")
     p1 = pay["pairs"][0]
     chk("화면 데이터: 페어 3장 · 캔버스 · 캐시 · 지문", len(pay["pairs"]) == 3 and p1["canvas"] == [40, 60] and
         p1["cut"]["srcOk"] and p1["face"] is None and re.match(r"^\d+,\d+;\d+,\d+$", p1["v"]) and
         pay["prefill"]["stickerName"] == "LUCKY" and pay["prefill"]["nameStyle"] == "bubble" and pay["sheets"] == 0, p1)
     chk("화면 데이터: 서버가 받는 기능 (배치 선택 · 크기 직접 · 이름 스타일) + 그림 목록",
-        pay["features"] == ["layouts", "sizes", "nameStyles", "counts"] and "alphabet_art_v2" in pay.get("art", {}), pay["features"])
+        pay["features"] == ["layouts", "sizes", "nameStyles", "counts", "smallName"] and "alphabet_art_v2" in pay.get("art", {}), pay["features"])
     try:
         cp.pairs_payload(projects, "../outside")
         chk("화면 데이터: 이상한 폴더는 LookupError", False)
@@ -489,10 +498,13 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
         c["shotTypes"] == {"Order A EVS-1_03": "face"} and
         c["expect"] == {"sheets": [["Order A EVS-1_03", "Order A EVS-1_01_BIG"]], "stickers": [17], "sigs": []}, c)
     chk("배치·크기·이름 스타일을 안 보내면 launch 에도 없다 (Illustrator 는 기본 배치 · 종류 범위 · retro)",
-        "layouts" not in c and "sizeRanges" not in c and "nameStyle" not in c and "maxCopies" not in c, c)
+        "layouts" not in c and "sizeRanges" not in c and "nameStyle" not in c and "maxCopies" not in c and "smallName" not in c, c)
     chk("이름 스타일은 그대로 싣는다",
         cp.build_launch(projects, dict(good, nameStyle="bubble"))[0]["composed"]["nameStyle"] == "bubble" and
         cp.build_launch(projects, dict(good, nameStyle="retro"))[0]["composed"]["nameStyle"] == "retro")
+    chk("작은 이름 넣기/빼기는 true/false 그대로 싣는다 (안 보내면 없음 = Illustrator 가 넣는다)",
+        cp.build_launch(projects, dict(good, smallName=False))[0]["composed"]["smallName"] is False and
+        cp.build_launch(projects, dict(good, smallName=True))[0]["composed"]["smallName"] is True)
     chk("요약 한 줄", summary == "사진 2장 · 시트 1장 예상", summary)
     picked2 = dict(good, layouts=[{"style": "sides", "namePos": "center", "mirror": True, "seed": 3}],
                    sizeRanges={"Order A EVS-1_01_BIG": [0.75, 2.5], "Order A EVS-1_03": [1, 1], "Order A EVS-1_02_SML": [2, 2.5]},
@@ -560,6 +572,9 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
         ("이름 스타일 빈 값", dict(good, nameStyle=""), "이름 스타일"),
         ("이름 스타일 목록", dict(good, nameStyle=["bubble"]), "이름 스타일"),
         ("이름 스타일 숫자", dict(good, nameStyle=1), "이름 스타일"),
+        ("작은 이름 문자열", dict(good, smallName="false"), "작은 이름"),
+        ("작은 이름 숫자", dict(good, smallName=0), "작은 이름"),
+        ("작은 이름 목록", dict(good, smallName=[False]), "작은 이름"),
     ]
     wrong = []
     for label, body, word in bad_cases:

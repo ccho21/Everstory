@@ -29,7 +29,7 @@ Trust bar:
 
 | Step | Label | Body |
 |------|-------|------|
-| 01 | CHOOSE YOUR PHOTOS | For a Name & Photo Sticker Sheet, upload 5–7 photos and a name; we choose the final five. For a Custom Sticker Sheet, choose one size and a photo count within that size's limit, then upload the number you chose. |
+| 01 | CHOOSE YOUR PHOTOS | For a Name & Photo Sticker Sheet, upload 5–7 photos and add a name if you like; we choose the final five. For a Custom Sticker Sheet, choose one size and a photo count within that size's limit, then upload the number you chose. |
 | 02 | WE SHAPE EACH ONE | Each photo is traced and refined by hand. |
 | 03 | WE BUILD YOUR SHEET | We size and arrange every design to make the most of your A5 sheet. |
 | 04 | MADE TO KEEP | Printed on premium sticker paper, ready to peel, share, and keep close. |
@@ -40,7 +40,7 @@ Trust bar:
 
 | Card | Subtitle | Price |
 |------|----------|-------|
-| Name & Photo Sticker Sheet | Their name and 5 photos, cut and ready to peel | $24.99 CAD |
+| Name & Photo Sticker Sheet | 5 photos, with or without their name, cut and ready to peel | $24.99 CAD |
 | Custom Sticker Sheet | You choose the size, the crop and the photos | From $18.99 CAD |
 
 Draft는 기존 Package Full·Face 상품을 두 카드로 표시한다. 이 표는 컷오버 후의 상품 데이터 목표값이며, 테마만 바꿔 현재 제목·가격을 덮어쓰지 않는다.
@@ -80,7 +80,7 @@ We are not a bulk sticker factory. We clean the subject edge by hand, check the 
 
 Our materials are Korean premium inkjet substrates finished with lamination. White Matte, Translucent, Silver, and Gold are selected for photographic print quality, durability, and a soft keepsake feel.
 
-Choose a Name & Photo Sticker Sheet for five photos selected and arranged by the studio, with a name in Retro or Bubble style. Choose a Custom Sticker Sheet to pick the size, photo count and crop yourself.
+Choose a Name & Photo Sticker Sheet for five photos selected and arranged by the studio, with a name in Retro or Bubble style if you like. Choose a Custom Sticker Sheet to pick the size, photo count and crop yourself.
 
 Made in Toronto. Free Canada-wide shipping. Toronto Studio pickup available.
 
@@ -121,7 +121,7 @@ We print on Epson ET-8550, cut on Summa D75, and pack by hand in Toronto. Local 
 ### Ordering
 
 **Q. How does ordering work?**
-A. On the Name & Photo Sticker Sheet you choose a material and lettering style, upload 5–7 photos and add the name. We choose five photos and set the crop, size and layout, mixing sizes from 0.75" to 2.5" on one A5 sheet. On the Custom Sticker Sheet you choose the size, photo count and crop, then upload the number of photos you chose. Add any details in Special instructions on the product page.
+A. On the Name & Photo Sticker Sheet you choose a material, upload 5–7 photos and, if you like, add a name in Retro or Bubble letters. We choose five photos and set the crop, size and layout, mixing sizes from 0.75" to 2.5" on one A5 sheet. On the Custom Sticker Sheet you choose the size, photo count and crop, then upload the number of photos you chose. Add any details in Special instructions on the product page.
 
 **Q. Can I cancel my order?**
 A. Yes, before we begin printing — typically within one business day of your order. Email studio.everstory@gmail.com as soon as possible.

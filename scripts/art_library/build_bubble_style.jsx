@@ -13,7 +13,9 @@
 //   · 글자 그룹 = 글자 몸통('BODY' = 검정 테두리 컴파운드) + 안쪽 장식·바탕('FACE') + 맨 아래 'SIL'(합집합 바깥 윤곽, 흰색).
 //     몸통 밖으로 튀어나온 조각은 'SIDE L' / 'SIDE R' 묶음(안에도 'SIL') — 이름 줄의 맨 앞 / 맨 끝 글자에서만 쓴다.
 //   · 색 그룹 'LTR A PINK' = 글자 그룹 복제 + 바탕(FACE)만 그 색 (2026-09-17 — 이름 글자 색 돌리기). 글자 안 장식과 같은 색은 안 만든다.
-//   · 데코 그룹 = 두들 + 맨 아래 'SIL' = 흰 테두리(최대 변의 6% 부터, 한 장으로 이어질 때까지 키움) = 칼선.
+//   · 데코 그룹 = 두들 + 맨 아래 'SIL' = 흰 테두리(최대 변의 6% 부터, 한 장으로 이어질 때까지 키움). SIL 까지 넣은 틀이
+//     시트 크기의 기준이지만 칼선은 아니다 — range.jsx 는 SIL 을 빼고 그림 윤곽에서 칼선을 딴다 (decoBorder, 2026-09-22),
+//     미리보기 그림도 SIL 을 빼고(캔버스는 그대로) 뽑는다.
 //   · 원본의 흰(크림) 채우기는 여러 글자에 걸친 컴파운드 하나라 풀어서 글자별로 다시 묶는다.
 //   · 두들 자리 = DOODLE_ITEMS 상자 (원본 좌표). 원본에서 두들을 옮기거나 더하면 상자를 고친다.
 //
@@ -511,8 +513,9 @@
   // ── 미리보기 그림 + 치수 ───────────────────────────────────────
   // 그룹마다 투명 PNG (높이 px) — 파일 이름 = 그룹 이름의 공백을 밑줄로 ('LTR A PINK' → LTR_A_PINK.png).
   // 옆 장식이 있는 글자는 LTR_C_R · LTR_C_PINK_R 처럼 장식을 넣은 그림도. measure 면 원래 글자 그룹의 틀·몸통 경계를 돌려준다
-  // (색 그룹은 모양이 같아 재지 않는다).
-  function exportPreviews(libPath, prefix, px, outDir, measure) {
+  // (색 그룹은 모양이 같아 재지 않는다). dropSil = 두들의 흰 테두리('SIL')를 그림에서 뺀다 — range.jsx 칼선이 그림 윤곽이라
+  // (decoBorder, 2026-09-22). 캔버스·돌려주는 경계는 SIL 까지 넣은 틀 그대로라 미리보기 크기·말풍선 비율표는 안 바뀐다.
+  function exportPreviews(libPath, prefix, px, outDir, measure, dropSil) {
     var tmp = app.documents.add(DocumentColorSpace.RGB, 1000, 1000), lib = null, out = { files: 0, metrics: {}, bounds: {} };
     function one(src, keep, path) {
       var TL = tmp.layers[0];
@@ -525,6 +528,9 @@
       app.activeDocument = tmp;     // exportFile 은 활성 문서를 내보낸다 — 반드시 먼저 바꾼다
       var b = d.geometricBounds;
       tmp.artboards[0].artboardRect = [b[0], b[1], b[2], b[3]];
+      if (dropSil) {
+        for (i = d.pageItems.length - 1; i >= 0; i--) if (d.pageItems[i].name === "SIL") d.pageItems[i].remove();
+      }
       var o = new ExportOptionsPNG24();
       o.artBoardClipping = true;
       o.transparency = true;
@@ -706,7 +712,7 @@
       (rd.outside ? " · ⚠ 상자 밖 조각 " + rd.outside + "개 (build.log)" : ""));
 
     var pa = exportPreviews(work.fsName + "/alphabet_art_v2.ai", "LTR ", LETTER_PX, work.fsName + "/art_preview/alphabet_art_v2", true);
-    var pd = exportPreviews(work.fsName + "/deco_art_v2.ai", "DECO ", DECO_PX, work.fsName + "/art_preview/deco_art_v2", false);
+    var pd = exportPreviews(work.fsName + "/deco_art_v2.ai", "DECO ", DECO_PX, work.fsName + "/art_preview/deco_art_v2", false, true);
     report.push("미리보기 그림 " + (pa.files + pd.files) + "장");
     var mt = metricsLines(pa.metrics), mf = new File(work.fsName + "/LETTER_ART_METRICS_V2.txt");
     mf.encoding = "UTF-8";

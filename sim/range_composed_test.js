@@ -811,9 +811,10 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
   }));
   chk('레트로 이름 치수 = 작업 전 값 (스타일 생략 · retro 둘 다, 비트 단위)', sameOld);
   const tallSet = [0.38, 0.78, 0.66, 0.85, 0.79, 0.89].map((a, i) => ({ base: 'D' + i, aspect: a, cutAspect: a, shotType: 'none' }));
+  // 고정 판(작업 전 · 말풍선 켬)은 두 번째 이름(2026-09-23) 없이 잰다 — 두 번째 이름을 빼면 예전 판 그대로여야 한다.
   const retroPack = (st, more) => {
     const h = st ? P._composedHero('SANVI', W, G, st) : P._composedHero('SANVI', W, G);
-    return P._packComposed(tallSet, 0, W, H, G, { ...P._composedPackExtras(h.spec, RIM, null), ...(more || {}) });
+    return P._packComposed(tallSet, 0, W, H, G, { ...P._composedPackExtras(h.spec, RIM, null), name2: null, ...(more || {}) });
   };
   // 데코 모양은 2026-09-17 부터 스티커 이름 자리에서 시작한다 (_composedDecoStart). 같은 날 말풍선이 들어가 판이 바뀌었다 —
   // 말풍선을 끄면(bubbleWant 0) 자리·크기(지문)는 작업 전 그대로여야 한다.
@@ -841,10 +842,12 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
   // 버블 이름 스펙
   const bs = P._composedHero('Vivian', W, G, 'bubble').spec;
   const u = bs.unit, boxes = P._artLetterBoxes(bs);
-  chk('버블 스펙: 통짜 · 유닛 13mm · 흰 테두리 = 유닛 × 0.08 · 블록 = 글자 + 테두리',
-      bs.whole && bs.nameStyle === 'bubble' && bs.unitMm === 13 && Math.abs(bs.halo - 0.08 * u) < 1e-9 &&
-      Math.abs(bs.cellW - (u * bs.artWCoef + 2 * bs.halo)) < 1e-9 && Math.abs(bs.cellH - (u + 2 * bs.halo)) < 1e-9 &&
-      Math.abs(bs.innerGap - (-0.03 * u)) < 1e-9,
+  // 2026-09-22 사용자: 이름에 1.04mm(유닛 × 0.08) 흰 테두리가 미리 들어가 마지막 오프셋과 겹쳤다 → 칼선 = 글자 윤곽 (여백 0).
+  // 2026-09-23 사용자 "떨어진 글씨가 메인" · "15mm 는 떨어진 글자" — 버블 첫 이름도 떨어진 글자 (레트로 간격 · 옆 장식 없음).
+  chk('버블 첫 이름 스펙: 떨어진 글자 · 유닛 15mm · 레트로 간격 · 옆 장식 없음 · 칼선 여백 0 · 블록 = 글자',
+      bs.whole && bs.nameStyle === 'bubble' && bs.unitMm === 15 && bs.halo === 0 && !P._nameJoined(bs) && bs.coreOnly &&
+      Math.abs(bs.cellW - u * bs.artWCoef) < 1e-9 && Math.abs(bs.cellH - u) < 1e-9 &&
+      Math.abs(bs.innerGap - P.LETTER_GAP_RATIO * u) < 1e-9 && boxes.every(b => b.variant === 'core'),
       `${(bs.cellW / M).toFixed(1)} × ${(bs.cellH / M).toFixed(1)}mm · 테두리 ${(bs.halo / M).toFixed(2)}mm`);
   const EPS = 1e-6;
   let inside = true, order = true, base = true;
@@ -855,24 +858,26 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
     if (i && Math.abs(b.x - (boxes[i - 1].x + boxes[i - 1].w + bs.innerGap)) > EPS) order = false;
     if (i && Math.abs((b.y + m.bl * b.h) - (boxes[0].y + V2[boxes[0].ch][boxes[0].variant].bl * boxes[0].h)) > EPS) base = false;
   }
-  chk('글자 자리: 테두리 안쪽 · 틀 = 표 × 배율 · 살짝 겹쳐 이어짐 · 바닥선 하나', inside && order && base,
+  chk('글자 자리: 테두리 안쪽 · 틀 = 표 × 배율 · 글자 사이 간격대로 이어짐 · 바닥선 하나', inside && order && base,
       boxes.map(b => b.ch + (b.variant === 'core' ? '' : '(' + b.variant + ')')).join(''));
-  chk('글자 자리: 줄 폭이 블록에 꽉 찬다 (가운데 정렬 · 좌우 테두리만 남음)',
+  chk('글자 자리: 줄 폭이 블록에 꽉 찬다 (가운데 정렬 · 좌우 여백 = halo)',
       Math.abs(boxes[0].x - bs.halo) < EPS && Math.abs(boxes[boxes.length - 1].x + boxes[boxes.length - 1].w - (bs.cellW - bs.halo)) < EPS);
-  const variants = n => P._artLetterBoxes(P._composedHero(n, W, G, 'bubble').spec).map(b => b.ch + ':' + b.variant).join(' ');
-  chk('옆 장식은 줄 맨 앞(L)·맨 끝(R) 글자만 — 가운데 V·Z·C 는 core',
+  // 옆 장식은 붙인 글자(작은 이름)만 — 첫 이름(떨어진 글자)은 늘 core.
+  const variants = n => P._artLetterBoxes(P._composedName2Spec(P._composedHero(n, W, G, 'bubble').spec)).map(b => b.ch + ':' + b.variant).join(' ');
+  chk('작은 이름 옆 장식은 줄 맨 앞(L)·맨 끝(R) 글자만 — 가운데 V·Z·C 는 core',
       variants('VIV') === 'V:L I:core V:core' && variants('LIZ') === 'L:core I:core Z:R' && variants('ZAC') === 'Z:core A:core C:R' &&
       variants('V') === 'V:L' && variants('Z') === 'Z:R' && variants('Cliv Zev') === 'C:core L:core I:core V:core Z:core E:core V:core',
       [variants('VIV'), variants('LIZ'), variants('Cliv Zev')].join(' | '));
-  const two = P._composedHero('Anne Kim', W, G, 'bubble').spec, tb = P._artLetterBoxes(two);
-  chk('두 단어 = 두 줄 (줄 간격 = 유닛 × 0.1) · 줄마다 가운데',
+  const two = P._composedHero('Anne Kim', W, G, 'bubble').spec, tb = P._artLetterBoxes(two), two2 = P._composedName2Spec(two);
+  chk('두 단어 = 두 줄 · 줄마다 가운데 (첫 이름 줄 간격 = 레트로 간격 · 작은 이름 = 유닛 × 0.1)',
       two.lines.length === 2 && Math.abs(two.cellH - (2 * two.unit + two.lineGap + 2 * two.halo)) < 1e-9 &&
-      Math.abs(two.lineGap - 0.1 * two.unit) < 1e-9 && tb.filter(b => b.line === 1).length === 3 &&
-      tb.filter(b => b.line === 1)[0].x > tb.filter(b => b.line === 0)[0].x);
+      Math.abs(two.lineGap - P.LETTER_GAP_RATIO * two.unit) < 1e-9 && tb.filter(b => b.line === 1).length === 3 &&
+      tb.filter(b => b.line === 1)[0].x > tb.filter(b => b.line === 0)[0].x &&
+      two2.lines.length === 2 && Math.abs(two2.lineGap - 0.1 * two2.unit) < 1e-9);
   const long = P._composedHero('Maximilianwolfgang', W, G, 'bubble').spec;
   const maxW = Math.min(P.RANGE_HERO_MAX_W_MM, W / M - 2 * P.RANGE_MARGIN_X_MM) * M;
-  chk('긴 이름은 유닛을 낮춰 폭 상한에 딱 맞춘다 (흰 테두리도 같이 준다)',
-      long.unitMm < 13 && Math.abs(long.cellW - maxW) < 1e-6 && Math.abs(long.halo - 0.08 * long.unit) < 1e-9,
+  chk('긴 이름은 유닛을 낮춰 폭 상한에 딱 맞춘다 (흰 테두리 없음)',
+      long.unitMm < 15 && Math.abs(long.cellW - maxW) < 1e-6 && long.halo === 0,
       `유닛 ${long.unitMm.toFixed(2)}mm · 폭 ${(long.cellW / M).toFixed(2)}mm`);
   chk('한글·숫자 이름은 버블도 건너뛴다 (같은 이유)', P._composedHero('하린', W, G, 'bubble').spec === null &&
       P._composedHero('하린', W, G, 'bubble').skipped === P._composedHero('하린', W, G).skipped);
@@ -899,7 +904,9 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
   chk('레트로 글자 자리 = 예전 _drawArtLetterBlock 계산식', retroOk && rb.length === 0);
 
   // 버블 배치 — 이름 박스는 칼선 여백만큼 넓게, 데코 박스는 그대로 · 안쪽 여백만큼 작게 그린다
-  const bubPack = rim => P._packComposed(tallSet, 0, W, H, G, P._composedPackExtras(P._composedHero('SANVI', W, G, 'bubble').spec, rim, null));
+  // 말풍선·데코 고정 판은 두 번째 이름(2026-09-23) 없이 잰다 — 두 번째 이름은 아래 따로 검사한다.
+  const bubPack = rim => P._packComposed(tallSet, 0, W, H, G,
+    { ...P._composedPackExtras(P._composedHero('SANVI', W, G, 'bubble').spec, rim, null), name2: null });
   const b1 = bubPack(RIM), b0 = bubPack(0), sb = P._composedHero('SANVI', W, G, 'bubble').spec;
   chk('버블 이름 박스 = 스펙 + 2 × 칼선 여백 · 그리기 여백 = 칼선 여백 (여백 0 이면 0)',
       Math.abs(b1.nameBox.w - (sb.cellW + 2 * RIM)) < 1e-9 && Math.abs(b1.nameBox.h - (sb.cellH + 2 * RIM)) < 1e-9 &&
@@ -915,7 +922,7 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
   // 말풍선 두 개 (22 · 19mm) · 순서 끝에서 처음으로 넘어가는 판 — Vivian 은 말풍선 순서 5(XOXO)부터
   const vb = P._composedHero('Vivian', W, G, 'bubble').spec;
   const bb = P._packComposed(pairsOf([0.75, 0.8, 1.2, 0.9]), 0, W, H, G,
-    P._composedPackExtras(vb, RIM, { style: 'bottom', namePos: 'center', mirror: false, seed: 0 }));
+    { ...P._composedPackExtras(vb, RIM, { style: 'bottom', namePos: 'center', mirror: false, seed: 0 }), name2: null });
   const b1b = bb.decos.filter(d => d.payload.bubble);
   const bubStyle = P.COMPOSED_NAME_STYLES[1], retStyle = P.COMPOSED_NAME_STYLES[0];
   const bubBoxes = P._composedDecoSizes(bubStyle, RIM / M), retBoxes = P._composedDecoSizes(retStyle, 0);
@@ -935,7 +942,8 @@ console.log('\n══ 이름 스타일 (레트로 · 버블 통짜) ══');
       `버블 박스 ${bubBoxes.join(' / ')}mm · 그림 ${bubArt.join(' / ')}mm (예전 ${oldArt.join(' / ')}mm)`);
   chk('버블 말풍선 = 말풍선 순서 자리부터 · 박스 = 그림 비율 + 안쪽 여백 (긴 변 22 또는 19mm)',
       b1b.length === P.COMPOSED_BUBBLE_MAX && bb.bubbleStart === P._composedBubbleStart(vb, 0) && bb.bubbles === b1b.length &&
-      b1b.map(d => d.payload.deco).join() === 'YAY,BESTDAY' && b1b.map(d => d.payload.sizeMm).join() === '19,19' &&
+      // 크기 19,19 → 22,22: 2026-09-23 버블 첫 이름이 떨어진 글자 15mm (Vivian 82 × 15mm) 로 바뀐 판
+      b1b.map(d => d.payload.deco).join() === 'YAY,BESTDAY' && b1b.map(d => d.payload.sizeMm).join() === '22,22' &&
       b1b.map(d => d.payload.deco).join() === rotated(P.DECO_BUBBLES_V2, bb.bubbleStart, b1b.length) &&
       b1b.every(d => {
         const a = P.DECO_BUBBLE_ASPECT_V2[d.payload.deco], w = d.w / M - 2, h = d.h / M - 2;
@@ -1168,7 +1176,8 @@ console.log('\n══ 말풍선 — 시트당 2개까지 22mm(안 되면 19mm) �
             const w = d.w / M - 2 * pad, hh = d.h / M - 2 * pad, a = st.bubbleAspect[d.payload.deco];
             if (d.payload.deco !== plan.motifs[i] || P.COMPOSED_BUBBLE_SIZES_MM.indexOf(d.payload.sizeMm) < 0 ||
                 Math.abs(Math.max(w, hh) - d.payload.sizeMm) > 1e-9 || Math.abs(w / hh - a) > 1e-9 || d.payload.pad !== ex.decoPad) bad.push(tag + ' 모양 ' + d.payload.deco);
-            const others = on.placed.map(p => ({ x: p.x / M, y: p.y / M, w: p.w / M, h: p.h / M })).concat(on.nameBox ? [{ x: on.nameBox.x / M, y: on.nameBox.y / M, w: on.nameBox.w / M, h: on.nameBox.h / M }] : []);
+            const others = on.placed.map(p => ({ x: p.x / M, y: p.y / M, w: p.w / M, h: p.h / M }))
+              .concat([on.nameBox, on.name2Box].filter(Boolean).map(b => ({ x: b.x / M, y: b.y / M, w: b.w / M, h: b.h / M })));
             const bx = { x: d.x / M, y: d.y / M, w: d.w / M, h: d.h / M };
             const near = Math.min(...others.map(o => Math.hypot(Math.max(0, o.x - (bx.x + bx.w), bx.x - (o.x + o.w)), Math.max(0, o.y - (bx.y + bx.h), bx.y - (o.y + o.h)))));
             if (near > P.COMPOSED_DECO_NEAR_MM + 1e-6) bad.push(tag + ' 빈틈 아님 ' + near.toFixed(1));
@@ -1260,6 +1269,101 @@ console.log('\n══ 입구 · 검증기 음성 케이스 ══');
   r = clone(); r.extras = P.COMPOSED_EXTRA_MAX + 1;
   r.gradeCounts = [0, 0, 0, 0, 0, r.placed.length - r.extras + r.missing.length + (r.skipped ? r.skipped.length : 0)];
   chk('추가 상한 초과 감지', v(r).indexOf('상한') >= 0);
+}
+
+console.log('\n══ 작은 이름 = 두 번째 이름 (2026-09-23 사용자 — 첫 이름 떨어진 글자 · 작은 이름 붙인 글자 10mm · 따로 · 넣고 빼기) ══');
+{
+  const UJ = P.COMPOSED_NAME2_JOIN_UNIT_MM, EPS2 = 1e-6;
+  const heroOf = (n, st) => P._composedHero(n, W, G, st).spec;
+  chk('글자 높이 = 붙인 글자 10mm · 떨어진 글자 = 첫 이름 (레트로 16 · 버블 15mm) ("10mm 는 붙은 글자, 15mm 는 떨어진 글자")',
+      UJ === 10 && P._nameStyle('bubble').unitMm === 15 && P._nameStyle('retro').unitMm === P.RANGE_HERO_UNIT_MM &&
+      P.COMPOSED_NAME2_APART_UNIT_MM === undefined);
+  // 레트로 이름 → 붙인 글자 (글자 틀이 겹친다 · 이름 전체 칼선 하나)
+  const r2 = P._composedName2Spec(heroOf('Yijun', 'retro')), rb = P._artLetterBoxes(r2);
+  chk('레트로 두 번째 = 붙인 글자 · 레트로 치수표 · 글자 높이 10mm · 겹침 −0.03 · 줄 사이 0.1 · 레이어 표시 2',
+      P._nameJoined(r2) && !r2.whole && r2.nameStyle === 'retro' && r2.unitMm === UJ && r2.drawTag === '2' && !r2.coreOnly &&
+      Math.abs(r2.innerGap - P.COMPOSED_NAME2_JOIN_GAP * r2.unit) < EPS2 && Math.abs(r2.lineGap - P.COMPOSED_NAME2_JOIN_LINE_GAP * r2.unit) < EPS2 &&
+      rb.every((b, i) => i === 0 || Math.abs(b.x - (rb[i - 1].x + rb[i - 1].w + r2.innerGap)) < EPS2),
+      `${(r2.cellW / M).toFixed(1)} × ${(r2.cellH / M).toFixed(1)}mm`);
+  // 버블 이름 → 작은 이름도 붙인 글자 (예전 버블 첫 이름 모양 — 겹침 −0.03 · 줄 사이 0.1 · 옆 장식 V 왼쪽 · C 오른쪽)
+  const b2 = P._composedName2Spec(heroOf('Vic Zev', 'bubble')), bb2 = P._artLetterBoxes(b2);
+  chk('버블 작은 이름 = 붙인 글자 · 버블 치수표 · 글자 높이 10mm · 겹침 −0.03 · 줄 사이 0.1 · 옆 장식 있음 · 레이어 표시 2',
+      P._nameJoined(b2) && b2.whole && b2.nameStyle === 'bubble' && b2.unitMm === UJ && !b2.coreOnly && b2.drawTag === '2' &&
+      Math.abs(b2.innerGap - P.COMPOSED_NAME2_JOIN_GAP * b2.unit) < EPS2 && Math.abs(b2.lineGap - P.COMPOSED_NAME2_JOIN_LINE_GAP * b2.unit) < EPS2 &&
+      bb2[0].variant === 'L' && bb2.filter(b => b.line === 0)[2].variant === 'R' &&
+      bb2.filter(b => b.line === 0).every((b, i, a) => i === 0 || Math.abs(b.x - (a[i - 1].x + a[i - 1].w + b2.innerGap)) < EPS2),
+      bb2.map(b => b.ch + ':' + b.variant).join(' '));
+  // 첫 이름 = 떨어진 글자 (두 스타일 모두) — 버블은 옆 장식 없음, 레트로 스펙엔 배열 표시가 없다 (예전 값 그대로)
+  const bh = heroOf('Vic Zev', 'bubble'), rh = heroOf('Vic Zev', 'retro');
+  chk('첫 이름 = 떨어진 글자 — 버블은 옆 장식 없음(모두 core) · 레트로는 배열 표시 없이 예전 그대로',
+      !P._nameJoined(bh) && bh.coreOnly && bh.joined === false && P._artLetterBoxes(bh).every(b => b.variant === 'core') &&
+      !P._nameJoined(rh) && rh.joined === undefined && rh.coreOnly === undefined);
+  // 폭 상한 — 긴 이름은 유닛을 낮춰 110mm 에 딱 맞춘다
+  const long2 = P._composedName2Spec(heroOf('Maximilianwolfgang', 'bubble')), longR = P._composedName2Spec(heroOf('Maximilianwolfgang', 'retro'));
+  chk('긴 이름 작은 이름은 폭 110mm 에 맞춰 줄인다 (두 스타일)',
+      Math.abs(long2.cellW / M - P.RANGE_HERO_MAX_W_MM) < EPS2 && long2.unitMm < UJ &&
+      Math.abs(longR.cellW / M - P.RANGE_HERO_MAX_W_MM) < EPS2 && longR.unitMm < UJ,
+      `버블 ${long2.unitMm.toFixed(2)}mm · 레트로 ${longR.unitMm.toFixed(2)}mm`);
+  chk('이름이 없거나 아트가 아니면 작은 이름도 없다', P._composedName2Spec(null) === null &&
+      P._composedPackExtras(null, RIM).name2 === null && P._composedHero('하린', W, G, 'retro').spec === null);
+  // 넣고 빼기 (2026-09-23 사용자 "작은 글씨들은 옵션처럼 넣었다 뺄 수 있게") — 첫 이름 스펙에 실려 extras 가 본다
+  const offH = P._composedHero('Yijun', W, G, 'bubble', false).spec, onH = P._composedHero('Yijun', W, G, 'bubble', true).spec;
+  const setT = pairsOf([0.8, 0.9, 1.1, 0.7]);
+  const packOff = P._packComposed(setT, 0, W, H, G, P._composedPackExtras(offH, RIM, null, 0));
+  const packNull = P._packComposed(setT, 0, W, H, G, { ...P._composedPackExtras(onH, RIM, null, 0), name2: null });
+  const packOn = P._packComposed(setT, 0, W, H, G, P._composedPackExtras(onH, RIM, null, 0));
+  chk('작은 이름 빼기 = 스펙 smallName false → 박스 없음 · 이름 하나 판과 같은 지문 · 넣기(true·없음)는 그대로',
+      offH.smallName === false && onH.smallName === undefined && P._composedHero('Yijun', W, G, 'bubble').spec.smallName === undefined &&
+      P._composedPackExtras(offH, RIM).name2 === null && P._composedPackExtras(onH, RIM).name2 !== null &&
+      packOff.name2Box === null && !packOff.name2Missing && packOff.sig === packNull.sig &&
+      packOn.name2Box !== null && packOn.sig !== packOff.sig && P._composedValidate(packOff, setT, W, H, G) === '',
+      `빼기 ${packOff.placed.length}장 · 넣기 ${packOn.placed.length}장`);
+  const lp2 = [{ base: 'A_01' }, { base: 'A_02' }];
+  const lcfg2 = { bases: ['A_01', 'A_02'], nameText: 'Test', stickerName: 'YIJUN', material: 'White Matte', cutMarginMm: 1, nameStyle: 'bubble' };
+  const lOff = P._composedLaunchOptions({ ...lcfg2, smallName: false }, lp2), lOn = P._composedLaunchOptions({ ...lcfg2, smallName: true }, lp2);
+  const lNone = P._composedLaunchOptions(lcfg2, lp2);
+  const badSmall = ['no', 1, 0, 'false', [false]].map(v => P._composedLaunchOptions({ ...lcfg2, smallName: v }, lp2).error || '');
+  chk('보드의 작은 이름 → options (없으면 넣기) · true/false 가 아니면 만들지 않는다',
+      !lOff.error && lOff.options.smallName === false && !lOn.error && lOn.options.smallName === true &&
+      !lNone.error && lNone.options.smallName === true && badSmall.every(e => e.includes('작은 이름')), badSmall.join(' / '));
+  // 배치 — 아래 가장자리 · 첫 이름 반대쪽 · 박스 = 스펙 + 2×칼선 여백 (두 스타일 모두)
+  const set = pairsOf([0.8, 0.9, 1.1, 0.7]), hB = heroOf('Harin', 'bubble'), exB = P._composedPackExtras(hB, RIM, null, 0);
+  const pk = lay => P._packComposed(set, 0, W, H, G, { ...exB, layout: lay });
+  const left = pk(null), center = pk({ style: 'center', namePos: 'center' }), right = pk({ style: 'center', namePos: 'right' });
+  const mir = pk({ style: 'center', namePos: 'right', mirror: true });
+  const at = r => ({ x: r.name2Box.x / M, y: r.name2Box.y / M, w: r.name2Box.w / M, h: r.name2Box.h / M });
+  const a0 = at(left), a1 = at(center), a2 = at(right), a3 = at(mir), Wm = W / M, Hm = H / M;
+  chk('두 번째 이름 = 시트 아래 · 첫 이름 반대쪽 (왼 → 오른쪽 아래 · 가운데 → 가운데 · 오른 → 왼쪽 아래 · 좌우 바꿈은 같이 뒤집힘)',
+      Math.abs(a0.y + a0.h - Hm) < EPS2 && Math.abs(a0.x + a0.w - Wm) < EPS2 && Math.abs(a1.x - (Wm - a1.w) / 2) < EPS2 &&
+      Math.abs(a2.x) < EPS2 && Math.abs(a3.x + a3.w - Wm) < EPS2 && mir.nameBox.x < W / 2,
+      `왼 ${a0.x.toFixed(1)} · 가운데 ${a1.x.toFixed(1)} · 오른 ${a2.x.toFixed(1)} · 좌우 바꿈 ${a3.x.toFixed(1)}`);
+  chk('두 번째 이름 박스 = 스펙 + 2 × 칼선 여백 · 그리기 여백 · 스펙이 결과에 실린다',
+      Math.abs(left.name2Box.w - (exB.name2.spec.cellW + 2 * RIM)) < EPS2 && Math.abs(left.name2Box.h - (exB.name2.spec.cellH + 2 * RIM)) < EPS2 &&
+      left.name2Pad === RIM && left.name2Spec === exB.name2.spec && !left.name2Missing &&
+      P._composedPackExtras(heroOf('Harin', 'retro'), RIM).name2.pad === RIM);
+  const off = P._packComposed(set, 0, W, H, G, { ...exB, name2: null });
+  chk('두 번째 이름 끔 = 박스 없음 · 지문이 다르다 (지문에 들어간다)', off.name2Box === null && !off.name2Missing && off.sig !== left.sig &&
+      P._composedLayoutSig({ ...left, name2Box: null }) !== left.sig);
+  // 여러 판 — 늘 들어가고 검증기를 통과하며, 사진은 평균 2장 넘게 줄지 않는다
+  let n = 0, inIt = 0, lost = 0;
+  const bad2 = [];
+  for (const st of ['retro', 'bubble']) {
+    for (const nm of ['Mia', 'Yijun', 'Charles', 'Anne Kim', 'Maximilian']) {
+      const h = heroOf(nm, st);
+      for (const s of [[0.38, 0.78, 0.66, 0.85, 0.79, 0.89], [0.8, 0.85, 0.9, 0.78, 0.82, 0.88], [1.4, 0.67, 0.8], [0.7]]) {
+        for (const lay of [null, { style: 'sides' }, { style: 'bottom', namePos: 'right', mirror: true, seed: 2 }]) {
+          const ex = P._composedPackExtras(h, RIM, lay, 0);
+          const on = P._packComposed(pairsOf(s), 0, W, H, G, ex), no = P._packComposed(pairsOf(s), 0, W, H, G, { ...ex, name2: null });
+          n++;
+          if (on.name2Box) inIt++; else bad2.push(`${st} ${nm} ${s.length}장 자리 없음`);
+          if (P._composedValidate(on, pairsOf(s), W, H, G) !== '') bad2.push(`${st} ${nm} 검증`);
+          lost += no.placed.length - on.placed.length;
+        }
+      }
+    }
+  }
+  chk(`여러 판 (${n}): 두 번째 이름이 늘 들어간다 · 검증 통과 · 사진 평균 −2장 이내`, inIt === n && bad2.length === 0 && lost / n <= 2,
+      `들어감 ${inIt}/${n} · 사진 평균 −${(lost / n).toFixed(2)}` + (bad2.length ? ' · ' + bad2.slice(0, 3).join(' | ') : ''));
 }
 
 assert(Buffer.compare(before, fs.readFileSync(SOURCE)) === 0, 'Everstory_range.jsx 가 테스트 중 바뀌었다');

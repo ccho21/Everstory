@@ -183,8 +183,25 @@ def size_from_options(options, line_item_index):
 # 옵션 `Name style` = 이름 스티커 스타일 (Easify 드롭다운 Retro / Bubble). range.jsx COMPOSED_NAME_STYLES 의 키로 바꿔 담는다.
 # 키 철자는 Easify 내부 이름을 따른다 — 정확한 값은 테스트 주문으로 확인한다 (2026-09-19, cutover_runbook §11).
 NAME_STYLE_OPTION_KEYS = ("name style", "name_style", "namestyle")
-NAME_STYLE_VALUES = {"retro": "retro", "레트로": "retro", "bubble": "bubble", "버블": "bubble"}
-NAME_STYLE_LABELS = {"retro": "레트로", "bubble": "버블"}
+# `No name` (2026-09-24 사용자) = 이름 없이 주문 — 시트는 사진만 채운다. job.name_style = "none" 은 range.jsx 스타일 키가
+# 아니다 (보드는 이름 칸을 비워 두고 이름 필수 경고 대신 안내만 한다).
+NAME_STYLE_VALUES = {"retro": "retro", "레트로": "retro", "bubble": "bubble", "버블": "bubble",
+                     "no name": "none", "none": "none", "이름 없음": "none"}
+NAME_STYLE_LABELS = {"retro": "레트로", "bubble": "버블", "none": "이름 없음"}
+# 옵션 `Extra sheets` (2026-09-25) = 같은 시트를 더 인쇄 (+$7/장). 값 "No extra print" · "Add N extra print" — 라벨을
+# "N extra sheets" 로 바꿔도 숫자로 읽는다. 같은 시트 인쇄 장수 = 수량 × (1 + extra_sheets) — 보드 요약 줄·경고에 뜬다.
+EXTRA_SHEETS_OPTION_KEYS = ("extra sheets", "extra_sheets", "extra sheet")
+
+
+def extra_sheets_from_value(value):
+    """`Add 2 extra print` -> 2, `No extra print` / `None` -> 0, 모르는 값 -> None."""
+    v = value.strip().lower()
+    m = re.search(r"\d+", v)
+    if m:
+        return int(m.group(0))
+    if v in ("none", "no", "0") or v.startswith("no "):
+        return 0
+    return None
 
 
 def build_job(manifest):
@@ -216,12 +233,13 @@ def build_job(manifest):
         "photos": sum(1 for p in photos if p.get("file")),
         "sticker_name": "",
         "name_style": "",
+        "extra_sheets": 0,
         "notes": [],
     }
 
     # 옵션 `Name` = 스티커에 넣을 이름. 고객 이름과 별개다 (선물이면 받는 사람 이름).
     # 옵션 `Name style` = 그 이름의 스타일 (retro | bubble). 모르는 값이면 비워 두고 notes 에 남긴다 — 보드에서 고른다.
-    names, styles = [], []
+    names, styles, extras = [], [], []
     for o in options:
         key, _ = split_key(o.get("key") or "")
         value = str(o.get("value") or "").strip()
@@ -242,6 +260,18 @@ def build_job(manifest):
                     job["name_style"] = style
                 else:
                     job["notes"].append("이름 스타일: 모르는 값 '%s' — 보드에서 고를 것" % value)
+        elif key in EXTRA_SHEETS_OPTION_KEYS:
+            n = extra_sheets_from_value(value)
+            if n is None:
+                job["notes"].append("추가 인쇄: 모르는 값 '%s' — 주문에서 장수 확인" % value)
+            elif n not in extras:
+                extras.append(n)
+
+    if len(extras) == 1:
+        job["extra_sheets"] = extras[0]
+    elif len(extras) > 1:
+        job["extra_sheets"] = None
+        job["notes"].append("추가 인쇄: line item 마다 다름 (%s) — 주문을 나눠 제작할 것" % " / ".join(str(n) for n in extras))
 
     if len(names) > 1:
         job["notes"].append("이름: line item 마다 다름 (%s) — 주문을 나눠 제작할 것" % " / ".join(names))
@@ -285,6 +315,11 @@ def build_job(manifest):
     # NAME 의 아트 이름·후보 사진 계약. mixed 의 폰트 이름(한글 포함)에는 적용하지 않는다.
     if job["pack"] == "NAME":
         name = job["sticker_name"]
+        no_name = job["name_style"] == "none"
+        if no_name and name:
+            # 이름 칸을 쓰다가 No name 으로 바꾸면 숨은 칸 값이 따라올 수 있다 — 고른 쪽(이름 없음)을 따르고 알린다.
+            job["notes"].append("이름 없음(No name)을 골랐는데 이름 '%s' 도 들어옴 — 이름 없이 만든다, 고객 확인" % name)
+            job["sticker_name"] = name = ""
         if name and not re.fullmatch(r"[A-Za-z ]+", name):
             job["notes"].append("이름: A–Z·공백 외 글자 ('%s') — 구성에서 이름·데코가 빠질 수 있음, 고객 확인" % name)
         if len(name) > 24:
@@ -293,11 +328,16 @@ def build_job(manifest):
             job["notes"].append("사진 %d장 — Name & Photo 는 5–7장 (구 Package 옵션으로 들어온 주문인지 확인)" % job["photos"])
         if any(p.get("bucket") in ("BIG", "MED", "SML") for p in photos):
             job["notes"].append("구 Package 속성(Big/Medium/Small)으로 받은 사진 — 전환 창 주문, 계약 확인")
-        if not name:
-            job["notes"].append("이름 없음 — Name & Photo 는 이름 필수")
+        if not name and not no_name:
+            job["notes"].append("이름 없음 — No name 을 고르지 않았는데 이름이 비어 있음, 고객 확인")
         if not job["name_style"] and not any(n.startswith("이름 스타일") for n in job["notes"]):
             job["notes"].append("이름 스타일 없음 — 보드에서 고를 것")
     return job
+
+
+def print_count(job):
+    """같은 시트 인쇄 장수 = 수량 × (1 + Extra sheets). 수량을 모르면 1, 추가 장수가 엇갈리면(None) 0 으로 본다."""
+    return max(job.get("quantity") or 0, 1) * (1 + (job.get("extra_sheets") or 0))
 
 
 def job_label(job):
@@ -318,6 +358,16 @@ def job_label(job):
     if job["sticker_name"]:
         style = NAME_STYLE_LABELS.get(job.get("name_style") or "")
         bits.append("이름 '%s'%s" % (job["sticker_name"], (" · " + style) if style else ""))
+    elif job.get("name_style") == "none":
+        bits.append("이름 없음 (고객 선택 — 사진만)")
+    prints = print_count(job)
+    if prints > 1:
+        why = []
+        if (job.get("quantity") or 0) > 1:
+            why.append("수량 %d" % job["quantity"])
+        if job.get("extra_sheets"):
+            why.append("추가 +%d" % job["extra_sheets"])
+        bits.append("같은 시트 %d장 인쇄 (%s)" % (prints, " · ".join(why)))
     line = " · ".join(bits)
     return line + ("   ⚠ " + " / ".join(job["notes"]) if job["notes"] else "")
 
