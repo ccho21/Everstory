@@ -200,33 +200,37 @@ A. Photo sticker sheets are our focus right now. Calligraphy, name tags, and log
 
 ## Materials Guide (`/pages/materials-guide`)
 
-**Page title**: `Material Guide`
+**Page title**: `Materials Guide`
 **Handle**: `materials-guide`
+**Template**: `page.materials-guide` (section `everstory-material-guide` in `Shopify Theme/horizon`)
 
-We use four Korean premium substrates, all finished with LAMat-AF or Oraguard lamination. Pick the material that matches the surface and the use.
+Live since 2026-10-02. The copy is stored in the template settings (`templates/page.materials-guide.json`), not in the page body. The previous body text is still in the admin but no longer shown — it claimed top-rack dishwasher use, which conflicts with the FAQ.
 
-**WHITE MATTE** — Soft, paper-like finish with no shine. The classic photo sticker look — neutral, quiet, lets your image lead.
+- Eyebrow: `Materials, in real life`
+- H1: `Same photo. Four materials.`
+- Intro: `White Matte, Silver, Gold and Translucent each give a photograph a different feel. Compare the same portrait and lettering on four real samples, then see a whole sheet printed on each material.`
+- Toggles: `Portrait` / `Lettering` · `Side by side` / `Full photograph` · card button `Enlarge`
+- Sample cards, left to right in both photographs (order confirmed by the owner, 2026-10-02): `White Matte`, `Silver`, `Gold`, `Translucent`
+- Photo note: `The wood background stays in the photographs so you can compare how the surface shows through and how each sample catches the light. Colour and shine can vary with lighting, angle and screen.`
+- **The whole sheet** — intro: `The same sheet design on all four materials, photographed together and then one by one.` · caption: `All four together, left to right: Gold, Translucent, Silver, White Matte.` · single sheets labelled with the material printed in each sheet's header
+- Dialog note: `Colour and reflection can vary with your screen and viewing conditions.`
+- Product pages (both): `Compare materials ↗` under the material comparison image, opening this page in a new tab so Easify uploads are not lost (`es_compare_materials` block in `templates/product.json`)
+- Main menu: `Materials` after `Shop`
 
-Best for: diaries, planners, journals; indoor packaging, gift boxes; calendar marks, mood boards; anywhere you want the photo to read clearly without competing surface effects.
+No lifespan, waterproof or dishwasher claims on this page — those stay in the FAQ and the product accordions.
 
-**TRANSLUCENT** — Semi-clear finish that lets the surface show through. The subtle one of our four — the photo reads while the background stays visible.
+**Photos** (Shopify Files): the owner's iPhone photos, converted Display P3 → sRGB (relative colorimetric) and saved as lossless WebP at full size; originals stay in the photo library (`iCloud Photos-2`).
 
-Best for: glass, windows, mirrors; layered or overlay looks; light or clear surfaces where the surface should show through; outdoor packaging where weather matters; subtle, minimal placement.
+- Close-ups: `IMG_8382-shopify-srgb.webp` (portrait, 4032 × 3024) · `IMG_8363-shopify-srgb.webp` (lettering, 4284 × 2856 — the original with 1428 px of empty wood trimmed from the top)
+- Sheets: `materials-sheets-together-srgb.webp`, `materials-sheet-{white-matte,silver,gold,translucent}-srgb.webp` (1932 × 2576)
+- Crop windows, in upload-file pixels: portrait 648 × 756 at left/top 829/1107 · 1496/1073 · 2091/1027 · 2665/1007 (the stickers sit only ~110 px apart, so a wider window shows the neighbour); lettering 889 × 762 at 311 · 1174 · 2018 · 2901, top 1212. New photographs need new coordinates and a fresh left-to-right material check — never infer the material from colour.
 
-**SILVER** — Metallic silver substrate. Reflective, clean, modern.
-
-Best for: tumblers and water bottles where you want metallic accents; cool-toned photographs; logo or text stickers paired with photo sheets; gift packaging where you want shine.
-
-**GOLD** — Metallic gold substrate. Warm, luxurious, classic.
-
-Best for: special occasions; warm-toned photographs; tumblers and packaging; pet portraits.
-
-All four share the same spec: indoor lifespan 5+ years, outdoor lifespan 2-3 years, waterproof, dishwasher top rack only and occasional.
+**To revert**: set the page template back to `page` (restores the old body), remove the `Materials` menu item, delete the `es_compare_materials` block.
 
 **SEO**
 
-- Title: `Material Guide | Everstory Studio`
-- Description: `White Matte, Translucent, Silver, and Gold photo sticker materials from Everstory Studio.`
+- Title: `Materials Guide | Everstory Studio Photo Stickers`
+- Description: `Compare White Matte, Silver, Gold and Translucent photo stickers: the same portrait, lettering and whole sheet on each material, photographed on wood.`
 
 ## Contact (`/pages/contact`)
 
