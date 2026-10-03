@@ -208,14 +208,14 @@ Live since 2026-10-02. The copy is stored in the template settings (`templates/p
 
 - Eyebrow: `Materials, in real life`
 - H1: `Same photo. Four materials.`
-- Intro: `White Matte, Silver, Gold and Translucent each give a photograph a different feel. Compare the same portrait and lettering on four real samples, then see a whole sheet printed on each material.`
-- Toggles: `Portrait` / `Lettering` · `Side by side` / `Full photograph` · card button `Enlarge`
+- Intro: `White Matte, Silver, Gold and Translucent each give a photograph a different feel. Compare the same lettering and portrait on four real samples, then see a whole sheet printed on each material.`
+- Toggles: `Lettering` / `Portrait` (lettering shown first — its photograph reads best, owner 2026-10-02) · `Side by side` / `Full photograph` · card button `Enlarge`
 - Sample cards, left to right in both photographs (order confirmed by the owner, 2026-10-02): `White Matte`, `Silver`, `Gold`, `Translucent`
 - Photo note: `The wood background stays in the photographs so you can compare how the surface shows through and how each sample catches the light. Colour and shine can vary with lighting, angle and screen.`
 - **The whole sheet** — intro: `The same sheet design on all four materials, photographed together and then one by one.` · caption: `All four together, left to right: Gold, Translucent, Silver, White Matte.` · single sheets labelled with the material printed in each sheet's header
 - Dialog note: `Colour and reflection can vary with your screen and viewing conditions.`
 - Product pages (both): `Compare materials ↗` under the material comparison image, opening this page in a new tab so Easify uploads are not lost (`es_compare_materials` block in `templates/product.json`)
-- Main menu: `Materials` after `Shop`
+- Home page (`templates/index.json`, section `material_guide_home`, after How it works): the same close-ups only, H2, intro `White Matte, Silver, Gold and Translucent, side by side on real samples photographed on wood.`, link `See each material on a whole sheet` → this page. No Materials item in the main menu (owner, 2026-10-02).
 
 No lifespan, waterproof or dishwasher claims on this page — those stay in the FAQ and the product accordions.
 
@@ -225,7 +225,7 @@ No lifespan, waterproof or dishwasher claims on this page — those stay in the 
 - Sheets: `materials-sheets-together-srgb.webp`, `materials-sheet-{white-matte,silver,gold,translucent}-srgb.webp` (1932 × 2576)
 - Crop windows, in upload-file pixels: portrait 648 × 756 at left/top 829/1107 · 1496/1073 · 2091/1027 · 2665/1007 (the stickers sit only ~110 px apart, so a wider window shows the neighbour); lettering 889 × 762 at 311 · 1174 · 2018 · 2901, top 1212. New photographs need new coordinates and a fresh left-to-right material check — never infer the material from colour.
 
-**To revert**: set the page template back to `page` (restores the old body), remove the `Materials` menu item, delete the `es_compare_materials` block.
+**To revert**: set the page template back to `page` (restores the old body), remove the `material_guide_home` section from the home page, delete the `es_compare_materials` block.
 
 **SEO**
 
