@@ -207,30 +207,32 @@ A. Photo sticker sheets are our focus right now. Calligraphy, name tags, and log
 Live since 2026-10-02. The copy is stored in the template settings (`templates/page.materials-guide.json`), not in the page body. The previous body text is still in the admin but no longer shown — it claimed top-rack dishwasher use, which conflicts with the FAQ.
 
 - Eyebrow: `Materials, in real life`
-- H1: `Same photo. Four materials.`
-- Intro: `White Matte, Silver, Gold and Translucent each give a photograph a different feel. Compare the same lettering and portrait on four real samples, then see a whole sheet printed on each material.`
+- H1: `Four materials, side by side.` (was `Same photo. Four materials.` until 2026-10-13 — the new lettering samples each carry a different word)
+- Intro: `White Matte, Silver, Gold and Translucent each give a photograph a different feel. Compare lettering and a portrait on four real samples, then see a whole sheet printed on each material.`
 - Toggles: `Lettering` / `Portrait` (lettering shown first — its photograph reads best, owner 2026-10-02) · `Side by side` / `Full photograph` · card button `Enlarge`
-- Sample cards, left to right in both photographs (order confirmed by the owner, 2026-10-02): `White Matte`, `Silver`, `Gold`, `Translucent`
-- Photo note: `The wood background stays in the photographs so you can compare how the surface shows through and how each sample catches the light. Colour and shine can vary with lighting, angle and screen.`
+- Sample cards, left to right (order confirmed by the owner, 2026-10-02): `White Matte`, `Silver`, `Gold`, `Translucent`. Since 2026-10-13 each lettering card is its own photograph of a round sticker printed with its material name (owner: lettering only, portrait stays on wood)
+- Photo note: `Lettering samples are photographed on a plain background. Portraits stay on wood so you can compare how the surface shows through and how each sample catches the light. Colour and shine can vary with lighting, angle and screen.`
 - **The whole sheet** — intro: `The same sheet design on all four materials, photographed together and then one by one.` · caption: `All four together, left to right: Gold, Translucent, Silver, White Matte.` · single sheets labelled with the material printed in each sheet's header
 - Dialog note: `Colour and reflection can vary with your screen and viewing conditions.`
-- Product pages (both): `Compare materials ↗` under the material comparison image, opening this page in a new tab so Easify uploads are not lost (`es_compare_materials` block in `templates/product.json`)
-- Home page (`templates/index.json`, section `material_guide_home`, after How it works): the same close-ups only, H2, intro `White Matte, Silver, Gold and Translucent, side by side on real samples photographed on wood.`, link `See each material on a whole sheet` → this page. No Materials item in the main menu (owner, 2026-10-02).
+- Product pages (both): the material comparison image under the Material buttons is `materials-round-row.png` since 2026-10-13 (was `material_comparison.png`, still in Files) · `Compare materials ↗` under it, opening this page in a new tab so Easify uploads are not lost (`es_compare_materials` block in `templates/product.json`)
+- Home page (`templates/index.json`, section `material_guide_home`, after How it works): the same close-ups only, H2, intro `White Matte, Silver, Gold and Translucent on real samples: lettering on a plain background, portraits on wood.`, link `See each material on a whole sheet` → this page. No Materials item in the main menu (owner, 2026-10-02).
 
 No lifespan, waterproof or dishwasher claims on this page — those stay in the FAQ and the product accordions.
 
 **Photos** (Shopify Files): the owner's iPhone photos, converted Display P3 → sRGB (relative colorimetric) and saved as lossless WebP at full size; originals stay in the photo library (`iCloud Photos-2`).
 
-- Close-ups: `IMG_8382-shopify-srgb.webp` (portrait, 4032 × 3024) · `IMG_8363-shopify-srgb.webp` (lettering, 4284 × 2856 — the original with 1428 px of empty wood trimmed from the top)
+- Close-ups: `IMG_8382-shopify-srgb.webp` (portrait, 4032 × 3024) · `IMG_8363-shopify-srgb.webp` (lettering, 4284 × 2856 — the original with 1428 px of empty wood trimmed from the top; no longer shown since 2026-10-13, kept in Files)
+- Lettering since 2026-10-13: `materials-round-{white-matte,silver,gold,translucent}.png` (~1950 px square, one per sample block's `lettering_photo`) and `materials-round-row.png` (1984 × 497, the Full photograph). The owner's chat photos (2000 px WebP) with the transparent corners trimmed; sources in `상품사진/material_round/`
+- Custom Sticker Sheet gallery, image 4: `materials-round-grid.png` (2 × 2: White Matte, Silver / Gold, Translucent) since 2026-10-13, replacing `harin_materials_01.png` (still in Files)
 - Sheets: `materials-sheets-together-srgb.webp`, `materials-sheet-{white-matte,silver,gold,translucent}-srgb.webp` (1932 × 2576)
-- Crop windows, in upload-file pixels: portrait 648 × 756 at left/top 829/1107 · 1496/1073 · 2091/1027 · 2665/1007 (the stickers sit only ~110 px apart, so a wider window shows the neighbour); lettering 889 × 762 at 311 · 1174 · 2018 · 2901, top 1212. New photographs need new coordinates and a fresh left-to-right material check — never infer the material from colour.
+- Crop windows, in upload-file pixels: portrait 648 × 756 at left/top 829/1107 · 1496/1073 · 2091/1027 · 2665/1007 (the stickers sit only ~110 px apart, so a wider window shows the neighbour); lettering 889 × 762 at 311 · 1174 · 2018 · 2901, top 1212 (used only by samples without a `lettering_photo`). New photographs need new coordinates and a fresh left-to-right material check — never infer the material from colour.
 
 **To revert**: set the page template back to `page` (restores the old body), remove the `material_guide_home` section from the home page, delete the `es_compare_materials` block.
 
 **SEO**
 
 - Title: `Materials Guide | Everstory Studio Photo Stickers`
-- Description: `Compare White Matte, Silver, Gold and Translucent photo stickers: the same portrait, lettering and whole sheet on each material, photographed on wood.`
+- Description: `Compare White Matte, Silver, Gold and Translucent photo stickers: lettering, a portrait and a whole sheet on each material, photographed on real samples.` (since 2026-10-13)
 
 ## Contact (`/pages/contact`)
 
