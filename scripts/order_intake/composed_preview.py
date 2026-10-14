@@ -9,7 +9,7 @@
   02_cutout/<base>_sil.png            캔버스 크기 (PNG IHDR — range.jsx _pngAspect 와 같은 값)
   02_cutout/_cutcache/<base>.evcut    칼선 박스(info=) · 트레이스 서명(sig=) · 실루엣 지문(src=)
   02_cutout/_cutcache/<base>.evface   자동 판별 측정값(probe=) · 운영자가 확정한 종류(type=)
-  _order.json 의 job                  고객 이름 · 주문번호 · 재질 · 스티커 이름 · 이름 스타일
+  _order.json 의 job                  고객 이름 · 주문번호 · 재질 · 스티커 이름 · 이름 스타일 · Special Day 디자인·글자
 
 이름 글자·데코 그림은 저장소의 templates/art_preview/<라이브러리>/*.png 에서 읽는다 (이름 스타일마다 다른 라이브러리).
 쓰는 것은 썸네일 캐시(~/Library/Caches/EverstoryBoard) 뿐이다 — 주문 폴더에는 아무것도 쓰지 않는다.
@@ -25,6 +25,7 @@ import re
 import struct
 import subprocess
 import tempfile
+import threading
 import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -240,7 +241,8 @@ def order_prefill(folder):
     orderFrom = "job" | "folder" | "" — 화면이 어디서 채웠는지 알린다.
     """
     out = {"nameText": "", "orderNumber": "", "material": "", "stickerName": "", "nameStyle": "", "noName": False, "notes": [], "orderFrom": "",
-           "pack": None, "photosOrdered": None, "sheets": None, "quantity": None, "extraSheets": None, "options": []}
+           "pack": None, "photosOrdered": None, "sheets": None, "quantity": None, "extraSheets": None, "options": [],
+           "specialDay": None}
     doc = None
     try:
         with open(os.path.join(folder, "_order.json"), "r", encoding="utf-8") as f:
@@ -267,6 +269,15 @@ def order_prefill(folder):
     # `No name` 주문 (intake name_style "none", 2026-09-24) — 화면은 이름 필수 경고 대신 "사진만" 안내를 띄운다.
     out["noName"] = job.get("name_style") == "none"
     out["notes"] = [str(n) for n in (job.get("notes") or [])]
+    # Special Day 주문 (intake job.special_day, 2026-10-13) — 화면이 스크립트를 Special Day 로, 디자인·글자·사이즈를 주문대로 고른다.
+    # 디자인이 한 개로 안 좁혀진 주문(line item 마다 다름)은 넘기지 않는다 — 운영자가 고르고, 이유는 notes 에 있다.
+    sd = job.get("special_day")
+    if isinstance(sd, dict) and sd.get("design") in ("PHOTO", "RING"):
+        out["specialDay"] = {"design": "ring" if sd["design"] == "RING" else "photo",
+                             "message": str(sd.get("message") or "").strip(),
+                             "topLine": str(sd.get("top_line") or "").strip(),
+                             "bottomLine": str(sd.get("bottom_line") or "").strip(),
+                             "sizeMm": job.get("size_mm") if isinstance(job.get("size_mm"), (int, float)) else None}
     num, rest = order_from_folder(os.path.basename(folder))
     if not out["orderNumber"] and num:
         out["orderNumber"] = num
@@ -629,3 +640,561 @@ def _layouts(raw, most):
             raise ValueError("섞기 번호가 이상해요 (%s): %s" % (where, seed))
         out.append({"style": style, "namePos": pos, "mirror": mirror, "seed": seed})
     return out
+
+
+# ── 다른 스크립트 (Ring · Christmas · Special Day) ─────────────────────────────
+# 구성 화면 헤더의 '스크립트' 드롭다운. Composed 가 기본이고, 나머지는 화면 폼 값으로 대화창 없이 만든다.
+# Ring = 원형 배지 (2026-10-03). Label(빈티지 라벨)은 2026-10-13 사용자 결정으로 스크립트째 뺐다.
+# Christmas(xmas) = 크리스마스 디자인 — 1번 하트 (2026-10-06) · 2번 MERRY · 3번 오벌 · 사진 카드 A·C·D (10-07, B 오벌 액자는 10-13 뺐다).
+# Special Day(bday) = 생일 디자인 — 1번 하트 사진 (2026-10-07, 참고 IMG_3165) · 2번 원 사진 (10-10, 사용자 시안 #1),
+# 문구·서명·이름·작은 글씨는 고객이 쓴 그대로. 보드 이름만 Special Day (10-13) — 키 bday·Everstory_birthday.jsx 는 그대로.
+# 선택지·그리기 값은 각 .jsx 에서 그대로 읽는다 — 화면용 사본이 없으니 인덱스·치수가 어긋나지 않는다.
+SCRIPT_KEYS = ("ring", "xmas", "bday")
+
+
+def _jsx_strings(src, var):
+    m = re.search(r"var %s\s*=\s*\[(.*?)\];" % var, src, re.S)
+    return [re.sub(r"\\(.)", r"\1", x) for x in re.findall(r'"((?:[^"\\]|\\.)*)"', m.group(1))] if m else []
+
+
+def _jsx_number(src, var):
+    m = re.search(r"var %s\s*=\s*(-?\d+(?:\.\d+)?)\s*;" % var, src)
+    return float(m.group(1)) if m else None
+
+
+def _jsx_text(src, var):
+    m = re.search(r'var %s\s*=\s*"((?:[^"\\]|\\.)*)"\s*;' % var, src)
+    return m.group(1) if m else ""
+
+
+RING_LAYOUT_KEYS = ("RING", "STRIPE")    # ring.jsx LAYOUT_RING=0 · LAYOUT_STRIPE=1 (_layoutTag)
+
+
+def ring_choices(jsx_path):
+    """Everstory_ring.jsx 의 선택지 → 화면 폼 값 (자주 쓰는 것만 — 2026-10-03 사용자 결정).
+    안쪽 원·얼굴 %·정렬·칼선은 .jsx _consumePreset 이 대화창 기본값으로 채운다.
+    색 = 믹스 두 가지 또는 한 색 통일 (10-04) — 한 색이면 그 테마 팔레트에서 하나 (draw.themes[].palette)."""
+    with open(jsx_path, "r", encoding="utf-8") as f:
+        src = f.read()
+    themes = [{"label": lab, "top": top, "bottom": bot} for lab, top, bot in re.findall(
+        r'\{\s*label:\s*"([^"]+)",\s*tag:.*?topText:\s*"((?:[^"\\]|\\.)*)",\s*bottomText:\s*"((?:[^"\\]|\\.)*)"', src, re.S)]
+    m = re.search(r"var SIZE_MM\s*=\s*\[(.*?)\];", src)
+    cut = re.search(r"var CUT_MARGIN_VALUES\s*=\s*\[(.*?)\];", src)
+    cut_vals = [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", cut.group(1))] if cut else [0]
+    cut_mm = cut_vals[int(_jsx_number(src, "CUT_MARGIN_DEFAULT_INDEX") or 0)]
+    gap = _jsx_number(src, "GAP_DEFAULT_MM") or 0
+    return {
+        "themes": themes,
+        "themeDefault": int(_jsx_number(src, "THEME_DEFAULT") or 0),
+        "layouts": _jsx_strings(src, "LAYOUT_OPTIONS"),
+        "layoutKeys": list(RING_LAYOUT_KEYS),
+        "sizes": _jsx_strings(src, "SIZE_OPTIONS"),
+        "sizesMm": [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", m.group(1))] if m else [],
+        "sizeDefault": int(_jsx_number(src, "SIZE_DEFAULT") or 0),
+        "effects": jsx_table(src, "TEXT_EFFECTS"),     # 글자 효과 (링·스트라이프) — [{key, label}]
+        "effectDefault": _jsx_text(src, "TEXT_EFFECT_DEFAULT") or "none",   # 10-13 사용자: 기본 레트로
+        "colorModes": _jsx_strings(src, "COLOR_MODE_OPTIONS"),
+        "colorDefault": int(_jsx_number(src, "COLOR_MODE_DEFAULT") or 0),
+        "colorSingle": int(_jsx_number(src, "COLOR_SINGLE") or 2),
+        # 격자 어림 — .jsx _buildSheet: 블리드(음수 칼선)면 간격을 블리드 2배까지 벌린다
+        "padYmm": _jsx_number(src, "BODY_PADDING_Y_MM") or 0,
+        "gapMm": max(gap, 2 * max(0.0, -cut_mm)),
+        "draw": ring_draw(jsx_path),
+    }
+
+
+def xmas_choices(jsx_path):
+    """Everstory_xmas.jsx 의 선택지·그리기 값 → 화면 폼 + 미리보기 (하트 윤곽·얼굴 상자·이름 곡선·팔레트,
+    오벌 타원·링·글자 자리·아래 문구 원호 그대로). 디자인마다 기본 사이즈가 있다 (designs[].size = SIZE_MM 번호).
+    서체는 위에서부터 이 Mac 에 파일이 있는 것을 쓴다 (have) — .jsx _resolveFontList 와 같은 순서."""
+    with open(jsx_path, "r", encoding="utf-8") as f:
+        src = f.read()
+    m = re.search(r"var SIZE_MM\s*=\s*\[(.*?)\];", src)
+    fonts = jsx_table(src, "NAME_FONTS")
+    oval_script = jsx_table(src, "OVAL_SCRIPT_FONTS")
+    oval_fonts = jsx_table(src, "OVAL_FONTS")
+    card_script = jsx_table(src, "CARD_SCRIPT_FONTS")
+    card_caps = jsx_table(src, "CARD_CAPS_FONTS")
+    for ft in fonts + oval_script + oval_fonts + card_script + card_caps:
+        ft["have"] = bool(font_file(ft.get("ps")))
+    return {
+        "designs": jsx_table(src, "DESIGNS"),
+        "designDefault": int(_jsx_number(src, "DESIGN_DEFAULT") or 0),
+        "sizes": _jsx_strings(src, "SIZE_OPTIONS"),
+        "sizesMm": [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", m.group(1))] if m else [],
+        "sizeDefault": int(_jsx_number(src, "SIZE_DEFAULT") or 0),
+        "colorModes": _jsx_strings(src, "COLOR_MODE_OPTIONS"),
+        "colorDefault": int(_jsx_number(src, "COLOR_MODE_DEFAULT") or 0),
+        "borders": _jsx_strings(src, "BORDER_OPTIONS"),
+        "borderDefault": int(_jsx_number(src, "BORDER_DEFAULT") or 0),
+        # 오벌 아래 문구 틀 ({name} = 이름) — 보드 칸을 주문 이름으로 미리 채운다
+        "linePresets": _jsx_strings(src, "OVAL_LINE_PRESETS"),
+        "linePresetDefault": int(_jsx_number(src, "OVAL_LINE_PRESET_DEFAULT") or 0),
+        # 격자 — .jsx _buildSheet: 블리드면 간격을 블리드 2배까지 벌린다
+        "padYmm": _jsx_number(src, "BODY_PADDING_Y_MM") or 0,
+        "gapMm": _jsx_number(src, "GAP_DEFAULT_MM") or 0,
+        "draw": {
+            "heart": jsx_object(src, "HEART"),
+            "face": jsx_object(src, "FACE_BOX"),
+            "name": jsx_object(src, "NAME_ARC"),
+            "fonts": fonts,
+            "palette": jsx_table(src, "PALETTE"),
+            "borderMm": _jsx_number(src, "BORDER_MM") or 0,
+            "bleedMm": _jsx_number(src, "BLEED_MM") or 0,
+            "samples": int(_jsx_number(src, "OFFSET_SAMPLES") or 8),
+            "merry": _merry_draw(src),
+            "oval": {
+                "shape": jsx_object(src, "OVAL"),
+                "face": jsx_object(src, "OVAL_FACE"),
+                "merry": jsx_object(src, "OVAL_MERRY"),
+                "title": jsx_object(src, "OVAL_TITLE"),
+                "line": jsx_object(src, "OVAL_LINE"),
+                "colors": jsx_object(src, "OVAL_COLORS"),
+                "scriptFonts": oval_script,
+                "fonts": oval_fonts,
+            },
+            # 사진 카드 A·C·D (10-07) — 이름 서체는 MERRY 와 같다 (merry.fonts)
+            "cards": {
+                "CARD": jsx_object(src, "CARD"),
+                "SQUARE": jsx_object(src, "SQUARE"),
+                "DIECUT": jsx_object(src, "DIECUT"),
+                "band": jsx_object(src, "CARD_BAND"),
+                "colors": jsx_object(src, "CARD_COLORS"),
+                "scriptFonts": card_script,
+                "capsFonts": card_caps,
+            },
+        },
+    }
+
+
+def bday_choices(jsx_path):
+    """Everstory_birthday.jsx 의 선택지·그리기 값 → 화면 폼 + 미리보기 (스티커·제목·하트·사진 자리·문구·서명·빨간 하트
+    그대로). 기본 문구(BD_MSG_DEFAULT)로 칸을 미리 채운다. 서체는 위에서부터 이 Mac 에 파일이 있는 것 (have).
+    원 사진(CIRCLE, 2026-10-10)은 draw.circle — 이름·작은 글씨(일직선)·손그림 하트·원·문구 (BN_* 표 그대로)."""
+    with open(jsx_path, "r", encoding="utf-8") as f:
+        src = f.read()
+    m = re.search(r"var SIZE_MM\s*=\s*\[(.*?)\];", src)
+    title_fonts = jsx_table(src, "BD_TITLE_FONTS")
+    hand_fonts = jsx_table(src, "BD_HAND_FONTS")
+    circle_name_fonts = jsx_table(src, "BN_NAME_FONTS")
+    circle_hand_fonts = jsx_table(src, "BN_HAND_FONTS")
+    pop_title_fonts = jsx_table(src, "POP_TITLE_FONTS")
+    pop_hand_fonts = jsx_table(src, "POP_HAND_FONTS")
+    for ft in title_fonts + hand_fonts + circle_name_fonts + circle_hand_fonts + pop_title_fonts + pop_hand_fonts:
+        ft["have"] = bool(font_file(ft.get("ps")))
+    return {
+        "designs": jsx_table(src, "DESIGNS"),
+        "designDefault": int(_jsx_number(src, "DESIGN_DEFAULT") or 0),
+        "sizes": _jsx_strings(src, "SIZE_OPTIONS"),
+        "sizesMm": [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", m.group(1))] if m else [],
+        "sizeDefault": int(_jsx_number(src, "SIZE_DEFAULT") or 0),
+        "msgDefault": _jsx_strings(src, "BD_MSG_DEFAULT"),
+        # 원 사진 기본 글씨 — 작은 글씨 칸·문구 칸을 미리 채운다
+        "circleMsgDefault": _jsx_strings(src, "BN_MSG_DEFAULT"),
+        "subDefault": _jsx_text(src, "BN_SUB_DEFAULT"),
+        # 팝 사진 기본 문구 (한 줄 — 이름은 문구 뒤에 붙는다)
+        "popMsgDefault": _jsx_text(src, "POP_MSG_DEFAULT"),
+        "padYmm": _jsx_number(src, "BODY_PADDING_Y_MM") or 0,
+        "gapMm": _jsx_number(src, "GAP_DEFAULT_MM") or 0,
+        "draw": {
+            "sticker": jsx_object(src, "BD"),
+            "title": jsx_object(src, "BD_TITLE"),
+            "heartAt": jsx_object(src, "BD_HEART_AT"),
+            "heart": jsx_object(src, "BD_HEART"),
+            "face": jsx_object(src, "BD_FACE"),
+            "upper": jsx_object(src, "BD_UPPER"),
+            "msg": jsx_object(src, "BD_MSG"),
+            "sig": jsx_object(src, "BD_SIG"),
+            "mini": jsx_object(src, "BD_MINI"),
+            "colors": jsx_object(src, "BD_COLORS"),
+            "titleFonts": title_fonts,
+            "handFonts": hand_fonts,
+            "minPt": _jsx_number(src, "LEGIBILITY_MIN_PT") or 0,
+            "circle": {
+                "sticker": jsx_object(src, "BN"),
+                "name": jsx_object(src, "BN_NAME"),
+                "sub": jsx_object(src, "BN_SUB"),
+                "subHeart": jsx_object(src, "BN_SUB_HEART"),
+                "circle": jsx_object(src, "BN_CIRCLE"),
+                "face": jsx_object(src, "BN_FACE"),
+                "upper": jsx_object(src, "BN_UPPER"),
+                "msg": jsx_object(src, "BN_MSG"),
+                "mini": jsx_object(src, "BN_MINI"),
+                "doodle": jsx_object(src, "BN_DOODLE"),
+                "colors": jsx_object(src, "BN_COLORS"),
+                "nameFonts": circle_name_fonts,
+                "handFonts": circle_hand_fonts,
+            },
+            # 팝 사진 (2026-10-13) — 옵션 표(레이아웃·서체·색·모양)와 머리 밖으로 규칙 (POP_* 표 그대로)
+            "pop": {
+                "sticker": jsx_object(src, "POP"),
+                "layouts": jsx_table(src, "POP_LAYOUTS"),
+                "region": jsx_object(src, "POP_REGION"),
+                "titleFonts": pop_title_fonts,
+                "handFonts": pop_hand_fonts,
+                "colors": jsx_table(src, "POP_COLORS"),
+                "shapes": jsx_table(src, "POP_SHAPES"),
+                "puff": jsx_object(src, "POP_PUFF"),
+                "cloud": jsx_object(src, "POP_CLOUD"),
+                "geo": jsx_object(src, "POP_GEO"),
+                # 프레임 안 (팝 끔, 10-13 저녁) — 모양마다 머리·얼굴 상자 자리 (프레임 폭 단위)
+                "inside": jsx_table(src, "POP_INSIDE"),
+                "text": jsx_object(src, "POP_TEXT_COLORS"),
+                "msg": jsx_object(src, "POP_MSG"),
+                "defaults": jsx_object(src, "POP_DEFAULTS"),
+            },
+        },
+    }
+
+
+# ── Christmas MERRY 미리보기 그림 (2026-10-07) ──────────────────────────────
+# 매 장 같은 부분(레터링·리본·크림·흰 테두리)은 빌드 도구(scripts/art_library/build_xmas_merry.jsx)가 뽑은 그림 —
+# FRAME.png = 칼선 bbox 그대로 · HAT.png = 모자 · SHAPES.json = 칼선·크림 패스(칼선 bbox 왼쪽 위 기준 그림 단위)와 실측값.
+XMAS_MERRY_DIR = os.path.join(ART_DIR, "xmas_merry_v1")
+XMAS_ART_NAMES = ("FRAME", "HAT")
+
+
+def xmas_art_file(name, art_dir=None):
+    """MERRY 미리보기 그림 경로 (FRAME · HAT 만). 없으면 None."""
+    if name not in XMAS_ART_NAMES:
+        return None
+    path = os.path.join(art_dir or XMAS_MERRY_DIR, name + ".png")
+    return path if os.path.isfile(path) else None
+
+
+def _merry_draw(src):
+    """MERRY 그리기 값 — .jsx MERRY 표(얼굴·모자·이름 자리) + 빌드 그림(칼선·크림 패스, 그림 시각)."""
+    fonts = jsx_table(src, "MERRY_NAME_FONTS")
+    for ft in fonts:
+        ft["have"] = bool(font_file(ft.get("ps")))
+    shapes = None
+    try:
+        with open(os.path.join(XMAS_MERRY_DIR, "SHAPES.json"), "r", encoding="utf-8") as f:
+            shapes = json.load(f)
+    except (OSError, ValueError):
+        shapes = None
+    art = {}
+    for n in XMAS_ART_NAMES:
+        path = xmas_art_file(n)
+        if path:
+            art[n] = int(os.path.getmtime(path))
+    return {"table": jsx_object(src, "MERRY"), "fonts": fonts, "red": _jsx_text(src, "MERRY_RED"),
+            "shapes": shapes, "art": art}
+
+
+# ── 미리보기 서체 파일 (2026-10-06) ──────────────────────────────────────────
+# Christmas 이름 서체(Sofia Pro Soft)는 Adobe Fonts 라 브라우저가 못 본다 — Illustrator 가 쓰는 파일을
+# 이 Mac 에서 찾아 /api/composed/font 로 넘긴다 (미리보기 전용, 읽기만). PostScript 이름(name table ID 6)으로 맞춘다.
+FONT_DIRS = (
+    os.path.expanduser("~/Library/Fonts"),
+    "/Library/Fonts",
+    os.path.expanduser("~/Library/Application Support/Adobe/CoreSync/plugins/livetype/.w"),
+    os.path.expanduser("~/Library/Application Support/Adobe/CoreSync/plugins/livetype/.r"),
+    os.path.expanduser("~/Library/Application Support/Adobe/CoreSync/plugins/livetype/.t"),
+)
+_FONT_INDEX = {}
+_FONT_LOCK = threading.Lock()   # 보드 서버는 요청마다 스레드 — 처음 훑는 동안 다른 요청이 반만 찬 표를 읽지 않게
+
+
+def _ps_name(path):
+    """OTF/TTF 의 PostScript 이름 (name ID 6). 못 읽으면 None — 서체 모음(.ttc)은 건너뛴다."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(12)
+            if len(head) < 12 or head[:4] == b"ttcf":
+                return None
+            num = struct.unpack(">H", head[4:6])[0]
+            recs = f.read(16 * num)
+            for i in range(num):
+                tag, _, off, ln = struct.unpack(">4sIII", recs[16 * i:16 * i + 16])
+                if tag != b"name":
+                    continue
+                f.seek(off)
+                data = f.read(ln)
+                count, soff = struct.unpack(">HH", data[2:6])
+                for j in range(count):
+                    pid, _, _, nid, sl, so = struct.unpack(">HHHHHH", data[6 + 12 * j:18 + 12 * j])
+                    if nid == 6:
+                        raw = data[soff + so:soff + so + sl]
+                        return raw.decode("utf-16-be" if pid in (0, 3) else "latin-1", "ignore").strip()
+    except (OSError, struct.error):
+        return None
+    return None
+
+
+def font_file(ps):
+    """PostScript 이름 → 서체 파일 경로 (없으면 None). 처음 한 번 폴더를 훑어 기억한다."""
+    if not ps or not re.match(r"^[A-Za-z0-9._-]{1,80}$", ps):
+        return None
+    with _FONT_LOCK:
+        if not _FONT_INDEX:
+            for d in FONT_DIRS:
+                try:
+                    names = os.listdir(d)   # _listdir 는 점 파일을 빼는데 Adobe Fonts 파일은 전부 ".24536.otf" 꼴이다
+                except OSError:
+                    names = []
+                for n in names:
+                    if n.lower().endswith((".otf", ".ttf")):
+                        p = os.path.join(d, n)
+                        name = _ps_name(p)
+                        if name and name not in _FONT_INDEX:
+                            _FONT_INDEX[name] = p
+            _FONT_INDEX.setdefault("", "")   # 빈 폴더여도 다시 훑지 않게
+    return _FONT_INDEX.get(ps) or None
+
+
+def _index(body, key, n):
+    v = body.get(key)
+    if isinstance(v, bool) or not isinstance(v, int) or not 0 <= v < n:
+        raise ValueError("%s 값이 이상해요: %s" % (key, v))
+    return v
+
+
+RING_SHOT_TYPES = ("face", "upper", "full", "whole")
+
+
+def _ring_shot_types(raw, picked):
+    """화면이 보낸 사진별 종류 → 고른 사진만, 알려진 값만. 이상하면 ValueError."""
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise ValueError("사진 종류 형식이 이상해요.")
+    out = {}
+    for k, v in raw.items():
+        k = nfc(str(k))
+        if k not in picked:
+            continue
+        if v not in RING_SHOT_TYPES:
+            raise ValueError("알 수 없는 사진 종류예요: %s" % v)
+        out[k] = v
+    return out
+
+
+def _ring_effect(v, ring):
+    """글자 효과 키 — ring.jsx TEXT_EFFECTS 에 있는 것만. 없으면 기본 (TEXT_EFFECT_DEFAULT = 레트로)."""
+    if v is None or v == "":
+        return ring.get("effectDefault") or "none"
+    keys = [e.get("key") for e in ring.get("effects") or []]
+    if v not in keys:
+        raise ValueError("알 수 없는 글자 효과예요: %s" % v)
+    return v
+
+
+BDAY_LINE_MAX = 40     # 생일 문구 한 줄 최대 글자 수 (길면 .jsx 가 두 줄을 같이 줄인다)
+BDAY_SUB_MAX = 30      # 원 사진 작은 글씨 (SPECIAL DAY) 최대 글자 수 (길면 .jsx 가 줄인다)
+
+
+def build_script_launch(projects_dir, body, ring=None, xmas=None, bday=None):
+    """구성 화면에서 Ring·Christmas·Special Day 만들기 → (script, launch, extra globals, 한 줄 요약). 이상하면 ValueError.
+
+    Ring = $.global.__EVERSTORY_RING_OPTS__, Christmas = __EVERSTORY_XMAS_OPTS__, Special Day = __EVERSTORY_BDAY_OPTS__ 로
+    폼 값 → 대화창 없이 만든다. ring = ring_choices, xmas = xmas_choices, bday = bday_choices.
+    launch 는 경로 문자열이다 (.jsx _launchFolder).
+    사진은 이름(NFC)으로 보낸다 — .jsx 가 _clean.psd 이름을 같은 방식으로 풀어 맞춘다.
+    """
+    if not isinstance(body, dict):
+        raise ValueError("요청 형식이 이상해요.")
+    script = body.get("script")
+    if script not in SCRIPT_KEYS:
+        raise ValueError("알 수 없는 스크립트예요: %s" % script)
+    folder = resolve_folder(projects_dir, str(body.get("folder") or ""))
+    if not folder:
+        raise ValueError("주문 폴더를 못 찾았어요.")
+    cut = os.path.join(folder, "02_cutout")
+    have = set(nfc(b) for b, _, _ in list_pairs(cut))
+    bases = body.get("bases")
+    if not isinstance(bases, list) or not bases:
+        raise ValueError("사진을 한 장 이상 고르세요.")
+    picked = []
+    for b in bases:
+        key = nfc(str(b))
+        if key not in have:
+            raise ValueError("폴더에 없는 사진이에요: %s — 새로고침한 뒤 다시 해 주세요." % key)
+        if key not in picked:
+            picked.append(key)
+    if script == "ring":
+        if not ring:
+            raise ValueError("Ring 선택지를 못 읽었어요.")
+        layout = _index(body, "layoutIdx", len(ring["layouts"]))
+        top = _text(body, "topText", limit=60)
+        bottom = _text(body, "bottomText", limit=60)
+        stripe = ring["layoutKeys"][layout] == "STRIPE"
+        if stripe and not top:
+            raise ValueError("스트라이프는 윗줄이 필요해요 (아래는 사진이 덮어요).")
+        if not top and not bottom:
+            raise ValueError("윗줄·아랫줄 중 하나는 적어 주세요.")
+        upper = body.get("upper", True)
+        if not isinstance(upper, bool):
+            raise ValueError("대문자 값이 이상해요.")
+        theme = _index(body, "themeIdx", len(ring["themes"]))
+        color_mode = _index(body, "colorMode", len(ring["colorModes"])) if "colorMode" in body else ring["colorDefault"]
+        color_idx = 0
+        if color_mode == ring["colorSingle"]:
+            color_idx = _index(body, "colorIdx", len(ring["draw"]["themes"][theme]["palette"]))
+        opts = {
+            "photoNames": picked,
+            "themeIdx": theme,
+            "colorMode": color_mode,     # 믹스(칸마다·디자인마다) / 한 색 통일 — ring.jsx COLOR_MODE_OPTIONS
+            "colorIdx": color_idx,
+            "layout": layout,
+            "sizeMm": ring["sizesMm"][_index(body, "sizeIdx", len(ring["sizesMm"]))],
+            "topText": top,
+            "upper": upper,
+            "bottomText": "" if stripe else bottom,
+            # 사진 종류 (얼굴·상반신·전신) — 링·스트라이프에서 놓는 법이 다르다 (ring.jsx SHOT_FULL_CROP 주석)
+            "shotTypes": _ring_shot_types(body.get("shotTypes"), picked),
+            "textEffect": _ring_effect(body.get("textEffect"), ring),
+            "customerName": _text(body, "customerName", limit=60),
+            "orderDate": _text(body, "orderDate", limit=10),
+        }
+        summary = "Ring %s · 사진 %d장" % (ring["layoutKeys"][layout], len(picked))
+        return script, cut, {"__EVERSTORY_RING_OPTS__": opts}, summary
+    if script == "xmas":
+        if not xmas:
+            raise ValueError("Christmas 선택지를 못 읽었어요.")
+        design = xmas["designs"][_index(body, "designIdx", len(xmas["designs"]))]
+        oval = design.get("key") == "OVAL"
+        name = _text(body, "name", limit=24)
+        line = _text(body, "line", limit=60) if oval else ""   # 오벌 아래 문구 (원호 — 길면 .jsx 가 자간 → 크기로 줄인다)
+        if oval and not line:
+            raise ValueError("오벌 아래 문구를 적어 주세요.")
+        if not oval and not name:
+            raise ValueError("스티커에 들어갈 이름을 적어 주세요.")
+        opts = {
+            "photoNames": picked,
+            "design": design.get("key"),
+            "name": name,
+            "line": line,
+            "sizeMm": xmas["sizesMm"][_index(body, "sizeIdx", len(xmas["sizesMm"]))],
+            "colorMode": _index(body, "colorMode", len(xmas["colorModes"])),
+            "border": _index(body, "borderIdx", len(xmas["borders"])),
+            # 사진 종류 — 하트·오벌은 얼굴 누끼용. 다른 종류면 .jsx 완료 창이 알린다
+            "shotTypes": _ring_shot_types(body.get("shotTypes"), picked),
+            "customerName": _text(body, "customerName", limit=60),
+            "orderDate": _text(body, "orderDate", limit=10),
+        }
+        summary = "Christmas %s · 사진 %d장" % (opts["design"], len(picked))
+        return script, cut, {"__EVERSTORY_XMAS_OPTS__": opts}, summary
+    if script == "bday":
+        if not bday:
+            raise ValueError("Special Day 선택지를 못 읽었어요.")
+        design = bday["designs"][_index(body, "designIdx", len(bday["designs"]))]
+        circle = design.get("key") == "CIRCLE"
+        pop = design.get("key") == "POP"
+        line1 = _text(body, "line1", limit=BDAY_LINE_MAX)
+        line2 = "" if pop else _text(body, "line2", limit=BDAY_LINE_MAX)   # 팝 사진은 한 줄 (문구 – 이름)
+        if pop and not line1:
+            raise ValueError("문구를 적어 주세요 (이름은 문구 뒤에 붙어요).")
+        if not line1 and not line2:
+            raise ValueError("문구를 한 줄 이상 적어 주세요.")
+        name = _text(body, "name", limit=24)     # 하트 = 서명 "– 이름 –" (비우면 서명 없음) · 원 사진 = 위 큰 이름 (필수)
+        if circle and not name:
+            raise ValueError("원 사진 디자인에 들어갈 이름을 적어 주세요.")
+        opts = {
+            "photoNames": picked,
+            "design": design.get("key"),
+            "line1": line1,
+            "line2": line2,
+            "name": name,
+            "sizeMm": bday["sizesMm"][_index(body, "sizeIdx", len(bday["sizesMm"]))],
+            # 사진 종류 — 윗몸·전신이면 머리 크기 맞춤 + 몸은 하트(원)가 자른다, 얼굴이면 얼굴 상자 (.jsx _composeHeartAt·_composeCircleAt)
+            "shotTypes": _ring_shot_types(body.get("shotTypes"), picked),
+            "customerName": _text(body, "customerName", limit=60),
+            "orderDate": _text(body, "orderDate", limit=10),
+        }
+        if circle:
+            opts["sub"] = _text(body, "sub", limit=BDAY_SUB_MAX)   # 작은 글씨 (SPECIAL DAY) — 비우면 양옆 하트와 같이 없음
+        if pop:
+            # 옵션은 키로 넘긴다 (.jsx _consumePreset 이 키로 찾는다) — 레이아웃 · 제목 서체 · 문구 서체 · 프레임 색 · 모양
+            P = bday["draw"]["pop"]
+            for field, table in (("popLayout", "layouts"), ("popTitle", "titleFonts"), ("popHand", "handFonts"),
+                                 ("popColor", "colors"), ("popShape", "shapes")):
+                opts[field] = P[table][_index(body, field, len(P[table]))]["key"]
+            # 사진 — True = 팝(머리가 프레임 밖으로) · False = 프레임 안. 없으면 .jsx 기본 (POP_DEFAULTS.popOut)
+            pop_out = body.get("popOut", P["defaults"].get("popOut", True))
+            if not isinstance(pop_out, bool):
+                raise ValueError("팝 여부(popOut)는 true/false 여야 해요.")
+            opts["popOut"] = pop_out
+        summary = "Special Day %s · 사진 %d장" % (opts["design"], len(picked))
+        return script, cut, {"__EVERSTORY_BDAY_OPTS__": opts}, summary
+
+
+# ── 미리보기 그리기용 값 (2026-10-03) ─────────────────────────────────────────
+# 구성 화면이 Ring·Christmas·Special Day 결과를 브라우저 SVG 로 그린다 — 치수·색·글자 아치를 .jsx 표에서 그대로 읽어
+# 미리보기 사본이 따로 놀지 않게 한다. 표 모양({ key: 값, ... } 배열·객체)만 읽는 작은 파서.
+_JS_VAL = r'"(?:[^"\\]|\\.)*"|-?\d+(?:\.\d+)?|\[[^\]]*\]|[A-Za-z_]\w*'
+
+
+def _js_value(v):
+    v = v.strip()
+    if v.startswith('"'):
+        return re.sub(r"\\(.)", r"\1", v[1:-1])
+    if v.startswith("["):
+        return [_js_value(x) for x in re.findall(_JS_VAL, v[1:-1])]
+    if re.match(r"^-?\d", v):
+        return float(v)
+    return {"true": True, "false": False, "null": None}.get(v, {"ref": v})
+
+
+def _strip_comments(src):
+    return re.sub(r"//[^\n]*", "", src)
+
+
+def _js_pairs(body):
+    return {k: _js_value(v) for k, v in re.findall(r"(\w+)\s*:\s*(%s)" % _JS_VAL, body)}
+
+
+def jsx_table(src, var):
+    """var NAME = [ { k: v, ... }, ... ]; → [dict] (중첩 없는 객체 배열)."""
+    m = re.search(r"var %s\s*=\s*\[(.*?)\n  \];" % var, src, re.S)
+    if not m:
+        return []
+    return [_js_pairs(b) for b in re.findall(r"\{([^{}]*)\}", _strip_comments(m.group(1)))]
+
+
+def jsx_object(src, var):
+    """var NAME = { k: v, ... }; → dict."""
+    m = re.search(r"var %s\s*=\s*\{(.*?)\}\s*;" % var, src, re.S)   # 한 줄·여러 줄 모두 (안에 중괄호 없는 표만)
+    return _js_pairs(_strip_comments(m.group(1))) if m else {}
+
+
+def jsx_numbers(src, names):
+    out = {}
+    for n in names:
+        v = _jsx_number(src, n)
+        if v is not None:
+            out[n] = v
+    return out
+
+
+def ring_draw(jsx_path):
+    """Ring 미리보기 그리기 값 — 테마(팔레트 hex)·서체·비율 상수."""
+    with open(jsx_path, "r", encoding="utf-8") as f:
+        src = f.read()
+    themes = []
+    for t in jsx_table(src, "THEMES"):
+        pal = t.get("palette")
+        if isinstance(pal, dict) and "ref" in pal:
+            t["palette"] = jsx_table(src, pal["ref"])
+        themes.append(t)
+    nums = ("PHOTO_RATIO", "RING_FONT_RATIO", "STRIPE_FONT_RATIO", "CAP_HEIGHT_RATIO", "TOP_SPAN_DEG", "BOTTOM_SPAN_DEG",
+            "RING_TRACKING", "HALO_RATIO", "FIT_MARGIN", "MIN_H_SCALE", "DEF_SUBJECT_PCT", "STRIPE_SUBJECT_PCT",
+            "DEF_Y_BIAS_PCT", "STRIPE_Y_BIAS_PCT", "SUBJECT_BLEED", "STRIPE_TEXT_EDGE",
+            "SHOT_FLAT_FILL", "SHOT_FULL_CROP", "EFFECT_OFFSET", "EFFECT_SHADOW_MIX", "EFFECT_RETRO_STROKE")
+    out = jsx_numbers(src, nums)
+    out["STRIPE_W_RATIO"] = 1 / 21.0 if re.search(r"var STRIPE_W_RATIO\s*=\s*1\s*/\s*21", src) else (
+        _jsx_number(src, "STRIPE_W_RATIO") or 1 / 21.0)
+    cut = re.search(r"var CUT_MARGIN_VALUES\s*=\s*\[(.*?)\];", src)
+    cut_vals = [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", cut.group(1))] if cut else [0]
+    return {
+        "themes": themes,
+        "layoutType": jsx_table(src, "LAYOUT_TYPE"),
+        "discHex": [None if x in ("null", None) else x for x in
+                    [_js_value(v) for v in re.findall(_JS_VAL, (re.search(r"var DISC_HEX\s*=\s*\[(.*?)\];", src) or re.match("()", "")).group(1))]],
+        "discDefault": int(_jsx_number(src, "DISC_DEFAULT") or 0),
+        "stripeBase": _jsx_text(src, "STRIPE_BASE_HEX") or "FFFFFF",
+        "haloHex": _jsx_text(src, "HALO_HEX") or "FFFFFF",
+        "retroFill": _jsx_text(src, "EFFECT_RETRO_FILL") or "FFF6E8",
+        "bleedMm": max(0.0, -cut_vals[int(_jsx_number(src, "CUT_MARGIN_DEFAULT_INDEX") or 0)]),
+        "nums": out,
+    }

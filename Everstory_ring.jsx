@@ -65,9 +65,10 @@
   // ── 사이즈 ────────────────────────────────────────────────────
   // 링 텍스트가 읽히는 하한이 1.5" 다. 1.25" 이하는 글자 높이가 2mm 미만이라
   // ET-8550 에서 뭉갠다 — 의도적으로 열지 않는다.
-  var SIZE_OPTIONS = ["1.5\" / 38mm", "2\" / 51mm  (기본)", "2.5\" / 64mm"];
-  var SIZE_MM      = [38.1, 50.8, 63.5];
-  var SIZE_DEFAULT = 1;
+  // 1.75" 는 2026-10-13 사용자 요청으로 추가 (1.5" 12장과 2" 6장 사이 — 9장).
+  var SIZE_OPTIONS = ["1.5\" / 38mm", "1.75\" / 44mm", "2\" / 51mm  (기본)", "2.5\" / 64mm"];
+  var SIZE_MM      = [38.1, 44.45, 50.8, 63.5];
+  var SIZE_DEFAULT = 2;
 
   // ── 레이아웃 ─────────────────────────────────────────────────
   var LAYOUT_RING   = 0;
@@ -86,6 +87,8 @@
   // ── 링 기하 (레퍼런스 실측 비율) ──────────────────────────────
   var PHOTO_RATIO      = 0.72;   // 안쪽 사진 원 지름 / 바깥 원 지름
   var RING_FONT_RATIO  = 0.095;  // 글자 크기 / 바깥 지름
+  // 스트라이프는 따로 — Barlow Semi Condensed 는 폭이 좁아 같은 크기면 글자가 작아 보인다 (2026-10-03 사용자 "조금 더 키워볼까")
+  var STRIPE_FONT_RATIO = 0.112;
   var CAP_HEIGHT_RATIO = 0.72;   // 글자 크기 → 대문자 높이 근사 (밴드 세로 중앙 정렬용)
   var TOP_SPAN_DEG     = 210;    // 위 아치가 도는 각도
   var BOTTOM_SPAN_DEG  = 120;    // 아래 아치가 도는 각도
@@ -96,6 +99,24 @@
   // 0.09 보다 키우면 자간(0.04em)보다 두꺼워져 옆 글자 헤일로와 붙는다.
   var HALO_HEX   = "FFFFFF";
   var HALO_RATIO = 0.09;
+
+  // ── 글자 효과 (링·스트라이프 공통, 10-04 사용자 "스트라이프에도 똑같이") ─────────
+  // 스트라이프는 흰 테두리(헤일로)를 맨 뒤에 깔고 그 위에 효과 카피 → 본체 순서 (_addArcText).
+  // 2026-10-03 사용자 시안 A·D. 둘 다 같은 글자를 뒤에 한 벌 더 까는 방식이라 벡터 그대로 선명하게 인쇄된다.
+  //   shadow = 짧은 그림자: 글자색과 링 색 사이 톤으로 오른쪽 아래에 한 벌
+  //   retro  = 레트로 오프셋: 크림 글자 + 글자색 외곽선 + 같은 색 그림자 (외곽선은 뒤 카피에 줘서 글자를 깎지 않는다)
+  // 실제 크기(2" 글자 4~5mm)에서 retro 외곽선이 a·e·0 속을 메우는지는 출력으로 확인할 것.
+  // 캘리그래피(윗줄 Pacifico 손글씨, 10-04)는 2026-10-13 사용자 결정으로 뺐다. 기본 = 레트로 (10-13 사용자).
+  var TEXT_EFFECTS = [
+    { key: "none",   label: "없음" },
+    { key: "shadow", label: "그림자" },
+    { key: "retro",  label: "레트로" }
+  ];
+  var TEXT_EFFECT_DEFAULT = "retro";   // 대화창 · 주문 보드 · OPTS 에 값이 없을 때
+  var EFFECT_OFFSET = 0.07;      // 그림자 거리 / 글자 크기 (오른쪽·아래로 같은 만큼)
+  var EFFECT_SHADOW_MIX = 0.50;  // 그림자 색 = 글자색에서 링 색 쪽으로 이만큼 (2026-10-13 사용자 "짙다" → 0.45 에서 글자색 비중 10% 줄임)
+  var EFFECT_RETRO_FILL = "FFF6E8";
+  var EFFECT_RETRO_STROKE = 0.16;  // 외곽선 굵기 / 글자 크기 (뒤 카피라 바깥 절반만 보인다)
   var FIT_MARGIN       = 0.94;   // 아치 길이 대비 글자가 차지해도 되는 비율
   var MIN_H_SCALE      = 85;     // 여기까지는 장평으로 줄이고, 그 아래는 폰트 크기를 줄인다
   var LEGIBILITY_MIN_PT = 5;     // 이보다 작아지면 경고
@@ -117,10 +138,23 @@
   var ALIGN_OPTIONS = ["가운데", "아래 맞춤 (원 하단에서 잘림)"];
   var ALIGN_CENTER = 0, ALIGN_BOTTOM = 1;
   var SUBJECT_BLEED = 0.02;    // 아래 맞춤일 때 피사체 바닥을 원 바닥보다 살짝 아래로
-  // 눈더미 — 사진창 반지름 대비 능선 높이(음수 = 중심 아래). −0.78 은 얼굴 누끼의
-  // 턱을 덮지 않는 선이다. 올리면(예 −0.60) 눈은 두꺼워지지만 턱을 먹는다.
-  var SNOW_CREST = -0.78;
-  var SNOW_HEX   = "FFFFFF";
+  // 사진 종류마다 놓는 법 — 링·스트라이프 공통 (2026-10-03 사용자 결정, 링은 "링 배지도 똑같이"):
+  //   얼굴   → 링 사진 창 크기(PHOTO_RATIO)로 정가운데 — 둘레 여백 균일, 세로 보정 없음 (2026-10-03 사용자
+  //            "얼굴은 항상 정가운데" — DEF_Y_BIAS_PCT −4 는 종류를 모를 때 대화창 기본값으로만 남는다). 크게 키우면 턱이 잘린다
+  //   상반신 → 아래 맞춤으로 크게 (STRIPE_SUBJECT_PCT·STRIPE_Y_BIAS_PCT). 링은 사진 창 바닥, 스트라이프는 원 바닥에서 잘린다
+  //   전신   → 상반신과 같이 아래 맞춤 + 발 쪽을 피사체 높이의 SHOT_FULL_CROP 만큼 내려 조금 잘라 크게
+  //   통사진 → 원·사각으로 꽉 찬 사진(원 디자인·배경 있는 사진). 링 창에 꽉 차게(cover) 정확히 가운데, 세로 보정 없음.
+  //            얼굴 −4% 보정을 원 디자인에 주면 가운데가 어긋나 보인다 (2026-10-03 사용자 "가운데 위치하지 않는데").
+  //            스트라이프도 링 창 크기 원으로 잘라 가운데 — 사각 사진이 줄무늬 위로 삐져나오지 않게
+  //   모름   → 대화창 값 그대로 (링 = 가운데, 스트라이프 = 아래 맞춤)
+  // 종류 = OPTS.shotTypes(주문 보드 구성 화면 — 카드에서 고침) > 파일명 표시(SML·MED·BIG, range.jsx 와 같은 표) > 모름.
+  var SHOT_FULL_CROP = 0.08;
+  var SHOT_NAME_TOKEN_RE = /_(BIG|MED|SML|XXL|XL|XS|S|M|L)$/i;
+  var SHOT_NAME_TYPES = { SML: "face", XS: "face", S: "face", MED: "upper", M: "upper", L: "upper",
+                            BIG: "full", XL: "full", XXL: "full" };
+  // 표시가 없을 때 화면이 _sil 로 어림하는 값 — 긴 변 480px 로 줄인 _sil 의 맨 아래 2px 위 한 줄이 피사체 폭을
+  // 이만큼 채우면 아래가 일자로 잘린 상반신, 아니면 얼굴 (하린 49장 실측: 일자 컷 ≥0.30, 얼굴 ≤0.22).
+  var SHOT_FLAT_FILL = 0.27;
 
   // ── 칼선 (2026-08-27 개편 — 흰 테두리 방식 폐기) ──────────────
   // 셀 = D, 칼선 = D 로 고정하고 배경만 늘린다.
@@ -151,36 +185,21 @@
     { name: "aqua",       bg: "A9DDDA", ink: "1F7370" }
   ];
 
-  // 홀리데이 — 레트로와 같은 채도를 유지하고 색상만 옮겼다. 채도를 올려 정통
-  // 레드·그린으로 가면 사진이 배경에 눌린다 (사진이 주인공인 상품이다).
-  // 빨강 → 초록 → 뉴트럴 순으로 번갈아 배열해야 한 시트가 크리스마스로 읽힌다.
-  var PALETTE_HOLIDAY = [
-    { name: "cranberry",   bg: "E8A9AE", ink: "A32B3E" },
-    { name: "spruce",      bg: "A8C6AE", ink: "2E6A44" },
-    { name: "cream oat",   bg: "F2E4C9", ink: "A5642B" },
-    { name: "candy red",   bg: "F2B0A6", ink: "C0362C" },
-    { name: "sage",        bg: "C6D6B4", ink: "52713A" },
-    { name: "ice blue",    bg: "B9D3E6", ink: "2F5E86" },
-    { name: "mulled wine", bg: "D9AEBE", ink: "8A3557" },
-    { name: "pine",        bg: "9FBFB4", ink: "26635A" },
-    { name: "gold",        bg: "EFD49B", ink: "A87B24" }
-  ];
-
   // ── 테마 ─────────────────────────────────────────────────────
-  // 팔레트 + 줄무늬 각도 + 눈더미 + 기본 문구를 한 묶음으로 고른다.
+  // 팔레트 + 기본 문구를 한 묶음으로 고른다. tag 는 저장 파일 이름 앞에 붙는다.
   // 따로 쪼개면 다이얼로그 항목만 늘고 조합 대부분이 무의미해서 묶었다.
-  // 다음 시즌(할로윈 등)은 이 표에 한 줄 추가하면 된다.
+  // 다음 시즌(할로윈 등)은 이 표에 한 줄 추가하면 된다 — 테마가 둘 이상일 때만 대화창·주문 보드에 테마 칸이 보인다.
+  // 크리스마스 테마(홀리데이 9색 · 45° 줄무늬 · 사진 아래 눈더미)는 2026-10-13 사용자 결정으로 뺐다.
   var THEMES = [
     { label: "레트로 파스텔 (생일)", tag: "",     palette: PALETTE_RETRO,
-      stripeAngle: 0,  snow: false,
-      topText: "OLIVIA'S 21ST BIRTHDAY",    bottomText: "Est. 2004" },
-    { label: "크리스마스",           tag: "XMAS", palette: PALETTE_HOLIDAY,
-      stripeAngle: 45, snow: true,
-      topText: "OLIVIA'S FIRST CHRISTMAS",  bottomText: "2026" }
+      topText: "OLIVIA'S 21ST BIRTHDAY",    bottomText: "Est. 2004" }
   ];
   var THEME_DEFAULT = 0;
 
-  var COLOR_MODE_OPTIONS = ["슬롯마다 순환 (레퍼런스)", "디자인마다 고정"];
+  // 색 — 믹스(팔레트를 돌려 쓴다) 또는 한 색 통일 (2026-10-04 사용자: 모든 테마·레이아웃에서 고를 수 있게).
+  // 한 색이면 OPTS.colorIdx / 대화창 '색' 드롭다운으로 팔레트 안의 색 하나를 고른다.
+  var COLOR_MODE_OPTIONS = ["믹스 — 칸마다 순환 (레퍼런스)", "믹스 — 디자인마다 고정", "한 색으로 통일"];
+  var COLOR_SINGLE = 2;
   var COLOR_MODE_DEFAULT = 0;
 
   // ── 안쪽 원 배경 ──────────────────────────────────────────────
@@ -192,11 +211,13 @@
   // ── 서체 · 흰 테두리 (레이아웃 고정 — 운영자 선택 항목 아님) ──
   // 2026-08-27 사용자 지정. 링은 얇은 Medium 에 테두리 없이 깔끔하게,
   // 스트라이프는 줄무늬 위에서 읽혀야 하니 굵은 ExtraBold + 흰 테두리.
-  // 설치 확인: ~/Library/Fonts 에 Fredoka-Medium.ttf, Baloo2-ExtraBold.ttf.
+  // 스트라이프 서체 2026-10-03 Baloo 2 → Barlow Semi Condensed ExtraBold (사용자 — 폭이 좁고 단정해 긴 문구에 좋다).
+  // 설치 확인: ~/Library/Fonts 에 Fredoka-Medium.ttf, Baloo2-ExtraBold.ttf, BarlowSemiCondensed-ExtraBold.ttf
+  // (Google Fonts OFL). Illustrator 는 켤 때만 서체를 읽는다 — 새로 깔았으면 다시 켤 것.
   // cands 의 첫 항목이 없으면 다음으로 폴백한다. 인덱스 = LAYOUT_RING / LAYOUT_STRIPE.
   var LAYOUT_TYPE = [
     { name: "Fredoka Medium",    cands: ["Fredoka-Medium", "Fredoka-SemiBold", "Fredoka-Bold"], halo: false },
-    { name: "Baloo 2 ExtraBold", cands: ["Baloo2-ExtraBold", "Baloo2-Bold"],                    halo: true }
+    { name: "Barlow Semi Condensed ExtraBold", cands: ["BarlowSemiCondensed-ExtraBold", "Baloo2-ExtraBold", "Baloo2-Bold"], halo: true }
   ];
 
 
@@ -204,6 +225,10 @@
   // ═══════════════════════════════════════════════════════
   //  MAIN
   // ═══════════════════════════════════════════════════════
+  var QUIET = false;   // 주입 실행(테스트)이면 완료 창 대신 결과를 전역에 담는다
+  var GUARDED = false; // 만드는 동안 Illustrator 경고 창을 꺼 둔 상태 — 완료 창은 켠 뒤에 띄운다
+  var PENDING = "";
+
   var folder = _launchFolder() ||
     Folder.selectDialog("02_cutout 폴더 선택 (_clean.psd + _sil.png 페어)");
   if (!folder) return;
@@ -216,6 +241,12 @@
 
   var opt = _showDialog(pairs, folder);
   if (!opt) return;
+
+  // Illustrator 자체 경고 창(색상 프로파일 등)이 뜨면 자동 실행이 통째로 멈춘다.
+  // 실측 2026-10-03: 크리스마스 테마 화면 실행이 매번 경고 창에서 7분 넘게 멈췄고, 끄면 7초에 끝났다.
+  // 입력 검증이 아니라 자동화가 멈추지 않게 하는 장치 — 끝나면 원래대로 되돌리고 완료 창을 띄운다.
+  var prevUIL = null;
+  try { prevUIL = app.userInteractionLevel; app.userInteractionLevel = UserInteractionLevel.DONTDISPLAYALERTS; GUARDED = true; } catch (eUI) {}
 
   // 선택 페어별 _sil 트레이스 (피사체 실제 bbox: 바닥 + 가로중심)
   var noSil = 0;
@@ -230,8 +261,12 @@
   try {
     _buildSheet(opt, folder, noSil);
   } catch (e) {
-    alert("실패: " + ((e && e.message) ? e.message : String(e)) +
+    _report("실패: " + ((e && e.message) ? e.message : String(e)) +
           (e && e.line ? ("  (line " + e.line + ")") : ""));
+  } finally {
+    if (prevUIL !== null) { try { app.userInteractionLevel = prevUIL; } catch (eR) {} }
+    GUARDED = false;
+    if (PENDING) _report(PENDING);
   }
 
 
@@ -296,7 +331,7 @@
     var placed = 0, failed = 0, minFontPt = 1e9;
     for (var i = 0; i < cells.length; i++) {
       var pair = sel[i % sel.length];                // 슬롯 round-robin
-      var swatch = _swatchFor(theme.palette, opt.colorMode, i, i % sel.length);
+      var swatch = _swatchFor(theme.palette, opt.colorMode, i, i % sel.length, opt.colorIdx);
       var ccx = bL + padX + cells[i].x + D / 2;
       var ccy = bT - padY - cells[i].y - D / 2;
       try {
@@ -333,10 +368,9 @@
     var rows = (cols > 0) ? Math.round(cells.length / cols) : 0;
     if (minFontPt > 1e8) minFontPt = 0;
 
-    alert(
+    _report(
       "완료: " + _layoutName(opt.layout) + " 시트\n\n" +
-      "테마: " + theme.label + (theme.snow ? " + 눈더미" : "") +
-        (theme.stripeAngle ? ("  /  줄무늬 " + theme.stripeAngle + "°") : "") + "\n" +
+      "테마: " + theme.label + "\n" +
       "레이아웃: " + _layoutName(opt.layout) + "  /  세로 정렬: " + ALIGN_OPTIONS[opt.alignMode] + "\n" +
       "사이즈: " + opt.sizeMm + "mm (" + _sizeTag(opt.sizeMm) + ")  /  칼선: " + opt.cutMarginMm +
         "mm  /  얼굴 " + opt.subjectPct + "%  /  세로 " + opt.yBiasPct + "%\n" +
@@ -344,7 +378,9 @@
       "아래: " + (opt.bottomText || "—") + "\n" +
       "서체: " + LAYOUT_TYPE[opt.layout].name +
         "  /  글자 " + minFontPt.toFixed(1) + "pt" + (LAYOUT_TYPE[opt.layout].halo ? " + 흰 테두리" : "") +
-        "  /  색: " + COLOR_MODE_OPTIONS[opt.colorMode] + "\n" +
+        "  /  색: " + COLOR_MODE_OPTIONS[opt.colorMode] +
+        (opt.colorMode === COLOR_SINGLE ? (" (" + theme.palette[(opt.colorIdx || 0) % theme.palette.length].name + ")") : "") +
+        "  /  글자 효과: " + _effectLabel(opt) + "\n" +
       "격자: " + cols + "×" + rows + " = " + cells.length + " 슬롯  /  선택 디자인 " + sel.length + "개\n" +
       "배치: " + placed + "개" + (failed > 0 ? ("  (실패 " + failed + ")") : "") + "\n" +
       (noSil > 0 ? ("⚠ _sil 없는 디자인 " + noSil + "개 — 이미지 전체를 피사체로 간주(여백 생길 수 있음)\n") : "") +
@@ -358,7 +394,8 @@
   }
 
   // 팔레트 선택. 중첩 삼항 금지 규약대로 if/else.
-  function _swatchFor(palette, colorMode, slotIdx, designIdx) {
+  function _swatchFor(palette, colorMode, slotIdx, designIdx, colorIdx) {
+    if (colorMode === COLOR_SINGLE) return palette[(colorIdx || 0) % palette.length];
     if (colorMode === 1) return palette[designIdx % palette.length];
     return palette[slotIdx % palette.length];
   }
@@ -394,7 +431,6 @@
   function _composeBadgeAt(doc, printLayer, kissLayer, cutSpot, pair, opt, swatch, cx, cy, D) {
     // 블리드 — 배경만 칼선 밖으로 나간다. 디자인(사진·글자) 치수는 D 기준 그대로라
     // 블리드를 켜고 꺼도 구도가 안 변한다.
-    var theme = THEMES[opt.themeIdx] || THEMES[0];
     var bleed = -opt.cutMarginMm * MM_TO_PT;
     if (bleed < 0) bleed = 0;
     var dArt   = D;                       // 디자인 = 칼선 지름
@@ -403,17 +439,32 @@
     var rBg    = dBg / 2;
     var isStripe = (opt.layout === LAYOUT_STRIPE);
 
+    // 사진 종류 — 얼굴은 가운데, 상반신·전신은 아래 맞춤(전신은 발 쪽 조금 잘림). 위 SHOT_FULL_CROP 주석
+    var subjectPct = opt.subjectPct, yBiasPct = opt.yBiasPct, alignMode = opt.alignMode;
+    var fullCrop = 0;
+    var shotType = _shotType(opt, pair.base);
+    var whole = (shotType === "whole");
+    if (whole) {
+      yBiasPct = 0; alignMode = ALIGN_CENTER;
+    } else if (shotType === "face") {
+      subjectPct = DEF_SUBJECT_PCT; yBiasPct = 0; alignMode = ALIGN_CENTER;
+    } else if (shotType === "upper" || shotType === "full") {
+      subjectPct = STRIPE_SUBJECT_PCT; yBiasPct = STRIPE_Y_BIAS_PCT; alignMode = ALIGN_BOTTOM;
+      if (shotType === "full") fullCrop = SHOT_FULL_CROP;
+    }
+
     // 사진 — fit 은 디자인 지름 기준, 클립은 배경 지름 기준(스트라이프는 사진도 블리드)
+    // 링은 늘 안쪽 사진 창, 스트라이프는 아래 맞춤이면 원 전체·가운데면 링 창 크기
     var dPhoto = dArt;
-    if (!isStripe) dPhoto = dArt * PHOTO_RATIO;
+    if (!isStripe || alignMode === ALIGN_CENTER) dPhoto = dArt * PHOTO_RATIO;
     var rPhoto = dPhoto / 2;
     var dClip  = dPhoto;
-    if (isStripe) dClip = dBg;
+    if (isStripe && !whole) dClip = dBg;
     var rClip  = dClip / 2;
 
     // ① 배경
     if (isStripe) {
-      _makeStripeGroup(printLayer, cx, cy, dBg, dArt * STRIPE_W_RATIO, swatch.bg, theme.stripeAngle);
+      _makeStripeGroup(printLayer, cx, cy, dBg, dArt * STRIPE_W_RATIO, swatch.bg);
     } else {
       var ring = printLayer.pathItems.ellipse(cy + rBg, cx - rBg, dBg, dBg);
       ring.stroked = false;
@@ -448,18 +499,19 @@
       fcx = pair.silInfo.centerXFrac;
       fcy = pair.silInfo.centerYFrac;
     }
-    var target = dPhoto * (opt.subjectPct / 100);
+    var target = dPhoto * (subjectPct / 100) / (1 - fullCrop);   // 잘리는 만큼 키워 보이는 부분 크기를 맞춘다
     var pw = target / Math.max(fw, fh * (ih / iw));   // 피사체 긴 변 = target
+    if (whole) pw = dPhoto / Math.min(fw, fh * (ih / iw));   // 통사진 — 짧은 변이 창 지름 (cover)
     var ph = pw * (ih / iw);
     photo.width = pw;
     photo.height = ph;
 
     // fcx/fcy 는 이미지 좌상단 기준 피사체 중심 분율.
-    var yOff = (opt.yBiasPct / 100) * dPhoto;   // + = 위로
+    var yOff = (yBiasPct / 100) * dPhoto;   // + = 위로
     photo.left = cx - fcx * pw;
-    if (opt.alignMode === ALIGN_BOTTOM) {
+    if (alignMode === ALIGN_BOTTOM) {
       // 피사체 바닥을 원 바닥에 — 레퍼런스 스트라이프처럼 하단에서 잘린다
-      photo.top = (cy - rPhoto) - SUBJECT_BLEED * dPhoto + (fcy + fh / 2) * ph + yOff;
+      photo.top = (cy - rPhoto) - SUBJECT_BLEED * dPhoto - fullCrop * fh * ph + (fcy + fh / 2) * ph + yOff;
     } else {
       photo.top = cy + fcy * ph + yOff;
     }
@@ -476,10 +528,6 @@
     var grp = printLayer.groupItems.add();
     if (disc) disc.move(grp, ElementPlacement.PLACEATEND);
     art.move(grp, ElementPlacement.PLACEATBEGINNING);
-    if (theme.snow && !isStripe) {
-      // 사진 위, 클립 아래 — 피사체가 눈 위에 선 것처럼 보인다
-      _makeSnowDrift(printLayer, cx, cy, rPhoto).move(grp, ElementPlacement.PLACEATBEGINNING);
-    }
     var clip = printLayer.pathItems.ellipse(cy + rClip, cx - rClip, dClip, dClip);
     clip.move(grp, ElementPlacement.PLACEATBEGINNING);
     clip.clipping = true;
@@ -487,6 +535,7 @@
 
     // ③ 곡선 텍스트
     var fontSize = dArt * RING_FONT_RATIO;
+    if (isStripe) fontSize = dArt * STRIPE_FONT_RATIO;
     var capH = fontSize * CAP_HEIGHT_RATIO;
     var usedPt = fontSize;
 
@@ -495,7 +544,7 @@
       if (opt.topText) {
         var rTopS = rArt - STRIPE_TEXT_EDGE * dArt - capH;
         var ts = _addArcText(printLayer, opt, opt.topText, cx, cy, rTopS,
-                             90 + TOP_SPAN_DEG / 2, 90 - TOP_SPAN_DEG / 2, fontSize, swatch.ink);
+                             90 + TOP_SPAN_DEG / 2, 90 - TOP_SPAN_DEG / 2, fontSize, swatch.ink, swatch.bg);
         if (ts < usedPt) usedPt = ts;
       }
     } else {
@@ -505,13 +554,13 @@
       if (opt.topText) {
         var rTop = rPhoto + inset;                  // 글자가 밴드 안에서 바깥으로 자람
         var t1 = _addArcText(printLayer, opt, opt.topText, cx, cy, rTop,
-                             90 + TOP_SPAN_DEG / 2, 90 - TOP_SPAN_DEG / 2, fontSize, swatch.ink);
+                             90 + TOP_SPAN_DEG / 2, 90 - TOP_SPAN_DEG / 2, fontSize, swatch.ink, swatch.bg);
         if (t1 < usedPt) usedPt = t1;
       }
       if (opt.bottomText) {
         var rBot = rArt - inset;                    // 글자가 밴드 안에서 안쪽으로 자람
         var t2 = _addArcText(printLayer, opt, opt.bottomText, cx, cy, rBot,
-                             270 - BOTTOM_SPAN_DEG / 2, 270 + BOTTOM_SPAN_DEG / 2, fontSize, swatch.ink);
+                             270 - BOTTOM_SPAN_DEG / 2, 270 + BOTTOM_SPAN_DEG / 2, fontSize, swatch.ink, swatch.bg);
         if (t2 < usedPt) usedPt = t2;
       }
     }
@@ -526,7 +575,7 @@
 
   // 세로 줄무늬 원판 — 흰 바탕 + 색 줄을 등간격으로 놓고 원으로 클립.
   // 중앙에 색 줄이 오도록 대칭 배치한다 (레퍼런스와 동일).
-  function _makeStripeGroup(layer, cx, cy, d, stripeW, hex, angleDeg) {
+  function _makeStripeGroup(layer, cx, cy, d, stripeW, hex) {
     var r = d / 2;
     var w = stripeW;              // 줄 하나 폭 (블리드와 무관하게 디자인 지름 기준)
     var pitch = w * 2;            // 색 + 흰 한 쌍
@@ -538,9 +587,7 @@
     base.fillColor = _hexToRGB(STRIPE_BASE_HEX);
     base.move(grp, ElementPlacement.PLACEATEND);
 
-    // 줄은 별도 하위 그룹에 모아 통째로 돌린다 (캔디케인 = 45°).
-    // 줄 길이 d 는 회전 후에도 충분하다 — 중심에서 x 만큼 떨어진 줄이 원을 가로지르는
-    // 길이는 2·sqrt(r²−x²) ≤ 2r = d 이므로.
+    // 줄은 별도 하위 그룹에 모은다.
     var bars = layer.groupItems.add();
     var n = Math.ceil(r / pitch) + 1;
     for (var k = -n; k <= n; k++) {
@@ -550,8 +597,6 @@
       rect.fillColor = _hexToRGB(hex);
       rect.move(bars, ElementPlacement.PLACEATBEGINNING);
     }
-    // bars 는 (cx, cy) 대칭이라 자기 중심 회전 = 원 중심 회전
-    if (angleDeg) { try { bars.rotate(angleDeg); } catch (eRot) {} }
     bars.move(grp, ElementPlacement.PLACEATBEGINNING);
 
     var clip = layer.pathItems.ellipse(cy + r, cx - r, d, d);
@@ -562,44 +607,16 @@
   }
 
 
-  // 눈더미 — 사진창 하단의 흰 언덕. 창보다 좌우로 넓게 그려 클립으로 잘라낸다.
-  // 정규화 점 표(x = cx + u·r, y = cy + v·r)만 고치면 능선이 바뀐다.
-  // pointType 은 전부 CORNER — SMOOTH 는 핸들을 일직선으로 강제해 물결이 죽는다
-  // (shapes.jsx _makeHeart 와 같은 이유).
-  function _makeSnowDrift(layer, cx, cy, r) {
-    var c = SNOW_CREST;
-    var pts = [
-      [[-1.30, -1.40],    [-1.30, -1.40],     [-1.30, -1.40]],
-      [[-1.30, c - 0.06], [-1.30, c - 0.06],  [-0.95, c + 0.13]],
-      [[-0.17, c],        [-0.58, c - 0.20],  [ 0.25, c + 0.18]],
-      [[ 1.30, c],        [ 0.70, c - 0.19],  [ 1.30, c]],
-      [[ 1.30, -1.40],    [ 1.30, -1.40],     [ 1.30, -1.40]]
-    ];
-    var p = layer.pathItems.add();
-    for (var i = 0; i < pts.length; i++) {
-      var pp = p.pathPoints.add();
-      pp.anchor         = [cx + pts[i][0][0] * r, cy + pts[i][0][1] * r];
-      pp.leftDirection  = [cx + pts[i][1][0] * r, cy + pts[i][1][1] * r];
-      pp.rightDirection = [cx + pts[i][2][0] * r, cy + pts[i][2][1] * r];
-      pp.pointType = PointType.CORNER;
-    }
-    p.closed  = true;
-    p.stroked = false;
-    p.filled  = true;
-    p.fillColor = _hexToRGB(SNOW_HEX);
-    return p;
-  }
-
-
   // ═══════════════════════════════════════════════════════
   //  ARC TEXT
   //  아치 패스를 직접 만들고 pathText + 가운데 정렬로 얹는다.
   //  (with_name 의 _addCurvedName 과 같은 방식 — 패스만 원호로 교체)
   // ═══════════════════════════════════════════════════════
-  function _addArcText(layer, opt, rawText, cx, cy, radius, a0Deg, a1Deg, fontSize, inkHex) {
+  function _addArcText(layer, opt, rawText, cx, cy, radius, a0Deg, a1Deg, fontSize, inkHex, bgHex) {
     var content = _composeHangulNFC(rawText);
     var spec = LAYOUT_TYPE[opt.layout] || LAYOUT_TYPE[0];
     var font = _resolveFont(spec.cands);
+    var track = RING_TRACKING;
     var spanRad = Math.abs((a1Deg - a0Deg) * Math.PI / 180);
     var arcLen = radius * spanRad * FIT_MARGIN;
 
@@ -609,7 +626,7 @@
     var pa = probe.textRange.characterAttributes;
     if (font) pa.textFont = font;
     pa.size = fontSize;
-    pa.tracking = RING_TRACKING;
+    pa.tracking = track;
     pa.horizontalScale = 100;
     var pb = probe.geometricBounds;
     var probeW = pb[2] - pb[0];
@@ -630,16 +647,31 @@
     // 같은 파라미터로 아크를 다시 그리므로 두 카피는 정확히 겹친다.
     if (spec.halo) {
       _makeArcFrame(layer, content, font, cx, cy, radius, a0Deg, a1Deg,
-                    fontSize, hScale, HALO_HEX, HALO_HEX, fontSize * HALO_RATIO);
+                    fontSize, hScale, HALO_HEX, HALO_HEX, fontSize * HALO_RATIO, track);
+    }
+    // 글자 효과 — 헤일로 위, 본체 아래에 뒤 카피부터 만든다 (나중 것이 위)
+    var effect = opt.textEffect || "none";
+    var off = fontSize * EFFECT_OFFSET;
+    var fillHex = inkHex;
+    if (effect === "shadow") {
+      _makeArcFrame(layer, content, font, cx, cy, radius, a0Deg, a1Deg,
+                    fontSize, hScale, _mixHex(inkHex, bgHex, EFFECT_SHADOW_MIX), null, 0, track).translate(off, -off);
+    } else if (effect === "retro") {
+      var sw = fontSize * EFFECT_RETRO_STROKE;
+      _makeArcFrame(layer, content, font, cx, cy, radius, a0Deg, a1Deg,
+                    fontSize, hScale, inkHex, inkHex, sw, track).translate(off, -off);
+      _makeArcFrame(layer, content, font, cx, cy, radius, a0Deg, a1Deg,
+                    fontSize, hScale, inkHex, inkHex, sw, track);
+      fillHex = EFFECT_RETRO_FILL;
     }
     _makeArcFrame(layer, content, font, cx, cy, radius, a0Deg, a1Deg,
-                  fontSize, hScale, inkHex, null, 0);
+                  fontSize, hScale, fillHex, null, 0, track);
     return fontSize;
   }
 
   // 아크 하나 + 그 위의 pathText 한 벌. 헤일로/본체가 같은 코드를 쓴다.
   function _makeArcFrame(layer, content, font, cx, cy, radius, a0Deg, a1Deg,
-                         fontSize, hScale, fillHex, strokeHex, strokeW) {
+                         fontSize, hScale, fillHex, strokeHex, strokeW, track) {
     var arc = _arcPath(layer, cx, cy, radius, a0Deg, a1Deg);
     var frame = layer.textFrames.pathText(arc);
     try { frame.move(layer, ElementPlacement.PLACEATBEGINNING); } catch (eMove) {}
@@ -647,7 +679,7 @@
     var rng = frame.textRange;
     if (font) rng.characterAttributes.textFont = font;
     rng.characterAttributes.size = fontSize;
-    rng.characterAttributes.tracking = RING_TRACKING;
+    rng.characterAttributes.tracking = track;
     rng.characterAttributes.horizontalScale = hScale;
     rng.characterAttributes.fillColor = _hexToRGB(fillHex);
     if (strokeHex && strokeW > 0) {
@@ -971,6 +1003,23 @@
     return "Ring badge";
   }
 
+  function _effectIndex(key) {
+    for (var i = 0; i < TEXT_EFFECTS.length; i++) if (TEXT_EFFECTS[i].key === key) return i;
+    return 0;
+  }
+
+  function _effectLabel(opt) {
+    for (var i = 0; i < TEXT_EFFECTS.length; i++) if (TEXT_EFFECTS[i].key === opt.textEffect) return TEXT_EFFECTS[i].label;
+    return TEXT_EFFECTS[0].label;
+  }
+
+  function _fillColorPick(dd, palette) {
+    var keep = dd.selection ? dd.selection.index : 0;
+    dd.removeAll();
+    for (var i = 0; i < palette.length; i++) dd.add("item", palette[i].name);
+    dd.selection = (keep < palette.length) ? keep : 0;
+  }
+
   function _sizeTag(mm) {
     var inch = mm / 25.4;
     return inch.toFixed(2).replace(/\.?0+$/, "") + "in";
@@ -982,6 +1031,16 @@
     opts.pdfCompatible = true;
     opts.embedICCProfile = true;
     doc.saveAs(file, opts);
+  }
+
+  // a 에서 b 쪽으로 t 만큼 섞은 hex (그림자 색)
+  function _mixHex(a, b, t) {
+    var out = "";
+    for (var i = 0; i < 6; i += 2) {
+      var v = Math.round(parseInt(a.substring(i, i + 2), 16) * (1 - t) + parseInt(b.substring(i, i + 2), 16) * t);
+      out += (v < 16 ? "0" : "") + v.toString(16).toUpperCase();
+    }
+    return out;
   }
 
   function _hexToRGB(hex) {
@@ -1080,7 +1139,83 @@
   // ═══════════════════════════════════════════════════════
   //  DIALOG
   // ═══════════════════════════════════════════════════════
+  function _report(msg) {
+    if (QUIET) {
+      try { $.global.__EVERSTORY_RING_RESULT__ = msg; } catch (e) {}
+      return;
+    }
+    if (GUARDED) { PENDING = msg; return; }   // 경고 창을 다시 켠 뒤 finally 에서 띄운다
+    alert(msg);
+  }
+
+  // 주문 보드 구성 화면 — $.global.__EVERSTORY_RING_OPTS__ (consume-once) 로 대화창을 건너뛴다
+  // (composed_preview.build_script_launch). 화면에 없는 값(색 순환·안쪽 원·얼굴 %·정렬·칼선)은
+  // 대화창 기본값 그대로 — 레이아웃을 바꿀 때 대화창이 넣는 기본값과 같다.
+  function _consumePreset(pairs) {
+    var raw = null;
+    try { raw = $.global.__EVERSTORY_RING_OPTS__; } catch (eG) { return null; }
+    try { $.global.__EVERSTORY_RING_OPTS__ = undefined; } catch (eC) {}
+    if (!raw) return null;
+    QUIET = (raw.quiet === true);
+
+    var chosen = [];
+    var names = raw.photoNames || [];
+    for (var n = 0; n < names.length; n++) {
+      for (var q = 0; q < pairs.length; q++) {
+        if (pairs[q].base === names[n]) { chosen.push(pairs[q]); break; }
+      }
+    }
+    if (chosen.length === 0) chosen.push(pairs[0]);
+
+    var layout = LAYOUT_DEFAULT;
+    if (raw.layout === LAYOUT_STRIPE) layout = LAYOUT_STRIPE;
+    var stripe = (layout === LAYOUT_STRIPE);
+    var themeIdx = THEME_DEFAULT;
+    if (raw.themeIdx != null && THEMES[raw.themeIdx]) themeIdx = raw.themeIdx;
+    var sizeMm = SIZE_MM[SIZE_DEFAULT];
+    if (raw.sizeMm) sizeMm = raw.sizeMm;
+
+    var topText = _trim(String(raw.topText || ""));
+    if (raw.upper !== false) topText = topText.toUpperCase();
+    var bottomText = _trim(String(raw.bottomText || ""));
+    if (stripe) bottomText = "";   // 사진이 하단을 덮는다
+
+    var alignMode = ALIGN_CENTER, subjectPct = DEF_SUBJECT_PCT, yBiasPct = DEF_Y_BIAS_PCT;
+    if (stripe) { alignMode = ALIGN_BOTTOM; subjectPct = STRIPE_SUBJECT_PCT; yBiasPct = STRIPE_Y_BIAS_PCT; }
+
+    return {
+      themeIdx:     themeIdx,
+      layout:       layout,
+      alignMode:    alignMode,
+      topText:      topText,
+      bottomText:   bottomText,
+      sizeMm:       sizeMm,
+      colorMode:    (raw.colorMode >= 0 && raw.colorMode < COLOR_MODE_OPTIONS.length ? raw.colorMode : COLOR_MODE_DEFAULT),
+      colorIdx:     (raw.colorIdx > 0 ? raw.colorIdx : 0),
+      discIdx:      DISC_DEFAULT,
+      subjectPct:   subjectPct,
+      yBiasPct:     yBiasPct,
+      cutMarginMm:  CUT_MARGIN_VALUES[CUT_MARGIN_DEFAULT_INDEX],
+      embed:        true,
+      customerName: (raw.customerName != null ? String(raw.customerName) : _deriveDefaultCustomerName(folder)),
+      orderDate:    (raw.orderDate ? String(raw.orderDate) : _todayStr()),
+      shotTypes:    (raw.shotTypes || null),
+      textEffect:   (raw.textEffect || TEXT_EFFECT_DEFAULT),
+      selectedPairs: chosen
+    };
+  }
+
+  // 사진 종류 (face·upper·full) — 화면이 보낸 값 > 파일명 표시. 모르면 null (= 대화창 값 그대로)
+  function _shotType(opt, base) {
+    if (opt.shotTypes && opt.shotTypes[base]) return opt.shotTypes[base];
+    var m = SHOT_NAME_TOKEN_RE.exec(base);
+    if (m && SHOT_NAME_TYPES[m[1].toUpperCase()]) return SHOT_NAME_TYPES[m[1].toUpperCase()];
+    return null;
+  }
+
   function _showDialog(pairs, folder) {
+    var preset = _consumePreset(pairs);
+    if (preset) return preset;
     var dlg = new Window("dialog", SCRIPT_TITLE);
     dlg.orientation = "column";
     dlg.alignChildren = "fill";
@@ -1110,25 +1245,37 @@
     var fontLbl = gFont.add("statictext", undefined, "", { truncate: "end" });
     fontLbl.preferredSize = [330, 20];
 
+    var gFx = pT.add("group");
+    gFx.add("statictext", undefined, "글자 효과   ");
+    var fxLabels = [];
+    for (var fx = 0; fx < TEXT_EFFECTS.length; fx++) fxLabels.push(TEXT_EFFECTS[fx].label);
+    var fxDd = gFx.add("dropdownlist", undefined, fxLabels);
+    fxDd.selection = _effectIndex(TEXT_EFFECT_DEFAULT); fxDd.preferredSize = [200, 24];
+    gFx.add("statictext", undefined, "링·스트라이프 공통");
+
     // ── 디자인 ──
     var pD = dlg.add("panel", undefined, "디자인");
     pD.orientation = "column"; pD.alignChildren = "fill";
     pD.margins = [12, 16, 12, 12]; pD.spacing = 6;
 
-    var gTheme = pD.add("group");
-    gTheme.add("statictext", undefined, "테마          ");
-    var themeDd = gTheme.add("dropdownlist", undefined, _themeLabels());
-    themeDd.selection = THEME_DEFAULT; themeDd.preferredSize = [200, 24];
-    gTheme.add("statictext", undefined, "팔레트 · 줄무늬 각도 · 기본 문구");
+    // 테마 칸은 테마가 둘 이상일 때만 (지금은 레트로 파스텔 하나 — THEMES 주석)
+    var themeDd = null;
+    if (THEMES.length > 1) {
+      var gTheme = pD.add("group");
+      gTheme.add("statictext", undefined, "테마          ");
+      themeDd = gTheme.add("dropdownlist", undefined, _themeLabels());
+      themeDd.selection = THEME_DEFAULT; themeDd.preferredSize = [200, 24];
+      gTheme.add("statictext", undefined, "팔레트 · 기본 문구");
 
-    // 손대지 않은 기본 문구만 테마 것으로 갈아끼운다 (직접 친 문구는 보존).
-    themeDd.onChange = function () {
-      var th = THEMES[themeDd.selection.index];
-      if (_isThemeDefaultText(_trim(fTop.text), "topText")) fTop.text = th.topText;
-      if (_isThemeDefaultText(_trim(fBot.text), "bottomText")) fBot.text = th.bottomText;
-      // colorLbl 은 아래에서 만들어진다 — 다이얼로그가 뜬 뒤에만 호출되므로 안전하다.
-      if (colorLbl) colorLbl.text = th.palette.length + "색";
-    };
+      // 손대지 않은 기본 문구만 테마 것으로 갈아끼운다 (직접 친 문구는 보존).
+      themeDd.onChange = function () {
+        var th = THEMES[themeDd.selection.index];
+        if (_isThemeDefaultText(_trim(fTop.text), "topText")) fTop.text = th.topText;
+        if (_isThemeDefaultText(_trim(fBot.text), "bottomText")) fBot.text = th.bottomText;
+        // colorPick 은 아래에서 만들어진다 — 다이얼로그가 뜬 뒤에만 호출되므로 안전하다.
+        if (colorPick) _fillColorPick(colorPick, th.palette);
+      };
+    }
 
     var gLayout = pD.add("group");
     gLayout.add("statictext", undefined, "레이아웃    ");
@@ -1141,13 +1288,15 @@
     sizeDd.selection = SIZE_DEFAULT; sizeDd.preferredSize = [200, 24];
 
     var gColor = pD.add("group");
-    gColor.add("statictext", undefined, "색 순환      ");
+    gColor.add("statictext", undefined, "색              ");
     var colorDd = gColor.add("dropdownlist", undefined, COLOR_MODE_OPTIONS);
     colorDd.selection = COLOR_MODE_DEFAULT; colorDd.preferredSize = [200, 24];
-    // 팔레트는 테마가 정한다 — 몇 색인지만 보여주고 테마 바뀌면 갱신한다.
-    var colorLbl = gColor.add("statictext", undefined,
-      THEMES[THEME_DEFAULT].palette.length + "색", { truncate: "end" });
-    colorLbl.preferredSize = [120, 20];
+    // 한 색 통일일 때 고를 색 — 팔레트는 테마가 정하므로 테마 바뀌면 다시 채운다.
+    var colorPick = gColor.add("dropdownlist", undefined, []);
+    colorPick.preferredSize = [120, 24];
+    _fillColorPick(colorPick, THEMES[THEME_DEFAULT].palette);
+    colorDd.onChange = function () { colorPick.enabled = (colorDd.selection.index === COLOR_SINGLE); };
+    colorDd.onChange();
 
     var gDisc = pD.add("group");
     gDisc.add("statictext", undefined, "안쪽 원      ");
@@ -1273,21 +1422,24 @@
       if (cutRadios[ci].value) { cutMarginMm = CUT_MARGIN_VALUES[ci]; break; }
     }
 
+    var layoutIdx = layoutDd.selection.index;
     var topText = _trim(fTop.text);
+    var fxKey = TEXT_EFFECTS[fxDd.selection.index].key;
     if (upperChk.value) topText = topText.toUpperCase();
 
-    var layoutIdx = layoutDd.selection.index;
     var bottomText = _trim(fBot.text);
     if (layoutIdx === LAYOUT_STRIPE) bottomText = "";   // 사진이 하단을 덮는다
 
     return {
-      themeIdx:     themeDd.selection.index,
+      themeIdx:     (themeDd ? themeDd.selection.index : THEME_DEFAULT),
       layout:       layoutIdx,
       alignMode:    alignDd.selection.index,
       topText:      topText,
       bottomText:   bottomText,
       sizeMm:       SIZE_MM[sizeDd.selection.index],
       colorMode:    colorDd.selection.index,
+      colorIdx:     (colorPick.selection ? colorPick.selection.index : 0),
+      textEffect:   fxKey,
       discIdx:      discDd.selection.index,
       subjectPct:   _num(fCrop.text, DEF_SUBJECT_PCT),
       yBiasPct:     _num(fYBias.text, DEF_Y_BIAS_PCT),

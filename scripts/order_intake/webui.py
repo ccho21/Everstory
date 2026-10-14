@@ -23,7 +23,10 @@ import sys
 import threading
 import time
 import webbrowser
-from http.server import BaseHTTPRequestHandler, HTTPServer
+# 연결마다 스레드 — 한 줄 서버는 브라우저가 미리 열어 두고 요청을 안 보내는 빈 연결 하나에 통째로 멈춘다.
+# 2026-10-13 실측: 앱 창(WKWebView)에서 '← 주문 보드' 이동이 29초 멈췄다 (서버가 빈 연결을 읽으며 기다리는 동안
+# 진짜 요청이 대기열에 묶임). 앱 브리지도 webui.HTTPServer 를 쓰므로 이름은 그대로 둔다.
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer as HTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -48,11 +51,16 @@ REPO_DIR = os.path.abspath(os.path.join(HERE, "..", ".."))
 MIXED_JSX = os.path.join(REPO_DIR, "Everstory_mixed.jsx")
 RANGE_JSX = os.path.join(REPO_DIR, "Everstory_range.jsx")
 LABELS_JSX = os.path.join(REPO_DIR, "Everstory_address_labels.jsx")
+RING_JSX = os.path.join(REPO_DIR, "Everstory_ring.jsx")
+XMAS_JSX = os.path.join(REPO_DIR, "Everstory_xmas.jsx")
+BDAY_JSX = os.path.join(REPO_DIR, "Everstory_birthday.jsx")
+SCRIPT_JSX = {"ring": RING_JSX, "xmas": XMAS_JSX, "bday": BDAY_JSX}   # '구성' 화면 스크립트 드롭다운 → .jsx (bday = Special Day)
 # 주문 폴더 위치. main() 의 --projects 로만 바꾼다 (개발·테스트용).
 PROJECTS_DIR = os.path.join(REPO_DIR, "projects")
 # '구성' 화면에서 같은 요청을 연달아 누르면 한 번만 보낸다 (Illustrator 시트가 두 벌 생기지 않게).
 COMPOSED_REPEAT_SEC = 8.0
 _LAST_MAKE = {"key": None, "at": 0.0}
+_MAKE_LOCK = threading.Lock()   # 요청마다 스레드라 같은 요청 두 개가 동시에 확인을 통과하지 않게
 
 
 def photoshop_app():
@@ -63,7 +71,7 @@ def photoshop_app():
     return None
 
 
-def launch_illustrator(script_path, launch):
+def launch_illustrator(script_path, launch, extra=None):
     """Illustrator 에서 .jsx 를 실행한다. 인자(대상 폴더 등)는 `$.global` 로 넘긴다.
 
     파일 핸드오프를 안 쓰는 이유: 고객명이 든 경로를 디스크에 안 남기고, 실행이
@@ -72,9 +80,11 @@ def launch_illustrator(script_path, launch):
     이스케이프는 json.dumps 가 맡는다 — 기본 ensure_ascii 라 산출이 ASCII 뿐이고,
     JSON 문자열 리터럴은 ExtendScript 문자열 리터럴로도 유효하다.
     다이얼로그가 떠 있는 동안 osascript 가 블록되므로 기다리지 않는다(Popen).
+    extra = 스크립트별 전역 {"__EVERSTORY_RING_OPTS__": {...}} — 같은 방식으로 넘기고 .jsx 가 읽자마자 지운다.
     """
-    js = "$.global.__EVERSTORY_LAUNCH__ = %s; $.evalFile(new File(%s));" % (
-        json.dumps(launch), json.dumps(script_path))
+    pre = "".join("$.global.%s = %s; " % (k, json.dumps(v)) for k, v in (extra or {}).items())
+    js = "%s$.global.__EVERSTORY_LAUNCH__ = %s; $.evalFile(new File(%s));" % (
+        pre, json.dumps(launch), json.dumps(script_path))
     osa = ('with timeout of 86400 seconds\n'
            'tell application id "com.adobe.illustrator"\n'
            '  activate\n'
@@ -272,11 +282,15 @@ def build_rows(orders, archived):
     return rows
 
 
+_JOB_LOCK = threading.Lock()   # 요청마다 스레드라 busy 확인과 세우기를 한 번에 (작업이 두 개 겹쳐 돌지 않게)
+
+
 def run_job(fn, note):
     """백그라운드로 돌리면서 stdout 을 로그로 돌린다."""
-    if STATE.busy:
-        return False
-    STATE.busy = True
+    with _JOB_LOCK:
+        if STATE.busy:
+            return False
+        STATE.busy = True
     STATE.note = note
     STATE.sticky = False
 
@@ -377,11 +391,37 @@ def act_composed_make(body):
         return 400, {"error": str(e)}
     key = json.dumps(launch, sort_keys=True)
     now = time.time()
-    if _LAST_MAKE["key"] == key and now - _LAST_MAKE["at"] < COMPOSED_REPEAT_SEC:
-        return 200, {"ok": True, "duplicate": True, "summary": summary}
-    _LAST_MAKE["key"], _LAST_MAKE["at"] = key, now
+    with _MAKE_LOCK:
+        if _LAST_MAKE["key"] == key and now - _LAST_MAKE["at"] < COMPOSED_REPEAT_SEC:
+            return 200, {"ok": True, "duplicate": True, "summary": summary}
+        _LAST_MAKE["key"], _LAST_MAKE["at"] = key, now
     launch_illustrator(RANGE_JSX, launch)
     STATE.emit("%s — 구성 미리보기에서 Illustrator 로 넘김 (%s)."
+               % (composed.nfc(str(body.get("folder") or "")), summary))
+    return 200, {"ok": True, "duplicate": False, "summary": summary}
+
+
+def act_script_make(body):
+    """'구성' 화면에서 스크립트를 Ring·Christmas·Special Day 로 고르고 'Illustrator 에서 만들기' → (HTTP 코드, 응답).
+
+    값 검사는 composed.build_script_launch. Composed 와 같은 이유로 같은 요청을 연달아 보내지 않는다.
+    """
+    want = body.get("script") if isinstance(body, dict) else None
+    try:
+        script, launch, extra, summary = composed.build_script_launch(
+            PROJECTS_DIR, body, composed.ring_choices(RING_JSX),
+            xmas=composed.xmas_choices(XMAS_JSX) if want == "xmas" else None,
+            bday=composed.bday_choices(BDAY_JSX) if want == "bday" else None)
+    except (ValueError, OSError) as e:
+        return 400, {"error": str(e)}
+    key = json.dumps([script, launch, extra], sort_keys=True)
+    now = time.time()
+    with _MAKE_LOCK:
+        if _LAST_MAKE["key"] == key and now - _LAST_MAKE["at"] < COMPOSED_REPEAT_SEC:
+            return 200, {"ok": True, "duplicate": True, "summary": summary}
+        _LAST_MAKE["key"], _LAST_MAKE["at"] = key, now
+    launch_illustrator(SCRIPT_JSX[script], launch, extra)
+    STATE.emit("%s — 구성 화면에서 Illustrator 로 넘김 (%s)."
                % (composed.nfc(str(body.get("folder") or "")), summary))
     return 200, {"ok": True, "duplicate": False, "summary": summary}
 
@@ -651,6 +691,55 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self._send(200, data, "image/png", cache="private, max-age=86400")
             return True
+        if route == "/api/composed/ring":
+            try:
+                self._json(200, composed.ring_choices(RING_JSX))
+            except OSError as e:
+                self._json(500, {"error": "Everstory_ring.jsx 를 못 읽었습니다: %s" % e})
+            return True
+        if route == "/api/composed/xmas":
+            try:
+                self._json(200, composed.xmas_choices(XMAS_JSX))
+            except OSError as e:
+                self._json(500, {"error": "Everstory_xmas.jsx 를 못 읽었습니다: %s" % e})
+            return True
+        if route == "/api/composed/bday":
+            try:
+                self._json(200, composed.bday_choices(BDAY_JSX))
+            except OSError as e:
+                self._json(500, {"error": "Everstory_birthday.jsx 를 못 읽었습니다: %s" % e})
+            return True
+        if route == "/api/composed/font":
+            # Christmas 이름 서체 미리보기 — Adobe Fonts 라 브라우저가 못 보는 파일을 넘긴다 (composed.font_file)
+            path = composed.font_file(self._q1("ps"))
+            data = None
+            if path:
+                try:
+                    with open(path, "rb") as f:
+                        data = f.read()
+                except OSError:
+                    data = None
+            if data is None:
+                self._json(404, {"error": "서체를 못 찾았어요"})
+            else:
+                ctype = "font/otf" if path.lower().endswith(".otf") else "font/ttf"
+                self._send(200, data, ctype, cache="private, max-age=86400")
+            return True
+        if route == "/api/composed/xmasart":
+            # Christmas MERRY 미리보기 그림 (templates/art_preview/xmas_merry_v1 — FRAME · HAT 만)
+            path = composed.xmas_art_file(self._q1("name"))
+            data = None
+            if path:
+                try:
+                    with open(path, "rb") as f:
+                        data = f.read()
+                except OSError:
+                    data = None
+            if data is None:
+                self._json(404, {"error": "그림을 못 찾았어요"})
+            else:
+                self._send(200, data, "image/png", cache="private, max-age=86400")
+            return True
         if route == "/api/composed/art":
             # 이름 글자·데코 미리보기 그림 (templates/art_preview) — URL 에 파일 시각(v=)이 붙는다.
             path = composed.art_file(self._q1("lib"), self._q1("name"))
@@ -726,6 +815,8 @@ class Handler(BaseHTTPRequestHandler):
                 run_job(lambda: job_labels(names), "라벨 %d건 만드는 중…" % len(names))
         elif route == "/api/composed/make":
             return self._json(*act_composed_make(body))
+        elif route == "/api/composed/script":
+            return self._json(*act_script_make(body))
         else:
             return self._send(404, json.dumps({"error": "not found"}))
         self._send(200, json.dumps({"ok": True}))

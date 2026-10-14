@@ -4,6 +4,7 @@
 |---|---|
 | `build_bubble_style.jsx` | **버블** 스타일 아트 두 개를 원본 .ai 에서 다시 만든다 (아래) |
 | `build_retro_bubbles.jsx` | **레트로** 데코 라이브러리(`deco_art_v1.ai`)에 말풍선 6종을 그린다 ([아래](#레트로-말풍선-build_retro_bubblesjsx)) |
+| `build_xmas_merry.jsx` | **크리스마스 2번 MERRY** 의 고정 그림(레터링·리본·크림·흰 테두리·칼선)을 만든다 ([아래](#크리스마스-merry-build_xmas_merryjsx)) |
 
 ## 버블 (`build_bubble_style.jsx`)
 
@@ -103,3 +104,26 @@
   (두 조각 → 바깥선 한 조각, 칼선 경계 = 그림 경계 ±0.05pt). 다시 만든 레트로 시트에서 FLOWER · CAMERA 칼선 한 조각 확인.
   새 그림을 넣을 때도 가장 큰 도형은 바깥선 한 조각으로 두는 게 안전하다.
 
+## 크리스마스 MERRY (`build_xmas_merry.jsx`)
+
+`Everstory_xmas.jsx` 의 디자인 2번 **MERRY CHRISTMAS** (2026-10-07) 가 칸마다 복제하는 고정 그림을 만든다. 3초 남짓.
+Illustrator → File → Scripts → Other Script → `build_xmas_merry.jsx` — 요약 창에서 **"예"** 를 눌러야 templates 에 덮어쓴다.
+
+| 입력 (`assets/xmas_merry/`) | 결과 |
+|---|---|
+| `merry_lettering_trace.svg` (ChatGPT 레터링 `merry_lettering_src.png` 를 벡터화) | `templates/xmas_merry_art_v1.ai` — 그룹 `XM_FRAME` |
+| `santa_hat_src.png` (ChatGPT 모자, 투명 PNG) | `templates/xmas_santa_hat_v1.png` (시트에 칸마다 놓는 그림) |
+| (둘 다) | `templates/art_preview/xmas_merry_v1/` — `FRAME.png` · `HAT.png` · `SHAPES.json` (주문 보드 미리보기) |
+
+- **XM_FRAME** (위→아래): `XM_CUT`(칠 없음 = 칼선 모양, 시트에서 KissCut 으로 옮긴다) · `XM_RIBBON` · `XM_LETTERING`(`XM_MERRY` · `XM_CHRISTMAS`) ·
+  `XM_CREAM` · `XM_WHITE`. **선 없음** — 리본 테두리도 Offset Path ±3 으로 만든 채운 도형 (resize 가 선 굵기를 안 바꾼다).
+- 배치 = ROUND 2 시안 확정값: 레터링 가로 0.8배 · 리본 = 참고 실측(가운데가 처진 곡선, 꼬리는 띠 끝보다 아래) ·
+  크림 = (레터링 ∪ 리본 ∪ 가장 큰 얼굴·모자 자리) 를 +90 → −68 (틈 메우기 + 여백 22) · 흰 테두리 +24. 단위 = CHRISTMAS 폭 925.
+  10-07: MERRY·CHRISTMAS 사이를 처음의 50% 로 (MERRY 118 내림) — 얼굴 자리도 줄어 얼굴 높이 0.6 → 0.49 (빌드 `FACE` = 시트 `MERRY` 표,
+  `SHAPES.json` measure 로 테스트가 확인). 2″ 칼선 50.8 × 46.1mm.
+- `SHAPES.json` 의 `measure` (칼선 bbox · CHRISTMAS 위·높이 · 이름 자리) 는 `Everstory_xmas.jsx` 의 `MERRY` 표와 같아야 한다 —
+  `composed_preview_test.py` 가 확인한다. 다르면 작업 폴더의 `MERRY_TABLE.txt` 로 표를 고친다.
+- 레터링 그림을 바꾸면 `merry_lettering_trace.svg` 부터 다시 만든다: 알파 2배 확대(LANCZOS) → 가우스 1.2 → 128 임계 마스크
+  (`merry_lettering_mask2x.png`) → Image Trace (흑백 · path 85 · corner 40 · noise 30 · abutting) → SVG 내보내기.
+- 테스트 훅: `$.global.__EVERSTORY_XMAS_MERRY_BUILD__ = { out: "<폴더>" }` → templates 를 안 건드리고 그 폴더에만 쓴다.
+- 함정: 다른 문서로 복제할 때는 **레이어로만** 된다 (그룹 안으로 바로 넣으면 MRAP 오류) — 레이어로 복제한 뒤 같은 문서 안에서 옮긴다.

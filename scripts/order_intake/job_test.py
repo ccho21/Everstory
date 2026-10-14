@@ -342,6 +342,64 @@ try:
     chk("노트는 사진이 아니라 옵션으로",
         any((o["key"] or "").startswith("Which photo") for o in options))
 
+    # Special Day Sticker Sheet (2026-10-13) — SKU EVS-SDAY-{PHOTO|RING}-XX · Easify 칸 = docs/shopify/special_day_easify.md
+    print("\n══ Special Day — SKU · 문구 칸 → job.special_day ══")
+
+    def sday(design="PHOTO", opts=None, n=2, qty=1, extra_li=None):
+        items = [{"index": 0, "title": "Special Day Sticker Sheet", "sku": "EVS-SDAY-%s-WM" % design, "quantity": qty}]
+        if extra_li:
+            items.append(dict({"index": 1, "title": "Special Day Sticker Sheet", "quantity": 1}, **extra_li))
+        return intake.build_job({"order": {"name": "EVS-SD", "customer": "Fixture Buyer"}, "line_items": items,
+                                 "options": [{"line_item": 0, "key": k, "value": v} for k, v in (opts or [])],
+                                 "photos": [{"file": "%02d_fixture.jpg" % i} for i in range(1, n + 1)]})
+
+    for sku, want in [("EVS-SDAY-PHOTO-WM", ("special_day", 38.1, 1, None)), ("EVS-SDAY-RING-GD", ("special_day", 38.1, 1, None)),
+                      ("evs-sday-ring-tr", ("special_day", 38.1, 1, None))]:
+        chk("SKU %s → 1.5″ 한 장" % sku, intake.size_from_sku(sku) == want, intake.size_from_sku(sku))
+    chk("디자인 = SKU 가운데", (intake.sday_design_from_sku("EVS-SDAY-PHOTO-SV"), intake.sday_design_from_sku("EVS-SDAY-RING-TR"),
+                                 intake.sday_design_from_sku("EVS-NAME-5-WM")) == ("PHOTO", "RING", None))
+    chk("Special Day SKU 는 단일 사이즈 토큰이 안 붙는다 (파일명 = 원본명)", intake.tier_from_sku("EVS-SDAY-PHOTO-WM") is None)
+    chk("재질 = SKU 끝", intake.material_from_sku("EVS-SDAY-RING-GD") == "Gold")
+
+    j = sday("PHOTO", [("Message", "Thanks for coming!"), ("Name", "Harin"), ("Extra sheets", "Add 1 extra print")])
+    chk("사진 스티커: 문구·이름·추가 인쇄 · 노트 없음",
+        j["special_day"] == {"design": "PHOTO", "message": "Thanks for coming!", "top_line": "", "bottom_line": ""} and
+        j["sticker_name"] == "Harin" and j["extra_sheets"] == 1 and j["notes"] == [] and j["pack"] is None, j)
+    chk("라벨: Special Day 사진 스티커 · 문구 · 이름 · 인쇄 장수",
+        "Special Day 사진 스티커 · 1.5\" · A5 1장 · 문구 'Thanks for coming!' · 이름 'Harin' · 같은 시트 2장 인쇄" in intake.job_label(j),
+        intake.job_label(j))
+    j = sday("RING", [("_Top line-1", "HARIN'S 2ND BIRTHDAY"), ("Bottom line", " 2026.08.23 ")])
+    chk("링 배지: 윗줄·아랫줄 (접두 `_`·접미 `-N`·공백 무시) · 노트 없음",
+        j["special_day"] == {"design": "RING", "message": "", "top_line": "HARIN'S 2ND BIRTHDAY", "bottom_line": "2026.08.23"} and
+        j["notes"] == [] and j["material"] == "White Matte", j)
+    chk("라벨: 윗줄·아랫줄", "Special Day 링 배지 · 1.5\" · A5 1장 · 윗줄 'HARIN'S 2ND BIRTHDAY' · 아랫줄 '2026.08.23'" in intake.job_label(j),
+        intake.job_label(j))
+    j = sday("RING", [("Top line", "PARTY"), ("Message", "Hi"), ("Name", "Mia")])
+    chk("링 배지에 숨은 사진 스티커 칸이 따라오면 비우고 확인 노트",
+        j["special_day"]["message"] == "" and j["sticker_name"] == "" and has_note(j, "사진 스티커 칸도 들어옴 (Hi / Mia)"), j["notes"])
+    j = sday("PHOTO", [("Message", "Hi"), ("Top line", "PARTY")])
+    chk("사진 스티커에 숨은 링 배지 칸이 따라오면 비우고 확인 노트",
+        j["special_day"]["top_line"] == "" and has_note(j, "링 배지 칸도 들어옴 (PARTY)"), j["notes"])
+    chk("필수 문구·윗줄이 비면 확인 노트",
+        has_note(sday("PHOTO", [("Name", "Mia")]), "문구(Message) 없음") and has_note(sday("RING", []), "윗줄(Top line) 없음"))
+    j = sday("PHOTO", [("Message", "M" * 25), ("Name", "N" * 11)])
+    chk("Easify 상한 넘으면 값은 그대로 · 노트 (문구 24 · 이름 10)",
+        len(j["special_day"]["message"]) == 25 and has_note(j, "문구(Message): 24자 초과 (25자)") and has_note(j, "이름(Name): 10자 초과 (11자)"), j["notes"])
+    j = sday("RING", [("Top line", "T" * 24), ("Bottom line", "B" * 16)])
+    chk("윗줄 23 · 아랫줄 15 상한", has_note(j, "윗줄(Top line): 23자 초과") and has_note(j, "아랫줄(Bottom line): 15자 초과"), j["notes"])
+    chk("상한 딱 맞으면 노트 없음", sday("PHOTO", [("Message", "M" * 24), ("Name", "N" * 10)])["notes"] == [] and
+        sday("RING", [("Top line", "T" * 23), ("Bottom line", "B" * 15)])["notes"] == [])
+    chk("사진 0장·4장은 노트 (1–3장)", has_note(sday("PHOTO", [("Message", "Hi")], n=0), "사진 0장") and
+        has_note(sday("PHOTO", [("Message", "Hi")], n=4), "사진 4장 — Special Day 는 1–3장"))
+    j = sday("PHOTO", [("Message", "Hi")], extra_li={"sku": "EVS-SDAY-RING-WM"})
+    chk("line item 마다 디자인이 다르면 디자인 비움 · 나눠 제작 노트",
+        j["special_day"]["design"] is None and has_note(j, "디자인: line item 마다 다름 (사진 스티커 / 링 배지)"), j["notes"])
+    j = sday("PHOTO", [("Message", "Hi")], extra_li={"sku": "EVS-FACE-19-WM"})
+    chk("다른 상품과 한 주문이면 special_day 없음 (사이즈 노트만)", j["special_day"] is None and j["mode"] is None and
+        has_note(j, "사이즈: line item 마다 다름"), j["notes"])
+    chk("다른 상품 job 은 special_day = None", intake.build_job({"order": {}, "line_items": [
+        {"index": 0, "title": "P", "sku": "EVS-NAME-5-WM", "quantity": 1}], "options": [], "photos": []})["special_day"] is None)
+
 finally:
     shutil.rmtree(root, ignore_errors=True)
 

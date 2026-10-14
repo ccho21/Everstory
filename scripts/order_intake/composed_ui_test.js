@@ -27,6 +27,7 @@ async function main() {
     return elements.get(key);
   }
   let payload, submitted;
+  const routes = {};   // GET 경로별 응답 (Special Day 선택지 등) — 없으면 payload
   const context = vm.createContext({
     engine, console, URLSearchParams, location: {search: ''}, history: {replaceState() {}},
     document: {querySelector: element, querySelectorAll: () => []},
@@ -34,7 +35,8 @@ async function main() {
     setTimeout: () => 0, clearTimeout() {},
     fetch: async (_url, options) => {
       if (options) submitted = JSON.parse(options.body);
-      return {ok: true, json: async () => options ? {ok: true, summary: 'synthetic'} : payload};
+      const route = Object.keys(routes).find(p => String(_url).startsWith(p + '?'));
+      return {ok: true, json: async () => options ? {ok: true, summary: 'synthetic'} : (route ? routes[route] : payload)};
     }
   });
   const html = fs.readFileSync(path.join(__dirname, 'composed_preview.html'), 'utf8');
@@ -135,6 +137,40 @@ async function main() {
   read('S.busy = false');
   await read('loadFolder("SYNTHETIC", true)');
   check('다른 주문을 새로 열면 다시 넣기', read('S.smallName') === true && read('S.results[0].r.name2Box !== null'));
+
+  // Special Day 주문 (EVS-SDAY-…, 2026-10-13): 새 주문을 열면 스크립트·디자인·글자·1.5″·사진 전부를 주문대로.
+  // 선택지는 실제 .jsx 표에서 서버 함수로 만든다 (fixture 로 베끼지 않는다). 그리기·목록은 빼고 칸 값만 본다.
+  const choices = kind => JSON.parse(execFileSync('python3', ['-B', '-c',
+    'import json,sys; sys.path.insert(0, sys.argv[1]); import composed_preview as cp, webui; ' +
+    'print(json.dumps(cp.' + kind + '_choices(webui.' + kind.toUpperCase() + '_JSX)))', __dirname], {encoding: 'utf8'}));
+  routes['/api/composed/bday'] = choices('bday');
+  routes['/api/composed/ring'] = choices('ring');
+  vm.runInContext('altList = () => {}; altSummary = () => {}; xLoadFontList = async () => ({family: "x", weight: 400, spec: {}, fallback: true});', context);
+  const sdPhoto = {design: 'photo', message: 'You made my day', topLine: '', bottomLine: '', sizeMm: 38.1};
+  payload = fixture(3, {stickerName: 'Harin', specialDay: sdPhoto, notes: []});
+  await read('loadFolder("SD PHOTO EVS-1", true)');
+  const popIdx = routes['/api/composed/bday'].designs.findIndex(d => d.key === 'POP');
+  check('Special Day 사진 스티커 주문 → 스크립트 Special Day · 디자인 팝 사진', read('A.script') === 'bday' &&
+    element('#script').value === 'bday' && element('#bDesign').value === String(popIdx) && popIdx >= 0);
+  check('문구·이름 = 주문 Message·Name, 사이즈 = 1.5″', element('#bLine1').value === 'You made my day' &&
+    element('#bLine2').value === '' && element('#bName').value === 'Harin' &&
+    routes['/api/composed/bday'].sizesMm[+element('#bSize').value] === 38.1);
+  check('고객 사진 3장 전부 넣기 (다른 주문은 첫 장만)', read('A.pairs.length === 3 && A.pairs.every(p => p.on)'));
+  check('Special Day 칸 아래 안내 (주의 없음)', element('#sdOrder').hidden === false &&
+    element('#sdOrder').textContent.includes('사진 스티커') && element('#sdOrder').className === 'hint');
+  const sdRing = {design: 'ring', message: '', topLine: "HARIN'S 2ND BIRTHDAY", bottomLine: '2026.08.23', sizeMm: 38.1};
+  payload = fixture(1, {stickerName: '', specialDay: sdRing, notes: ['사진 1장 테스트 메모']});
+  await read('loadFolder("SD RING EVS-2", true)');
+  check('Special Day 링 배지 주문 → 디자인 Ring · 링 배지 폼', read('A.script') === 'ring' && element('#bDesign').value === 'ring');
+  check('윗줄·아랫줄 = 주문 Top line·Bottom line, 사이즈 = 1.5″', element('#rTop').value === "HARIN'S 2ND BIRTHDAY" &&
+    element('#rBot').value === '2026.08.23' && routes['/api/composed/ring'].sizesMm[+element('#rSize').value] === 38.1);
+  check('주문 메모는 Special Day 안내 줄에 경고로', element('#sdOrder').textContent.includes('주문 메모: 사진 1장 테스트 메모') &&
+    element('#sdOrder').className === 'hint warn');
+  payload = fixture(2, {notes: []});
+  await read('loadFolder("PLAIN EVS-3", true)');
+  await read('altLoad("PLAIN EVS-3")');
+  check('일반 주문은 스크립트를 바꾸지 않고 (운영자 선택) 첫 장만 · 안내 줄 숨김', read('A.script') === 'ring' &&
+    read('A.sd') === null && read('A.pairs.filter(p => p.on).length') === 1 && element('#sdOrder').hidden === true);
 
   // 실제 보드 render를 실행한 뒤 표 HTML을 표준 HTML 파서로 읽어 텍스트·속성 값을 확인한다.
   const boardSource = fs.readFileSync(path.join(__dirname, 'webui.py'), 'utf8');

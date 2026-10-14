@@ -131,6 +131,20 @@ PACK_NAMES = {
     "FULL": "Full Set",
 }
 
+# Special Day Sticker Sheet (2026-10-13): EVS-SDAY-{PHOTO|RING}-{WM|SV|GD|TR}. 사이즈는 상품이 고정한다 — 1.5″ · A5 한 장.
+# PHOTO = 사진 스티커 (Everstory_birthday.jsx POP — "문구 – 이름 ♥" 한 줄), RING = 링 배지 (Everstory_ring.jsx — 윗줄·아랫줄).
+# 가운데에 숫자를 넣지 않는다 — SKU_SIZE_RE 가 `-38-WM` 을 Custom 단일 사이즈로 읽는다.
+SKU_SDAY_RE = re.compile(r"-SDAY-(PHOTO|RING)-[A-Z]{2}$", re.I)
+SDAY_SIZE_MM = 38.1
+SDAY_DESIGNS = {"PHOTO": "사진 스티커", "RING": "링 배지"}
+# Easify 칸 내부 이름(= 주문 키, docs/shopify/special_day_easify.md) -> job.special_day 필드. `Name` 은 다른 상품처럼 sticker_name.
+SDAY_TEXT_KEYS = {"message": "message", "top line": "top_line", "bottom line": "bottom_line"}
+SDAY_FIELD_LABELS = {"message": "문구(Message)", "name": "이름(Name)", "top_line": "윗줄(Top line)",
+                     "bottom_line": "아랫줄(Bottom line)"}
+# Easify 글자 수 상한과 같은 값 — 넘어서 들어오면 값은 그대로 두고 노트만 남긴다.
+SDAY_LIMITS = {"message": 24, "name": 10, "top_line": 23, "bottom_line": 15}
+SDAY_PHOTOS = (1, 3)
+
 
 def material_from_sku(sku):
     """SKU -> 재질 이름. 모르면 None (추측하지 않는다)."""
@@ -140,8 +154,14 @@ def material_from_sku(sku):
     return SKU_MATERIAL.get(m.group(1).upper()) if m else None
 
 
+def sday_design_from_sku(sku):
+    """Special Day SKU -> "PHOTO" | "RING". 다른 SKU 는 None."""
+    m = SKU_SDAY_RE.search(sku or "")
+    return m.group(1).upper() if m else None
+
+
 def size_from_sku(sku):
-    """SKU -> (mode, size_mm, sheets, pack). mode = single | package | pack | all. 모르면 None.
+    """SKU -> (mode, size_mm, sheets, pack). mode = single | package | pack | all | special_day. 모르면 None.
 
     일러스트 스크립트의 내부 sentinel(-2/-3) 을 매니페스트에 쓰지 않는다 — 저 숫자는
     Everstory_mixed.jsx 사정이고, 매니페스트는 그 사정을 몰라야 한다.
@@ -157,6 +177,8 @@ def size_from_sku(sku):
         pack = m.group(1).upper()
         photos = int(m.group(2))
         return ("pack", None, PACK_SHEETS_BY_PHOTOS.get(photos), (pack, photos))
+    if SKU_SDAY_RE.search(sku):
+        return ("special_day", SDAY_SIZE_MM, 1, None)   # 디자인은 sday_design_from_sku
     m = SKU_SIZE_RE.search(sku)
     if not m:
         return None
@@ -234,12 +256,14 @@ def build_job(manifest):
         "sticker_name": "",
         "name_style": "",
         "extra_sheets": 0,
+        "special_day": None,
         "notes": [],
     }
 
     # 옵션 `Name` = 스티커에 넣을 이름. 고객 이름과 별개다 (선물이면 받는 사람 이름).
     # 옵션 `Name style` = 그 이름의 스타일 (retro | bubble). 모르는 값이면 비워 두고 notes 에 남긴다 — 보드에서 고른다.
     names, styles, extras = [], [], []
+    sd_texts = {field: [] for field in SDAY_TEXT_KEYS.values()}
     for o in options:
         key, _ = split_key(o.get("key") or "")
         value = str(o.get("value") or "").strip()
@@ -266,6 +290,9 @@ def build_job(manifest):
                 job["notes"].append("추가 인쇄: 모르는 값 '%s' — 주문에서 장수 확인" % value)
             elif n not in extras:
                 extras.append(n)
+        elif key in SDAY_TEXT_KEYS:
+            if value not in sd_texts[SDAY_TEXT_KEYS[key]]:
+                sd_texts[SDAY_TEXT_KEYS[key]].append(value)
 
     if len(extras) == 1:
         job["extra_sheets"] = extras[0]
@@ -278,7 +305,7 @@ def build_job(manifest):
     if len(styles) > 1:
         job["notes"].append("이름 스타일: line item 마다 다름 (%s) — 주문을 나눠 제작할 것" % " / ".join(styles))
 
-    titles, materials, sizes = [], [], []
+    titles, materials, sizes, designs = [], [], [], []
     for it in items:
         title = it.get("title")
         if title and title not in titles:
@@ -287,6 +314,9 @@ def build_job(manifest):
         mat = material_from_sku(it.get("sku"))
         if mat and mat not in materials:
             materials.append(mat)
+        design = sday_design_from_sku(it.get("sku"))
+        if design and design not in designs:
+            designs.append(design)
         size = size_from_sku(it.get("sku")) or size_from_options(options, it.get("index"))
         if size and size not in sizes:
             sizes.append(size)
@@ -332,6 +362,42 @@ def build_job(manifest):
             job["notes"].append("이름 없음 — No name 을 고르지 않았는데 이름이 비어 있음, 고객 확인")
         if not job["name_style"] and not any(n.startswith("이름 스타일") for n in job["notes"]):
             job["notes"].append("이름 스타일 없음 — 보드에서 고를 것")
+
+    # Special Day (2026-10-13) — 디자인·글자를 job.special_day 에. 보드 '구성' 의 Special Day 화면이 그대로 채운다.
+    # NAME 계약과 같은 원칙: 한 값으로 안 좁혀지거나 칸이 비면 추측하지 않고 notes 로 알린다.
+    if job["mode"] == "special_day":
+        sd = {"design": designs[0] if len(designs) == 1 else None}
+        for field, values in sd_texts.items():
+            sd[field] = values[0] if values else ""
+            if len(values) > 1:
+                job["notes"].append("%s: line item 마다 다름 (%s) — 주문을 나눠 제작할 것"
+                                    % (SDAY_FIELD_LABELS[field], " / ".join(values)))
+        if len(designs) > 1:
+            job["notes"].append("디자인: line item 마다 다름 (%s) — 주문을 나눠 제작할 것"
+                                % " / ".join(SDAY_DESIGNS[d] for d in designs))
+        # 다른 디자인의 칸은 Easify 가 숨긴다 — 디자인을 바꾸기 전에 쓴 값이 따라오면 고른 디자인으로 만들고 알린다 (No name 과 같은 함정).
+        if sd["design"] == "RING":
+            stray = [v for v in (sd["message"], job["sticker_name"]) if v]
+            if stray:
+                job["notes"].append("링 배지인데 사진 스티커 칸도 들어옴 (%s) — 링 배지로 만든다, 고객 확인" % " / ".join(stray))
+            sd["message"] = job["sticker_name"] = ""
+            if not sd["top_line"]:
+                job["notes"].append("윗줄(Top line) 없음 — 고객 확인")
+        elif sd["design"] == "PHOTO":
+            stray = [v for v in (sd["top_line"], sd["bottom_line"]) if v]
+            if stray:
+                job["notes"].append("사진 스티커인데 링 배지 칸도 들어옴 (%s) — 사진 스티커로 만든다, 고객 확인" % " / ".join(stray))
+            sd["top_line"] = sd["bottom_line"] = ""
+            if not sd["message"]:
+                job["notes"].append("문구(Message) 없음 — 고객 확인")
+        for field, limit in SDAY_LIMITS.items():
+            value = job["sticker_name"] if field == "name" else sd[field]
+            if len(value) > limit:
+                job["notes"].append("%s: %d자 초과 (%d자) — 글자가 작아질 수 있음, 고객 확인"
+                                    % (SDAY_FIELD_LABELS[field], limit, len(value)))
+        if not SDAY_PHOTOS[0] <= job["photos"] <= SDAY_PHOTOS[1]:
+            job["notes"].append("사진 %d장 — Special Day 는 %d–%d장" % ((job["photos"],) + SDAY_PHOTOS))
+        job["special_day"] = sd
     return job
 
 
@@ -353,6 +419,12 @@ def job_label(job):
         bits.append("Package %s시트" % (job["sheets"] or "?"))
     elif job["mode"] == "all":
         bits.append("전 사이즈")
+    elif job["mode"] == "special_day":
+        sd = job.get("special_day") or {}
+        bits.append('Special Day %s · 1.5" · A5 1장' % SDAY_DESIGNS.get(sd.get("design"), "디자인 ?"))
+        for field in ("message", "top_line", "bottom_line"):
+            if sd.get(field):
+                bits.append("%s '%s'" % (SDAY_FIELD_LABELS[field].split("(")[0], sd[field]))
     elif job["mode"] == "single" and job["size_mm"]:
         bits.append('%.2f" / %dmm' % (job["size_mm"] / 25.4, round(job["size_mm"])))
     if job["sticker_name"]:

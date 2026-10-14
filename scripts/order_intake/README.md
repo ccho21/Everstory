@@ -72,6 +72,10 @@ x-amz-expiration: expiry-date="...", rule-id="ExpireAllObjectsAfterNinetyDays"
   **처음 한 번은 보드 앱을 다시 켜야** 버튼이 보인다 (예전 서버면 버튼이 숨고 늘 넣는다). 미리보기 요약 줄에 작은 이름 크기(또는 "작은 이름 뺌")가 나온다.
   두 단어 이름은 두 줄이 한 스티커로 이어진다. 주문에 `Name style` 이 있으면(`job.name_style`) 그 스타일이 먼저 골라지고 안내 문구가 뜬다 (2026-09-19);
   없으면 마지막에 고른 스타일(브라우저 저장)을 쓴다. 규칙은 `sim/README.md` "이름 스타일".
+- **Special Day 주문** (2026-10-13, `job.special_day`): 주문을 열면 헤더 스크립트가 **Special Day**, 디자인이 주문대로
+  (사진 스티커 → 팝 사진 · 링 배지 → Ring) 골라지고 문구·이름(사진 스티커) 또는 윗줄·아랫줄(링 배지)과 **1.5″** 가 채워진다.
+  고객 사진(1–3장)은 전부 넣는다 (다른 주문은 첫 장만). 프레임 모양·색·팝은 운영자가 사진을 보고 고른다.
+  디자인 칸 아래 줄에 주문 내용과 주문 메모(`job.notes`, 경고색)가 뜬다. 일반 주문을 열면 스크립트는 그대로 둔다 (운영자 선택).
 - **배치 고르기** (2026-09-16 사용자): 시트 오른쪽 작은 그림 — **스타일**(가운데·양옆·모으기·가장자리·아래쪽)과 고른 스타일의
   **변형**(기본·좌우 바꿈·섞기). 왼쪽 `이름 위치`(자동·왼쪽·가운데·오른쪽). 시트마다 따로 고르고, `모든 시트에` 로 맞출 수 있다.
   스타일 줄은 화면을 먼저 그린 뒤 나눠 계산한다(시트당 20~40ms). 규칙은 `sim/README.md` "배치 선택".
@@ -260,7 +264,8 @@ projects/{고객명 주문번호}/
 ```json
 "job": { "order":"EVS-1007", "customer":"Naekyung Seong", "product":"Package Full",
          "material":"White Matte", "mode":"package", "size_mm":null, "sheets":2,
-         "quantity":1, "photos":14, "sticker_name":"", "name_style":"", "extra_sheets":0, "notes":[] }
+         "quantity":1, "photos":14, "sticker_name":"", "name_style":"", "extra_sheets":0,
+         "special_day":null, "notes":[] }
 ```
 
 재질·사이즈는 SKU 문자열 안에 인코딩돼 있다 (`EVS-PACKAGE-FULL-WM`). 그대로 두면 **읽는
@@ -268,7 +273,13 @@ projects/{고객명 주문번호}/
 빠뜨려도 **틀린 재질로 인쇄된다.** 그래서 해석은 인테이크에서 한 번만 하고 결과를 박아둔다.
 
 - `mode` = `single` (그때만 `size_mm`) · `package` (그때만 `sheets`) · `all`(Mixed → 전 사이즈) ·
-  `pack` (그때 `pack`·`photos_ordered`·`sheets` — `EVS-NAME-5-WM` = Name & Photo Sticker Sheet, 사진 5 · 1시트)
+  `pack` (그때 `pack`·`photos_ordered`·`sheets` — `EVS-NAME-5-WM` = Name & Photo Sticker Sheet, 사진 5 · 1시트) ·
+  `special_day` (`EVS-SDAY-{PHOTO|RING}-WM` = Special Day Sticker Sheet — `size_mm` 38.1 · `sheets` 1, 사이즈는 상품이 고정)
+- `special_day` (2026-10-13) = Special Day 주문만 `{design, message, top_line, bottom_line}`, 그 외 `null`. `design` = SKU 가운데
+  `PHOTO`(사진 스티커 = Everstory_birthday.jsx POP) · `RING`(링 배지 = Everstory_ring.jsx). 글자 = Easify 칸 `Message` · `Top line` ·
+  `Bottom line` (이름 `Name` 은 다른 상품처럼 `sticker_name`, 칸 정의 = `docs/shopify/special_day_easify.md`). 다른 디자인의 칸 값이
+  따라오면 비우고 노트, 필수 칸(문구·윗줄)이 비거나 Easify 상한(문구 24 · 이름 10 · 윗줄 23 · 아랫줄 15)을 넘거나 사진이 1–3장이
+  아니면 노트만 — 값은 그대로. line item 마다 디자인이 다르면 `design` = `null` + 노트. 구성 보드가 이 값으로 Special Day 를 채운다 (위 "구성").
 - `sticker_name` = 옵션 `Name`. `name_style` = 옵션 `Name style` (Retro / Bubble → `retro` / `bubble`, range.jsx
   `COMPOSED_NAME_STYLES` 키). 모르는 값이면 비우고 `notes` 에 남긴다 — 구성 보드가 이 값으로 이름 스타일을 미리 고른다 (2026-09-19).
 - `extra_sheets` = 옵션 `Extra sheets` (같은 시트 추가 인쇄, +$7/장 — `No extra print` → 0 · `Add 2 extra print` → 2, 라벨을
@@ -334,6 +345,7 @@ Toronto ON  M5V 2T6
 | Package Full / Mini | 속성 키 `Big/Medium/Small print` | `BIG` `MED` `SML` |
 | Face / Full Body / Shape | **SKU** (`EVS-FACE-19-WM` → 19mm) | `XS` `S` `M` `L` `XL` `XXL` |
 | 위 상품의 `Mixed` 옵션 | — (전 사이즈 모드로 제작) | 없음 |
+| Special Day (`EVS-SDAY-…`) | 상품이 1.5″ 로 고정 (사진마다 다르지 않다) | 없음 |
 | SKU 없는 초기 주문 | 옵션 라벨 `Photos to include (19mm)` | 위와 동일 |
 
 SKU 사이즈 코드 ↔ 티어: `19`→XS(0.75") · `25`→S(1") · `32`→M(1.25") · `38`→L(1.5") · `51`→XL(2") · `64`→XXL(2.5") · `MIX`→토큰 없음.
@@ -377,9 +389,10 @@ SKU 사이즈 코드 ↔ 티어: `19`→XS(0.75") · `25`→S(1") · `32`→M(1.
 
 ```bash
 python3 progress_test.py     # 진행 표시 (임시 폴더에 실파일 생성, 네트워크 없음)
-python3 job_test.py          # job 백필 왕복 + 배송지 추출
+python3 job_test.py          # job 백필 왕복 + 배송지 추출 + Special Day SKU·문구 칸 → job.special_day
+node composed_ui_test.js     # 구성 화면 동작 (실제 HTML 함수 · 합성 DOM) — NAME 계약 · 작은 이름 · Special Day 주문 자동 선택·채우기
 python3 label_test.py        # 주소 라벨 — 빈 필드 조합·국내/국제·선택 순서
-python3 composed_preview_test.py   # 구성 미리보기 — 엔진 추출(node 교차 실행 · 배치 선택/크기 직접/버블 이름 포함)·이름 스타일 키·글자/데코 그림 목록과 경로·경로 조작 차단·캐시·폴더 이름 주문번호·만들기 요청(배치·크기·이름 스타일 검사)·HTTP
+python3 composed_preview_test.py   # 구성 미리보기 — 엔진 추출(node 교차 실행 · 배치 선택/크기 직접/버블 이름 포함)·이름 스타일 키·글자/데코 그림 목록과 경로·경로 조작 차단·캐시·폴더 이름 주문번호·만들기 요청(배치·크기·이름 스타일 검사)·HTTP·스크립트 드롭다운(Christmas·Special Day — Ring 은 Special Day 디자인 목록 맨 끝(10-13) · Label 뺌·Ring 테마 하나·Ring 1.75″·글자 효과 기본 레트로·캘리그래피 뺌)·빈 연결이 있어도 바로 응답(서버 스레드)·Christmas(하트·MERRY·오벌·사진 카드 A·C·D 선택지·그리기 값·MERRY 표 = 빌드 그림 실측·만들기 값·아래 문구 검사·서체·MERRY 그림 API)·Special Day(하트 사진·원 사진·팝 사진 선택지·그리기 값·서체 순서·만들기 값·문구·이름·작은 글씨·팝 옵션 키 검사·API)
 ```
 
 `composed_preview_test.py` 는 임시 폴더에 합성 PNG와 정상 비압축 RGB PSD를 직접 만들고, 127.0.0.1 임시 서버로 라우트까지 돈다.

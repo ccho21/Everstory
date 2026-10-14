@@ -12,12 +12,12 @@
   python3 composed_preview_test.py
 """
 
-import http.server
 import importlib.util
 import json
 import os
 import re
 import shutil
+import socket
 import struct
 import subprocess
 import sys
@@ -409,7 +409,7 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
         "material": "Gold", "stickerName": "LUCKY", "nameStyle": "bubble", "noName": False, "notes": ["재질: SKU 에서 못 읽음"], "orderFrom": "job",
         "pack": "NAME", "photosOrdered": 5, "sheets": 1, "quantity": 2, "extraSheets": 3, "options": [
             {"key": "Extra sheets", "value": "Add 3 extra print"},
-            {"key": "Special instructions", "value": " <keep & show> "}]}, pre)
+            {"key": "Special instructions", "value": " <keep & show> "}], "specialDay": None}, pre)
     cases = [("Sanvi EVS-0000", ("EVS-0000", "Sanvi")), ("Jennifer Lee EVS-1008 (test)", ("EVS-1008", "Jennifer Lee (test)")),
              ("#evs-12 Kim", ("EVS-12", "Kim")), ("하린", ("", "하린")), ("Mary-Jane Park", ("", "Mary-Jane Park")),
              (NFD_HARIN + " EVS-2001", ("EVS-2001", "하린")), ("EVS-1 EVS-1100", ("EVS-1100", "EVS-1"))]
@@ -445,6 +445,22 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     pre_n = cp.order_prefill(order_h)
     chk("No name 주문은 noName · 스타일·이름 빈 값", pre_n["noName"] is True and pre_n["nameStyle"] == "" and pre_n["stickerName"] == "", pre_n)
     chk("일반 주문은 noName 이 거짓", cp.order_prefill(empty)["noName"] is False)
+    # Special Day 주문 (intake job.special_day, 2026-10-13) — 화면이 스크립트·디자인·글자·사이즈를 주문대로
+    write(os.path.join(order_h, "_order.json"), json.dumps({"job": {"mode": "special_day", "size_mm": 38.1, "sticker_name": "Harin",
+        "special_day": {"design": "PHOTO", "message": " Thanks for coming! ", "top_line": "", "bottom_line": ""}}}))
+    pre_sd = cp.order_prefill(order_h)
+    chk("Special Day 사진 스티커 → specialDay (photo · 문구 · 1.5″) · 이름은 stickerName",
+        pre_sd["specialDay"] == {"design": "photo", "message": "Thanks for coming!", "topLine": "", "bottomLine": "", "sizeMm": 38.1}
+        and pre_sd["stickerName"] == "Harin", pre_sd)
+    write(os.path.join(order_h, "_order.json"), json.dumps({"job": {"mode": "special_day", "size_mm": 38.1,
+        "special_day": {"design": "RING", "message": "", "top_line": "HARIN'S 2ND BIRTHDAY", "bottom_line": "2026.08.23"}}}))
+    chk("Special Day 링 배지 → specialDay (ring · 윗줄 · 아랫줄)", cp.order_prefill(order_h)["specialDay"] ==
+        {"design": "ring", "message": "", "topLine": "HARIN'S 2ND BIRTHDAY", "bottomLine": "2026.08.23", "sizeMm": 38.1})
+    write(os.path.join(order_h, "_order.json"), json.dumps({"job": {"mode": "special_day", "size_mm": 38.1,
+        "special_day": {"design": None, "message": "Hi"}, "notes": ["디자인: line item 마다 다름"]}}))
+    chk("디자인이 안 좁혀진 Special Day 주문은 넘기지 않는다 (운영자가 고름 · 이유는 notes)",
+        cp.order_prefill(order_h)["specialDay"] is None and cp.order_prefill(order_h)["notes"] == ["디자인: line item 마다 다름"])
+    chk("일반 주문은 specialDay 없음", cp.order_prefill(empty)["specialDay"] is None)
     pay = cp.pairs_payload(projects, "Order A EVS-1")
     p1 = pay["pairs"][0]
     chk("화면 데이터: 페어 3장 · 캔버스 · 캐시 · 지문", len(pay["pairs"]) == 3 and p1["canvas"] == [40, 60] and
@@ -592,7 +608,7 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     webui.TOKEN = "tok-test"
     webui.launch_illustrator = lambda script, launch: launches.append((script, launch))
     webui.STATE.emit = lambda text: None
-    srv = http.server.HTTPServer(("127.0.0.1", 0), webui.Handler)
+    srv = webui.HTTPServer(("127.0.0.1", 0), webui.Handler)   # 보드·앱 브리지와 같은 서버 (연결마다 스레드)
     server_thread = threading.Thread(target=srv.serve_forever, daemon=True)
     server_thread.start()
     base_url = "http://127.0.0.1:%d" % srv.server_address[1]
@@ -621,6 +637,18 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     st, hd, body = get("/composed")
     chk("화면: 200 HTML", st == 200 and "text/html" in hd["Content-Type"] and "Composed 미리보기".encode() in body)
     chk("토큰 없으면 403", get("/composed", token=False)[0] == 403 and get("/api/composed/folders", token=False)[0] == 403)
+    # 빈 연결 = 앱 창(WKWebView)이 미리 열어 두고 요청을 안 보내는 연결. 한 줄 서버는 이것 하나에 통째로 멈춰
+    # 앱의 '← 주문 보드' 이동이 29초 걸렸다 (2026-10-13) — 열어 둔 채로 다른 요청이 바로 오는지 본다.
+    idle = socket.create_connection(srv.server_address[:2])
+    t0 = time.time()
+    try:
+        with opener.open(base_url + "/?t=tok-test", timeout=3) as r:
+            idle_ok = r.status == 200 and b"<html" in r.read()[:400].lower()
+    except Exception as e:  # noqa: BLE001 — 시간 초과면 한 줄 서버로 돌아간 것
+        idle_ok = False
+    idle_sec = time.time() - t0
+    idle.close()
+    chk("빈 연결이 열려 있어도 보드 화면은 바로 응답 (앱 '← 주문 보드' 멈춤 재발 방지)", idle_ok and idle_sec < 2, "%.2f초" % idle_sec)
     st, hd, body = get("/composed/engine.js")
     chk("엔진: 200 자바스크립트", st == 200 and "javascript" in hd["Content-Type"] and b"window.EverstoryComposed" in body)
     st, _, body = get("/api/composed/folders")
@@ -664,6 +692,285 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     chk("잘못된 요청은 400 + 이유 · 안 넘김", st == 400 and "재질" in res.get("error", "") and len(launches) == 2, res)
     chk("만들기도 토큰 없으면 403", post("/api/composed/make", good, token=False)[0] == 403 and len(launches) == 2)
     chk("Args 의 주문 폴더는 PROJECTS_DIR 을 따른다 (--projects)", webui.Args().projects_dir == projects)
+
+    print("\n══ 스크립트 드롭다운 — Christmas · Special Day (Label 은 2026-10-13 뺐다 · Ring 은 Special Day 안으로) ══")
+    with open(os.path.join(HERE, "composed_preview.html"), encoding="utf-8") as f:
+        board_html = f.read()
+    script_sel = re.search(r'<select id="script"[^>]*>(.*?)</select>', board_html, re.S).group(1)
+    chk("드롭다운: Composed · Christmas · Special Day (bday 의 보이는 이름 = Special Day, Ring 은 없음)",
+        re.findall(r'<option value="(\w+)">([^<]+)</option>', script_sel)
+        == [("composed", "Composed"), ("xmas", "Christmas"), ("bday", "Special Day")], script_sel)
+    chk("Ring = Special Day 디자인 목록 맨 끝 (값 ring → Everstory_ring.jsx · 배지 폼)",
+        'const SD_RING = "ring";' in board_html and '<option value="${SD_RING}">Ring · 원형 배지' in board_html
+        and 'if ($("#bDesign").value === SD_RING) return setScript("ring");' in board_html
+        and re.search(r'<div class="sec" id="sdSec" hidden>.*?<select id="bDesign"', board_html, re.S) is not None)
+    try:
+        cp.build_script_launch(projects, {"script": "label", "folder": "Order A EVS-1", "bases": ["Order A EVS-1_03"]})
+        label_gone = False
+    except ValueError as e:
+        label_gone = "알 수 없는 스크립트" in str(e)
+    chk("Label 뺌: 스크립트 키·.jsx 표에 없음 · 만들기 요청 거부 · 선택지 API 404",
+        cp.SCRIPT_KEYS == ("ring", "xmas", "bday") and set(webui.SCRIPT_JSX) == {"ring", "xmas", "bday"}
+        and not hasattr(cp, "label_choices") and not hasattr(webui, "LABEL_JSX") and label_gone
+        and get("/api/composed/label")[0] == 404)
+    rch = cp.ring_choices(webui.RING_JSX)
+    rth = rch["draw"]["themes"]
+    chk("Ring 테마 = 레트로 파스텔 하나 (크리스마스 테마·눈더미·45° 줄무늬 뺌 — 테마 하나면 보드·대화창이 칸을 숨긴다)",
+        [t["label"] for t in rch["themes"]] == ["레트로 파스텔 (생일)"] and len(rth) == 1 and len(rth[0].get("palette") or []) == 12
+        and all("snow" not in t and "stripeAngle" not in t for t in rth)
+        and "snowHex" not in rch["draw"] and "SNOW_CREST" not in rch["draw"]["nums"], rch["themes"])
+    chk("Ring 사이즈 1.5·1.75·2·2.5″ (기본 2″) · 글자 효과 없음·그림자·레트로, 기본 레트로 (10-13: 1.75″ 추가 · 캘리그래피 뺌)",
+        rch["sizesMm"] == [38.1, 44.45, 50.8, 63.5] and rch["sizesMm"][rch["sizeDefault"]] == 50.8
+        and [e.get("key") for e in rch["effects"]] == ["none", "shadow", "retro"] and rch["effectDefault"] == "retro"
+        and "calliFont" not in rch["draw"] and not any(k.startswith("CALLI") for k in rch["draw"]["nums"]),
+        (rch["sizes"], rch["effects"]))
+    rgood = {"script": "ring", "folder": "Order A EVS-1", "bases": ["Order A EVS-1_03"], "themeIdx": 0, "layoutIdx": 0, "sizeIdx": 1,
+             "topText": "Olivia's 1st", "bottomText": "2026", "customerName": "Order A", "orderDate": "2026-10-13"}
+    _, _, rex, rsm = cp.build_script_launch(projects, rgood, rch)
+    ro = rex.get("__EVERSTORY_RING_OPTS__", {})
+    try:
+        cp.build_script_launch(projects, dict(rgood, textEffect="calli"), rch)
+        calli_gone = False
+    except ValueError as e:
+        calli_gone = "글자 효과" in str(e)
+    chk("Ring 만들기 값: 1.75″ = 44.45mm · 효과를 안 보내면 레트로 · 캘리그래피 요청은 거부",
+        ro.get("sizeMm") == 44.45 and ro.get("textEffect") == "retro" and ro.get("upper") is True
+        and cp.build_script_launch(projects, dict(rgood, textEffect="none"), rch)[2]["__EVERSTORY_RING_OPTS__"]["textEffect"] == "none"
+        and calli_gone and rsm == "Ring RING · 사진 1장", ro)
+
+    print("\n══ Christmas (xmas) — 하트 · MERRY · 오벌 · 사진 카드 A·C·D ══")
+    xch = cp.xmas_choices(webui.XMAS_JSX)
+    d = xch["draw"]
+    chk("선택지: 하트·MERRY·오벌·사진 카드 3 디자인 (B 오벌 액자 뺌) · 사이즈 4 · 색 2 · 테두리 2 (.jsx 표 그대로)",
+        [x["key"] for x in xch["designs"]] == ["HEART", "MERRY", "OVAL", "CARD", "SQUARE", "DIECUT"]
+        and xch["sizesMm"] == [38.1, 44.45, 50.8, 63.5]
+        and len(xch["colorModes"]) == 2 and len(xch["borders"]) == 2 and xch["sizeDefault"] == 2,
+        xch["sizesMm"])
+    chk("디자인별 기본 사이즈: 하트 2″ · MERRY 2″ · 오벌 1.75″ · 카드 A 1.5″ · C·D 1.75″ (시트 9장)",
+        [xch["sizesMm"][int(x["size"])] for x in xch["designs"]] == [50.8, 50.8, 44.45, 38.1, 44.45, 44.45], xch["designs"])
+    kc = d.get("cards") or {}
+    chk("사진 카드 그리기 값: A 1.346 · C 띄운 대문자 · D 테두리·판 · 머리 띠 · 서체 순서 · B 없음 (.jsx 표 그대로)",
+        kc.get("CARD", {}).get("h") == 1.346 and "FRAME" not in kc and kc.get("SQUARE", {}).get("capsW") == 0.53
+        and kc.get("DIECUT", {}).get("border") == 0.025 and kc.get("DIECUT", {}).get("plateH") == 0.303
+        and kc.get("band") == {"band0": 0.08, "band1": 0.2, "wideK": 0.7} and kc.get("colors", {}).get("teal") == "2F6B66"
+        and [f["ps"] for f in kc.get("scriptFonts", [])][:1] == ["ACaslonPro-SemiboldItalic"]
+        and [f["ps"] for f in kc.get("capsFonts", [])][:1] == ["Baskerville"], {k: v for k, v in kc.items() if k in ("band", "colors")})
+    mg = d.get("merry") or {}
+    mt, msh = mg.get("table") or {}, mg.get("shapes") or {}
+    meas = msh.get("measure") or {}
+    chk("MERRY 표 = 빌드 그림 실측 (칼선 bbox · CHRISTMAS · 얼굴 자리 · 이름 자리 — SHAPES.json)",
+        meas and all(abs(float(mt.get(k, -1e9)) - float(v)) < (0.011 if abs(float(v)) > 1.5 else 1e-4) for k, v in meas.items())
+        and {"faceH", "faceWMax", "chinK", "faceCx"} <= set(meas)
+        and msh.get("cut", "").startswith("M") and msh.get("cream", "").startswith("M"), (mt, meas))
+    templates = os.path.join(os.path.dirname(webui.XMAS_JSX), "templates")
+    chk("MERRY 그림 파일: templates 의 .ai · 모자 PNG + 미리보기 FRAME · HAT",
+        os.path.isfile(os.path.join(templates, "xmas_merry_art_v1.ai")) and os.path.isfile(os.path.join(templates, "xmas_santa_hat_v1.png"))
+        and sorted(mg.get("art") or {}) == ["FRAME", "HAT"] and cp.xmas_art_file("FRAME") and cp.xmas_art_file("../x") is None
+        and cp.xmas_art_file("LTR_A") is None, mg.get("art"))
+    chk("MERRY 이름 서체: DM Serif Display (대문자 0.66 em)",
+        [f.get("ps") for f in mg.get("fonts") or []][:1] == ["DMSerifDisplay-Regular"] and (mg.get("fonts") or [{}])[0].get("cap") == 0.66,
+        mg.get("fonts"))
+    ov = d.get("oval") or {}
+    chk("오벌 그리기 값: 타원 1.2608 · 링 3 · 얼굴 상자 · 글자 자리 · 아래 문구 원호 · 색 (.jsx 표 그대로)",
+        ov.get("shape") == {"h": 1.2608, "ring1": 0.0124, "gap": 0.02, "ring2": 0.0069}
+        and ov.get("face", {}).get("maxW") == 0.78 and ov.get("merry", {}).get("size") == 0.1625
+        and ov.get("title", {}).get("xh") == 0.0783 and ov.get("line", {}).get("r") == 0.3932
+        and ov.get("line", {}).get("maxDeg") == 58 and ov.get("colors") == {"red": "9F1112", "cream": "F9F3E1"}, ov)
+    chk("오벌 서체 순서: Great Vibes · Etna Semibold 이 첫째 + 아래 문구 틀 4개 (기본 = Love, 이름)",
+        [f["ps"] for f in ov.get("scriptFonts", [])][:1] == ["GreatVibes-Regular"]
+        and [f["ps"] for f in ov.get("fonts", [])][:1] == ["Etna-Semibold"]
+        and len(xch["linePresets"]) == 4 and xch["linePresets"][xch["linePresetDefault"]] == "Love, {name}",
+        xch["linePresets"])
+    chk("그리기 값: 하트 12개 · 얼굴 상자 · 이름 곡선 · 팔레트 3 · 테두리/블리드 mm",
+        len(d["heart"]) == 12 and d["heart"].get("h") == 0.9591 and d["face"].get("maxW") == 0.61
+        and d["name"].get("r") == 0.65 and d["name"].get("cap") == 0.0517 and len(d["palette"]) == 3
+        and d["borderMm"] == 1.5 and d["bleedMm"] == 1 and d["samples"] == 8, d["name"])
+    chk("이름 서체 순서: Sofia Pro Soft Medium 이 첫째", d["fonts"] and d["fonts"][0]["ps"] == "SofiaProSoftMedium",
+        [f["ps"] for f in d["fonts"]])
+    chk("서체 파일 찾기: 경로 조작·모르는 이름은 None",
+        cp.font_file("../../etc/passwd") is None and cp.font_file("") is None and cp.font_file("NoSuchFont-Zz9") is None)
+    have = [f for f in d["fonts"] if f.get("have")]
+    if have:
+        p = cp.font_file(have[0]["ps"])
+        chk("서체 파일 찾기: 있는 서체는 파일 경로 + PostScript 이름 일치", p and os.path.isfile(p) and cp._ps_name(p) == have[0]["ps"], p)
+    else:
+        skip("서체 파일 찾기 (있는 서체)", "이 Mac 에 이름 서체가 하나도 없음")
+
+    xgood = {"script": "xmas", "folder": "Order A EVS-1", "bases": ["Order A EVS-1_03"], "designIdx": 0,
+             "sizeIdx": 2, "colorMode": 1, "borderIdx": 0, "name": "harin", "customerName": "Order A", "orderDate": "2026-10-06",
+             "shotTypes": {"Order A EVS-1_03": "upper"}}
+    sk, ln, ex, sm = cp.build_script_launch(projects, xgood, rch, xmas=xch)
+    xo = ex.get("__EVERSTORY_XMAS_OPTS__", {})
+    chk("만들기 값: 폴더 경로 문자열 + __EVERSTORY_XMAS_OPTS__",
+        sk == "xmas" and isinstance(ln, str) and ln.endswith(os.path.join("Order A EVS-1", "02_cutout"))
+        and xo.get("design") == "HEART" and xo.get("name") == "harin" and xo.get("sizeMm") == 50.8
+        and xo.get("colorMode") == 1 and xo.get("border") == 0 and xo.get("photoNames") == ["Order A EVS-1_03"]
+        and xo.get("shotTypes") == {"Order A EVS-1_03": "upper"} and xo.get("line") == "", xo)
+    xoval = dict(xgood, designIdx=2, sizeIdx=1, name="", line=" Love, Harin ")
+    sk, ln, ex, sm = cp.build_script_launch(projects, xoval, rch, xmas=xch)
+    xo = ex.get("__EVERSTORY_XMAS_OPTS__", {})
+    _, _, exm, _ = cp.build_script_launch(projects, dict(xgood, designIdx=1, name="harin"), rch, xmas=xch)
+    xm = exm.get("__EVERSTORY_XMAS_OPTS__", {})
+    chk("MERRY 만들기 값: design MERRY + 이름 (리본) · 2″",
+        xm.get("design") == "MERRY" and xm.get("name") == "harin" and xm.get("sizeMm") == 50.8 and xm.get("line") == "", xm)
+    _, _, exc, _ = cp.build_script_launch(projects, dict(xgood, designIdx=5, sizeIdx=1, name="Harin"), rch, xmas=xch)
+    xc = exc.get("__EVERSTORY_XMAS_OPTS__", {})
+    chk("사진 카드 D 만들기 값: design DIECUT + 이름 · 1.75″ · 사진 종류",
+        xc.get("design") == "DIECUT" and xc.get("name") == "Harin" and xc.get("sizeMm") == 44.45
+        and xc.get("shotTypes") == {"Order A EVS-1_03": "upper"}, xc)
+    chk("오벌 만들기 값: design OVAL + 아래 문구(앞뒤 공백 정리) · 이름은 비어도 됨 · 1.75″",
+        xo.get("design") == "OVAL" and xo.get("line") == "Love, Harin" and xo.get("name") == "" and xo.get("sizeMm") == 44.45
+        and "OVAL" in sm, xo)
+    xbad = [("이름 없음", dict(xgood, name="  "), "이름"), ("이름 너무 김", dict(xgood, name="A" * 30), "name"),
+            ("디자인 번호 밖", dict(xgood, designIdx=99), "designIdx"), ("테두리 번호 밖", dict(xgood, borderIdx=2), "borderIdx"),
+            ("색 번호 밖", dict(xgood, colorMode=2), "colorMode"), ("사이즈 True", dict(xgood, sizeIdx=True), "sizeIdx"),
+            ("모르는 사진 종류", dict(xgood, shotTypes={"Order A EVS-1_03": "hat"}), "사진 종류"),
+            ("오벌 아래 문구 없음", dict(xoval, line="  "), "아래 문구"), ("오벌 아래 문구 너무 김", dict(xoval, line="A" * 61), "line"),
+            ("MERRY 이름 없음", dict(xgood, designIdx=1, name=" "), "이름"),
+            ("사진 카드 이름 없음", dict(xgood, designIdx=3, name=" "), "이름"),
+            ("디자인 번호 밖 (6)", dict(xgood, designIdx=6), "designIdx")]
+    wrong = []
+    for label, body, word in xbad:
+        try:
+            cp.build_script_launch(projects, body, rch, xmas=xch)
+            wrong.append(label + " (통과됨)")
+        except ValueError as e:
+            if word not in str(e):
+                wrong.append("%s → %s" % (label, e))
+    try:
+        cp.build_script_launch(projects, xgood, rch)
+        wrong.append("선택지 없이 통과됨")
+    except ValueError:
+        pass
+    chk("이상한 Christmas 요청 %d가지는 이유와 함께 거부" % (len(xbad) + 1), not wrong, "; ".join(wrong))
+
+    st, hd, body = get("/api/composed/xmas")
+    chk("선택지 API: 200 + 하트", st == 200 and json.loads(body)["designs"][0]["key"] == "HEART")
+    st, hd, body = get("/api/composed/xmasart?name=FRAME")
+    chk("MERRY 그림 API: FRAME 200 PNG · 모르는 이름 404 · 토큰 없으면 403",
+        st == 200 and hd["Content-Type"] == "image/png" and body[:4] == b"\x89PNG"
+        and get("/api/composed/xmasart?name=../SHAPES")[0] == 404 and get("/api/composed/xmasart?name=HAT", token=False)[0] == 403)
+    chk("서체 API: 모르는 이름은 404 · 토큰 없으면 403",
+        get("/api/composed/font?ps=NoSuchFont-Zz9")[0] == 404 and get("/api/composed/font?ps=Nunito-Bold", token=False)[0] == 403)
+    if have:
+        st, hd, body = get("/api/composed/font?ps=" + have[0]["ps"])
+        chk("서체 API: 있는 서체는 200 + 서체 형식 · 캐시 허용", st == 200 and hd["Content-Type"].startswith("font/")
+            and body[:4] in (b"OTTO", b"\x00\x01\x00\x00", b"true") and "max-age" in hd["Cache-Control"], hd["Content-Type"])
+    xl = []
+    webui.launch_illustrator = lambda script, launch, extra=None: xl.append((script, launch, extra))
+    st, res = post("/api/composed/script", xgood)
+    chk("만들기 API: Everstory_xmas.jsx 로 한 번 넘김 + 옵션 전역",
+        st == 200 and res.get("ok") and len(xl) == 1 and xl[0][0] == webui.XMAS_JSX
+        and xl[0][2]["__EVERSTORY_XMAS_OPTS__"]["name"] == "harin", res)
+    st, res = post("/api/composed/script", dict(xgood, name=""))
+    chk("만들기 API: 이름 없으면 400 + 이유 · 안 넘김", st == 400 and "이름" in res.get("error", "") and len(xl) == 1, res)
+    st, res = post("/api/composed/script", xoval)
+    chk("만들기 API: 오벌도 Everstory_xmas.jsx 로 + 아래 문구 전역",
+        st == 200 and res.get("ok") and len(xl) == 2 and xl[1][2]["__EVERSTORY_XMAS_OPTS__"]["design"] == "OVAL"
+        and xl[1][2]["__EVERSTORY_XMAS_OPTS__"]["line"] == "Love, Harin", res)
+
+    print("\n══ Special Day (bday) — 디자인 하나: 팝·모양·색 (2026-10-13 저녁 하트·원·팝 사진을 합침) ══")
+    bch = cp.bday_choices(webui.BDAY_JSX)
+    bd = bch["draw"]
+    chk("Special Day 선택지: 디자인 하나(POP) · 사이즈 4 · 기본 2″ · 기본 문구 (.jsx 표 그대로)",
+        [x["key"] for x in bch["designs"]] == ["POP"] and bch["sizesMm"] == [38.1, 44.45, 50.8, 63.5]
+        and bch["sizesMm"][int(bch["designs"][0]["size"])] == 50.8 and bch["popMsgDefault"] == "Thanks for coming!"
+        and int(bch["designDefault"]) == 0, bch["designs"])
+    ba = bd.get("circle", {})
+    chk("하트·원 사진 실측 표는 남아 있다 (프레임 안 값의 출처): 하트 폭 0.6393 · 머리 0.20 / 원 r 0.3167 · 머리 0.29",
+        bd["heartAt"].get("w") == 0.6393 and bd["upper"].get("headW") == 0.2 and bd["face"].get("maxW") == 0.4
+        and ba["circle"].get("r") == 0.3167 and ba["upper"].get("headW") == 0.29 and ba["face"].get("maxW") == 0.44, bd["heartAt"])
+    pp = bd.get("pop", {})
+    chk("옵션 표: 레이아웃 2 · 제목 서체 3 (Bree·Titan·Fredoka) · 문구 서체 2 (Fredoka Medium·Patrick Hand) · 색 6 · 모양 4",
+        [x["key"] for x in pp.get("layouts", [])] == ["TITLE_TOP", "PHOTO_TOP"]
+        and [x["ps"] for x in pp.get("titleFonts", [])] == ["BreeSerif-Bold", "TitanOne", "Fredoka-Bold"]
+        and [x["ps"] for x in pp.get("handFonts", [])] == ["Fredoka-Medium", "PatrickHand-Regular"]
+        and [x["key"] for x in pp.get("colors", [])] == ["SKY", "BLUSH", "BUTTER", "MINT", "LILAC", "PEACH"]
+        and [x["key"] for x in pp.get("shapes", [])] == ["HEART", "PUFF", "CLOUD", "CIRCLE"], pp.get("layouts"))
+    chk("그리기 값: 스티커 1.076 · 영역 0.80×0.57 · 머리 밖으로 규칙 · 윤곽 120점 × 2 (시안 ROUND 4·5 그대로)",
+        pp.get("sticker") == {"h": 1.076, "r": 0.02} and pp.get("region") == {"wMax": 0.8, "h": 0.57}
+        and pp["geo"].get("headK") == 0.3822 and pp["geo"].get("openW") == 1.5 and pp["geo"].get("shoulderK") == 1.45
+        and pp["text"] == {"ink": "141414", "accent": "D7192D"} and pp["layouts"][0].get("capMax") == 0.09
+        and len(pp["puff"].get("pts", [])) == 240 and len(pp["cloud"].get("pts", [])) == 240
+        and pp["puff"].get("aspect") == 1.1184 and pp["cloud"].get("aspect") == 0.7468, pp.get("geo"))
+
+    def _contrast(h, bg="FFFFFF"):
+        def lum(x):
+            c = [int(x[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+            c = [v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4 for v in c]
+            return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+        a, b = lum(h), lum(bg)
+        return (max(a, b) + 0.05) / (min(a, b) + 0.05)
+    accents = {c["key"]: c.get("accent") for c in pp.get("colors", [])}
+    chk("포인트 색(BIRTHDAY·끝 하트) = 프레임 색마다 따로 · 흰 바탕 명암비 ≥ 3.8 (제목 크기에서 읽힌다)",
+        all(accents.values()) and len(set(accents.values())) == 6
+        and min(_contrast(a) for a in accents.values()) >= 3.8, accents)
+    ins = {t["key"]: t for t in pp.get("inside", [])}
+    hu, hf, ha, cc, cu, cf = bd["upper"], bd["face"], bd["heartAt"], ba["circle"], ba["upper"], ba["face"]
+    cw, ctop = 2 * cc["r"], cc["cy"] - cc["r"]
+    near = lambda a, b: abs(a - b) < 1e-3
+    chk("프레임 안 표: 모양 4개 · 하트 = 하트 사진 실측 ÷ 하트 폭 · 원 = 원 사진 실측 ÷ 지름 · 기본은 팝",
+        list(ins) == ["HEART", "PUFF", "CLOUD", "CIRCLE"]
+        and near(ins["HEART"]["head"], hu["headW"] / ha["w"]) and near(ins["HEART"]["top"], (hu["top"] - ha["top"]) / ha["w"])
+        and near(ins["HEART"]["faceTop"], (hf["top"] - ha["top"]) / ha["w"])
+        and near(ins["HEART"]["faceBottom"], (hf["bottom"] - ha["top"]) / ha["w"]) and near(ins["HEART"]["faceW"], hf["maxW"] / ha["w"])
+        and near(ins["CIRCLE"]["head"], cu["headW"] / cw) and near(ins["CIRCLE"]["top"], (cu["top"] - ctop) / cw)
+        and near(ins["CIRCLE"]["faceTop"], (cf["top"] - ctop) / cw) and near(ins["CIRCLE"]["faceBottom"], (cf["bottom"] - ctop) / cw)
+        and near(ins["CIRCLE"]["faceW"], cf["maxW"] / cw) and pp["defaults"].get("popOut") is True, ins)
+
+    bgood = {"script": "bday", "folder": "Order A EVS-1", "bases": ["Order A EVS-1_03"], "designIdx": 0, "sizeIdx": 2,
+             "line1": " Thanks for coming! ", "line2": "무시됨", "name": " Harin ", "customerName": "Order A",
+             "orderDate": "2026-10-07", "shotTypes": {"Order A EVS-1_03": "upper"},
+             "popOut": True, "popLayout": 1, "popShape": 2, "popColor": 3, "popTitle": 1, "popHand": 1}
+    sk, ln, ex, sm = cp.build_script_launch(projects, bgood, rch, bday=bch)
+    po = ex.get("__EVERSTORY_BDAY_OPTS__", {})
+    chk("만들기 값: 폴더 경로 + 옵션은 키로 (팝 · 사진 위 · 구름 · 민트 · Titan One · Patrick Hand) · 문구 한 줄 (2줄은 버림) · 이름",
+        sk == "bday" and isinstance(ln, str) and ln.endswith(os.path.join("Order A EVS-1", "02_cutout"))
+        and po.get("design") == "POP" and po.get("popOut") is True and po.get("popLayout") == "PHOTO_TOP"
+        and po.get("popShape") == "CLOUD" and po.get("popColor") == "MINT" and po.get("popTitle") == "TITAN"
+        and po.get("popHand") == "PATRICK" and po.get("line1") == "Thanks for coming!" and po.get("line2") == ""
+        and po.get("name") == "Harin" and po.get("sizeMm") == 50.8 and po.get("shotTypes") == {"Order A EVS-1_03": "upper"}
+        and "sub" not in po and "Special Day POP" in sm, po)
+    _, _, exi, _ = cp.build_script_launch(projects, dict(bgood, popOut=False), rch, bday=bch)
+    _, _, exd, _ = cp.build_script_launch(projects, {k: v for k, v in bgood.items() if k != "popOut"}, rch, bday=bch)
+    chk("프레임 안 = popOut false 그대로 · 값이 없으면 .jsx 기본(팝)",
+        exi["__EVERSTORY_BDAY_OPTS__"].get("popOut") is False and exd["__EVERSTORY_BDAY_OPTS__"].get("popOut") is True,
+        (exi, exd))
+    bbad = [("문구 없음 (이름만)", dict(bgood, line1=" "), "문구"), ("문구 너무 김", dict(bgood, line1="A" * 41), "line1"),
+            ("이름 너무 김", dict(bgood, name="A" * 30), "name"), ("디자인 번호 밖", dict(bgood, designIdx=1), "designIdx"),
+            ("사이즈 번호 밖", dict(bgood, sizeIdx=4), "sizeIdx"),
+            ("모르는 사진 종류", dict(bgood, shotTypes={"Order A EVS-1_03": "hat"}), "사진 종류"),
+            ("레이아웃 번호 밖", dict(bgood, popLayout=2), "popLayout"), ("모양 번호 밖", dict(bgood, popShape=4), "popShape"),
+            ("색 번호 밖", dict(bgood, popColor=6), "popColor"),
+            ("제목 서체 없음", {k: v for k, v in bgood.items() if k != "popTitle"}, "popTitle"),
+            ("문구 서체 번호 밖", dict(bgood, popHand=2), "popHand"), ("팝 여부가 글자", dict(bgood, popOut="yes"), "popOut")]
+    wrong = []
+    for label, body, word in bbad:
+        try:
+            cp.build_script_launch(projects, body, rch, bday=bch)
+            wrong.append(label + " (통과됨)")
+        except ValueError as e:
+            if word not in str(e):
+                wrong.append("%s → %s" % (label, e))
+    try:
+        cp.build_script_launch(projects, bgood, rch)
+        wrong.append("선택지 없이 통과됨")
+    except ValueError:
+        pass
+    chk("이상한 Special Day 요청 %d가지는 이유와 함께 거부" % (len(bbad) + 1), not wrong, "; ".join(wrong))
+    st, hd, body = get("/api/composed/bday")
+    chk("Special Day 선택지 API: 200 + 디자인 하나 (POP) + 프레임 안 표", st == 200 and [d["key"] for d in json.loads(body)["designs"]] == ["POP"]
+        and len(json.loads(body)["draw"]["pop"]["inside"]) == 4)
+    st, res = post("/api/composed/script", bgood)
+    chk("만들기 API: Everstory_birthday.jsx 로 + 옵션 키 전역",
+        st == 200 and res.get("ok") and len(xl) == 3 and xl[2][0] == webui.BDAY_JSX
+        and xl[2][2]["__EVERSTORY_BDAY_OPTS__"]["popShape"] == "CLOUD" and xl[2][2]["__EVERSTORY_BDAY_OPTS__"]["popOut"] is True, res)
+    st, res = post("/api/composed/script", dict(bgood, line1=""))
+    chk("만들기 API: 문구 없으면 400 + 이유 · 안 넘김", st == 400 and "문구" in res.get("error", "") and len(xl) == 3, res)
+    st, res = post("/api/composed/script", dict(bgood, popOut=False, popShape=0))
+    chk("만들기 API: 프레임 안 · 하트도 Everstory_birthday.jsx 로",
+        st == 200 and res.get("ok") and len(xl) == 4 and xl[3][2]["__EVERSTORY_BDAY_OPTS__"]["popOut"] is False
+        and xl[3][2]["__EVERSTORY_BDAY_OPTS__"]["popShape"] == "HEART", res)
 
 finally:
     if srv is not None:

@@ -37,11 +37,27 @@
   #msg.ok { color:var(--ok); background:var(--okbg); }
   #msg.err { color:var(--err); background:var(--errbg); }
   main { flex:1; min-height:0; display:flex; }
+  main[hidden] { display:none; }
+  #script { width:150px; }
+  /* Ring · Christmas · Special Day (스크립트 드롭다운) — 2026-10-03 */
+  .ttl { display:flex; gap:6px; align-items:center; } .ttl input[type=text] { flex:1; }
+  .ttl label { white-space:nowrap; display:flex; align-items:center; gap:3px; }
+  .ttl input[type=checkbox] { width:auto; margin:0; }
+  .ttl select { flex:1; min-width:0; }
+  #aview { flex:1; min-width:0; overflow:auto; display:flex; flex-direction:column; align-items:center;
+           justify-content:center; gap:14px; padding:24px; color:var(--mut); text-align:center; }
+  #aview .big { font-size:15px; color:var(--fg); font-weight:600; }
+  /* 시트 미리보기 — .jsx 그리기를 SVG 로 옮긴 것 (서체·자동 축소는 근사) */
+  .arow { display:flex; gap:24px; align-items:center; justify-content:center; flex-wrap:wrap; width:100%; }
+  svg.msheet { height:min(78vh, 760px); max-width:100%; background:#fff; border:1px solid var(--line); border-radius:6px;
+               box-shadow:0 1px 6px rgba(0,0,0,.08); flex:none; }
+  .samp { display:flex; flex-direction:column; align-items:center; gap:8px; max-width:240px; }
   aside { width:400px; flex:none; overflow:auto; border-right:1px solid var(--line); padding:12px 14px 24px; }
   .sec { margin-bottom:14px; }
   .sec h2 { font-size:12px; color:var(--mut); font-weight:600; margin:0 0 8px; display:flex; align-items:center; gap:6px; }
   .form { display:grid; grid-template-columns:74px 1fr; gap:6px 10px; align-items:center; }
   .form label { font-size:12.5px; color:var(--mut); }
+  .form [hidden], .sec .hint[hidden] { display:none; }   /* .ttl(flex) 도 디자인별로 숨긴다 */
   .form input, .form select { width:100%; }
   .seg { display:flex; gap:4px; }
   .seg button { padding:3px 9px; font-size:12.5px; }
@@ -146,12 +162,14 @@
   <a class="back" id="back" href="#">← 주문 보드</a>
   <h1>Composed 미리보기</h1>
   <select id="folder" title="주문 폴더 — 02_cutout 에 누끼 페어가 있는 폴더, 최근 것부터"></select>
+  <select id="script" title="만들 스크립트 — Composed(이 화면 미리보기) · Christmas(크리스마스 하트·오벌·사진 카드) · Special Day(생일 하트·원·팝 사진 + Ring 원형 배지). Christmas·Special Day 는 왼쪽 폼 값으로 대화창 없이 만든다">
+    <option value="composed">Composed</option><option value="xmas">Christmas</option><option value="bday">Special Day</option></select>
   <button id="reload" title="폴더를 다시 읽는다 (Photoshop 에서 누끼를 새로 저장했을 때)">새로고침</button>
   <span id="sum"></span>
   <button class="primary" id="make" disabled>Illustrator 에서 만들기</button>
 </header>
 <div id="msg"></div>
-<main>
+<main id="cmain">
   <aside>
     <div class="sec">
       <h2>시트 정보</h2>
@@ -198,6 +216,83 @@
     <ul id="notes"></ul>
     <div id="sheets"><div class="empty">불러오는 중…</div></div>
   </section>
+</main>
+<main id="amain" hidden>
+  <aside id="aaside">
+    <div class="sec" id="sdSec" hidden>
+      <h2>Special Day</h2>
+      <div class="form">
+        <label for="bDesign">디자인</label><select id="bDesign" title="하트·원·팝 사진 = Everstory_birthday.jsx · Ring 원형 배지 = Everstory_ring.jsx"></select>
+      </div>
+      <p class="hint" id="sdOrder" hidden></p>
+    </div>
+    <div class="sec" id="rFormSec" hidden>
+      <h2>배지 정보</h2>
+      <div class="form">
+        <label for="rTheme">테마</label><select id="rTheme"></select>
+        <label for="rLayout">레이아웃</label><select id="rLayout"></select>
+        <label for="rColor">색</label><div class="ttl"><select id="rColor"></select><select id="rColorPick" title="한 색으로 통일할 때 쓸 색"></select></div>
+        <label for="rEffect">글자 효과</label><select id="rEffect" title="링·스트라이프 공통 — 기본 레트로"></select>
+        <label for="rSize">사이즈</label><select id="rSize"></select>
+        <label for="rTop">윗줄</label><div class="ttl"><input type="text" id="rTop" autocomplete="off" spellcheck="false">
+          <label><input type="checkbox" id="rUpper" checked> 대문자</label></div>
+        <label for="rBot">아랫줄</label><input id="rBot" autocomplete="off" spellcheck="false">
+        <label for="rName">고객 이름</label><input id="rName" autocomplete="off" spellcheck="false">
+        <label for="rODate">날짜</label><input id="rODate" autocomplete="off" spellcheck="false" placeholder="2026-10-03">
+      </div>
+      <p class="hint">안쪽 원·얼굴 크기·정렬·칼선은 대화창 기본값으로 만들어요. 스트라이프는 아랫줄을 쓰지 않아요.</p>
+    </div>
+    <div class="sec" id="xFormSec" hidden>
+      <h2>크리스마스 정보</h2>
+      <div class="form">
+        <label for="xDesign">디자인</label><select id="xDesign"></select>
+        <label for="xName" data-xd="HEART MERRY CARD SQUARE DIECUT">이름</label><input id="xName" data-xd="HEART MERRY CARD SQUARE DIECUT" autocomplete="off" spellcheck="false" placeholder="스티커에 들어갈 이름 (주문 스티커 이름)">
+        <label for="xLine" data-xd="OVAL">아래 문구</label><div class="ttl" data-xd="OVAL"><input type="text" id="xLine" autocomplete="off" spellcheck="false" placeholder="Love, ○○">
+          <select id="xLinePreset" title="틀 고르기 — 주문 스티커 이름을 넣어 채워요"></select></div>
+        <label for="xColor" data-xd="HEART">색</label><select id="xColor" data-xd="HEART"></select>
+        <label for="xBorder" data-xd="HEART">테두리</label><select id="xBorder" data-xd="HEART"></select>
+        <label for="xSize">사이즈</label><select id="xSize"></select>
+        <label for="xCust">고객 이름</label><input id="xCust" autocomplete="off" spellcheck="false">
+        <label for="xODate">날짜</label><input id="xODate" autocomplete="off" spellcheck="false" placeholder="2026-10-06">
+      </div>
+      <p class="hint" data-xd="HEART">하트는 머리만 오린 얼굴 누끼용이에요 — 상반신·전신은 작게 떠 보여요. 이름은 대문자로, 원본처럼 살짝 둥글게(∪) 들어가요. 서체 = Sofia Pro Soft (Adobe Fonts).</p>
+      <p class="hint" data-xd="MERRY">MERRY 도 머리만 오린 얼굴 누끼용이에요. 레터링·리본·흰 테두리는 그림(templates/xmas_merry_art_v1.ai) 그대로, 매 장 얼굴·산타 모자·리본 이름만 바뀌어요. 이름은 첫 글자만 대문자, 서체 = DM Serif Display.</p>
+      <p class="hint" data-xd="CARD SQUARE DIECUT">사진 카드는 윗몸·전신 누끼도 돼요 — 머리 크기를 맞추고 아래는 창(D 는 이름 판)이 잘라요. 얼굴 누끼는 창 가운데에 통째로. 이름은 첫 글자만 대문자, 서체 = DM Serif Display + Adobe Caslon Pro 기울임(Merry Christmas) · Baskerville(띄운 대문자). D 칼선 = 사진 윤곽 + 이름 판.</p>
+      <p class="hint" data-xd="OVAL">오벌도 머리만 오린 얼굴 누끼용이에요. 흰 테두리·레드 한 색으로 만들어요. 아래 문구는 원호를 따라 들어가고, 길면 자간 → 글자 크기 순으로 줄어요. 서체 = Great Vibes + Etna Semibold (Adobe Fonts).</p>
+    </div>
+    <div class="sec" id="bFormSec" hidden>
+      <h2>스티커 정보</h2>
+      <div class="form">
+        <label for="bName" id="bNameLabel">서명 이름</label><input id="bName" autocomplete="off" spellcheck="false" maxlength="24" placeholder="– 이름 – (비우면 서명 없음)">
+        <label for="bSub" data-bd="CIRCLE">작은 글씨</label><input id="bSub" data-bd="CIRCLE" autocomplete="off" spellcheck="false" maxlength="30" placeholder="SPECIAL DAY (비우면 양옆 하트도 빠져요)">
+        <label for="bLine1" id="bLine1Label">문구 1줄</label><input id="bLine1" autocomplete="off" spellcheck="false" maxlength="40" placeholder="Hey friend!">
+        <label for="bLine2" data-bd="HEART CIRCLE">문구 2줄</label><input id="bLine2" data-bd="HEART CIRCLE" autocomplete="off" spellcheck="false" maxlength="40" placeholder="Thanks for coming!">
+        <label for="bPopOut" data-bd="POP">사진</label><select id="bPopOut" data-bd="POP" title="팝 = 머리만 프레임 위로 · 프레임 안 = 머리까지 프레임이 감싼다"></select>
+        <label for="bPopLayout" data-bd="POP">레이아웃</label><select id="bPopLayout" data-bd="POP"></select>
+        <label for="bPopShape" data-bd="POP">모양</label><select id="bPopShape" data-bd="POP"></select>
+        <label for="bPopColor" data-bd="POP">프레임 색</label><select id="bPopColor" data-bd="POP"></select>
+        <label for="bPopTitle" data-bd="POP">제목 서체</label><select id="bPopTitle" data-bd="POP"></select>
+        <label for="bPopHand" data-bd="POP">문구 서체</label><select id="bPopHand" data-bd="POP"></select>
+        <label for="bSize">사이즈</label><select id="bSize"></select>
+        <label for="bCust">고객 이름</label><input id="bCust" autocomplete="off" spellcheck="false">
+        <label for="bODate">날짜</label><input id="bODate" autocomplete="off" spellcheck="false" placeholder="2026-10-07">
+      </div>
+      <p class="hint" data-bd="HEART">문구는 고객이 쓴 그대로 넣어요 — 두 줄 가운데, 끝에 빨간 하트 (길면 두 줄을 같이 줄여요). 윗몸·전신 사진은 머리 크기를 맞추고 몸은 하트가 잘라요 · 얼굴 누끼는 하트 안에 통째로 (사진 카드에서 종류를 고칠 수 있어요). 서체 = Bree Serif Bold + Shantell Sans Medium.</p>
+      <p class="hint" data-bd="POP" hidden>문구와 이름이 한 줄로 들어가요 — “문구 – 이름 ♥” (이름을 비우면 문구만). 팝 = 머리만 프레임 위로 나오고 몸은 프레임이 잘라요 · 프레임 안 = 머리까지 프레임이 감싸요 · 얼굴 누끼는 얼굴째 나와요. 프레임 색은 사진을 보고 고르세요 (파란 옷이면 하늘색에 묻혀요). 제목 = HAPPY 검정 · BIRTHDAY 와 끝 하트 = 프레임 색에 어울리는 진한 색.</p>
+      <p class="hint" data-bd="CIRCLE" hidden>이름·작은 글씨·문구는 고객이 쓴 그대로 넣어요 — 이름은 대문자 한 줄(길면 줄어요), 작은 글씨 양옆에 하트, 문구 끝에 분홍 하트. 사진 규칙은 하트와 같고 몸은 원이 잘라요. 1.75″ 가 9장 (2″ 는 4장). 서체 = Bree Serif Bold (Adobe Fonts, 하트 제목과 같음) + Shantell Sans Bold.</p>
+    </div>
+    <div class="sec" id="lPhotoSec">
+      <h2>사진 <span id="lcount"></span>
+        <span class="tools">
+          <button type="button" data-lpick="first">첫 장</button>
+          <button type="button" data-lpick="all">전체</button>
+          <button type="button" data-lpick="none">해제</button>
+        </span></h2>
+      <div class="plist" id="lplist"></div>
+      <p class="hint">클릭 = 넣기·빼기. 고른 사진이 칸마다 돌아가며 들어가요. 누끼 피사체를 사진 창 안에 맞춰 가운데 놓아요.</p>
+    </div>
+  </aside>
+  <section id="aview"></section>
 </main>
 <script>
 "use strict";
@@ -379,7 +474,8 @@ async function loadFolder(name, fresh) {
   const quantity = contract.quantity == null ? "" : "수량 " + contract.quantity;
   const extra = contract.extraSheets ? "추가 인쇄 +" + contract.extraSheets : "";
   const prints = printCount(contract) > 1 ? "같은 시트 " + printCount(contract) + "장 인쇄" : "";
-  $("#orderContract").textContent = [contract.pack === "NAME" ? "Name & Photo · 최종 5디자인 · A5 1장" : "", quantity, extra, prints]
+  const sdLine = contract.specialDay ? "Special Day " + (contract.specialDay.design === "ring" ? "링 배지" : "사진 스티커") + " · 1.5″ · A5 1장" : "";
+  $("#orderContract").textContent = [contract.pack === "NAME" ? "Name & Photo · 최종 5디자인 · A5 1장" : "", sdLine, quantity, extra, prints]
     .filter(Boolean).join(" · ");
   $("#orderContract").hidden = !$("#orderContract").textContent;
   const options = (contract.options || []).map(o => o.key + " = " + o.value).join(" · ");
@@ -427,6 +523,7 @@ async function loadFolder(name, fresh) {
   // 칼선 캐시를 못 쓰는 사진은 실루엣으로 어림한 뒤 다시 계산한다.
   const todo = S.pairs.filter(p => p.cutState !== "ok" && p.cutState !== "bad" && !p.est && p.canvasAspect > 0);
   for (const p of todo) estimateFromSil(p).then(() => { if (S.folder === name) schedule(); });
+  if (fresh) await sdFromOrder(d.prefill);
 }
 
 // ── 목록 ──────────────────────────────────────────────────────
@@ -885,6 +982,7 @@ function renderSheets() {
 }
 
 function renderSummary() {
+  if (A.script !== "composed") return altSummary();
   const n = S.results.reduce((t, x) => t + (x.r ? x.r.placed.length : 0), 0);
   $("#sum").textContent = S.sel.length
     ? `사진 ${S.pairs.length}장 중 ${S.sel.length}장 → 시트 ${S.results.length}장 · 스티커 ${n}장` +
@@ -906,6 +1004,7 @@ function highlight(i, on) {
 
 // ── 만들기 ────────────────────────────────────────────────────
 async function make() {
+  if (A.script !== "composed") return altMake();
   if (S.busy || S.blockers.length) return;
   const f = form();
   const shotTypes = {}, sizeRanges = {}, maxCopies = {};
@@ -1112,6 +1211,1389 @@ async function init() {
     paintRim();
   }
 }
+// 시트 미리보기 — Everstory_ring.jsx · xmas · birthday 가 그리는 것을 브라우저 SVG 로 그대로 옮긴다.
+// 치수·색·서체 표는 서버가 .jsx 에서 읽어 준다 (choices.draw). 좌표는 시트 body 기준 mm, y 는 아래로.
+// .jsx 는 Illustrator 좌표(y 위로)라 y 성분 부호만 바꿨다 — 각도 규약(12시 = 90°, 반시계 증가)은 그대로.
+// 다른 점: 서체는 이 Mac 에 깔린 글꼴로 그리고, Ring 의 장평 축소는 textLength 로 흉내 낸다.
+const FONT_CSS = {
+  "DMSerifDisplay-Regular": ["'DM Serif Display'", 400], "Nunito-Bold": ["Nunito", 700],
+  "Fredoka-Medium": ["Fredoka", 500], "Fredoka-SemiBold": ["Fredoka", 600], "Fredoka-Bold": ["Fredoka", 700],
+  "Baloo2-ExtraBold": ["'Baloo 2'", 800], "Baloo2-Bold": ["'Baloo 2'", 700],
+  "BarlowSemiCondensed-ExtraBold": ["'Barlow Semi Condensed'", 800],
+};
+function fontOf(cands) {
+  const list = (cands || []).map(c => FONT_CSS[c]).filter(Boolean);
+  if (!list.length) return { family: "sans-serif", weight: 600 };
+  return { family: list.map(f => f[0]).join(", ") + ", sans-serif", weight: list[0][1] };
+}
+const hex = h => "#" + String(h || "000000").replace(/^#/, "");
+// a 에서 b 쪽으로 t 만큼 섞은 색 (ring.jsx _mixHex — 그림자 색)
+const mixHex = (a, b, t) => "#" + [0, 2, 4].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t)
+  .toString(16).padStart(2, "0")).join("");
+const rad = d => d * Math.PI / 180;
+let drawUid = 0;
+
+// 원·타원 호 — a0 → a1 (도). 글자가 이 진행 방향으로 얹힌다 (Illustrator pathText 와 같음)
+function arcD(cx, cy, rx, ry, a0, a1) {
+  const n = Math.max(8, Math.ceil(Math.abs(a1 - a0) / 3));
+  let d = "";
+  for (let i = 0; i <= n; i++) {
+    const a = rad(a0 + (a1 - a0) * i / n);
+    d += (i ? " L" : "M") + (cx + rx * Math.cos(a)).toFixed(3) + " " + (cy - ry * Math.sin(a)).toFixed(3);
+  }
+  return d;
+}
+function pathLen(d) {
+  const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  p.setAttribute("d", d);
+  return p.getTotalLength();
+}
+// 곡선 글자 — fit: "shrink" = 넘치면 글자 크기 축소, "ring" = 장평 85% 까지 → 그다음 크기 (ring _addArcText)
+function arcText(id, d, text, font, fs, trackK, fill, fit, margin, halo) {
+  if (!text) return "";
+  const len = pathLen(d);
+  const t = `<text font-family="${font.family}" font-weight="${font.weight}" font-size="${fs}" letter-spacing="${fs * trackK / 1000}"` +
+    ` data-fit="${fit}" data-max="${len * margin}" data-fs="${fs}" data-track="${trackK}"`;
+  const body = `<textPath href="#${id}" startOffset="50%" text-anchor="middle">${esc(text)}</textPath></text>`;
+  return `<path id="${id}" d="${d}" fill="none"/>` +
+    (halo ? `${t} fill="${halo.color}" stroke="${halo.color}" stroke-width="${halo.w}" stroke-linejoin="round">${body}` : "") +
+    `${t} fill="${fill}">${body}`;
+}
+// 그린 뒤 글자 폭을 재서 줄인다 — 같은 원리로 .jsx 가 프로브 텍스트를 잰다
+function fitTexts(root) {
+  root.querySelectorAll("text[data-fit]").forEach(t => {
+    const max = +t.dataset.max, fs = +t.dataset.fs, w = t.getComputedTextLength();
+    if (!(w > max) || !(w > 0)) return;
+    const need = max / w;
+    if (t.dataset.fit === "ring" && need >= 0.85) {
+      t.setAttribute("textLength", max); t.setAttribute("lengthAdjust", "spacingAndGlyphs");
+      return;
+    }
+    const nfs = t.dataset.fit === "ring" ? Math.max(1, fs * need / 0.85) : Math.max(1, fs * need);
+    t.setAttribute("font-size", nfs);
+    t.setAttribute("letter-spacing", nfs * (+t.dataset.track) / 1000);
+    if (t.dataset.fit === "ring") {
+      const w2 = t.getComputedTextLength();
+      if (w2 > 0) { t.setAttribute("textLength", w2 * 0.85); t.setAttribute("lengthAdjust", "spacingAndGlyphs"); }
+    }
+  });
+}
+
+// 누끼 사진 — 피사체 bbox(_sil) 를 창에 맞춘다. info 없으면 이미지 전체 (.jsx 와 같음)
+function subjectOf(p) {
+  const s = p && A.sil[p.base];
+  return s || { fw: 1, fh: 1, fcx: 0.5, fcy: 0.5 };
+}
+function photoHref(p) { return url("/api/composed/thumb", { folder: A.folder, base: p.base, v: p.v }); }
+function imgTag(p, x, y, w, h) {
+  return `<image href="${photoHref(p)}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`;
+}
+
+// ── Ring ─────────────────────────────────────────────────────
+function ringBadge(D, opt, p, slot, cx, cy, dArt, uid) {
+  const N = D.nums, theme = D.themes[opt.themeIdx] || D.themes[0];
+  // 색 — ring.jsx _swatchFor: 0 = 칸마다 순환, 1 = 디자인(사진)마다 고정, COLOR_SINGLE = 한 색 통일
+  const pl = theme.palette.length, cm = opt.colorMode || 0;
+  const sw = theme.palette[(cm === opt.colorSingle ? (opt.colorIdx || 0) : cm === 1 ? slot % Math.max(1, opt.nSel || 1) : slot) % pl];
+  const stripe = opt.layoutKey === "STRIPE", bleed = D.bleedMm;
+  const rArt = dArt / 2, rBg = rArt + bleed;
+  // 사진 종류 — 얼굴 = 가운데, 상반신·전신 = 아래 맞춤(전신은 발 쪽 조금 잘림). 모르면 레이아웃 기본 (ring.jsx _shotType · SHOT_FULL_CROP)
+  const type = ringShotType(p), whole = type === "whole";
+  const bottomAlign = type === "face" || whole ? false : (type ? true : stripe);
+  const crop = type === "full" ? (N.SHOT_FULL_CROP || 0) : 0;
+  const dPhoto = stripe && bottomAlign ? dArt : dArt * N.PHOTO_RATIO, rPhoto = dPhoto / 2, rClip = stripe && !whole ? rBg : rPhoto;
+  const spec = D.layoutType[stripe ? 1 : 0] || D.layoutType[0], font = fontOf(spec.cands);
+  let o = "";
+  if (stripe) {
+    const w = dArt * N.STRIPE_W_RATIO, pitch = 2 * w, n = Math.ceil(rBg / pitch) + 1;
+    let bars = "";
+    for (let k = -n; k <= n; k++) bars += `<rect x="${cx + k * pitch - w / 2}" y="${cy - rBg}" width="${w}" height="${2 * rBg}" fill="${hex(sw.bg)}"/>`;
+    o += `<clipPath id="s${uid}"><circle cx="${cx}" cy="${cy}" r="${rBg}"/></clipPath><g clip-path="url(#s${uid})">` +
+      `<circle cx="${cx}" cy="${cy}" r="${rBg}" fill="${hex(D.stripeBase)}"/>${bars}</g>`;
+  } else {
+    o += `<circle cx="${cx}" cy="${cy}" r="${rBg}" fill="${hex(sw.bg)}"/>`;
+  }
+  let inner = "";
+  if (!stripe) {
+    const dh = D.discHex[D.discDefault];
+    inner += `<circle cx="${cx}" cy="${cy}" r="${rPhoto}" fill="${hex(dh || sw.bg)}"/>`;
+  }
+  if (p) {
+    const sj = subjectOf(p), asp = p.aspect || 1;
+    const pct = (bottomAlign ? N.STRIPE_SUBJECT_PCT : N.DEF_SUBJECT_PCT) / 100, yb = (bottomAlign ? N.STRIPE_Y_BIAS_PCT : N.DEF_Y_BIAS_PCT) / 100;
+    // 통사진(원·사각) = 창에 꽉 차게(cover) 정확히 가운데 — ring.jsx 통사진 주석
+    const pw = whole ? dPhoto / Math.min(sj.fw, sj.fh * asp) : dPhoto * pct / (1 - crop) / Math.max(sj.fw, sj.fh * asp);
+    const ph = pw * asp, yOff = whole || type === "face" ? 0 : yb * dPhoto;   // 통사진·얼굴 = 정가운데 (세로 보정 없음)
+    const y = bottomAlign ? cy + rPhoto + N.SUBJECT_BLEED * dPhoto + crop * sj.fh * ph - (sj.fcy + sj.fh / 2) * ph - yOff : cy - sj.fcy * ph - yOff;
+    inner += imgTag(p, cx - sj.fcx * pw, y, pw, ph);
+  }
+  o += `<clipPath id="c${uid}"><circle cx="${cx}" cy="${cy}" r="${rClip}"/></clipPath><g clip-path="url(#c${uid})">${inner}</g>`;
+  const fs = dArt * (stripe && N.STRIPE_FONT_RATIO ? N.STRIPE_FONT_RATIO : N.RING_FONT_RATIO), capH = fs * N.CAP_HEIGHT_RATIO, ink = hex(sw.ink);
+  const halo = spec.halo ? { color: hex(D.haloHex), w: fs * N.HALO_RATIO } : null;
+  const top0 = 90 + N.TOP_SPAN_DEG / 2, top1 = 90 - N.TOP_SPAN_DEG / 2;
+  // 글자 효과 (링·스트라이프 공통) — ring.jsx _addArcText 와 같은 순서: 흰 테두리 → 뒤 카피 → 본체
+  const fx = (id, d, text, F, f, tr) => {
+    if (!text) return "";
+    const eff = opt.textEffect || "none", off = f * (N.EFFECT_OFFSET || 0.07);
+    const T = (k, fill, h) => arcText(id + k, d, text, F, f, tr, fill, "ring", N.FIT_MARGIN, h);
+    const hw = halo ? { color: halo.color, w: f * N.HALO_RATIO } : null;
+    let out = hw ? T("h", hw.color, hw) : "";
+    if (eff === "shadow") return out + `<g transform="translate(${off} ${off})">${T("s", mixHex(sw.ink, sw.bg, N.EFFECT_SHADOW_MIX || 0.45), null)}</g>` + T("", ink, null);
+    if (eff === "retro") {
+      const st = { color: ink, w: f * (N.EFFECT_RETRO_STROKE || 0.16) };
+      return out + `<g transform="translate(${off} ${off})">${T("s", ink, st)}</g>` + T("o", ink, st) + T("", hex(D.retroFill || "FFF6E8"), null);
+    }
+    return out + T("", ink, null);
+  };
+  if (stripe) {
+    const r = rArt - N.STRIPE_TEXT_EDGE * dArt - capH;
+    o += fx("t" + uid, arcD(cx, cy, r, r, top0, top1), opt.topText, font, fs, N.RING_TRACKING);
+  } else {
+    const inset = Math.max(0, (rArt - rPhoto - capH) / 2);
+    const rT = rPhoto + inset, rB = rArt - inset;
+    o += fx("t" + uid, arcD(cx, cy, rT, rT, top0, top1), opt.topText, font, fs, N.RING_TRACKING);
+    o += fx("b" + uid, arcD(cx, cy, rB, rB, 270 - N.BOTTOM_SPAN_DEG / 2, 270 + N.BOTTOM_SPAN_DEG / 2), opt.bottomText, font, fs, N.RING_TRACKING);
+  }
+  return o + `<circle cx="${cx}" cy="${cy}" r="${rArt}" fill="none" stroke="#e8318a" stroke-width="0.15" opacity=".7"/>`;
+}
+
+// ── Christmas (xmas) — Everstory_xmas.jsx 그리기를 SVG 로 (2026-10-06) ─────────────
+// 하트 윤곽·흰 테두리 칼선(오프셋)·얼굴 상자·∪ 곡선 이름. 수치는 서버가 .jsx 표에서 읽어 준다 (A.xch.draw).
+// .jsx 의 하트 좌표는 정규화(폭 1)·y 아래라 여기 mm·y 아래 좌표와 부호가 같다 — 방향을 안 바꾼다.
+function xSegs(H) {
+  const N = [0.5, H.n], P = [H.pkx, 0], E = [1, H.ey], T = [0.5, H.h];
+  return [[N, [0.5 + H.a1, H.n - H.b1], [H.pkx - H.a2, 0], P],
+          [P, [H.pkx + H.a3, 0], [1, H.ey - H.b3], E],
+          [E, [1, H.ey + H.b4], [0.5 + H.a5, H.h - H.b5], T]];
+}
+const xMir = p => [1 - p[0], p[1]];
+const xBz = (s, t) => { const u = 1 - t; return [0, 1].map(k => u * u * u * s[0][k] + 3 * u * u * t * s[1][k] + 3 * u * t * t * s[2][k] + t * t * t * s[3][k]); };
+const xBzd = (s, t) => { const u = 1 - t; return [0, 1].map(k => 3 * u * u * (s[1][k] - s[0][k]) + 6 * u * t * (s[2][k] - s[1][k]) + 3 * t * t * (s[3][k] - s[2][k])); };
+const xUnit = v => { const L = Math.hypot(v[0], v[1]); return L ? [v[0] / L, v[1] / L] : [0, 0]; };
+const xOffPt = (s, t, d) => { const p = xBz(s, t), v = xUnit(xBzd(s, t)); return [p[0] + d * v[1], p[1] - d * v[0]]; };
+// 하트 윤곽 (.jsx _heartPath) — 오른쪽 3세그먼트 + 거울
+function xHeartD(H, hx, hy, W) {
+  const S = xSegs(H), f = q => (hx + q[0] * W).toFixed(3) + " " + (hy + q[1] * W).toFixed(3);
+  let d = "M" + f(S[0][0]);
+  for (const s of S) d += " C" + f(s[1]) + " " + f(s[2]) + " " + f(s[3]);
+  for (let i = S.length - 1; i >= 0; i--) { const s = S[i]; d += " C" + f(xMir(s[2])) + " " + f(xMir(s[1])) + " " + f(xMir(s[0])); }
+  return d + " Z";
+}
+// 하트를 바깥으로 d(하트 폭 대비) 띄운 닫힌 패스 — .jsx _offsetPath 와 같은 노드·핸들 (오목점 뾰족 · 꼭지 원호)
+function xOffsetD(H, samples, hx, hy, W, d) {
+  const S = xSegs(H);
+  let t0 = 0;
+  if (d > 0) { let lo = 0, hi = 0.5; for (let it = 0; it < 40; it++) { const mid = (lo + hi) / 2; if (xOffPt(S[0], mid, d)[0] < 0.5) lo = mid; else hi = mid; } t0 = hi; }
+  const R = [];
+  S.forEach((s, si) => { const ta = si ? 0 : t0; for (let k = si ? 1 : 0; k <= samples; k++) { const t = ta + (1 - ta) * k / samples; R.push({ p: xOffPt(s, t, d), v: xUnit(xBzd(s, t)) }); } });
+  R[0].p = [0.5, R[0].p[1]];
+  const n = R.length, nodes = R.map(r => ({ p: r.p })), tip = n;
+  for (let i = n - 1; i >= 1; i--) nodes.push({ p: xMir(R[i].p) });
+  const mt = v => [v[0], -v[1]], dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const seg = (ai, bi, ta, tb, la, lb) => { const A2 = nodes[ai], B = nodes[bi]; A2.o = [A2.p[0] + ta[0] * la, A2.p[1] + ta[1] * la]; B.i = [B.p[0] - tb[0] * lb, B.p[1] - tb[1] * lb]; };
+  for (let i = 0; i < n - 1; i++) { const L = dist(R[i].p, R[i + 1].p) / 3; seg(i, i + 1, R[i].v, R[i + 1].v, L, L); }
+  const vT = R[n - 1].v, th0 = Math.atan2(-vT[0], vT[1]), k = (4 / 3) * Math.tan(Math.abs(Math.PI - 2 * th0) / 4) * d;
+  seg(n - 1, tip, vT, mt(vT), k, k);
+  for (let i = n - 1; i >= 2; i--) { const ai = tip + (n - 1 - i), L = dist(R[i].p, R[i - 1].p) / 3; seg(ai, ai + 1, mt(R[i].v), mt(R[i - 1].v), L, L); }
+  const L3 = dist(R[1].p, R[0].p) / 3;
+  seg(nodes.length - 1, 0, mt(R[1].v), mt(R[0].v), L3, L3);
+  const f = q => (hx + q[0] * W).toFixed(3) + " " + (hy + q[1] * W).toFixed(3);
+  let out = "M" + f(nodes[0].p);
+  for (let i = 0; i < nodes.length; i++) { const A2 = nodes[i], B = nodes[(i + 1) % nodes.length]; out += " C" + f(A2.o) + " " + f(B.i) + " " + f(B.p); }
+  return out + " Z";
+}
+// 이름 — ∪ 원호 위 (원 중심이 위, 글자 위쪽이 얼굴 쪽). 대문자 높이 → 글자 크기, 자간은 서체 표 값. 길면 fitXmasNames
+function xNameSvg(D, opt, hx, hy, W, ink, uid) {
+  const text = (opt.name || "").trim().toUpperCase();
+  if (!text || !A.xfont) return "";
+  const N = D.name, F = A.xfont, fs = Math.max(N.cap * W, N.minCapMm) / F.spec.cap, tr = F.spec.track / 1000, ls = tr * fs;
+  const r = N.r * W, cx = hx + W / 2, cy = hy + (N.low - N.r) * W, span = rad(60), id = "xn" + uid;
+  const p0 = [cx + r * Math.cos(Math.PI / 2 + span), cy + r * Math.sin(Math.PI / 2 + span)];
+  const p1 = [cx + r * Math.cos(Math.PI / 2 - span), cy + r * Math.sin(Math.PI / 2 - span)];
+  return `<path id="${id}" d="M${p0[0].toFixed(3)} ${p0[1].toFixed(3)} A${r.toFixed(3)} ${r.toFixed(3)} 0 0 0 ${p1[0].toFixed(3)} ${p1[1].toFixed(3)}" fill="none"/>` +
+    `<text font-family="${F.family}" font-weight="${F.weight}" font-size="${fs}" letter-spacing="${ls}" fill="${ink}"` +
+    ` data-xfit="1" data-max="${N.maxLen * W}" data-fs="${fs}" data-tr="${tr}" data-trmin="${N.trackMinK}" data-hs="${N.minHScale / 100}">` +
+    `<textPath href="#${id}" startOffset="${(r * span + ls / 2).toFixed(3)}" text-anchor="middle">${esc(text)}</textPath></text>`;
+}
+// 그린 뒤 폭을 재서 줄인다 — .jsx _addName 과 같은 순서: 자간(원래의 trackMinK 까지) → 장평(minHScale) → 크기
+function fitXmasNames(root) {
+  root.querySelectorAll("text[data-xfit]").forEach(t => {
+    const max = +t.dataset.max, fs0 = +t.dataset.fs, tr0 = +t.dataset.tr, trMin = +t.dataset.trmin, hsMin = +t.dataset.hs;
+    const tp = t.querySelector("textPath"), n = Math.max(1, (t.textContent || "").length - 1);
+    const setLs = ls => {   // 자간을 바꾸면 끝 글자 뒤 자간 반만큼 가운데가 밀린다 — 시작점도 같이
+      const old = +t.getAttribute("letter-spacing");
+      t.setAttribute("letter-spacing", ls);
+      tp.setAttribute("startOffset", +tp.getAttribute("startOffset") - (old - ls) / 2);
+    };
+    let w = t.getComputedTextLength();
+    if (!(w > max) || !(w > 0)) return;
+    const cut = w - max, can = n * fs0 * tr0 * (1 - trMin);
+    if (cut <= can) { setLs(fs0 * tr0 - cut / n); return; }
+    setLs(fs0 * tr0 * trMin);
+    w = t.getComputedTextLength();
+    const need = max / w;
+    if (need >= hsMin) { t.setAttribute("textLength", max); t.setAttribute("lengthAdjust", "spacingAndGlyphs"); return; }
+    const nfs = fs0 * need / hsMin;
+    t.setAttribute("font-size", nfs);
+    setLs(nfs * tr0 * trMin);
+    const w2 = t.getComputedTextLength();
+    if (w2 > 0) { t.setAttribute("textLength", w2 * hsMin); t.setAttribute("lengthAdjust", "spacingAndGlyphs"); }
+  });
+}
+// 하트 한 장 — (x0, y0) = 칼선 bbox 왼쪽 위 (mm), Dmm = 칼선 폭. .jsx _composeHeartAt 과 같은 순서
+function heartSticker(D, opt, p, slot, x0, y0, Dmm, uid) {
+  const white = opt.border === 0, b = white ? D.borderMm : 0, W = Dmm - 2 * b, hx = x0 + b, hy = y0 + b;
+  // 색 — 한 색이면 레드, 믹스면 (행 + 열) 로 한 칸씩 밀어 대각선으로 (.jsx _buildSheet)
+  const pal = D.palette, sw = opt.colorMode === 1 ? pal[(Math.floor(slot / opt.cols) + slot % opt.cols) % pal.length] : pal[0];
+  const H = D.heart, heart = xHeartD(H, hx, hy, W);
+  let o = white ? `<path d="${xOffsetD(H, D.samples, hx, hy, W, b / W)}" fill="#fff"/>`
+                : `<path d="${xOffsetD(H, D.samples, hx, hy, W, D.bleedMm / W)}" fill="${hex(sw.bg)}"/>`;
+  o += `<path d="${heart}" fill="${hex(sw.bg)}"/>`;
+  if (p) {
+    // 피사체 bbox 를 얼굴 상자에 통째로 담고 상자 가운데 (.jsx 와 같음)
+    const sj = subjectOf(p), asp = p.aspect || 1, F = D.face;
+    const bw = F.maxW * W, bh = (F.bottom - F.top) * W, pw = Math.min(bw / sj.fw, bh / (sj.fh * asp)), ph = pw * asp;
+    const cx = hx + W / 2, cy = hy + (F.top + F.bottom) / 2 * W;
+    o += `<clipPath id="xc${uid}"><path d="${heart}"/></clipPath><g clip-path="url(#xc${uid})">${imgTag(p, cx - sj.fcx * pw, cy - sj.fcy * ph, pw, ph)}</g>`;
+  }
+  o += xNameSvg(D, opt, hx, hy, W, hex(sw.ink), uid);
+  const cut = white ? xOffsetD(H, D.samples, hx, hy, W, b / W) : heart;
+  return o + `<path d="${cut}" fill="none" stroke="#e8318a" stroke-width="0.15" opacity=".7"/>`;
+}
+
+// ── Christmas MERRY (참고 2번, 2026-10-07) — .jsx _composeMerryAt 그대로 ─────────────
+// 매 장 같은 부분 = 빌드 도구가 뽑은 FRAME.png (칼선 bbox 그대로 · 레터링·리본·크림·흰 테두리) — 얼굴은 리본과 안 겹쳐
+// (턱이 리본 위) 그림 위에 얹어도 z-order 가 같다. 얼굴·모자는 크림 패스로 클립, 이름은 리본 가운데.
+const xmasArtUrl = name => url("/api/composed/xmasart", { name, v: ((A.xch && A.xch.draw.merry && A.xch.draw.merry.art) || {})[name] || 0 });
+const merryName = raw => { const t = String(raw || "").trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; };
+function merrySticker(D, opt, p, slot, x0, y0, Dmm, uid) {
+  const M = D.merry || {}, T = M.table || {}, S = M.shapes;
+  if (!S || !(M.art || {}).FRAME) return `<rect x="${x0}" y="${y0}" width="${Dmm}" height="${Dmm}" fill="#f6e7e7"/>`;
+  const s = Dmm / T.cutW, X = u => u - T.cutL, Y = v => v - T.cutT;   // 그림 단위 → 칼선 bbox 기준 (그룹이 mm 로 줄인다)
+  let o = `<g transform="translate(${x0} ${y0}) scale(${s})">` +
+    `<image href="${xmasArtUrl("FRAME")}" x="0" y="0" width="${T.cutW}" height="${T.cutH}" preserveAspectRatio="none"/>`;
+  if (p) {
+    // 얼굴 — 피사체 bbox 를 상자에 통째로, 턱 = CHRISTMAS 위에서 높이의 chinK. 모자 — 띠 폭 = 얼굴 폭 × hatBrimK
+    const sj = subjectOf(p), asp = p.aspect || 1;
+    const pw = Math.min(T.faceWMax * T.cw / sj.fw, T.faceH * T.cw / (sj.fh * asp)), ph = pw * asp;
+    const sw = sj.fw * pw, sh = sj.fh * ph, cx = T.x0 + T.faceCx * T.cw, chin = T.cTop + T.chinK * T.cH, top = chin - sh;
+    const k = T.hatBrimK * sw / T.hatBrimPx, ax = cx + T.hatApexX * sw, ay = top + T.hatApexY * sh;
+    o += `<clipPath id="xm${uid}"><path d="${S.cream}"/></clipPath><g clip-path="url(#xm${uid})">` +
+      imgTag(p, X(cx - sj.fcx * pw), Y(chin - sh / 2 - sj.fcy * ph), pw, ph) +
+      `<image href="${xmasArtUrl("HAT")}" x="${X(ax - T.hatApexPxX * k)}" y="${Y(ay - T.hatApexPxY * k)}" width="${T.hatPxW * k}" height="${T.hatPxH * k}"/></g>`;
+  }
+  const nm = merryName(opt.name), F = A.xmName;
+  if (nm && F) o += `<text x="${X(T.nameX)}" y="${Y(T.nameBase)}" text-anchor="middle" font-family="${F.family}" font-weight="${F.weight || 400}"` +
+    ` font-size="${T.nameSize}" fill="${hex(M.red || "9F1112")}" data-mname="1" data-max="${T.nameMaxW}" data-fs="${T.nameSize}">${esc(nm)}</text>`;
+  return o + `<path d="${S.cut}" fill="none" stroke="#e8318a" stroke-width="${(0.15 / s).toFixed(2)}" opacity=".7"/></g>`;
+}
+// 리본 이름이 넘치면 글자 크기를 줄인다 (.jsx _addMerryName 과 같음)
+function fitMerryNames(root) {
+  root.querySelectorAll("text[data-mname]").forEach(t => {
+    const max = +t.dataset.max, fs = +t.dataset.fs, w = t.getComputedTextLength();
+    if (w > max && w > 0) t.setAttribute("font-size", fs * max / w);
+  });
+}
+
+// ── Christmas 오벌 (참고 3번, 2026-10-07) — .jsx _composeOvalAt 그대로 ─────────────
+// 흰 판 · 타원 4겹(레드·크림·레드·크림) · 얼굴(안쪽 크림 타원 클립) · Merry/Christmas(잉크 가운데) · 아래 문구(원호).
+// .jsx 는 임시 윤곽으로 잉크 폭을 재서 가운데 맞춘다 — 여기선 canvas measureText 의 잉크 bbox 로 같은 일을 한다.
+let xInkCtx = null;   // 처음 쓸 때 만든다 (페이지 로드 시점엔 만들지 않는다)
+function xCenteredText(text, F, fs, trackK, cx, baseY, fill) {
+  if (!F || !text) return "";
+  if (!xInkCtx) xInkCtx = document.createElement("canvas").getContext("2d");
+  const ls = trackK / 1000 * fs, k = fs / 100;
+  xInkCtx.font = `${F.weight || 400} 100px ${F.family}`;
+  const m = xInkCtx.measureText(text);
+  const l = -m.actualBoundingBoxLeft * k, r = m.actualBoundingBoxRight * k + ls * (text.length - 1);
+  return `<text x="${(cx - (l + r) / 2).toFixed(3)}" y="${baseY.toFixed(3)}" font-family="${F.family}" font-weight="${F.weight || 400}"` +
+    ` font-size="${fs.toFixed(3)}" letter-spacing="${ls.toFixed(4)}" fill="${fill}">${esc(text)}</text>`;
+}
+// 아래 문구 — 원호 위 (원 중심 높이 cy, 글자 위쪽이 원 중심). 서체 표 자간(lineTrack) = 원본 길이. 길면 fitOvalLines
+function xOvalLineSvg(O, opt, cx, cy, W, fill, uid) {
+  const text = (opt.line || "").trim(), F = A.xoSerif;
+  if (!text || !F || !F.spec.xh) return "";
+  const L = O.line, fs = L.xh * W / F.spec.xh, tr = (F.spec.lineTrack || 0) / 1000, ls = tr * fs, r = L.r * W, span = rad(80), id = "xl" + uid;
+  const p0 = [cx + r * Math.cos(Math.PI / 2 + span), cy + r * Math.sin(Math.PI / 2 + span)];
+  const p1 = [cx + r * Math.cos(Math.PI / 2 - span), cy + r * Math.sin(Math.PI / 2 - span)];
+  return `<path id="${id}" d="M${p0[0].toFixed(3)} ${p0[1].toFixed(3)} A${r.toFixed(3)} ${r.toFixed(3)} 0 0 0 ${p1[0].toFixed(3)} ${p1[1].toFixed(3)}" fill="none"/>` +
+    `<text font-family="${F.family}" font-weight="${F.weight || 400}" font-size="${fs}" letter-spacing="${ls}" fill="${fill}"` +
+    ` data-xline="1" data-max="${2 * r * rad(L.maxDeg)}" data-fs="${fs}" data-tr="${tr}" data-trmin="${L.trackMin / 1000}">` +
+    `<textPath href="#${id}" startOffset="${(r * span + ls / 2).toFixed(3)}" text-anchor="middle">${esc(text)}</textPath></text>`;
+}
+// 그린 뒤 길이를 재서 줄인다 — .jsx _addOvalLine 과 같은 순서: 자간(trackMin 까지) → 크기. 반환 = 가장 작은 글자 크기(mm)
+function fitOvalLines(root) {
+  let minFs = Infinity;
+  root.querySelectorAll("text[data-xline]").forEach(t => {
+    const max = +t.dataset.max, fs0 = +t.dataset.fs, tr0 = +t.dataset.tr, trMin = +t.dataset.trmin;
+    const tp = t.querySelector("textPath"), n = Math.max(1, (t.textContent || "").length - 1);
+    const setLs = ls => {   // 끝 글자 뒤 자간 반만큼 가운데가 밀리는 것까지 같이 옮긴다
+      const old = +t.getAttribute("letter-spacing");
+      t.setAttribute("letter-spacing", ls);
+      tp.setAttribute("startOffset", +tp.getAttribute("startOffset") - (old - ls) / 2);
+    };
+    let w = t.getComputedTextLength();
+    if (w > max && w > 0) {
+      const ls1 = fs0 * tr0 - (w - max) / n;
+      if (ls1 >= fs0 * trMin) setLs(ls1);
+      else {
+        setLs(fs0 * trMin);
+        w = t.getComputedTextLength();
+        if (w > max) { const k = max / w; t.setAttribute("font-size", fs0 * k); setLs(fs0 * trMin * k); }
+      }
+    }
+    minFs = Math.min(minFs, +t.getAttribute("font-size"));
+  });
+  return minFs;
+}
+// 오벌 한 장 — (x0, y0) = 칼선 bbox 왼쪽 위 (mm), Dmm = 칼선 폭. 흰 테두리만 (.jsx 와 같음)
+function ovalSticker(D, opt, p, slot, x0, y0, Dmm, uid) {
+  const O = D.oval, S = O.shape, b = D.borderMm, W = Dmm - 2 * b, rx = W / 2, ry = S.h * W / 2;
+  const cx = x0 + Dmm / 2, cy = y0 + b + ry, top = cy - ry, red = hex(O.colors.red), cream = hex(O.colors.cream);
+  const d1 = S.ring1 * W, d2 = (S.ring1 + S.gap) * W, d3 = (S.ring1 + S.gap + S.ring2) * W;
+  const el = (ex, ey, fill, extra) => `<ellipse cx="${cx.toFixed(3)}" cy="${cy.toFixed(3)}" rx="${ex.toFixed(3)}" ry="${ey.toFixed(3)}" fill="${fill}"${extra || ""}/>`;
+  let o = el(rx + b, ry + b, "#fff") + el(rx, ry, red) + el(rx - d1, ry - d1, cream) + el(rx - d2, ry - d2, red) + el(rx - d3, ry - d3, cream);
+  if (p) {
+    // 피사체 bbox 를 얼굴 상자에 통째로 담고 상자 가운데, 안쪽 크림 타원으로 클립
+    const sj = subjectOf(p), asp = p.aspect || 1, F = O.face;
+    const bw = F.maxW * W, bh = (F.bottom - F.top) * W, pw = Math.min(bw / sj.fw, bh / (sj.fh * asp)), ph = pw * asp;
+    const fcy = top + (F.top + F.bottom) / 2 * W;
+    o += `<clipPath id="xo${uid}">${el(rx - d3, ry - d3, "#000")}</clipPath><g clip-path="url(#xo${uid})">${imgTag(p, cx - sj.fcx * pw, fcy - sj.fcy * ph, pw, ph)}</g>`;
+  }
+  const sf = A.xoSerif;
+  o += xCenteredText("Merry", A.xoScript, O.merry.size * W, 0, cx, top + O.merry.base * W, red);
+  if (sf && sf.spec.xh) o += xCenteredText("Christmas", sf, O.title.xh * W / sf.spec.xh, sf.spec.track || 0, cx, top + O.title.base * W, red);
+  o += xOvalLineSvg(O, opt, cx, top + O.line.cy * W, W, red, uid);
+  return o + el(rx + b, ry + b, "none", ` stroke="#e8318a" stroke-width="0.15" opacity=".7"`);
+}
+
+// ── Christmas 사진 카드 A·C·D (2026-10-07, B 오벌 액자는 10-13 뺐다) — .jsx _composeCardAt 그대로 ─────────────
+// 수치 = A.xch.draw.cards (스티커 폭 W 단위). 사진 = 누끼 — 윗몸·전신이면 머리 띠(loadSil hw·hcx)를 headW 에 맞추고
+// 피사체 위 = subjTop · 피사체 가운데 = 창 가운데, 아니면 얼굴 상자에 통째로 (.jsx _cardPhotoGeo).
+function xCardPhoto(T, p, W, cx, cy, bottom) {   // 칸 왼쪽 위 기준 (y 아래)
+  const sj = subjectOf(p), asp = p.aspect || 1, kind = ringShotType(p), q = A.sil[p.base];
+  if ((kind === "upper" || kind === "full") && q && q.hw > 0) {
+    const pw = T.headW * W / q.hw, ph = pw * asp;
+    return { x: cx - q.fcx * pw, y: T.subjTop * W - (q.fcy - q.fh / 2) * ph, w: pw, h: ph };
+  }
+  const pw = Math.min(T.faceW * W / sj.fw, T.faceH * W / (sj.fh * asp)), ph = pw * asp;
+  const bcy = bottom != null ? bottom - sj.fh * ph / 2 : cy;   // 얼굴 = 상자 가운데 (D 는 피사체 아래 = bottom)
+  return { x: cx - sj.fcx * pw, y: bcy - sj.fcy * ph, w: pw, h: ph };
+}
+const xRR = (x, y, w, h, r) => `<rect x="${x.toFixed(3)}" y="${y.toFixed(3)}" width="${w.toFixed(3)}" height="${h.toFixed(3)}" rx="${r.toFixed(3)}"`;
+// 잉크 폭 = inkW 가 되는 크기로 잉크 가운데 = cx (Merry Christmas)
+function xFitText(text, F, inkW, cx, baseY, fill) {
+  if (!F) return "";
+  const k = bInk(text, F, 100), fs = inkW / ((k.r - k.l) / 100);
+  return xCenteredText(text, F, fs, 0, cx, baseY, fill);
+}
+// 띄운 대문자 — 대문자 높이 capH 로 크기, 잉크 폭 = inkW 가 되게 자간. left 면 잉크 왼쪽 = x
+function xCapsText(text, F, capH, inkW, x, baseY, fill, left) {
+  if (!F) return "";
+  const fs = capH / (F.spec.cap || 0.66), k = bInk(text, F, fs), ls = (inkW - (k.r - k.l)) / Math.max(1, text.length - 1);
+  const x0 = left ? x - k.l : x - (k.l + k.r + ls * (text.length - 1)) / 2;
+  return `<text x="${x0.toFixed(3)}" y="${baseY.toFixed(3)}" font-family="${F.family}" font-weight="${F.weight || 400}" font-size="${fs.toFixed(3)}"` +
+    ` letter-spacing="${ls.toFixed(4)}" fill="${fill}">${esc(text)}</text>`;
+}
+// 이름 — 첫 글자만 대문자, 잉크 가운데 = cx, 최대 폭을 넘으면 줄인다 (.jsx _cardName)
+function xCardName(raw, size, maxW, cx, baseY, fill) {
+  const nm = merryName(raw), F = A.xmName;
+  if (!nm || !F) return "";
+  let fs = size, k = bInk(nm, F, fs);
+  if (k.r - k.l > maxW) { fs = fs * maxW / (k.r - k.l); k = bInk(nm, F, fs); }
+  return `<text x="${(cx - (k.l + k.r) / 2).toFixed(3)}" y="${baseY.toFixed(3)}" font-family="${F.family}" font-weight="${F.weight || 400}"` +
+    ` font-size="${fs.toFixed(3)}" fill="${fill}" data-cardname="1">${esc(nm)}</text>`;
+}
+const xBar = (cx, cy, w, t, fill) => `<rect x="${(cx - w / 2).toFixed(3)}" y="${(cy - t / 2).toFixed(3)}" width="${w.toFixed(3)}" height="${t.toFixed(3)}" fill="${fill}"/>`;
+const xCut = s => s.replace(/^<(\w+)/, '<$1 fill="none" stroke="#e8318a" stroke-width="0.15" opacity=".7"');
+// 한 장 — (x0, y0) = 칸 왼쪽 위 (mm), Dmm = 칸 폭
+function cardSticker(D, opt, p, slot, x0, y0, Dmm, uid) {
+  const K = D.cards, T = K[opt.design], C = K.colors, W = Dmm, H = T.h * W, X = u => x0 + u * W, Y = v => y0 + v * W;
+  const c = h => hex(C[h]);
+  let o = "", cut = "";
+  const photo = (clipSvg, cx, cy, bottom, geo) => {
+    if (!p) return "";
+    const g = geo || xCardPhoto(T, p, W, cx - x0, cy - y0, bottom);
+    return `<clipPath id="xk${uid}">${clipSvg}</clipPath><g clip-path="url(#xk${uid})">${imgTag(p, x0 + g.x, y0 + g.y, g.w, g.h)}</g>`;
+  };
+  if (opt.design === "CARD") {
+    const e = T.edge * W;
+    o += xRR(x0, y0, W, H, T.r * W) + ` fill="${c("teal")}"/>` + xRR(x0 + e, y0 + e, W - 2 * e, H - 2 * e, (T.r - T.edge) * W) + ` fill="${c("cream")}"/>`;
+    const win = xRR(X(T.winL), Y(T.winT), T.winW * W, T.winH * W, T.winR * W);
+    o += win + ` fill="${c("panel")}"/>` + photo(win + "/>", X(T.winL + T.winW / 2), Y(T.winT + T.winH / 2), null);
+    o += xFitText("Merry Christmas", A.xcScript, T.titleW * W, X(0.5), Y(T.titleBase), c("teal")) + xBar(X(0.5), Y(T.ulY), T.ulW * W, T.ulT * W, c("teal"));
+    o += xRR(X(T.barL), Y(T.barT), T.barW * W, T.barH * W, T.barR * W) + ` fill="${c("teal")}"/>`;
+    o += xCardName(opt.name, T.nameSize * W, T.nameMaxW * W, X(0.5), Y(T.nameBase), c("ink"));
+    cut = xCut(xRR(x0, y0, W, H, T.r * W) + "/>");
+  } else if (opt.design === "SQUARE") {
+    o += xRR(x0, y0, W, H, T.r * W) + ` fill="${c("burgCard")}"/>`;
+    const win = `<rect x="${X(T.winL).toFixed(3)}" y="${Y(T.winT).toFixed(3)}" width="${(T.winW * W).toFixed(3)}" height="${(T.winH * W).toFixed(3)}"`;
+    o += win + ` fill="${c("cream")}"/>` + photo(win + "/>", X(T.winL + T.winW / 2), Y(T.winT + T.winH / 2), null);
+    o += xCapsText("MERRY CHRISTMAS", A.xcCaps, T.capsCap * W, T.capsW * W, X(T.capsL), Y(T.capsBase), c("ink"), true);
+    o += xBar(X((T.lineL + T.lineR) / 2), Y(T.capsBase - T.capsCap / 2), (T.lineR - T.lineL) * W, T.lineT * W, c("ink"));
+    o += xCardName(opt.name, T.nameSize * W, T.nameMaxW * W, X(0.5), Y(T.nameBase), c("ink"));
+    cut = xCut(xRR(x0, y0, W, H, T.r * W) + "/>");
+  } else {
+    // D — 크림 모양 = (_sil 을 border 만큼 부풀린 것, 판 가운데 위까지) ∪ (판 + 여백). 칼선 = 그 모양의 바깥 테두리 (필터)
+    const midY = Y(T.plateT + T.plateH / 2), m = T.margin * W;
+    const g = p ? xCardPhoto(T, p, W, 0.5 * W, 0.45 * W, T.faceBottom * W) : null;
+    const sil = p ? url("/api/composed/sil", { folder: A.folder, base: p.base, v: p.v }) : "";
+    o += `<defs><filter id="xg${uid}" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">` +
+      `<feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -0.333 -0.333 -0.333 1 0" result="a"/>` +
+      `<feMorphology in="a" operator="dilate" radius="${(T.border * W).toFixed(3)}" result="d"/>` +
+      `<feFlood flood-color="${c("cream")}"/><feComposite in2="d" operator="in"/></filter>` +
+      `<filter id="xo${uid}" x="-10%" y="-10%" width="120%" height="120%"><feMorphology in="SourceAlpha" operator="dilate" radius="0.15" result="o"/>` +
+      `<feComposite in="o" in2="SourceAlpha" operator="out" result="ring"/><feFlood flood-color="#e8318a" flood-opacity="0.7"/>` +
+      `<feComposite in2="ring" operator="in"/></filter>` +
+      `<clipPath id="xu${uid}"><rect x="${x0 - W}" y="${y0 - W}" width="${3 * W}" height="${(midY - y0 + W).toFixed(3)}"/></clipPath></defs>`;
+    const shape = `<g id="xs${uid}">` + (g ? `<g clip-path="url(#xu${uid})"><image href="${sil}" x="${x0 + g.x}" y="${y0 + g.y}" width="${g.w}" height="${g.h}"` +
+      ` preserveAspectRatio="none" filter="url(#xg${uid})"/></g>` : "") +
+      xRR(X(T.plateL) - m, Y(T.plateT) - m, T.plateW * W + 2 * m, T.plateH * W + 2 * m, T.plateR * W + m) + ` fill="${c("cream")}"/></g>`;
+    o += shape;
+    if (g) o += `<g clip-path="url(#xu${uid})">${imgTag(p, x0 + g.x, y0 + g.y, g.w, g.h)}</g>`;
+    const pe = T.plateEdge * W;
+    o += xRR(X(T.plateL), Y(T.plateT), T.plateW * W, T.plateH * W, T.plateR * W) + ` fill="${c("teal")}"/>` +
+      xRR(X(T.plateL) + pe, Y(T.plateT) + pe, T.plateW * W - 2 * pe, T.plateH * W - 2 * pe, T.plateR * W - pe) + ` fill="${c("cream")}"/>`;
+    o += xCardName(opt.name, T.nameSize * W, T.nameMaxW * W, X(0.5), Y(T.nameBase), c("teal"));
+    o += xCapsText("MERRY CHRISTMAS", A.xcCaps, T.capsCap * W, T.capsW * W, X(0.5), Y(T.capsBase), c("teal"), false);
+    cut = `<use href="#xs${uid}" filter="url(#xo${uid})"/>`;
+  }
+  return o + cut;
+}
+
+// ── Birthday 하트 사진 (참고 IMG_3165, 2026-10-07) — Everstory_birthday.jsx _composeHeartAt 그대로 ─────────────
+// 흰 판(둥근 사각) · 하트(하늘) · 사진(하트 클립 — 윗몸·전신 = 머리 띠 폭 맞춤, 얼굴 = 얼굴 상자) · HAPPY BIRTHDAY ·
+// 서명 · 문구 1~2줄 + 빨간 하트. 수치는 서버가 .jsx 표에서 읽어 준다 (A.bch.draw, 스티커 폭 W 단위).
+// .jsx 는 임시 윤곽으로 잉크 폭을 잰다 — 여기선 canvas measureText 의 잉크 bbox 로 같은 일을 한다.
+function bInk(text, F, fs) {   // 잉크 왼쪽·오른쪽 (글자 원점 기준, fs 와 같은 단위)
+  if (!xInkCtx) xInkCtx = document.createElement("canvas").getContext("2d");
+  xInkCtx.font = `${F.weight || 400} 100px ${F.family}`;
+  const m = xInkCtx.measureText(text), k = fs / 100;
+  return { l: -m.actualBoundingBoxLeft * k, r: m.actualBoundingBoxRight * k };
+}
+const bLines = opt => [opt.line1, opt.line2].map(t => String(t || "").trim()).filter(Boolean);
+const bSigText = name => { const n = String(name || "").trim(); return n ? "– " + n + " –" : ""; };
+// 문구 배치 (.jsx _addMessage) — 가장 긴 줄(마지막 줄은 + 간격 + 하트)이 maxW 를 넘으면 두 줄을 같이 줄인다.
+// D = 문구 표가 든 묶음 (하트 = draw · 원 사진 = draw.circle — 두 줄 크기 size2 가 있으면 두 줄일 때 그 크기), F = 서체
+function bMsgLayout(D, opt, W, F = A.bHand) {
+  const M = D.msg, mini = D.mini, lines = bLines(opt);
+  if (!F || !lines.length) return null;
+  const ink100 = lines.map(t => bInk(t, F, 100));
+  const widest = Math.max(...ink100.map((k, i) => (k.r - k.l) / 100 + (i === lines.length - 1 ? mini.gap + mini.w : 0)));
+  let fs = (lines.length > 1 && M.size2 ? M.size2 : M.size) * W;
+  if (widest * fs > M.maxW * W) fs = M.maxW * W / widest;
+  return { lines, fs, ink: ink100.map(k => ({ l: k.l * fs / 100, r: k.r * fs / 100 })) };
+}
+// 서명 크기 (.jsx _addSignature) — 문구 기본 크기 × k, 최대 폭을 넘으면 줄인다
+function bSigLayout(D, opt, W) {
+  const F = A.bHand, text = bSigText(opt.name);
+  if (!F || !text) return null;
+  const G = D.sig;
+  let fs = G.k * D.msg.size * W, k = bInk(text, F, fs);
+  if (k.r - k.l > G.maxW * W) { fs = fs * G.maxW * W / (k.r - k.l); k = bInk(text, F, fs); }
+  return { text, fs, ink: k };
+}
+// 사진 자리 (.jsx _placeUpper / _placeFace) — 윗몸·전신이고 머리 띠를 쟀으면 머리 크기 맞춤, 아니면 얼굴 상자
+function bPhotoPlace(D, p, W, X, Y) {
+  const sj = subjectOf(p), asp = p.aspect || 1, kind = ringShotType(p), q = A.sil[p.base], U = D.upper;
+  if ((kind === "upper" || kind === "full") && q && q.hw > 0) {
+    const pw = U.headW * W / q.hw, ph = pw * asp;
+    return { x: X(U.cx) - q.hcx * pw, y: Y(U.top) - (q.fcy - q.fh / 2) * ph, w: pw, h: ph };
+  }
+  const F = D.face, bw = F.maxW * W, bh = (F.bottom - F.top) * W, pw = Math.min(bw / sj.fw, bh / (sj.fh * asp)), ph = pw * asp;
+  return { x: X(0.5) - sj.fcx * pw, y: Y(F.bottom) - (sj.fcy + sj.fh / 2) * ph, w: pw, h: ph };   // 피사체 아래(턱) = 상자 아래
+}
+// 생일 한 장 — (x0, y0) = 칼선 bbox 왼쪽 위 (mm), Dmm = 칼선 폭 = 스티커 폭
+function bdaySticker(D, opt, p, slot, x0, y0, Dmm, uid) {
+  const W = Dmm, S = D.sticker, C = D.colors, X = u => x0 + u * W, Y = v => y0 + v * W, ink = hex(C.ink);
+  const H = S.h * W, rr = S.r * W, HA = D.heartAt, heart = xHeartD(D.heart, X(HA.left), Y(HA.top), HA.w * W);
+  let o = `<rect x="${x0}" y="${y0}" width="${W}" height="${H.toFixed(3)}" rx="${rr.toFixed(3)}" fill="#fff"/>` +
+    `<path d="${heart}" fill="${hex(C.heart)}"/>`;
+  if (p) {
+    const pl = bPhotoPlace(D, p, W, X, Y);
+    o += `<clipPath id="bc${uid}"><path d="${heart}"/></clipPath><g clip-path="url(#bc${uid})">${imgTag(p, pl.x, pl.y, pl.w, pl.h)}</g>`;
+  }
+  // 제목 — BIRTHDAY 잉크 폭 = inkW·W, 두 줄 같은 원점에서 BIRTHDAY 잉크 왼쪽 = left
+  const TF = A.bTitle, T = D.title;
+  if (TF) {
+    const k = bInk("BIRTHDAY", TF, 100), fs = T.inkW * W / ((k.r - k.l) / 100), x = X(T.left) - k.l * fs / 100;
+    o += `<g font-family="${TF.family}" font-weight="${TF.weight || 400}" font-size="${fs.toFixed(3)}" fill="${ink}">` +
+      `<text x="${x.toFixed(3)}" y="${Y(T.base1).toFixed(3)}">HAPPY</text><text x="${x.toFixed(3)}" y="${Y(T.base2).toFixed(3)}">BIRTHDAY</text></g>`;
+  }
+  const HF = A.bHand;
+  // 서명 — 잉크 오른쪽 끝 = sig.right
+  const G = bSigLayout(D, opt, W);
+  if (G) o += `<text x="${(X(D.sig.right) - G.ink.r).toFixed(3)}" y="${Y(D.sig.base).toFixed(3)}" font-family="${HF.family}" font-weight="${HF.weight || 400}"` +
+    ` font-size="${G.fs.toFixed(3)}" fill="${ink}">${esc(G.text)}</text>`;
+  // 문구 — 가운데 (마지막 줄은 [글자 + 간격 + 하트] 묶음 가운데), 빨간 하트 세로 가운데 = 대문자 높이 가운데
+  const L = bMsgLayout(D, opt, W);
+  if (L) {
+    const M = D.msg, mini = D.mini, last = L.lines.length - 1;
+    const bases = L.lines.length > 1 ? [Y(M.base1), Y(M.base2)] : [Y(M.baseOne)];
+    L.lines.forEach((t, i) => {
+      const w = L.ink[i].r - L.ink[i].l, tot = w + (i === last ? (mini.gap + mini.w) * L.fs : 0), left = X(M.cx) - tot / 2;
+      o += `<text x="${(left - L.ink[i].l).toFixed(3)}" y="${bases[i].toFixed(3)}" font-family="${HF.family}" font-weight="${HF.weight || 400}"` +
+        ` font-size="${L.fs.toFixed(3)}" fill="${ink}">${esc(t)}</text>`;
+      if (i === last) {
+        const mw = mini.w * L.fs, cap = (HF.spec.cap || 0.7) * L.fs;
+        o += `<path d="${xHeartD(D.heart, left + w + mini.gap * L.fs, bases[i] - cap / 2 - D.heart.h * mw / 2, mw)}" fill="${hex(C.red)}"/>`;
+      }
+    });
+  }
+  return o + `<rect x="${x0}" y="${y0}" width="${W}" height="${H.toFixed(3)}" rx="${rr.toFixed(3)}" fill="none" stroke="#e8318a" stroke-width="0.15" opacity=".7"/>`;
+}
+
+// ── Birthday 원 사진 (사용자 시안 #1, 2026-10-10) — Everstory_birthday.jsx _composeCircleAt 그대로 ─────────────
+// 흰 판 · 원(하늘) · 사진(원 클립 — 규칙은 하트와 같다) · 이름 (대문자 한 줄) · 작은 글씨 (대문자 한 줄, 자간) + 양옆
+// 손그림 하트 · 문구 1~2줄 + 끝 하트. 시안은 글씨가 아치였지만 사용자가 일직선으로 정했다 (10-10).
+// 수치는 A.bch.draw.circle (.jsx BN_* 표, 스티커 폭 W 단위).
+const bUpper = s => String(s || "").trim().toUpperCase();
+// 이름 크기 (.jsx _addCircleName) — 대문자 높이 cap, 잉크가 maxW 를 넘으면 줄이고 대문자 가운데 높이는 그대로
+function bCircleNameLayout(N, F, text, W) {
+  if (!F || !text) return null;
+  const capK = (F.spec && F.spec.cap) || 0.7;
+  let fs = N.cap * W / capK, k = bInk(text, F, fs), fit = false;
+  if (k.r - k.l > N.maxW * W) { fs = fs * N.maxW * W / (k.r - k.l); k = bInk(text, F, fs); fit = true; }
+  return { fs, ink: k, fit, cap: capK * fs, base: N.base - N.cap / 2 + capK * fs / W / 2 };
+}
+// 작은 글씨 크기 (.jsx _addSubtitle) — 잉크 폭(자간 포함)이 maxW 를 넘으면 줄인다. ink = 글자 원점 기준 잉크 왼쪽·오른쪽
+// (자간 ls 는 글자마다 뒤에 붙는다 — Illustrator tracking 과 SVG letter-spacing 이 같다)
+function bCircleSubLayout(S, F, text, W) {
+  if (!F || !text) return null;
+  const inkOf = fs => { const k = bInk(text, F, fs), ls = fs * S.track / 1000; return { l: k.l, r: k.r + ls * (text.length - 1), ls }; };
+  let fs = S.size * W, k = inkOf(fs), fit = false;
+  if (k.r - k.l > S.maxW * W) { fs = fs * S.maxW * W / (k.r - k.l); k = inkOf(fs); fit = true; }
+  return { fs, ink: k, fit };
+}
+// 손그림 하트 (.jsx _doodlePath) — 가운데 (cx, cy) (mm, y 아래) · 폭 w · 시계 방향 기울기 rotDeg · mirror = 좌우 거울 (기울기도 반대)
+function bDoodleD(DD, cx, cy, w, rotDeg, mirror) {
+  const P = DD.pts, h = DD.h, n = Math.floor(P.length / 6), a = rad(mirror ? -rotDeg : rotDeg), ca = Math.cos(a), sa = Math.sin(a);
+  const T = (x, y) => {
+    const u = (mirror ? -1 : 1) * (x - 0.5) * w, v = (y - h / 2) * w;
+    return (cx + u * ca - v * sa).toFixed(3) + " " + (cy + u * sa + v * ca).toFixed(3);
+  };
+  let d = "M" + T(P[0], P[1]);
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    d += " C" + T(P[6 * i + 4], P[6 * i + 5]) + " " + T(P[6 * j + 2], P[6 * j + 3]) + " " + T(P[6 * j], P[6 * j + 1]);
+  }
+  return d + "Z";
+}
+// 원 사진 한 장 — (x0, y0) = 칼선 bbox 왼쪽 위 (mm), Dmm = 칼선 폭 = 스티커 폭
+function circleSticker(DB, opt, p, slot, x0, y0, Dmm, uid) {
+  const CR = DB.circle, W = Dmm, S = CR.sticker, C = CR.colors, X = u => x0 + u * W, Y = v => y0 + v * W, ink = hex(C.ink), pink = hex(C.pink);
+  const H = S.h * W, rr = S.r * W, CI = CR.circle, ccx = X(CI.cx), ccy = Y(CI.cy), cr = CI.r * W;
+  const circle = `<circle cx="${ccx.toFixed(3)}" cy="${ccy.toFixed(3)}" r="${cr.toFixed(3)}"`;
+  let o = `<rect x="${x0}" y="${y0}" width="${W}" height="${H.toFixed(3)}" rx="${rr.toFixed(3)}" fill="#fff"/>` + circle + ` fill="${hex(C.circle)}"/>`;
+  if (p) {
+    const pl = bPhotoPlace({ upper: CR.upper, face: CR.face }, p, W, X, Y);
+    o += `<clipPath id="bc${uid}">${circle}/></clipPath><g clip-path="url(#bc${uid})">${imgTag(p, pl.x, pl.y, pl.w, pl.h)}</g>`;
+  }
+  // 이름 — 대문자 한 줄, 잉크 가운데
+  const name = bUpper(opt.name), NF = A.bCircleName, NL = bCircleNameLayout(CR.name, NF, name, W);
+  if (NL) o += `<text x="${(X(0.5) - (NL.ink.l + NL.ink.r) / 2).toFixed(3)}" y="${Y(NL.base).toFixed(3)}" font-family="${NF.family}"` +
+    ` font-weight="${NF.weight || 400}" font-size="${NL.fs.toFixed(3)}" fill="${ink}">${esc(name)}</text>`;
+  // 작은 글씨 — 대문자 한 줄, 잉크 가운데. 양옆 하트 = 잉크 끝에서 하트 가운데까지 gap, 기준선 위 rise (오른쪽 그린 그대로 · 왼쪽 거울)
+  const sub = bUpper(opt.sub), F = A.bCircleHand, SL = bCircleSubLayout(CR.sub, F, sub, W);
+  if (SL) {
+    const by = Y(CR.sub.base), w = SL.ink.r - SL.ink.l, SH = CR.subHeart, hx = w / 2 + SH.gap * W, hy = by - SH.rise * W;
+    o += `<text x="${(X(0.5) - (SL.ink.l + SL.ink.r) / 2).toFixed(3)}" y="${by.toFixed(3)}" font-family="${F.family}" font-weight="${F.weight || 400}"` +
+      ` font-size="${SL.fs.toFixed(3)}" letter-spacing="${SL.ink.ls.toFixed(4)}" fill="${ink}">${esc(sub)}</text>` +
+      `<path d="${bDoodleD(CR.doodle, X(0.5) + hx, hy, SH.w * W, 0, false)}" fill="${pink}"/>` +
+      `<path d="${bDoodleD(CR.doodle, X(0.5) - hx, hy, SH.w * W, 0, true)}" fill="${pink}"/>`;
+  }
+  // 문구 — 가운데 (마지막 줄은 [글자 + 간격 + 하트] 묶음 가운데), 끝 하트 = 기준선 위 rise, 반시계로 rot
+  const L = bMsgLayout(CR, opt, W, A.bCircleHand), HF = A.bCircleHand;
+  if (L) {
+    const M = CR.msg, mini = CR.mini, last = L.lines.length - 1;
+    const bases = L.lines.length > 1 ? [Y(M.base1), Y(M.base2)] : [Y(M.baseOne)];
+    L.lines.forEach((t, i) => {
+      const w = L.ink[i].r - L.ink[i].l, tot = w + (i === last ? (mini.gap + mini.w) * L.fs : 0), left = X(M.cx) - tot / 2;
+      o += `<text x="${(left - L.ink[i].l).toFixed(3)}" y="${bases[i].toFixed(3)}" font-family="${HF.family}" font-weight="${HF.weight || 400}"` +
+        ` font-size="${L.fs.toFixed(3)}" fill="${ink}">${esc(t)}</text>`;
+      if (i === last) {
+        const mw = mini.w * L.fs;
+        o += `<path d="${bDoodleD(CR.doodle, left + w + mini.gap * L.fs + mw / 2, bases[i] - mini.rise * L.fs, mw, -mini.rot, false)}" fill="${pink}"/>`;
+      }
+    });
+  }
+  return o + `<rect x="${x0}" y="${y0}" width="${W}" height="${H.toFixed(3)}" rx="${rr.toFixed(3)}" fill="none" stroke="#e8318a" stroke-width="0.15" opacity=".7"/>`;
+}
+
+// ── Special Day 팝 사진 (2026-10-13, 시안 ROUND 4·5) — Everstory_birthday.jsx _composePopAt 그대로 ─────────────
+// 흰 판 · 프레임 (운영자 색, 모양 4) · 사진 (클립 = 프레임 ∪ 머리 둘레 — 머리만 밖으로) · HAPPY 검정 / BIRTHDAY 빨강 ·
+// 문구 한 줄 "문구 – 이름" + 빨간 하트. 수치는 A.bch.draw.pop (.jsx POP_* 표).
+// 고른 서체가 이 Mac 에 없으면 .jsx _resolvePick 처럼 같은 표의 다음 서체 (고른 것 → 표 순서)
+function popFontPick(arr, i) {
+  const order = [i].concat(arr.map((_, j) => j).filter(j => j !== i));
+  for (const j of order) if (arr[j] && !arr[j].fallback) return arr[j];
+  return arr[i] || arr[0] || null;
+}
+// 문구 한 줄 (.jsx _popLines) — 이름이 없으면 문구만
+function popLine(msg, name) {
+  const m = String(msg || "").trim(), n = String(name || "").trim();
+  if (!m && !n) return "";
+  if (!n) return m;
+  if (!m) return "– " + n;
+  return m + " – " + n;
+}
+// 문구 크기 — 레이아웃 크기에서 시작해 [글자 + 간격 + 하트] 가 maxW 를 넘으면 줄인다 (.jsx _addMessage)
+function popMsgLayout(DB, opt, W) {
+  const P = DB.pop, L = P.layouts[opt.layout] || P.layouts[0], F = popFontPick(A.pHand, opt.hand), text = popLine(opt.line1, opt.name);
+  if (!F || !text) return null;
+  const k = bInk(text, F, 100), widest = (k.r - k.l) / 100 + DB.mini.gap + DB.mini.w;
+  let fs = L.msgSize * W, fit = false;
+  if (widest * fs > P.msg.maxW * W) { fs = P.msg.maxW * W / widest; fit = true; }
+  return { text, fs, fit, F, ink: { l: k.l * fs / 100, r: k.r * fs / 100 } };
+}
+// 프레임 모양 패스 — (x, y) = bbox 왼쪽 위 (mm, y 아래), w = 폭. 기울인 하트·구름 = 점 120개 + Catmull-Rom 핸들 (.jsx _smoothPolyPath)
+function popShapeD(DB, key, x, y, w) {
+  if (key === "HEART") return xHeartD(DB.heart, x, y, w);
+  if (key === "CIRCLE") { const r = w / 2; return `M${x.toFixed(3)} ${(y + r).toFixed(3)} a${r} ${r} 0 1 0 ${w} 0 a${r} ${r} 0 1 0 ${-w} 0 Z`; }
+  const T = key === "PUFF" ? DB.pop.puff : DB.pop.cloud, Q = T.pts, n = Math.floor(Q.length / 2);
+  const pt = i => { i = (i + n) % n; return [x + Q[2 * i] * w, y + Q[2 * i + 1] * w]; };
+  const f = q => q[0].toFixed(3) + " " + q[1].toFixed(3);
+  let d = "M" + f(pt(0));
+  for (let i = 0; i < n; i++) {
+    const a = pt(i), b = pt(i + 1), pa = pt(i - 1), nb = pt(i + 2);
+    d += " C" + f([a[0] + (b[0] - pa[0]) / 6, a[1] + (b[1] - pa[1]) / 6]) + " " + f([b[0] - (nb[0] - a[0]) / 6, b[1] - (nb[1] - a[1]) / 6]) + " " + f(b);
+  }
+  return d + " Z";
+}
+// 팝 사진 한 장 — (x0, y0) = 칼선 bbox 왼쪽 위 (mm), Dmm = 칼선 폭 = 스티커 폭
+function popSticker(DB, opt, p, slot, x0, y0, Dmm, uid) {
+  const P = DB.pop, W = Dmm, G = P.geo, X = u => x0 + u * W, Y = v => y0 + v * W;
+  const L = P.layouts[opt.layout] || P.layouts[0], S = P.shapes[opt.shape] || P.shapes[0], C = P.colors[opt.color] || P.colors[0];
+  const H = P.sticker.h * W, rr = P.sticker.r * W;
+  // 프레임 자리 — 영역(폭 ≤ wMax · 높이 h) 안에 모양 비율 그대로, 가운데·바닥 맞춤. k = 머리 크기 기준
+  const fw = Math.min(P.region.wMax, P.region.h / S.aspect), fh = fw * S.aspect, fTop = L.bottom - fh, fLeft = 0.5 - fw / 2;
+  const k = Math.min(0.5 * (fw + fh / DB.heart.h), G.kMax * fw);
+  const frame = popShapeD(DB, S.key, X(fLeft), Y(fTop), fw * W);
+  let o = `<rect x="${x0}" y="${y0}" width="${W}" height="${H.toFixed(3)}" rx="${rr.toFixed(3)}" fill="#fff"/><path d="${frame}" fill="${hex(C.hex)}"/>`;
+  if (p) {
+    const q = A.sil[p.base], kind = ringShotType(p), asp = p.aspect || 1;
+    let pw, ph, left, top, headW, headTop;
+    // 프레임 안 (팝 끔) — 머리까지 프레임 안, 클립 = 프레임만 (.jsx POP_INSIDE · _composePopAt 과 같은 계산)
+    const I = opt.popOut === false ? ((P.inside || []).find(t => t.key === S.key) || (P.inside || [])[0]) : null;
+    if (I && (kind === "upper" || kind === "full") && q && q.hw > 0) {
+      const topFrac = q.fcy - q.fh / 2;
+      headTop = fTop + I.top * fw;
+      pw = Math.max(I.head * fw / q.hw, (L.bottom + G.below - headTop) / (1 - topFrac) / asp);
+      ph = pw * asp; left = 0.5 - q.hcx * pw; top = headTop - topFrac * ph; headW = q.hw * pw;
+    } else if (I) {
+      const sj = subjectOf(p), chin = fTop + I.faceBottom * fw;
+      headTop = fTop + I.faceTop * fw;
+      pw = Math.min(I.faceW * fw / sj.fw, (chin - headTop) / (sj.fh * asp));
+      ph = pw * asp; left = 0.5 - sj.fcx * pw; top = chin - (sj.fcy + sj.fh / 2) * ph; headW = sj.fw * pw;
+    } else if ((kind === "upper" || kind === "full") && q && q.hw > 0) {
+      const topFrac = q.fcy - q.fh / 2;
+      headTop = fTop - G.rise;
+      pw = Math.max(G.headK * k / q.hw, (L.bottom + G.below - headTop) / (1 - topFrac) / asp);   // 사진 아래 끝은 프레임 바닥 아래로
+      ph = pw * asp; left = 0.5 - q.hcx * pw; top = headTop - topFrac * ph; headW = q.hw * pw;
+    } else {
+      const sj = subjectOf(p), chin = L.bottom - G.faceGap;
+      headTop = fTop - G.faceRise;
+      pw = Math.min(G.faceW * k / sj.fw, (chin - headTop) / (sj.fh * asp));
+      ph = pw * asp; left = 0.5 - sj.fcx * pw; top = chin - (sj.fcy + sj.fh / 2) * ph; headW = sj.fw * pw;
+    }
+    const shoulder = top + (q && q.shoulder > 0 ? q.shoulder : 1) * ph, oL = 0.5 - G.openW * headW / 2, oT = headTop - G.openUp;
+    o += `<clipPath id="bc${uid}"><path d="${frame}"/>` +
+      (!I && shoulder > oT ? `<rect x="${X(oL).toFixed(3)}" y="${Y(oT).toFixed(3)}" width="${(G.openW * headW * W).toFixed(3)}" height="${((shoulder - oT) * W).toFixed(3)}"/>` : "") +
+      `</clipPath><g clip-path="url(#bc${uid})">${imgTag(p, X(left), Y(top), pw * W, ph * W)}</g>`;
+  }
+  // 제목 — 대문자 capMax 에서 시작, 넓은 줄 잉크가 inkW 를 넘으면 줄인다. 줄마다 잉크 가운데
+  const TF = popFontPick(A.pTitle, opt.title);
+  if (TF) {
+    let fs = L.capMax * W / ((TF.spec && TF.spec.cap) || 0.7);
+    const k1 = bInk("HAPPY", TF, fs), k2 = bInk("BIRTHDAY", TF, fs), widest = Math.max(k1.r - k1.l, k2.r - k2.l);
+    if (widest > L.inkW * W) fs *= L.inkW * W / widest;
+    [["HAPPY", L.happy, P.text.ink], ["BIRTHDAY", L.birthday, C.accent || P.text.accent]].forEach(([t, b, c]) => {
+      const kk = bInk(t, TF, fs);
+      o += `<text x="${(X(0.5) - (kk.l + kk.r) / 2).toFixed(3)}" y="${Y(b).toFixed(3)}" font-family="${TF.family}" font-weight="${TF.weight || 400}"` +
+        ` font-size="${fs.toFixed(3)}" fill="${hex(c)}">${esc(t)}</text>`;
+    });
+  }
+  // 문구 한 줄 + 빨간 하트 (세로 가운데 = 대문자 높이 가운데)
+  const ML = popMsgLayout(DB, opt, W);
+  if (ML) {
+    const mini = DB.mini, w = ML.ink.r - ML.ink.l, left = X(0.5) - (w + (mini.gap + mini.w) * ML.fs) / 2, base = Y(L.msgBase);
+    o += `<text x="${(left - ML.ink.l).toFixed(3)}" y="${base.toFixed(3)}" font-family="${ML.F.family}" font-weight="${ML.F.weight || 400}"` +
+      ` font-size="${ML.fs.toFixed(3)}" fill="${hex(P.text.ink)}">${esc(ML.text)}</text>`;
+    const mw = mini.w * ML.fs, cap = ((ML.F.spec && ML.F.spec.cap) || 0.7) * ML.fs;
+    o += `<path d="${xHeartD(DB.heart, left + w + mini.gap * ML.fs, base - cap / 2 - DB.heart.h * mw / 2, mw)}" fill="${hex(C.accent || P.text.accent)}"/>`;
+  }
+  return o + `<rect x="${x0}" y="${y0}" width="${W}" height="${H.toFixed(3)}" rx="${rr.toFixed(3)}" fill="none" stroke="#e8318a" stroke-width="0.15" opacity=".7"/>`;
+}
+
+// 시트 전체 — .jsx 와 같은 격자(가운데 정렬), 사진은 슬롯 순서대로 돌아가며
+function sheetSvg(info, opt) {
+  const on = A.pairs.filter(p => p.on);
+  const { cols, rows, cellW, cellH, gap } = info.g;
+  const x0 = (BODY_MM.w - (cols * cellW + (cols - 1) * gap)) / 2;
+  const y0 = (BODY_MM.h - (rows * cellH + (rows - 1) * gap)) / 2;
+  let g = "";
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const i = r * cols + c, p = on.length ? on[i % on.length] : null, uid = ++drawUid;
+    const x = x0 + c * (cellW + gap), y = y0 + r * (cellH + gap);
+    if (A.script === "ring") g += ringBadge(A.rch.draw, opt, p, i, x + cellW / 2, y + cellH / 2, cellW, uid);
+    else if (A.script === "xmas") g += ({ OVAL: ovalSticker, MERRY: merrySticker, CARD: cardSticker, SQUARE: cardSticker,
+                                          DIECUT: cardSticker }[opt.design] || heartSticker)(A.xch.draw, opt, p, i, x, y, cellW, uid);
+    else if (A.script === "bday") g += ({ CIRCLE: circleSticker, POP: popSticker }[opt.design] || bdaySticker)(A.bch.draw, opt, p, i, x, y, cellW, uid);
+  }
+  return `<svg class="msheet" viewBox="0 0 ${BODY_MM.w} ${BODY_MM.h}" xmlns="http://www.w3.org/2000/svg">` +
+    `<rect width="${BODY_MM.w}" height="${BODY_MM.h}" fill="#fff"/>${g}</svg>`;
+}
+
+// _sil.png → 피사체 bbox 분율 (ring _silSubjectInfo 와 같은 값: 캔버스 기준 폭·높이·중심)
+async function loadSil(p) {
+  if (A.sil[p.base] !== undefined || A.silBusy[p.base]) return;
+  A.silBusy[p.base] = true;
+  const img = new Image();
+  img.src = url("/api/composed/sil", { folder: A.folder, base: p.base, v: p.v });
+  try { await img.decode(); } catch (e) { A.sil[p.base] = null; return; }
+  const k = Math.min(1, 480 / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
+  const g2 = cv.getContext("2d");
+  g2.drawImage(img, 0, 0, w, h);
+  const d = g2.getImageData(0, 0, w, h).data;
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const q = (y * w + x) * 4;
+    // 검정 피사체 + (투명 또는 흰) 바탕 — Illustrator 트레이스(threshold 230, 흰색 무시)와 같은 판정
+    if (d[q + 3] > 24 && (d[q] + d[q + 1] + d[q + 2]) / 3 < 230) {
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+  }
+  // flat = 아래가 일자로 잘렸나 — 긴 변 480px 로 줄인 _sil 의 맨 아래 2px 위 한 줄이 피사체 폭을 얼마나 채우는지
+  // (ring.jsx SHOT_FLAT_FILL — 하린 49장 실측과 같은 측정 위치)
+  let flat = false;
+  if (x1 >= 0) {
+    const yy = Math.max(y0, y1 - 2);
+    let n = 0;
+    for (let x = 0; x < w; x++) { const q = (yy * w + x) * 4; if (d[q + 3] > 24 && (d[q] + d[q + 1] + d[q + 2]) / 3 < 230) n++; }
+    flat = n / (x1 - x0 + 1) >= ((A.rch && A.rch.draw.nums.SHOT_FLAT_FILL) || 0.27);
+  }
+  // whole = 원·사각으로 꽉 찬 사진 — 피사체가 bbox 를 90% 넘게 채우거나(사각), bbox 내접 타원과 2% 안으로 맞으면(원)
+  // (2026-10-03 실측: 원 디자인 0.4~0.8% · 얼굴·하트·구름 3% 이상 · 사각 사진 채움 0.92~1.00 · 사람 0.4~0.8)
+  let whole = false;
+  if (x1 >= 0) {
+    const ex = (x0 + x1 + 1) / 2, ey = (y0 + y1 + 1) / 2, rx = (x1 - x0 + 1) / 2, ry = (y1 - y0 + 1) / 2;
+    let on = 0, bad = 0, tot = 0;
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const q = (y * w + x) * 4, isOn = d[q + 3] > 24 && (d[q] + d[q + 1] + d[q + 2]) / 3 < 230;
+      const u = (x + 0.5 - ex) / rx, v = (y + 0.5 - ey) / ry;
+      if (isOn) on++;
+      if (isOn !== (u * u + v * v <= 1)) bad++;
+      tot++;
+    }
+    whole = on / tot >= 0.9 || bad / tot <= 0.02;
+  }
+  // 머리 띠 — 피사체 위에서 band0~band1 높이 줄의 피사체 폭·가운데 (Birthday 윗몸·전신 머리 크기, birthday.jsx _silSubjectInfo 와 같은 띠)
+  let hw = 0, hcx = 0.5;
+  if (x1 >= 0) {
+    const U = (A.bch && A.bch.draw.upper) || { band0: 0.08, band1: 0.2 }, sh = y1 - y0 + 1;
+    let mn = w, mx = -1;
+    for (let y = y0 + Math.floor(U.band0 * sh); y <= Math.min(y1, y0 + Math.floor(U.band1 * sh)); y++)
+      for (let x = 0; x < w; x++) {
+        const q = (y * w + x) * 4;
+        if (d[q + 3] > 24 && (d[q] + d[q + 1] + d[q + 2]) / 3 < 230) { if (x < mn) mn = x; if (x > mx) mx = x; }
+      }
+    if (mx >= mn) { hw = (mx - mn + 1) / w; hcx = (mn + mx + 1) / 2 / w; }
+  }
+  // 어깨 줄 — 머리 띠 아래에서 줄 폭이 머리 폭 × shoulderK 를 처음 넘는 높이 (팝 사진: 머리만 프레임 밖으로 여는 곳의 아래 끝,
+  // birthday.jsx _silSubjectInfo 와 같은 기준). 못 찾으면 피사체 아래
+  let shoulder = 0;
+  if (x1 >= 0 && hw > 0) {
+    const sh = y1 - y0 + 1, hpx = hw * w, P = A.bch && A.bch.draw.pop, K = (P && P.geo.shoulderK) || 1.45;
+    const U = (A.bch && A.bch.draw.upper) || { band1: 0.2 };
+    shoulder = (y1 + 1) / h;
+    for (let y = y0 + Math.floor(U.band1 * sh); y <= y1; y++) {
+      let mn = w, mx = -1;
+      for (let x = 0; x < w; x++) {
+        const q = (y * w + x) * 4;
+        if (d[q + 3] > 24 && (d[q] + d[q + 1] + d[q + 2]) / 3 < 230) { if (x < mn) mn = x; if (x > mx) mx = x; }
+      }
+      if (mx >= mn && mx - mn + 1 > K * hpx) { shoulder = y / h; break; }
+    }
+  }
+  A.sil[p.base] = x1 < 0 ? null : { fw: (x1 - x0 + 1) / w, fh: (y1 - y0 + 1) / h, fcx: (x0 + x1 + 1) / 2 / w, fcy: (y0 + y1 + 1) / 2 / h, flat, whole, hw, hcx, shoulder };
+  if (A.folder && A.pairs.indexOf(p) >= 0) { if (ringStripe() && p.on) altList(); altSummary(); }   // 자동 종류 표시도 갱신
+}
+
+// ── 다른 스크립트 (Ring · Christmas · Special Day) — 헤더 '스크립트' 드롭다운 (2026-10-03) ─────────────
+// Composed 는 위 코드 그대로. 나머지는 왼쪽 폼 값으로 각 .jsx 를 대화창 없이 만든다.
+// 선택지는 서버가 각 .jsx 에서 읽어 준다 (/api/composed/ring · xmas · bday). Label(빈티지 라벨)은 2026-10-13 뺐다.
+// 사진 선택은 모두 함께 쓴다 (칸 id 의 l 은 처음 Label 과 같이 쓰던 이름). 오른쪽 = 시트 미리보기 + 격자 수.
+const A = { script: "composed", rch: null, xch: null, xfont: null, xoScript: null, xoSerif: null, xmName: null, xSticker: "",
+            bch: null, bTitle: null, bHand: null, bCircleName: null, bCircleHand: null, xcScript: null, xcCaps: null,
+            pTitle: [], pHand: [], bLastKey: "", sd: null,
+            pairs: [], folder: "", busy: false, sil: {}, silBusy: {} };
+// Ring(원형 배지)은 2026-10-13 부터 Special Day 디자인 중 하나다 (사용자 — "Special Day 에 들어가야") — 헤더 드롭다운엔 없고
+// Special Day 디자인 목록 맨 끝 값 "ring" 을 고르면 A.script = "ring" (Everstory_ring.jsx · 배지 폼 그대로)
+const SD_RING = "ring";
+const SCRIPT_NAME = { ring: "Special Day", xmas: "Christmas", bday: "Special Day" };
+const SCRIPT_FILE = { ring: "Everstory_ring.jsx", xmas: "Everstory_xmas.jsx", bday: "Everstory_birthday.jsx" };
+const BODY_MM = { w: 142, h: 175 };   // template_cutout_v2.ait info > body (mm)
+
+const optHtml = (arr, d) => arr.map((t, i) => `<option value="${i}"${i === d ? " selected" : ""}>${esc(t)}</option>`).join("");
+
+async function altEnsureChoices(kind) {
+  if (kind === "ring" && A.rch) return true;
+  if (kind === "xmas" && A.xch) return true;
+  if (kind === "bday" && A.bch) return true;
+  let ch;
+  try { ch = await getJSON("/api/composed/" + kind); }
+  catch (e) { say(SCRIPT_NAME[kind] + " 선택지를 못 읽었어요: " + e.message, "err"); return false; }
+  if (kind === "bday") {
+    A.bch = ch;
+    $("#bDesign").innerHTML = optHtml(ch.designs.map(x => x.label), ch.designDefault) +
+      `<option value="${SD_RING}">Ring · 원형 배지 — 컬러 링 + 위·아래 곡선 글자 (링·스트라이프)</option>`;
+    const d0 = ch.designs[ch.designDefault] || {};
+    $("#bSize").innerHTML = optHtml(ch.sizes, d0.size != null ? d0.size : ch.sizeDefault);
+    if (!$("#bSub").value.trim()) $("#bSub").value = ch.subDefault || "";
+    bDesignChanged(false);
+    bPrefillLines();
+    sdFill("bday");
+    A.bTitle = await xLoadFontList(ch.draw.titleFonts, "BdayTitle");
+    A.bHand = await xLoadFontList(ch.draw.handFonts, "BdayHand");
+    const cc = ch.draw.circle || {};
+    A.bCircleName = await xLoadFontList(cc.nameFonts, "BdayCircleName");
+    A.bCircleHand = await xLoadFontList(cc.handFonts, "BdayCircleHand");
+    // 팝 사진 (10-13) — 옵션 칸 · 제목 서체 3 · 문구 서체 2 (서체마다 따로 읽어 둔다 — 고른 것이 없으면 .jsx 처럼 다음 서체)
+    const P = ch.draw.pop;
+    if (P) {
+      const df = P.defaults || {}, nm = f => f.name + (f.have ? "" : " (이 Mac 에 없음)");
+      $("#bPopOut").innerHTML = `<option value="1"${df.popOut === false ? "" : " selected"}>팝 — 머리가 프레임 밖으로</option>` +
+        `<option value="0"${df.popOut === false ? " selected" : ""}>프레임 안</option>`;
+      $("#bPopLayout").innerHTML = optHtml(P.layouts.map(x => x.label), df.layout || 0);
+      $("#bPopShape").innerHTML = optHtml(P.shapes.map(x => x.label), df.shape || 0);
+      $("#bPopColor").innerHTML = optHtml(P.colors.map(x => x.name), df.color || 0);
+      $("#bPopTitle").innerHTML = optHtml(P.titleFonts.map(nm), df.title || 0);
+      $("#bPopHand").innerHTML = optHtml(P.handFonts.map(nm), df.hand || 0);
+      A.pTitle = []; A.pHand = [];
+      for (let i = 0; i < P.titleFonts.length; i++) A.pTitle.push(await xLoadFontList([P.titleFonts[i]], "BdayPopTitle" + i));
+      for (let i = 0; i < P.handFonts.length; i++) A.pHand.push(await xLoadFontList([P.handFonts[i]], "BdayPopHand" + i));
+    }
+  } else if (kind === "xmas") {
+    A.xch = ch;
+    $("#xDesign").innerHTML = optHtml(ch.designs.map(x => x.label), ch.designDefault);
+    $("#xColor").innerHTML = optHtml(ch.colorModes, ch.colorDefault);
+    $("#xBorder").innerHTML = optHtml(ch.borders, ch.borderDefault);
+    $("#xSize").innerHTML = optHtml(ch.sizes, ch.sizeDefault);
+    $("#xLinePreset").innerHTML = `<option value="">틀 고르기…</option>` +
+      (ch.linePresets || []).map((t, i) => `<option value="${i}">${esc(t.replace(/\{name\}/g, "○○"))}</option>`).join("");
+    xDesignChanged(true);
+    const ov = ch.draw.oval || {};
+    A.xfont = await xLoadFontList(ch.draw.fonts, "XmasName");
+    A.xoScript = await xLoadFontList(ov.scriptFonts, "XmasScript");
+    A.xoSerif = await xLoadFontList(ov.fonts, "XmasSerif");
+    A.xmName = await xLoadFontList((ch.draw.merry || {}).fonts, "XmasMerry");
+    const cards = ch.draw.cards || {};
+    A.xcScript = await xLoadFontList(cards.scriptFonts, "XmasCardScript");
+    // 띄운 대문자 = Baskerville (macOS 시스템 서체 — 파일 대신 이름으로 그린다)
+    A.xcCaps = await xLoadFontList(cards.capsFonts, "XmasCardCaps");
+    if (A.xcCaps.fallback && (cards.capsFonts || []).length)
+      A.xcCaps = { family: "Baskerville, 'Iowan Old Style', Georgia, serif", weight: 400, spec: cards.capsFonts[0], fallback: false };
+    xPrefillLine();
+  } else {
+    A.rch = ch;
+    $("#rTheme").innerHTML = optHtml(ch.themes.map(x => x.label), ch.themeDefault);
+    // 테마가 하나뿐이면 칸을 숨긴다 (2026-10-13 크리스마스 테마를 뺐다 — ring.jsx THEMES 에 테마를 더하면 다시 보인다)
+    $("#rTheme").hidden = $("label[for=rTheme]").hidden = ch.themes.length < 2;
+    $("#rLayout").innerHTML = optHtml(ch.layouts, 0);
+    $("#rColor").innerHTML = optHtml(ch.colorModes || [], ch.colorDefault || 0);
+    ringColorPick();
+    $("#rEffect").innerHTML = (ch.effects || []).map(e => `<option value="${esc(e.key)}">${esc(e.label)}</option>`).join("");
+    if (ch.effectDefault) $("#rEffect").value = ch.effectDefault;   // ring.jsx TEXT_EFFECT_DEFAULT (10-13 레트로)
+    $("#rSize").innerHTML = optHtml(ch.sizes, ch.sizeDefault);
+    const th = ch.themes[ch.themeDefault] || ch.themes[0];
+    $("#rTop").value = th ? th.top : "";
+    $("#rBot").value = th ? th.bottom : "";
+    ringLayoutChanged();
+    sdFill("ring");
+  }
+  return true;
+}
+
+// Christmas 서체 — .jsx _resolveFontList 와 같은 순서로 이 Mac 에 있는 첫 서체 (하트 이름 · 오벌 손글씨 · 오벌 세리프).
+// Adobe Fonts 라 브라우저가 못 봐서 서버가 Illustrator 가 쓰는 파일을 넘겨준다 (/api/composed/font).
+async function xLoadFontList(fonts, prefix) {
+  const list = fonts || [];
+  for (let i = 0; i < list.length; i++) {
+    const f = list[i];
+    if (!f.have) continue;
+    try {
+      const ff = new FontFace(prefix + i, `url("${url("/api/composed/font", { ps: f.ps })}")`);
+      await ff.load();
+      document.fonts.add(ff);
+      return { family: prefix + i, weight: 400, spec: f, fallback: i > 0 };
+    } catch (e) { /* 다음 서체 */ }
+  }
+  const f0 = list[0] || { ps: "", cap: 0.7, xh: 0.5, track: 120, lineTrack: 0, name: "sans-serif" };
+  return Object.assign({ spec: f0, fallback: true }, fontOf([f0.ps]));
+}
+
+// 생일 문구 — 두 칸 다 비었으면 그 디자인 기본 문구 (.jsx BD_MSG_DEFAULT · BN_MSG_DEFAULT) 로 채운다. 고객이 쓴 문구로 바꿔 넣는다
+const bDesignKey = () => (A.bch && (A.bch.designs[+$("#bDesign").value] || {}).key) || "HEART";
+// 디자인마다 기본 문구 (팝 사진 = 한 줄 — 이름은 문구 뒤에 붙는다)
+function bMsgDefaultOf(key) {
+  if (!A.bch) return [];
+  if (key === "CIRCLE") return A.bch.circleMsgDefault || [];
+  if (key === "POP") return [A.bch.popMsgDefault || "", ""];
+  return A.bch.msgDefault || [];
+}
+function bPrefillLines() {
+  if (!A.bch || $("#bLine1").value.trim() || $("#bLine2").value.trim()) return;
+  const m = bMsgDefaultOf(bDesignKey());
+  $("#bLine1").value = m[0] || "";
+  $("#bLine2").value = m[1] || "";
+}
+// 디자인 — 하트 = 서명 이름 · 원 사진 = 위 큰 이름 + 작은 글씨 칸. 문구가 다른 디자인 기본 문구 그대로면 이 디자인
+// 기본 문구로 바꾸고, resetSize 면 그 디자인의 기본 사이즈로 (하트 2″ · 원 사진 1.75″)
+function bDesignChanged(resetSize) {
+  if (!A.bch) return;
+  const d = A.bch.designs[+$("#bDesign").value] || A.bch.designs[0], circle = d.key === "CIRCLE", pop = d.key === "POP";
+  document.querySelectorAll("#bFormSec [data-bd]").forEach(el => { el.hidden = !el.dataset.bd.split(" ").includes(d.key); });
+  $("#bNameLabel").textContent = circle ? "이름" : "서명 이름";
+  let ph = "– 이름 – (비우면 서명 없음)";
+  if (circle) ph = "위에 들어갈 큰 이름 (필수)";
+  if (pop) ph = "문구 뒤 – 이름 (비우면 이름 없이)";
+  $("#bName").placeholder = ph;
+  $("#bLine1Label").textContent = pop ? "문구" : "문구 1줄";
+  const from = bMsgDefaultOf(A.bLastKey || d.key), to = bMsgDefaultOf(d.key);
+  A.bLastKey = d.key;
+  if ($("#bLine1").value.trim() === (from[0] || "") && $("#bLine2").value.trim() === (from[1] || "")) {
+    $("#bLine1").value = to[0] || "";
+    $("#bLine2").value = to[1] || "";
+  }
+  $("#bLine1").placeholder = to[0] || "";
+  $("#bLine2").placeholder = to[1] || "(두 줄이면 조금 작아져요)";
+  if (resetSize && d.size != null) $("#bSize").value = String(d.size);
+}
+
+// 디자인 — 하트·오벌마다 쓰는 칸이 다르다 (오벌 = 아래 문구 · 흰 테두리·레드 고정). 바꿀 때는 그 디자인의 기본 사이즈로
+function xDesignChanged(resetSize) {
+  if (!A.xch) return;
+  const d = A.xch.designs[+$("#xDesign").value] || A.xch.designs[0];
+  document.querySelectorAll("#xFormSec [data-xd]").forEach(el => { el.hidden = !el.dataset.xd.split(" ").includes(d.key); });
+  if (resetSize && d.size != null) $("#xSize").value = String(d.size);
+}
+// 오벌 아래 문구 틀 — {name} 자리에 이름 (.jsx OVAL_LINE_PRESETS)
+const xLineOf = (i, name) => ((A.xch && A.xch.linePresets[i]) || "{name}").replace(/\{name\}/g, name || "");
+// 빈 칸이면 주문 스티커 이름으로 기본 틀을 채운다 (선택지를 늦게 읽어도 한 번은 채운다)
+function xPrefillLine() {
+  if (!A.xch || !A.xSticker || $("#xLine").value.trim()) return;
+  $("#xLine").value = xLineOf(A.xch.linePresetDefault || 0, A.xSticker);
+}
+
+// Special Day 주문 (SKU EVS-SDAY-…, 2026-10-13) — intake job.special_day → prefill.specialDay.
+// 새 주문을 열면 스크립트 = Special Day, 디자인 = 주문대로 (사진 스티커 = POP · 링 배지 = Ring). 프레임 모양·색·팝은 운영자가 사진을 보고 고른다.
+async function sdFromOrder(f) {
+  A.sd = (f && f.specialDay) || null;
+  if (!A.sd) return;
+  if (!(await altEnsureChoices("bday"))) return;
+  const pop = A.bch.designs.findIndex(x => x.key === "POP");
+  $("#script").value = "bday";
+  $("#bDesign").value = A.sd.design === "ring" ? SD_RING : String(pop >= 0 ? pop : A.bch.designDefault);
+  if (A.sd.design !== "ring") bDesignChanged(false);   // 사이즈는 아래 sdFill 이 주문대로 (1.5″)
+  await setScript("bday");
+  sdFill();
+  altSummary();
+}
+// 주문 글자·사이즈를 칸에 넣는다. kind 를 주면 그 스크립트 칸만 (선택지를 늦게 읽은 쪽만 다시 채우고, 운영자가 고친 다른 칸은 두려고).
+// 빈 문구·윗줄은 넣지 않는다 (필수 칸이 빈 주문 — 기본 문구가 남고 안내 줄에 노트가 뜬다). 아랫줄은 선택 칸이라 비어 있으면 비운다.
+function sdFill(kind) {
+  const sd = A.sd;
+  if (!sd) return;
+  const sizeIdx = list => (list || []).findIndex(mm => sd.sizeMm != null && Math.abs(mm - sd.sizeMm) < 0.5);
+  if (A.bch && sd.design === "photo" && (!kind || kind === "bday")) {
+    if (sd.message) { $("#bLine1").value = sd.message; $("#bLine2").value = ""; }
+    const k = sizeIdx(A.bch.sizesMm);
+    if (k >= 0) $("#bSize").value = String(k);
+  }
+  if (A.rch && sd.design === "ring" && (!kind || kind === "ring")) {
+    if (sd.topLine) $("#rTop").value = sd.topLine;
+    $("#rBot").value = sd.bottomLine || "";
+    const k = sizeIdx(A.rch.sizesMm);
+    if (k >= 0) $("#rSize").value = String(k);
+  }
+}
+// Special Day 칸 아래 안내 — 주문대로 고른 것 + 주문 메모 (구성 화면의 주문 메모와 같은 job.notes)
+function sdHint(f) {
+  const sd = f.specialDay, notes = f.notes || [];
+  const what = sd ? "주문 = " + (sd.design === "ring" ? "링 배지" : "사진 스티커") + " · 1.5″ — 디자인·글자·사이즈를 주문대로 넣었어요" : "";
+  const memo = notes.length ? "주문 메모: " + notes.join(" / ") : "";
+  $("#sdOrder").textContent = [what, memo].filter(Boolean).join(" · ");
+  $("#sdOrder").className = "hint" + (memo ? " warn" : "");
+  $("#sdOrder").hidden = !$("#sdOrder").textContent;
+}
+
+async function altLoad(name) {
+  if (!name) return;
+  let d;
+  try { d = await getJSON("/api/composed/pairs", { folder: name }); }
+  catch (e) { say(e.message, "err"); return; }
+  const fresh = A.folder !== name;
+  const keep = new Set(A.pairs.filter(p => p.on).map(p => p.base));
+  if (fresh) { A.sil = {}; A.silBusy = {}; }
+  A.folder = name;
+  // Special Day 주문은 고객 사진 1–3장을 전부 시트에 돌려 쓴다 (상품 문구 "repeat them across the sheet") — 다른 주문은 첫 장만
+  const sdAll = !!(d.prefill && d.prefill.specialDay);
+  // aspect = 세로/가로 (_sil 캔버스 = _clean.psd 캔버스 — 썸네일도 같은 비율)
+  A.pairs = d.pairs.map((p, i) => ({ base: p.base, label: p.label, v: p.v, on: fresh ? (sdAll || i === 0) : keep.has(p.base),
+                                     aspect: p.canvas && p.canvas[0] ? p.canvas[1] / p.canvas[0] : 1 }));
+  if (fresh) {
+    const f = d.prefill || {};
+    $("#rName").value = $("#xCust").value = f.nameText || "";
+    $("#rODate").value = $("#xODate").value = d.today || "";
+    $("#xName").value = f.stickerName || "";   // 하트 이름 = 주문의 스티커 이름 (없으면 비워 두고 직접)
+    A.xSticker = f.stickerName || "";          // 오벌 아래 문구 = 기본 틀 + 스티커 이름
+    $("#xLine").value = "";
+    xPrefillLine();
+    $("#bCust").value = f.nameText || "";
+    $("#bODate").value = d.today || "";
+    $("#bName").value = f.stickerName || "";   // 생일 서명 · 원 사진 이름 = 주문의 스티커 이름
+    $("#bSub").value = (A.bch && A.bch.subDefault) || "";   // 작은 글씨도 주문마다 — 기본 SPECIAL DAY 로
+    $("#bLine1").value = $("#bLine2").value = "";   // 문구는 주문마다 — 기본 문구로 다시 채운다
+    bPrefillLines();
+    A.sd = f.specialDay || null;
+    sdFill();
+    sdHint(f);
+  }
+  altList();
+  altSummary();
+}
+
+// 사진 종류 (Ring 링·스트라이프) — 카드에서 고친 값 > 통사진(원·사각 모양) > 파일명 표시(SML·MED·BIG) > _sil 어림(아래 일자 컷 = 상반신, 아니면 얼굴)
+const SHOT_TYPES = [["face", "얼굴"], ["upper", "상반신"], ["full", "전신"], ["whole", "통사진"]];
+const SHOT_TOKEN = { SML: "face", XS: "face", S: "face", MED: "upper", M: "upper", L: "upper", BIG: "full", XL: "full", XXL: "full" };
+function ringShotType(p) {
+  if (!p) return null;
+  if (p.userType) return p.userType;
+  const m = /_(BIG|MED|SML|XXL|XL|XS|S|M|L)$/i.exec(p.base);
+  const q = A.sil[p.base];
+  if (q && q.whole) return "whole";   // 원·사각으로 꽉 찬 사진 — 모양으로 확실히 갈리므로 파일명 표시보다 먼저
+  if (m) return SHOT_TOKEN[m[1].toUpperCase()];
+  return q ? (q.flat ? "upper" : "face") : null;
+}
+// 사진 종류 고르기 — 링·스트라이프 둘 다 (이름은 처음 스트라이프용이라) + Christmas (하트는 얼굴용 — 다른 종류면 알린다)
+const ringStripe = () => (A.script === "ring" && !!A.rch) || (A.script === "xmas" && !!A.xch) || (A.script === "bday" && !!A.bch);
+
+function altList() {
+  const pick = ringStripe();
+  $("#lplist").innerHTML = A.pairs.map((p, i) => `<div class="ph${p.on ? " sel" : ""}" data-li="${i}" title="${esc(p.label)}">
+    <div class="thumb" style="background-image:url('${url("/api/composed/thumb", { folder: A.folder, base: p.base, v: p.v })}')"></div>
+    <div class="nm">${esc(shortName(p.label))}</div>` +
+    (pick && p.on ? `<select data-st="${i}" title="놓는 법 — 얼굴 = 가운데 · 상반신 = 아래 맞춤 · 전신 = 아래 맞춤 + 발 쪽 조금 잘림">` +
+      SHOT_TYPES.map(([v, t]) => `<option value="${v}"${ringShotType(p) === v ? " selected" : ""}>${t}${p.userType === v ? "" : (ringShotType(p) === v ? " (자동)" : "")}</option>`).join("") +
+      `</select>` : "") + `</div>`).join("");
+  $("#lcount").textContent = A.pairs.length ? `${A.pairs.filter(p => p.on).length} / ${A.pairs.length}` : "";
+}
+
+// .jsx _buildSheet 와 같은 격자 계산 (body 142×175 · 위아래 여백 · 셀 간격)
+function gridOf(cellW, cellH, gap, padY) {
+  return { cols: Math.floor((BODY_MM.w + gap) / (cellW + gap)),
+           rows: Math.floor((BODY_MM.h - 2 * padY + gap) / (cellH + gap)), cellW, cellH, gap };
+}
+
+function altRingInfo() {
+  const ch = A.rch, li = +$("#rLayout").value, key = ch.layoutKeys[li];
+  const d = ch.sizesMm[+$("#rSize").value];
+  const g = gridOf(d, d, ch.gapMm, ch.padYmm);
+  const top = $("#rTop").value.trim(), bot = $("#rBot").value.trim();
+  const effect = $("#rEffect").value || "none";
+  let blocker = "";
+  if (key === "STRIPE" && !top) blocker = "스트라이프는 윗줄이 필요해요";
+  else if (!top && !bot) blocker = "윗줄·아랫줄 중 하나는 적어 주세요";
+  // 글자 효과는 링·스트라이프 공통
+  const opt = { themeIdx: +$("#rTheme").value, layoutKey: key, topText: $("#rUpper").checked ? top.toUpperCase() : top,
+                bottomText: key === "STRIPE" ? "" : bot, textEffect: effect,
+                colorMode: +$("#rColor").value || 0, colorIdx: +$("#rColorPick").value || 0, colorSingle: ch.colorSingle,
+                nSel: A.pairs.filter(p => p.on).length };
+  return { key, name: ch.layouts[li], size: ch.sizes[+$("#rSize").value], g, opt, blocker };
+}
+
+// Christmas — 칸 = 칼선 bbox (폭 = 사이즈, 높이 = 하트·타원 + 흰 테두리). 블리드면 간격을 블리드 2배까지 (.jsx _buildSheet)
+// 오벌은 흰 테두리만 (.jsx 가 테두리 값을 무시한다)
+function altXmasInfo() {
+  const ch = A.xch, D = ch.draw, design = ch.designs[+$("#xDesign").value] || ch.designs[0], oval = design.key === "OVAL";
+  const merry = design.key === "MERRY", MT = (D.merry || {}).table || {}, CT = (D.cards || {})[design.key];
+  const dmm = ch.sizesMm[+$("#xSize").value], border = oval || merry || CT ? 0 : (+$("#xBorder").value || 0), white = border === 0;
+  const b = white ? D.borderMm : 0, W = dmm - 2 * b;
+  let cutH = (oval ? D.oval.shape.h : D.heart.h) * W + 2 * b;
+  if (merry) cutH = dmm * MT.cutH / MT.cutW;           // 흰 테두리까지 그림에 들어 있다 — 칼선 bbox 비율 그대로
+  if (CT) cutH = CT.h * dmm;                           // 사진 카드 = 폭 × h (테두리 없이 칼선 = 바깥 모양)
+  const g = gridOf(dmm, CT ? CT.h * dmm : cutH, white || CT ? ch.gapMm : Math.max(ch.gapMm, 2 * D.bleedMm), ch.padYmm);
+  const name = $("#xName").value.trim(), line = $("#xLine").value.trim();
+  const notes = [];
+  const notFace = A.pairs.filter(p => p.on && ringShotType(p) && ringShotType(p) !== "face");
+  const dsgWord = oval ? "오벌은" : (merry ? "MERRY 는" : "하트는");
+  if (notFace.length && !CT) notes.push(`얼굴 누끼가 아닌 사진 ${notFace.length}장 — ${dsgWord} 머리만 오린 사진용이라 작게 떠 보여요 (사진 카드에서 종류를 고칠 수 있어요)`);
+  let blocker = "";
+  if (CT) {
+    const K = D.cards, wide = A.pairs.filter(p => {
+      const k = ringShotType(p), q = A.sil[p.base];
+      return p.on && (k === "upper" || k === "full") && q && q.fw > 0 && q.hw / q.fw > K.band.wideK;
+    });
+    if (wide.length) notes.push(`머리 높이에 넓은 것(모자·의자·손 등)이 같이 있는 사진 ${wide.length}장 — 머리가 작게 나올 수 있어요`);
+    [[A.xmName, (D.merry || {}).fonts], [A.xcScript, K.scriptFonts]].forEach(([F, list]) => {
+      const first = (list || [])[0] || {};
+      if (F && F.fallback) notes.push(`${first.name || "서체"} 를 이 Mac 에서 못 찾았어요 — Adobe Fonts 에서 켜 주세요 (지금은 ${F.spec === first ? "기본 서체" : F.spec.name} 로 그려요)`);
+    });
+    if (design.key === "DIECUT" && A.pairs.some(p => p.on && A.sil[p.base] === null)) notes.push("_sil 이 없는 사진은 D 칼선(사진 윤곽)을 못 만들어요");
+    if (!name) blocker = "스티커에 들어갈 이름을 적어 주세요";
+  } else if (merry) {
+    const M = D.merry || {};
+    if (!M.shapes || !(M.art || {}).FRAME) notes.push("MERRY 그림(templates/art_preview/xmas_merry_v1)이 없어요 — scripts/art_library/build_xmas_merry.jsx 로 만든다");
+    if (A.xmName && A.xmName.fallback) notes.push(`${((M.fonts || [])[0] || {}).name || "이름 서체"} 를 이 Mac 에서 못 찾았어요 (지금은 기본 서체로 그려요)`);
+    if (!name) blocker = "스티커에 들어갈 이름을 적어 주세요";
+  } else if (oval) {
+    [[A.xoScript, D.oval.scriptFonts], [A.xoSerif, D.oval.fonts]].forEach(([F, list]) => {
+      const first = (list || [])[0] || {};
+      if (F && F.fallback) notes.push(`${first.name || "서체"} 를 이 Mac 에서 못 찾았어요 — Adobe Fonts 에서 켜 주세요 (지금은 ${F.spec === first ? "기본 서체" : F.spec.name} 로 그려요)`);
+    });
+    if (!line) blocker = "오벌 아래 문구를 적어 주세요";   // 작은 글자 경고는 그린 뒤 altSummary 가 단다 (줄인 크기 기준)
+  } else {
+    if (A.xfont && A.xfont.fallback) notes.push(`${(D.fonts[0] || {}).name || "이름 서체"} 를 이 Mac 에서 못 찾았어요 — Adobe Fonts 에서 켜 주세요 (지금은 ${A.xfont.spec.name} 로 그려요)`);
+    if (!name) blocker = "스티커에 들어갈 이름을 적어 주세요";
+  }
+  const size = ch.sizes[+$("#xSize").value] + (oval || merry || CT ? ` · 칼선 ${dmm.toFixed(1)}×${cutH.toFixed(1)}mm${design.key === "DIECUT" ? " 칸" : ""}` : "");
+  return { key: design.key, name: design.label, size, g, notes, blocker,
+           opt: { design: design.key, name, line, colorMode: +$("#xColor").value || 0, border, cols: g.cols } };
+}
+
+// Special Day 팝 사진 — 칸 = 칼선 bbox (폭 × 1.076). 고른 서체가 없으면 · 문구가 작아지면 · 머리 띠가 넓으면 알린다
+function altPopInfo(ch, design) {
+  const D = ch.draw, P = D.pop, dmm = ch.sizesMm[+$("#bSize").value], cutH = P.sticker.h * dmm, PT = 72 / 25.4;
+  const g = gridOf(dmm, cutH, ch.gapMm, ch.padYmm);
+  const opt = { design: "POP", line1: $("#bLine1").value, name: $("#bName").value,
+                popOut: $("#bPopOut").value !== "0",
+                layout: +$("#bPopLayout").value || 0, shape: +$("#bPopShape").value || 0, color: +$("#bPopColor").value || 0,
+                title: +$("#bPopTitle").value || 0, hand: +$("#bPopHand").value || 0 };
+  const notes = [];
+  [[A.pTitle, P.titleFonts, opt.title], [A.pHand, P.handFonts, opt.hand]].forEach(([arr, list, i]) => {
+    const want = list[i] || {}, F = popFontPick(arr, i);
+    if (F && F !== arr[i]) notes.push(`${want.name} 를 이 Mac 에서 못 찾았어요 — 설치하고 Illustrator 를 다시 켜 주세요 (지금은 ${F.spec.name} 로 그려요)`);
+  });
+  const ML = popMsgLayout(D, opt, dmm);
+  if (ML && ML.fs * PT < D.minPt) notes.push(`문구 글자가 ${(ML.fs * PT).toFixed(1)}pt 까지 줄어요 — 문구를 줄이거나 사이즈를 올리세요`);
+  const wide = A.pairs.filter(p => {
+    const k = ringShotType(p), q = A.sil[p.base];
+    return p.on && (k === "upper" || k === "full") && q && q.fw > 0 && q.hw / q.fw > D.upper.wideK;
+  });
+  if (wide.length) notes.push(`머리 높이에 넓은 것(모자·의자·손 등)이 같이 있는 사진 ${wide.length}장 — 머리가 작게 나올 수 있어요`);
+  const blocker = opt.line1.trim() ? "" : "문구를 적어 주세요 (이름은 문구 뒤에 붙어요)";
+  const sh = P.shapes[opt.shape] || {}, col = P.colors[opt.color] || {};
+  return { key: "POP", name: `${opt.popOut ? "팝" : "프레임 안"} · ${sh.label || ""} · ${col.name || ""}`,
+           size: `${ch.sizes[+$("#bSize").value]} · 칼선 ${dmm.toFixed(1)}×${cutH.toFixed(1)}mm`, g, notes, opt, blocker };
+}
+
+// Special Day(bday) — 칸 = 칼선 bbox (폭 = 사이즈, 높이 = 폭 × 1.076 · 원 사진 × 1.1432). 문구가 줄어든 크기·서체·머리 띠를
+// 미리 알린다 (.jsx 완료 창과 같은 기준)
+function altBdayInfo() {
+  const ch0 = A.bch, design0 = ch0.designs[+$("#bDesign").value] || ch0.designs[0];
+  if (design0.key === "POP") return altPopInfo(ch0, design0);
+  const ch = A.bch, D = ch.draw, design = ch.designs[+$("#bDesign").value] || ch.designs[0], circle = design.key === "CIRCLE", CR = D.circle || {};
+  const dmm = ch.sizesMm[+$("#bSize").value], cutH = (circle ? CR.sticker.h : D.sticker.h) * dmm, PT = 72 / 25.4;
+  const g = gridOf(dmm, cutH, ch.gapMm, ch.padYmm);
+  const opt = { design: design.key, line1: $("#bLine1").value, line2: $("#bLine2").value, name: $("#bName").value, sub: $("#bSub").value };
+  const notes = [];
+  (circle ? [[A.bCircleName, CR.nameFonts], [A.bCircleHand, CR.handFonts]] : [[A.bTitle, D.titleFonts], [A.bHand, D.handFonts]]).forEach(([F, list]) => {
+    const first = (list || [])[0] || {};
+    if (F && F.fallback) notes.push(`${first.name || "서체"} 를 이 Mac 에서 못 찾았어요 — Adobe Fonts 에서 켜 주세요 (지금은 ${F.spec === first ? "기본 서체" : F.spec.name} 로 그려요)`);
+  });
+  const L = circle ? bMsgLayout(CR, opt, dmm, A.bCircleHand) : bMsgLayout(D, opt, dmm);
+  if (L && L.fs * PT < D.minPt) notes.push(`문구 글자가 ${(L.fs * PT).toFixed(1)}pt 까지 줄어요 — 문구를 줄이거나 사이즈를 올리세요`);
+  if (circle) {
+    const NL = bCircleNameLayout(CR.name, A.bCircleName, bUpper(opt.name), dmm);
+    if (NL && NL.fit) notes.push(`이름이 길어서 대문자 ${NL.cap.toFixed(1)}mm 로 줄어요 (기본 ${(CR.name.cap * dmm).toFixed(1)}mm)`);
+    const SL = bCircleSubLayout(CR.sub, A.bCircleHand, bUpper(opt.sub), dmm);
+    if (SL && SL.fs * PT < D.minPt) notes.push(`작은 글씨가 ${(SL.fs * PT).toFixed(1)}pt — 작아서 인쇄가 뭉갤 수 있어요 (글씨를 줄이거나 사이즈를 올리세요)`);
+  } else {
+    const G = bSigLayout(D, opt, dmm);
+    if (G && G.fs * PT < D.minPt) notes.push(`서명 글자가 ${(G.fs * PT).toFixed(1)}pt — 작아서 인쇄가 뭉갤 수 있어요 (사이즈를 올리는 게 좋아요)`);
+  }
+  const wide = A.pairs.filter(p => {
+    const k = ringShotType(p), q = A.sil[p.base];
+    return p.on && (k === "upper" || k === "full") && q && q.fw > 0 && q.hw / q.fw > D.upper.wideK;
+  });
+  if (wide.length) notes.push(`머리 높이에 넓은 것(모자·의자·손 등)이 같이 있는 사진 ${wide.length}장 — 머리가 작게 나올 수 있어요`);
+  let blocker = bLines(opt).length ? "" : "문구를 한 줄 이상 적어 주세요";
+  if (circle && !opt.name.trim()) blocker = "원 사진 디자인에 들어갈 이름을 적어 주세요";
+  return { key: design.key, name: design.label, size: `${ch.sizes[+$("#bSize").value]} · 칼선 ${dmm.toFixed(1)}×${cutH.toFixed(1)}mm`,
+           g, notes, opt, blocker };
+}
+
+function altSummary() {
+  const kind = A.script, ch = { ring: A.rch, xmas: A.xch, bday: A.bch }[kind];
+  if (!ch) { $("#make").disabled = true; return; }
+  const info = kind === "ring" ? altRingInfo() : (kind === "xmas" ? altXmasInfo() : altBdayInfo());
+  const n = A.pairs.filter(p => p.on).length, slots = info.g.cols * info.g.rows;
+  $("#sum").textContent = n ? `${SCRIPT_NAME[kind]} ${info.key} · ${info.g.cols}×${info.g.rows} = ${slots}장 · 사진 ${n}장 돌아가며` : "사진을 한 장 이상 고르세요";
+  $("#aview").innerHTML = `<div class="arow">${sheetSvg(info, info.opt)}<div class="samp">` +
+    `<div class="big">${esc(info.name)}</div>` +
+    `<div>${esc(info.size)} · ${info.g.cols}×${info.g.rows} = ${slots}장${n ? " · 사진 " + n + "장이 칸마다 돌아가며" : ""}</div>` +
+    `<div>Illustrator 결과를 그대로 옮겨 그린 미리보기예요. 서체 모양·글자 자동 축소는 조금 다를 수 있어요.</div>` +
+    (info.notes || []).map(t => `<div class="hint warn">${esc(t)}</div>`).join("") + `</div></div>`;
+  const svg = $("#aview svg.msheet");
+  if (svg) {
+    fitTexts(svg); fitXmasNames(svg); fitMerryNames(svg);
+    // 오벌 아래 문구 — 줄인 뒤 실제 대문자 높이로 알린다 (.jsx 완료 창 경고와 같은 기준 OVAL_LINE.minCapMm)
+    const minFs = fitOvalLines(svg);
+    if (kind === "xmas" && isFinite(minFs) && A.xoSerif && A.xoSerif.spec.cap) {
+      const capMm = minFs * A.xoSerif.spec.cap, lim = A.xch.draw.oval.line.minCapMm || 0;
+      if (capMm < lim - 0.05) $("#aview .samp").insertAdjacentHTML("beforeend",
+        `<div class="hint warn">아래 문구 대문자 ${capMm.toFixed(1)}mm — 작아서 인쇄가 뭉갤 수 있어요 (문구를 줄이거나 사이즈를 올리세요)</div>`);
+    }
+  }
+  A.pairs.filter(p => p.on).forEach(loadSil);
+  const blocker = !n ? "사진을 한 장 이상 고르세요" : info.blocker;
+  $("#make").disabled = A.busy || !!blocker || slots < 1;
+  $("#make").title = blocker || `${SCRIPT_FILE[A.script]} 가 이 값으로 대화창 없이 만든다 (시트 하나에 3분쯤)`;
+}
+
+// 레이아웃 — 스트라이프는 사진이 하단을 덮어 아랫줄을 쓰지 않는다 (ring.jsx 대화창과 같은 규칙)
+function ringLayoutChanged() {
+  const key = A.rch && A.rch.layoutKeys[+$("#rLayout").value], stripe = key === "STRIPE";
+  $("#rBot").disabled = stripe;
+}
+
+// 색 — 한 색 통일일 때만 색 고르기. 팔레트는 테마가 정한다 (ring.jsx _fillColorPick)
+function ringColorPick() {
+  if (!A.rch) return;
+  const pal = (A.rch.draw.themes[+$("#rTheme").value] || A.rch.draw.themes[0]).palette || [];
+  const keep = +$("#rColorPick").value || 0;
+  $("#rColorPick").innerHTML = optHtml(pal.map(c => c.name), keep < pal.length ? keep : 0);
+  $("#rColorPick").hidden = +$("#rColor").value !== A.rch.colorSingle;
+}
+
+// 테마 — 손대지 않은 기본 문구만 새 테마 것으로 바꾼다 (직접 친 문구는 그대로, ring.jsx 대화창과 같은 규칙)
+function ringThemeChanged() {
+  const ths = A.rch.themes, th = ths[+$("#rTheme").value];
+  if (ths.some(t => t.top === $("#rTop").value.trim())) $("#rTop").value = th.top;
+  if (ths.some(t => t.bottom === $("#rBot").value.trim())) $("#rBot").value = th.bottom;
+}
+
+// 사진 종류 어림에 쓸 _sil 측정을 다 끝낸 뒤 보낸다 (미리보기와 같은 값)
+async function ringShotTypes() {
+  const on = A.pairs.filter(p => p.on);
+  await Promise.all(on.map(p => loadSil(p)));
+  for (let i = 0; i < 50 && on.some(p => A.sil[p.base] === undefined); i++) await new Promise(r => setTimeout(r, 100));
+  const out = {};
+  on.forEach(p => { const t = ringShotType(p); if (t) out[p.base] = t; });
+  return out;
+}
+
+async function altMake() {
+  if (A.busy) return;
+  const body = { script: A.script, folder: A.folder, bases: A.pairs.filter(p => p.on).map(p => p.base) };
+  if (A.script === "bday") Object.assign(body, {
+    shotTypes: await ringShotTypes(),   // 윗몸·전신 = 머리 크기 맞춤 · 얼굴 = 얼굴 상자
+    designIdx: +$("#bDesign").value, sizeIdx: +$("#bSize").value,
+    line1: $("#bLine1").value, line2: $("#bLine2").value, name: $("#bName").value, sub: $("#bSub").value,
+    customerName: $("#bCust").value, orderDate: $("#bODate").value,
+    // 팝 사진 옵션 번호 (다른 디자인이면 서버가 쓰지 않는다)
+    popOut: $("#bPopOut").value !== "0",
+    popLayout: +$("#bPopLayout").value || 0, popShape: +$("#bPopShape").value || 0, popColor: +$("#bPopColor").value || 0,
+    popTitle: +$("#bPopTitle").value || 0, popHand: +$("#bPopHand").value || 0,
+  });
+  else if (A.script === "xmas") Object.assign(body, {
+    shotTypes: await ringShotTypes(),   // 하트·오벌은 얼굴용 — 다른 종류면 완료 창이 알린다
+    designIdx: +$("#xDesign").value, sizeIdx: +$("#xSize").value,
+    colorMode: +$("#xColor").value || 0, borderIdx: +$("#xBorder").value || 0,
+    name: $("#xName").value, line: $("#xLine").value, customerName: $("#xCust").value, orderDate: $("#xODate").value,
+  });
+  else Object.assign(body, {
+    shotTypes: await ringShotTypes(),
+    themeIdx: +$("#rTheme").value, layoutIdx: +$("#rLayout").value, sizeIdx: +$("#rSize").value,
+    textEffect: $("#rEffect").value || "none",
+    colorMode: +$("#rColor").value || 0, colorIdx: +$("#rColorPick").value || 0,
+    topText: $("#rTop").value, upper: $("#rUpper").checked, bottomText: $("#rBot").value,
+    customerName: $("#rName").value, orderDate: $("#rODate").value,
+  });
+  A.busy = true;
+  altSummary();
+  try {
+    const r = await fetch(url("/api/composed/script"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j.error || ("HTTP " + r.status));
+    say(j.duplicate ? "방금 같은 내용을 보냈어요 — 다시 보내지 않았어요."
+      : `Illustrator 로 넘겼어요 (${j.summary}). 다 되면 Illustrator 에 완료 창이 떠요.`, "ok");
+  } catch (e) {
+    say("Illustrator 로 못 넘겼어요: " + e.message, "err");
+  }
+  setTimeout(() => { A.busy = false; altSummary(); }, 4000);
+}
+
+async function setScript(v) {
+  A.script = v;
+  const alt = v !== "composed";
+  $("#cmain").hidden = alt;
+  $("#amain").hidden = !alt;
+  $("#sdSec").hidden = v !== "bday" && v !== "ring";
+  $("#rFormSec").hidden = v !== "ring";
+  $("#xFormSec").hidden = v !== "xmas";
+  $("#bFormSec").hidden = v !== "bday";
+  say("");
+  if (!alt) { renderSummary(); return; }
+  // 헤더 Special Day — 디자인 목록(Ring 포함)을 먼저 읽고, 고른 디자인이 Ring 이면 링 배지로
+  if (v === "bday") {
+    if (!(await altEnsureChoices("bday"))) return;
+    if ($("#bDesign").value === SD_RING) return setScript("ring");
+  }
+  if (!(await altEnsureChoices(v))) return;
+  if (A.folder !== S.folder || !A.pairs.length) await altLoad(S.folder);
+  else altSummary();
+}
+
+function wireAlt() {
+  $("#script").addEventListener("change", () => setScript($("#script").value));
+  $("#folder").addEventListener("change", () => { if (A.script !== "composed") altLoad($("#folder").value); });
+  $("#reload").addEventListener("click", () => { if (A.script !== "composed") altLoad(A.folder); });
+  $("#lplist").addEventListener("click", e => {
+    if (e.target.closest("select")) return;   // 사진 종류 고르기는 넣기·빼기가 아니다
+    const c = e.target.closest("[data-li]");
+    if (!c) return;
+    const p = A.pairs[+c.dataset.li];
+    p.on = !p.on;
+    altList(); altSummary();
+  });
+  document.querySelectorAll("[data-lpick]").forEach(b => b.addEventListener("click", () => {
+    A.pairs.forEach((p, i) => { p.on = b.dataset.lpick === "all" || (b.dataset.lpick === "first" && i === 0); });
+    altList(); altSummary();
+  }));
+  ["#rSize", "#rUpper", "#rColorPick", "#rEffect"].forEach(id => $(id).addEventListener("change", altSummary));
+  $("#rColor").addEventListener("change", () => { ringColorPick(); altSummary(); });
+  ["#rTop", "#rBot"].forEach(id => $(id).addEventListener("input", altSummary));
+  $("#rLayout").addEventListener("change", () => { ringLayoutChanged(); altList(); altSummary(); });
+  $("#lplist").addEventListener("change", e => {
+    const sel = e.target.closest("select[data-st]");
+    if (!sel) return;
+    A.pairs[+sel.dataset.st].userType = sel.value;
+    altList(); altSummary();
+  });
+  $("#rTheme").addEventListener("change", () => { ringThemeChanged(); ringColorPick(); altSummary(); });
+  ["#xSize", "#xColor", "#xBorder"].forEach(id => $(id).addEventListener("change", altSummary));
+  $("#xDesign").addEventListener("change", () => { xDesignChanged(true); altSummary(); });
+  ["#xName", "#xLine"].forEach(id => $(id).addEventListener("input", altSummary));
+  $("#bSize").addEventListener("change", altSummary);
+  ["#bPopOut", "#bPopLayout", "#bPopShape", "#bPopColor", "#bPopTitle", "#bPopHand"].forEach(id => $(id).addEventListener("change", altSummary));
+  $("#bDesign").addEventListener("change", async () => {
+    if ($("#bDesign").value === SD_RING) { setScript("ring"); return; }
+    if (A.script === "ring") await setScript("bday");
+    bDesignChanged(true); altSummary();
+  });
+  ["#bLine1", "#bLine2", "#bName", "#bSub"].forEach(id => $(id).addEventListener("input", altSummary));
+  $("#xLinePreset").addEventListener("change", e => {   // 틀 고르기 → 이름을 넣어 채우고 다시 "틀 고르기…"
+    if (e.target.value === "") return;
+    $("#xLine").value = xLineOf(+e.target.value, $("#xName").value.trim() || A.xSticker);
+    e.target.value = "";
+    altSummary();
+  });
+}
+wireAlt();
 init();
 </script>
 </body></html>

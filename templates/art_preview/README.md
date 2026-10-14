@@ -9,6 +9,7 @@ Illustrator 결과와 같은 자리에 놓이도록 **그림 = 라이브러리 �
 | `deco_art_v1/` | `deco_art_v1.ai` | 레트로 | `DECO_HEART.png` … 12종 + 말풍선 `DECO_YAY.png` … 6종 (높이 200px) |
 | `alphabet_art_v2/` | `alphabet_art_v2.ai` | 버블 | `LTR_A.png` … + 옆 장식 넣은 틀 `LTR_C_R.png` · `LTR_V_L.png` · `LTR_Z_R.png` + 색 그룹 `LTR_A_PINK.png` · `LTR_C_PINK_R.png` … 77장 (모두 106장) |
 | `deco_art_v2/` | `deco_art_v2.ai` | 버블 | `DECO_SMILE.png` … 27종 (흰 테두리 `SIL` 은 빼고 뽑음 — 캔버스는 테두리까지라 크기는 같다, 2026-09-22 · 글씨 두들 6종이 말풍선) |
+| `xmas_merry_v1/` | `xmas_merry_art_v1.ai` | (크리스마스 MERRY) | `FRAME.png`(칼선 bbox 그대로, 폭 1200px) · `HAT.png` · `SHAPES.json`(칼선·크림 패스) — `build_xmas_merry.jsx` 가 만든다 · `/api/composed/xmasart` |
 
 - 이름 규칙: `LTR_<A–Z>[_<색>][_L|_R]` · `DECO_<영문 대문자·숫자>` — 그림 이름 = 라이브러리 그룹 이름의 공백을 밑줄로
   (`LTR A PINK` → `LTR_A_PINK`, 색은 대문자 3~12자). 보드 서버(`composed_preview.art_file`)가 이 모양이 아니면 404 를 준다.
