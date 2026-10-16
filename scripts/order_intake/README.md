@@ -274,9 +274,9 @@ projects/{고객명 주문번호}/
 
 - `mode` = `single` (그때만 `size_mm`) · `package` (그때만 `sheets`) · `all`(Mixed → 전 사이즈) ·
   `pack` (그때 `pack`·`photos_ordered`·`sheets` — `EVS-NAME-5-WM` = Name & Photo Sticker Sheet, 사진 5 · 1시트) ·
-  `special_day` (`EVS-SDAY-{PHOTO|RING}-WM` = Special Day Sticker Sheet — `size_mm` 38.1 · `sheets` 1, 사이즈는 상품이 고정)
+  `special_day` (`EVS-SDAY-{PHOTO|RING|STRIPE}-WM` = Special Day Sticker Sheet — `size_mm` 38.1 · `sheets` 1, 사이즈는 상품이 고정)
 - `special_day` (2026-10-13) = Special Day 주문만 `{design, message, top_line, bottom_line}`, 그 외 `null`. `design` = SKU 가운데
-  `PHOTO`(사진 스티커 = Everstory_birthday.jsx POP) · `RING`(링 배지 = Everstory_ring.jsx). 글자 = Easify 칸 `Message` · `Top line` ·
+  `PHOTO`(사진 스티커 = Everstory_birthday.jsx POP) · `RING`(링 배지 = Everstory_ring.jsx) · `STRIPE`(스트라이프 배지 = Everstory_ring.jsx STRIPE 레이아웃, 윗줄만 — 아랫줄이 따라오면 비우고 노트, 2026-10-15). 글자 = Easify 칸 `Message` · `Top line` ·
   `Bottom line` (이름 `Name` 은 다른 상품처럼 `sticker_name`, 칸 정의 = `docs/shopify/special_day_easify.md`). 다른 디자인의 칸 값이
   따라오면 비우고 노트, 필수 칸(문구·윗줄)이 비거나 Easify 상한(문구 24 · 이름 10 · 윗줄 23 · 아랫줄 15)을 넘거나 사진이 1–3장이
   아니면 노트만 — 값은 그대로. line item 마다 디자인이 다르면 `design` = `null` + 노트. 구성 보드가 이 값으로 Special Day 를 채운다 (위 "구성").

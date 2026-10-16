@@ -272,8 +272,8 @@ def order_prefill(folder):
     # Special Day 주문 (intake job.special_day, 2026-10-13) — 화면이 스크립트를 Special Day 로, 디자인·글자·사이즈를 주문대로 고른다.
     # 디자인이 한 개로 안 좁혀진 주문(line item 마다 다름)은 넘기지 않는다 — 운영자가 고르고, 이유는 notes 에 있다.
     sd = job.get("special_day")
-    if isinstance(sd, dict) and sd.get("design") in ("PHOTO", "RING"):
-        out["specialDay"] = {"design": "ring" if sd["design"] == "RING" else "photo",
+    if isinstance(sd, dict) and sd.get("design") in ("PHOTO", "RING", "STRIPE"):
+        out["specialDay"] = {"design": str(sd["design"]).lower(),   # photo | ring | stripe (스트라이프 = 링 스크립트 STRIPE 레이아웃)
                              "message": str(sd.get("message") or "").strip(),
                              "topLine": str(sd.get("top_line") or "").strip(),
                              "bottomLine": str(sd.get("bottom_line") or "").strip(),

@@ -131,12 +131,13 @@ PACK_NAMES = {
     "FULL": "Full Set",
 }
 
-# Special Day Sticker Sheet (2026-10-13): EVS-SDAY-{PHOTO|RING}-{WM|SV|GD|TR}. 사이즈는 상품이 고정한다 — 1.5″ · A5 한 장.
-# PHOTO = 사진 스티커 (Everstory_birthday.jsx POP — "문구 – 이름 ♥" 한 줄), RING = 링 배지 (Everstory_ring.jsx — 윗줄·아랫줄).
+# Special Day Sticker Sheet (2026-10-13): EVS-SDAY-{PHOTO|RING|STRIPE}-{WM|SV|GD|TR}. 사이즈는 상품이 고정한다 — 1.5″ · A5 한 장.
+# PHOTO = 사진 스티커 (Everstory_birthday.jsx POP — "문구 – 이름 ♥" 한 줄), RING = 링 배지 (Everstory_ring.jsx — 윗줄·아랫줄),
+# STRIPE = 스트라이프 배지 (2026-10-15, Everstory_ring.jsx 스트라이프 레이아웃 — 윗줄만, 사진이 아래를 덮어 아랫줄이 없다).
 # 가운데에 숫자를 넣지 않는다 — SKU_SIZE_RE 가 `-38-WM` 을 Custom 단일 사이즈로 읽는다.
-SKU_SDAY_RE = re.compile(r"-SDAY-(PHOTO|RING)-[A-Z]{2}$", re.I)
+SKU_SDAY_RE = re.compile(r"-SDAY-(PHOTO|RING|STRIPE)-[A-Z]{2}$", re.I)
 SDAY_SIZE_MM = 38.1
-SDAY_DESIGNS = {"PHOTO": "사진 스티커", "RING": "링 배지"}
+SDAY_DESIGNS = {"PHOTO": "사진 스티커", "RING": "링 배지", "STRIPE": "스트라이프 배지"}
 # Easify 칸 내부 이름(= 주문 키, docs/shopify/special_day_easify.md) -> job.special_day 필드. `Name` 은 다른 상품처럼 sticker_name.
 SDAY_TEXT_KEYS = {"message": "message", "top line": "top_line", "bottom line": "bottom_line"}
 SDAY_FIELD_LABELS = {"message": "문구(Message)", "name": "이름(Name)", "top_line": "윗줄(Top line)",
@@ -376,11 +377,16 @@ def build_job(manifest):
             job["notes"].append("디자인: line item 마다 다름 (%s) — 주문을 나눠 제작할 것"
                                 % " / ".join(SDAY_DESIGNS[d] for d in designs))
         # 다른 디자인의 칸은 Easify 가 숨긴다 — 디자인을 바꾸기 전에 쓴 값이 따라오면 고른 디자인으로 만들고 알린다 (No name 과 같은 함정).
-        if sd["design"] == "RING":
+        if sd["design"] in ("RING", "STRIPE"):
+            label = SDAY_DESIGNS[sd["design"]]
             stray = [v for v in (sd["message"], job["sticker_name"]) if v]
             if stray:
-                job["notes"].append("링 배지인데 사진 스티커 칸도 들어옴 (%s) — 링 배지로 만든다, 고객 확인" % " / ".join(stray))
+                job["notes"].append("%s인데 사진 스티커 칸도 들어옴 (%s) — %s로 만든다, 고객 확인" % (label, " / ".join(stray), label))
             sd["message"] = job["sticker_name"] = ""
+            if sd["design"] == "STRIPE" and sd["bottom_line"]:
+                # 스트라이프는 아랫줄 자리가 없다 (Easify 도 Ring badge 에만 보인다) — 링 배지에서 바꾸며 따라온 값
+                job["notes"].append("스트라이프 배지는 아랫줄이 없는데 '%s' 이 들어옴 — 윗줄만으로 만든다, 고객 확인" % sd["bottom_line"])
+                sd["bottom_line"] = ""
             if not sd["top_line"]:
                 job["notes"].append("윗줄(Top line) 없음 — 고객 확인")
         elif sd["design"] == "PHOTO":

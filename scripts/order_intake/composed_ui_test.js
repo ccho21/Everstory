@@ -166,6 +166,18 @@ async function main() {
     element('#rBot').value === '2026.08.23' && routes['/api/composed/ring'].sizesMm[+element('#rSize').value] === 38.1);
   check('주문 메모는 Special Day 안내 줄에 경고로', element('#sdOrder').textContent.includes('주문 메모: 사진 1장 테스트 메모') &&
     element('#sdOrder').className === 'hint warn');
+  // 스트라이프 배지 (2026-10-15) — 링 스크립트 + STRIPE 레이아웃 · 아랫줄 비움 (링 주문 다음에 열어도 레이아웃이 바뀐다)
+  const sdStripe = {design: 'stripe', message: '', topLine: "LEO'S 1ST BIRTHDAY", bottomLine: '', sizeMm: 38.1};
+  payload = fixture(1, {stickerName: '', specialDay: sdStripe, notes: []});
+  await read('loadFolder("SD STRIPE EVS-4", true)');
+  const ringKeys = routes['/api/composed/ring'].layoutKeys;
+  check('Special Day 스트라이프 배지 주문 → Ring 스크립트 · STRIPE 레이아웃 · 윗줄 · 아랫줄 비움 · 1.5″',
+    read('A.script') === 'ring' && element('#bDesign').value === 'ring' && ringKeys[+element('#rLayout').value] === 'STRIPE' &&
+    element('#rTop').value === "LEO'S 1ST BIRTHDAY" && element('#rBot').value === '' &&
+    routes['/api/composed/ring'].sizesMm[+element('#rSize').value] === 38.1 && element('#sdOrder').textContent.includes('스트라이프 배지'));
+  payload = fixture(1, {stickerName: '', specialDay: sdRing, notes: []});
+  await read('loadFolder("SD RING EVS-5", true)');
+  check('스트라이프 다음 링 배지 주문 → 레이아웃이 RING 으로 돌아온다', ringKeys[+element('#rLayout').value] === 'RING' && element('#rBot').value === '2026.08.23');
   payload = fixture(2, {notes: []});
   await read('loadFolder("PLAIN EVS-3", true)');
   await read('altLoad("PLAIN EVS-3")');

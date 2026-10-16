@@ -397,6 +397,18 @@ try:
     j = sday("PHOTO", [("Message", "Hi")], extra_li={"sku": "EVS-FACE-19-WM"})
     chk("다른 상품과 한 주문이면 special_day 없음 (사이즈 노트만)", j["special_day"] is None and j["mode"] is None and
         has_note(j, "사이즈: line item 마다 다름"), j["notes"])
+    # 스트라이프 배지 (2026-10-15) — 링 스크립트 STRIPE 레이아웃: 윗줄만, 아랫줄은 자리가 없다
+    chk("SKU EVS-SDAY-STRIPE-SV → 1.5″ 한 장 · 디자인 STRIPE",
+        intake.size_from_sku("EVS-SDAY-STRIPE-SV") == ("special_day", 38.1, 1, None) and intake.sday_design_from_sku("EVS-SDAY-STRIPE-SV") == "STRIPE")
+    j = sday("STRIPE", [("Top line", "LEO'S 1ST BIRTHDAY")])
+    chk("스트라이프 배지: 윗줄 · 노트 없음 · 라벨",
+        j["special_day"] == {"design": "STRIPE", "message": "", "top_line": "LEO'S 1ST BIRTHDAY", "bottom_line": ""} and j["notes"] == [] and
+        "Special Day 스트라이프 배지 · 1.5\" · A5 1장 · 윗줄 'LEO'S 1ST BIRTHDAY'" in intake.job_label(j), (j["notes"], intake.job_label(j)))
+    j = sday("STRIPE", [("Top line", "PARTY"), ("Bottom line", "2026.08.23"), ("Message", "Hi")])
+    chk("스트라이프 배지에 아랫줄·문구가 따라오면 비우고 노트",
+        j["special_day"]["bottom_line"] == "" and j["special_day"]["message"] == "" and
+        has_note(j, "아랫줄이 없는데 '2026.08.23'") and has_note(j, "스트라이프 배지인데 사진 스티커 칸도 들어옴 (Hi)"), j["notes"])
+    chk("스트라이프 배지 윗줄 없으면 확인 노트", has_note(sday("STRIPE", []), "윗줄(Top line) 없음"))
     chk("다른 상품 job 은 special_day = None", intake.build_job({"order": {}, "line_items": [
         {"index": 0, "title": "P", "sku": "EVS-NAME-5-WM", "quantity": 1}], "options": [], "photos": []})["special_day"] is None)
 

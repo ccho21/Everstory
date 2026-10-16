@@ -267,8 +267,11 @@
   //   프레임 밖으로 여는 곳 = 머리 폭 × openW 너비, 머리 위 − openUp ~ 어깨 줄. 어깨 줄 = 머리 띠 아래에서 윤곽 폭이
   //   머리 폭 × shoulderK 를 처음 넘는 높이. (전체 폭으로 열면 좁은 모양에서 손·조끼가 옆으로 삐져나오고, 프레임 윗선에서
   //   자르면 머리가 잘린다 — 둘 다 시안에서 실측 후 버렸다)
+  //   여는 곳 아래 끝은 어깨 줄이어도 프레임 위 + openDown × 프레임 높이를 넘지 않는다 (2026-10-14 사용자 — 옆으로 선 마른
+  //   전신 사진은 어느 줄도 머리 폭 × shoulderK 를 안 넘어 어깨 줄 = 발끝이 되고, 머리 폭 직사각형이 좁아지는 하트 아래로
+  //   빠져나가 다리가 하트 밖에 보였다). 프레임 가운데 높이까지는 모양 폭이 여는 폭보다 넓어 밖으로 나갈 곳이 없다
   var POP_GEO = { headK: 0.3822, kMax: 1.06, rise: 0.05, faceRise: 0.045, faceW: 0.78, faceGap: 0.022, below: 0.01,
-                  openW: 1.5, openUp: 0.03, shoulderK: 1.45 };
+                  openW: 1.5, openUp: 0.03, shoulderK: 1.45, openDown: 0.5 };
   //   프레임 안 (팝 끔, 2026-10-13) — 머리까지 프레임 안, 클립 = 프레임만. 값은 프레임 폭 fw 단위, 프레임 위에서 아래로:
   //   head = 머리 띠 폭 · top = 머리 위 · faceTop·faceBottom·faceW = 얼굴 누끼 상자 (턱 = faceBottom).
   //   하트 = 하트 사진 실측(BD_UPPER·BD_FACE ÷ 하트 폭 0.6393), 원 = 원 사진 실측(BN_UPPER·BN_FACE ÷ 지름 0.6334) 그대로.
@@ -890,11 +893,12 @@
     photo.top = Y(top);
     var art = _embedPhoto(printLayer, photo, opt, pair);
 
-    // 클립 = 프레임 ∪ 머리 둘레 (머리 폭 × openW, 머리 위 − openUp ~ 어깨 줄) — 머리만 프레임 밖으로.
+    // 클립 = 프레임 ∪ 머리 둘레 (머리 폭 × openW, 머리 위 − openUp ~ 어깨 줄, 단 프레임 가운데 높이까지) — 머리만 프레임 밖으로.
     // 프레임 안이면 프레임만 (직사각형 없음 → _popClipPath 가 프레임 그대로 돌려준다)
     var openL = 0.5 - G.openW * headW / 2, openT = headTop - G.openUp;
+    var openB = Math.min(shoulder, fTop + G.openDown * fh);
     var clip = _popClipPath(doc, printLayer, S.key, X(fLeft), Y(fTop), fw * W,
-                            inside ? null : [X(openL), Y(openT), G.openW * headW * W, (shoulder - openT) * W]);
+                            inside ? null : [X(openL), Y(openT), G.openW * headW * W, (openB - openT) * W]);
     var grp = printLayer.groupItems.add();
     art.move(grp, ElementPlacement.PLACEATBEGINNING);
     clip.move(grp, ElementPlacement.PLACEATBEGINNING);

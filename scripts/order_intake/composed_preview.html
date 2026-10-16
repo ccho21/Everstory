@@ -474,7 +474,7 @@ async function loadFolder(name, fresh) {
   const quantity = contract.quantity == null ? "" : "수량 " + contract.quantity;
   const extra = contract.extraSheets ? "추가 인쇄 +" + contract.extraSheets : "";
   const prints = printCount(contract) > 1 ? "같은 시트 " + printCount(contract) + "장 인쇄" : "";
-  const sdLine = contract.specialDay ? "Special Day " + (contract.specialDay.design === "ring" ? "링 배지" : "사진 스티커") + " · 1.5″ · A5 1장" : "";
+  const sdLine = contract.specialDay ? "Special Day " + ({ photo: "사진 스티커", ring: "링 배지", stripe: "스트라이프 배지" }[contract.specialDay.design] || "") + " · 1.5″ · A5 1장" : "";
   $("#orderContract").textContent = [contract.pack === "NAME" ? "Name & Photo · 최종 5디자인 · A5 1장" : "", sdLine, quantity, extra, prints]
     .filter(Boolean).join(" · ");
   $("#orderContract").hidden = !$("#orderContract").textContent;
@@ -1897,8 +1897,10 @@ function popSticker(DB, opt, p, slot, x0, y0, Dmm, uid) {
       ph = pw * asp; left = 0.5 - sj.fcx * pw; top = chin - (sj.fcy + sj.fh / 2) * ph; headW = sj.fw * pw;
     }
     const shoulder = top + (q && q.shoulder > 0 ? q.shoulder : 1) * ph, oL = 0.5 - G.openW * headW / 2, oT = headTop - G.openUp;
+    // 여는 곳 아래 끝 = 어깨 줄, 단 프레임 가운데 높이까지 (.jsx POP_GEO.openDown — 어깨를 못 찾은 마른 전신이 하트 밖으로 새지 않게)
+    const oB = Math.min(shoulder, fTop + (G.openDown != null ? G.openDown : 0.5) * fh);
     o += `<clipPath id="bc${uid}"><path d="${frame}"/>` +
-      (!I && shoulder > oT ? `<rect x="${X(oL).toFixed(3)}" y="${Y(oT).toFixed(3)}" width="${(G.openW * headW * W).toFixed(3)}" height="${((shoulder - oT) * W).toFixed(3)}"/>` : "") +
+      (!I && oB > oT ? `<rect x="${X(oL).toFixed(3)}" y="${Y(oT).toFixed(3)}" width="${(G.openW * headW * W).toFixed(3)}" height="${((oB - oT) * W).toFixed(3)}"/>` : "") +
       `</clipPath><g clip-path="url(#bc${uid})">${imgTag(p, X(left), Y(top), pw * W, ph * W)}</g>`;
   }
   // 제목 — 대문자 capMax 에서 시작, 넓은 줄 잉크가 inkW 를 넘으면 줄인다. 줄마다 잉크 가운데
@@ -2189,15 +2191,18 @@ function xPrefillLine() {
 }
 
 // Special Day 주문 (SKU EVS-SDAY-…, 2026-10-13) — intake job.special_day → prefill.specialDay.
-// 새 주문을 열면 스크립트 = Special Day, 디자인 = 주문대로 (사진 스티커 = POP · 링 배지 = Ring). 프레임 모양·색·팝은 운영자가 사진을 보고 고른다.
+// 새 주문을 열면 스크립트 = Special Day, 디자인 = 주문대로 (사진 스티커 = POP · 링 배지 = Ring · 스트라이프 배지 = Ring 의 스트라이프
+// 레이아웃, 2026-10-15). 프레임 모양·색·팝은 운영자가 사진을 보고 고른다.
+const SD_LABEL = { photo: "사진 스티커", ring: "링 배지", stripe: "스트라이프 배지" };
+const sdIsBadge = sd => !!sd && (sd.design === "ring" || sd.design === "stripe");
 async function sdFromOrder(f) {
   A.sd = (f && f.specialDay) || null;
   if (!A.sd) return;
   if (!(await altEnsureChoices("bday"))) return;
   const pop = A.bch.designs.findIndex(x => x.key === "POP");
   $("#script").value = "bday";
-  $("#bDesign").value = A.sd.design === "ring" ? SD_RING : String(pop >= 0 ? pop : A.bch.designDefault);
-  if (A.sd.design !== "ring") bDesignChanged(false);   // 사이즈는 아래 sdFill 이 주문대로 (1.5″)
+  $("#bDesign").value = sdIsBadge(A.sd) ? SD_RING : String(pop >= 0 ? pop : A.bch.designDefault);
+  if (!sdIsBadge(A.sd)) bDesignChanged(false);   // 사이즈는 아래 sdFill 이 주문대로 (1.5″)
   await setScript("bday");
   sdFill();
   altSummary();
@@ -2213,9 +2218,12 @@ function sdFill(kind) {
     const k = sizeIdx(A.bch.sizesMm);
     if (k >= 0) $("#bSize").value = String(k);
   }
-  if (A.rch && sd.design === "ring" && (!kind || kind === "ring")) {
+  if (A.rch && sdIsBadge(sd) && (!kind || kind === "ring")) {
+    // 레이아웃도 주문대로 — 링 배지 = RING · 스트라이프 배지 = STRIPE (아랫줄 없음, ringLayoutChanged 가 칸을 끈다)
+    const li = (A.rch.layoutKeys || []).indexOf(sd.design === "stripe" ? "STRIPE" : "RING");
+    if (li >= 0) { $("#rLayout").value = String(li); ringLayoutChanged(); }
     if (sd.topLine) $("#rTop").value = sd.topLine;
-    $("#rBot").value = sd.bottomLine || "";
+    $("#rBot").value = sd.design === "stripe" ? "" : (sd.bottomLine || "");
     const k = sizeIdx(A.rch.sizesMm);
     if (k >= 0) $("#rSize").value = String(k);
   }
@@ -2223,7 +2231,7 @@ function sdFill(kind) {
 // Special Day 칸 아래 안내 — 주문대로 고른 것 + 주문 메모 (구성 화면의 주문 메모와 같은 job.notes)
 function sdHint(f) {
   const sd = f.specialDay, notes = f.notes || [];
-  const what = sd ? "주문 = " + (sd.design === "ring" ? "링 배지" : "사진 스티커") + " · 1.5″ — 디자인·글자·사이즈를 주문대로 넣었어요" : "";
+  const what = sd ? "주문 = " + (SD_LABEL[sd.design] || sd.design) + " · 1.5″ — 디자인·글자·사이즈를 주문대로 넣었어요" : "";
   const memo = notes.length ? "주문 메모: " + notes.join(" / ") : "";
   $("#sdOrder").textContent = [what, memo].filter(Boolean).join(" · ");
   $("#sdOrder").className = "hint" + (memo ? " warn" : "");

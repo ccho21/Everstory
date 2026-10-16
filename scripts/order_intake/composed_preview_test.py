@@ -457,6 +457,10 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     chk("Special Day 링 배지 → specialDay (ring · 윗줄 · 아랫줄)", cp.order_prefill(order_h)["specialDay"] ==
         {"design": "ring", "message": "", "topLine": "HARIN'S 2ND BIRTHDAY", "bottomLine": "2026.08.23", "sizeMm": 38.1})
     write(os.path.join(order_h, "_order.json"), json.dumps({"job": {"mode": "special_day", "size_mm": 38.1,
+        "special_day": {"design": "STRIPE", "message": "", "top_line": "LEO'S 1ST BIRTHDAY", "bottom_line": ""}}}))
+    chk("Special Day 스트라이프 배지 → specialDay (stripe · 윗줄)", cp.order_prefill(order_h)["specialDay"] ==
+        {"design": "stripe", "message": "", "topLine": "LEO'S 1ST BIRTHDAY", "bottomLine": "", "sizeMm": 38.1})
+    write(os.path.join(order_h, "_order.json"), json.dumps({"job": {"mode": "special_day", "size_mm": 38.1,
         "special_day": {"design": None, "message": "Hi"}, "notes": ["디자인: line item 마다 다름"]}}))
     chk("디자인이 안 좁혀진 Special Day 주문은 넘기지 않는다 (운영자가 고름 · 이유는 notes)",
         cp.order_prefill(order_h)["specialDay"] is None and cp.order_prefill(order_h)["notes"] == ["디자인: line item 마다 다름"])
@@ -889,7 +893,7 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
         and [x["key"] for x in pp.get("shapes", [])] == ["HEART", "PUFF", "CLOUD", "CIRCLE"], pp.get("layouts"))
     chk("그리기 값: 스티커 1.076 · 영역 0.80×0.57 · 머리 밖으로 규칙 · 윤곽 120점 × 2 (시안 ROUND 4·5 그대로)",
         pp.get("sticker") == {"h": 1.076, "r": 0.02} and pp.get("region") == {"wMax": 0.8, "h": 0.57}
-        and pp["geo"].get("headK") == 0.3822 and pp["geo"].get("openW") == 1.5 and pp["geo"].get("shoulderK") == 1.45
+        and pp["geo"].get("headK") == 0.3822 and pp["geo"].get("openW") == 1.5 and pp["geo"].get("shoulderK") == 1.45 and pp["geo"].get("openDown") == 0.5
         and pp["text"] == {"ink": "141414", "accent": "D7192D"} and pp["layouts"][0].get("capMax") == 0.09
         and len(pp["puff"].get("pts", [])) == 240 and len(pp["cloud"].get("pts", [])) == 240
         and pp["puff"].get("aspect") == 1.1184 and pp["cloud"].get("aspect") == 0.7468, pp.get("geo"))

@@ -1,6 +1,6 @@
 # Special Day — Easify option set
 
-Product: **Special Day Sticker Sheet** (`special-day-sticker-sheet`, Draft, Product 10220556288256) · Variants: **Design** (Photo sticker / Ring badge) × **Material** (4).
+Product: **Special Day Sticker Sheet** (`special-day-sticker-sheet`, live since 2026-10-14, Product 10220556288256) · Variants: **Design** (Photo sticker / Ring badge / Stripe badge — added 2026-10-15) × **Material** (4).
 Written 2026-10-13 from the live Name & Photo set (767342) so the field types, file formats and wording match. The **internal name** of every field becomes the order property key that `intake.py` reads — type it exactly.
 `intake.py` already reads these keys (2026-10-13): `Message` / `Top line` / `Bottom line` → `job.special_day`, `Name` → `job.sticker_name`, `Your photos` → photos, `Extra sheets` → `job.extra_sheets`. The order board then opens the order on **Special Day** with the design, words and 1.5″ filled in (`scripts/order_intake/README.md`).
 
@@ -71,8 +71,8 @@ Written 2026-10-13 from the live Name & Photo set (767342) so the field types, f
 | Characters | min 1, max **23** |
 | Letter case | Uppercase |
 | Placeholder | `e.g. HARIN'S 2ND BIRTHDAY` |
-| Help text | `Printed in capitals around the top of the ring.` |
-| Condition | Show when **Variant contains** `Ring badge` |
+| Help text | `Printed in capitals around the top of the badge.` |
+| Condition | Show when **Variant contains** `badge` — Ring badge and Stripe badge (2026-10-15; was `Ring badge`) |
 
 ### 5. Bottom line — Ring badge only
 
@@ -86,7 +86,7 @@ Written 2026-10-13 from the live Name & Photo set (767342) so the field types, f
 | Letter case | Uppercase |
 | Placeholder | `e.g. 2026.08.23` |
 | Help text | `Printed around the bottom of the ring — a date works well.` |
-| Condition | Show when **Variant contains** `Ring badge` |
+| Condition | Show when **Variant contains** `Ring badge` — not Stripe badge: the stripe layout has no bottom line |
 
 ### 6. Extra sheets — always shown (same as Name & Photo)
 
