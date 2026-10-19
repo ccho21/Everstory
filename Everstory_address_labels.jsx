@@ -72,6 +72,15 @@
   // OPOS 로 마크를 읽고 그 자리를 컷한다 (재급지 정합을 마크가 해결).
   var TEMPLATE_REL = "templates/address_label.ait";
 
+  // 보내는 사람 라벨 (2026-10-18) — 같은 템플릿 칸에 로고 + 스튜디오 주소.
+  // 주소는 사용자가 정한 그대로 (2026-10-18). Shopify 스토어 주소(Redpath)와 다르다 —
+  // 바꿀 땐 여기만 고친다.
+  var LOGO_REL = "templates/logo_template.ai";
+  var SENDER_LINES = ["75 Billes Hts, North York, ON M2K 0J8"];   // 10-18 한 줄로 (사용자 "두줄로 가지말고")
+  var SENDER_LOGO_W_MM = 58;     // 로고 폭 (원본 비율 590:144 → 높이 약 14mm, 10-18 46→58 "가로로 더 길게")
+  var SENDER_GAP_MM = 2;         // 로고와 주소 사이
+  var SENDER_SIZE_PT = 9;       // 10-18 11→9 (로고를 키운 만큼 주소는 작게)
+
   var testConfig = $.global.__EVERSTORY_LABELS_TEST__;
 
   // 주문 보드(scripts/order_intake/webui.py '주소 라벨' 버튼)가 osascript 로 넣는 실행
@@ -389,6 +398,50 @@
     return tf;
   }
 
+  function drawSenderBlock(targetDoc, lyr, font, logoSrc, cell) {
+    // 로고(위) + 주소 한 줄(아래, 로고 가운데에 맞춤)을 한 그룹으로 칸 중앙에 (2026-10-18
+    // 사용자 확정 — 좌측정렬·주소만 좌측정렬도 보고 전부 가운데로). 칸에 안 맞으면 통째로 줄인다.
+    var grp = lyr.groupItems.add();
+    var logo = logoSrc.duplicate(grp, ElementPlacement.PLACEATEND);
+    var lb = logo.geometricBounds;
+    var logoScale = SENDER_LOGO_W_MM * MM_TO_PT / (lb[2] - lb[0]) * 100;
+    logo.resize(logoScale, logoScale);
+    lb = logo.geometricBounds;
+
+    var tf = grp.textFrames.add();
+    tf.contents = SENDER_LINES.join("\r");
+    var attrs = tf.textRange.characterAttributes;
+    if (font) attrs.textFont = font;
+    attrs.size = SENDER_SIZE_PT;
+    attrs.leading = SENDER_SIZE_PT * LEADING_RATIO;
+    tf.textRange.paragraphAttributes.justification = Justification.CENTER;
+    var tb = tf.geometricBounds;
+    tf.left = (lb[0] + lb[2]) / 2 - (tb[2] - tb[0]) / 2;
+    tf.top = lb[3] - SENDER_GAP_MM * MM_TO_PT;
+
+    var box = textBoxOf(cell);
+    var gb = grp.geometricBounds;
+    var w = gb[2] - gb[0];
+    var h = gb[1] - gb[3];
+    var scale = 1;
+    if (w > box.wMm * MM_TO_PT) scale = box.wMm * MM_TO_PT / w;
+    if (h > box.hMm * MM_TO_PT) {
+      var vs = box.hMm * MM_TO_PT / h;
+      if (vs < scale) scale = vs;
+    }
+    if (scale < 1) {
+      grp.resize(scale * 100, scale * 100, true, true, true, true, scale * 100);
+      gb = grp.geometricBounds;
+      w = gb[2] - gb[0];
+      h = gb[1] - gb[3];
+    }
+    var cx = _toPt(targetDoc, cell.xMm + cell.wMm / 2, cell.yMm + cell.hMm / 2);
+    grp.left = cx.x - w / 2;
+    grp.top = cx.y + h / 2;
+    grp.name = "sender_" + cell.n;
+    return grp;
+  }
+
   function drawPrintSheet(targetDoc, sheet, blocks, startN) {
     var plan = planSlots(startN, blocks.length);
     if (plan.error) throw new Error(plan.error);
@@ -419,7 +472,10 @@
       "템플릿 인쇄 — address_label.ait (주소+마크 인쇄 → Summa OPOS 컷)");
     var rbCut = gMode.add("radiobutton", undefined, "칼선 시트 — 빈 12분할 (Summa, 한 번만)");
     var rbPrint = gMode.add("radiobutton", undefined, "인쇄 — 이미 칼선 난 시트에 주소만");
+    var rbSender = gMode.add("radiobutton", undefined,
+      "보내는 사람 — address_label.ait 에 로고 + 스튜디오 주소");
     rbTpl.enabled = tplExists;
+    rbSender.enabled = tplExists;
     if (tplExists) rbTpl.value = true;
     else rbPrint.value = true;
 
@@ -433,6 +489,11 @@
     var etStart = gStart.add("edittext", undefined, "1");
     etStart.characters = 4;
 
+    var gCount = dlg.add("group");
+    gCount.add("statictext", undefined, "장수 (보내는 사람, 비우면 시트 끝까지)");
+    var etCount = gCount.add("edittext", undefined, "");
+    etCount.characters = 4;
+
     var gFile = dlg.add("group");
     gFile.add("statictext", undefined, "주소 파일 (.txt)");
     var etFile = gFile.add("edittext", undefined, initialLabelsPath());
@@ -445,13 +506,15 @@
 
     function syncEnabled() {
       var addressing = rbPrint.value || rbTpl.value;
-      gStart.enabled = addressing;
+      gStart.enabled = addressing || rbSender.value;
       gFile.enabled = addressing;
-      gSheet.enabled = !rbTpl.value;   // 템플릿 모드는 시트 규격을 템플릿이 정한다
+      gCount.enabled = rbSender.value;
+      gSheet.enabled = !rbTpl.value && !rbSender.value;   // 템플릿 모드는 시트 규격을 템플릿이 정한다
     }
     rbTpl.onClick = syncEnabled;
     rbCut.onClick = syncEnabled;
     rbPrint.onClick = syncEnabled;
+    rbSender.onClick = syncEnabled;
     syncEnabled();
 
     var gBtn = dlg.add("group");
@@ -462,10 +525,12 @@
     var mode = "print";
     if (rbCut.value) mode = "cutline";
     if (rbTpl.value) mode = "template";
+    if (rbSender.value) mode = "sender";
     return {
       mode: mode,
       sheetName: SHEET_NAMES[ddSheet.selection.index],
       startN: parseInt(etStart.text, 10),
+      count: parseInt(etCount.text, 10),
       filePath: etFile.text
     };
   }
@@ -489,8 +554,12 @@
   function runTemplateMode(opts) {
     var tpl = templateFile();
     if (!tpl || !tpl.exists) { _fail("템플릿이 없다: " + TEMPLATE_REL); return; }
-    var blocks = readAddressBlocks(opts.filePath);
-    if (!blocks) return;
+    var sender = opts.mode === "sender";
+    var blocks = null;
+    if (!sender) {
+      blocks = readAddressBlocks(opts.filePath);
+      if (!blocks) return;
+    }
     var startN = opts.startN;
     if (isNaN(startN)) { _fail("시작 칸이 숫자가 아니다."); return; }
 
@@ -503,6 +572,14 @@
       return;
     }
     var cells = got.cells;
+    if (sender) {
+      // 보내는 사람 = 같은 주소를 장수만큼. 장수를 안 주면 시작 칸부터 시트 끝까지.
+      var count = opts.count;
+      if (isNaN(count) || count < 1) count = cells.length - startN + 1;
+      blocks = [];
+      var k;
+      for (k = 0; k < count; k++) blocks.push(SENDER_LINES);
+    }
     var plan = planSlots(startN, blocks.length, cells.length);
     if (plan.error) {
       doc.close(SaveOptions.DONOTSAVECHANGES);
@@ -512,17 +589,25 @@
 
     var font = _resolveFont(FONT_CANDS);
     var lyr = _ensureLayer(doc, "Print");
+    var logoSrc = null;
+    if (sender) {
+      // .ai 를 벡터 그룹으로 들여온다 — 칸마다 같은 문서 안에서 duplicate.
+      logoSrc = lyr.groupItems.createFromFile(
+        new File((new File($.fileName)).parent.fsName + "/" + LOGO_REL));
+    }
     var used = {};
     var i, j;
     for (i = 0; i < plan.used.length; i++) {
       used[plan.used[i]] = true;
       for (j = 0; j < cells.length; j++) {
         if (cells[j].n === plan.used[i]) {
-          drawAddressBlock(doc, lyr, font, cells[j], blocks[i]);
+          if (sender) drawSenderBlock(doc, lyr, font, logoSrc, cells[j]);
+          else drawAddressBlock(doc, lyr, font, cells[j], blocks[i]);
           break;
         }
       }
     }
+    if (logoSrc) logoSrc.remove();
     // 안 쓴 칸의 칼선은 지운다 — Summa 가 빈 라벨까지 잘라내지 않게.
     // (마크는 Regmark 레이어라 그대로 남아 인쇄된다 — OPOS 가 읽는 대상.)
     for (i = cells.length - 1; i >= 0; i--) {
@@ -531,10 +616,13 @@
       }
     }
 
-    var msg = "주소 " + plan.used.length + "건 · 칸 " + plan.used[0] + "~" +
+    var what = "주소 ";
+    var sizePt = BODY_SIZE_PT;
+    if (sender) { what = "보내는 사람 "; sizePt = SENDER_SIZE_PT; }
+    var msg = what + plan.used.length + "건 · 칸 " + plan.used[0] + "~" +
               plan.used[plan.used.length - 1] + " (" +
               cells[0].wMm.toFixed(1) + " x " + cells[0].hMm.toFixed(1) + "mm) · " +
-              BODY_SIZE_PT + "pt";
+              sizePt + "pt";
     if (plan.overflow > 0) {
       msg += "\n\n남은 " + plan.overflow + "건은 이 시트에 안 들어간다 — " +
              "다음 시트에 시작 칸 1 로 다시 돌릴 것.";
@@ -553,7 +641,7 @@
     else opts = askOptions();
     if (!opts) return;
 
-    if (opts.mode === "template") {
+    if (opts.mode === "template" || opts.mode === "sender") {
       runTemplateMode(opts);
       return;
     }
