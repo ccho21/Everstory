@@ -72,14 +72,19 @@
   // OPOS 로 마크를 읽고 그 자리를 컷한다 (재급지 정합을 마크가 해결).
   var TEMPLATE_REL = "templates/address_label.ait";
 
-  // 보내는 사람 라벨 (2026-10-18) — 같은 템플릿 칸에 로고 + 스튜디오 주소.
-  // 주소는 사용자가 정한 그대로 (2026-10-18). Shopify 스토어 주소(Redpath)와 다르다 —
-  // 바꿀 땐 여기만 고친다.
+  // 보내는 사람 라벨 (2026-10-18) — 같은 템플릿 칸에 로고 + 스튜디오 위치 한 줄.
+  // 반송용이 아니라 브랜드용이라 도시만 쓴다 (2026-10-19 사용자). 바꿀 땐 여기만 고친다.
   var LOGO_REL = "templates/logo_template.ai";
-  var SENDER_LINES = ["75 Billes Hts, North York, ON M2K 0J8"];   // 10-18 한 줄로 (사용자 "두줄로 가지말고")
+  // 10-19: "Toronto, Ontario" 9pt 검정 → 로고 셋째 줄처럼 작은 대문자 TORONTO (사용자).
+  // 서체·자간·색은 logo_template.ai 실측: everstory = Jost-Light 자간 454 · studio = Jost-ExtraLight
+  // 자간 300 · 둘 다 CMYK 75/68/67/90 (회색처럼 보이는 건 가는 굵기 때문 — 색은 같다).
+  var SENDER_LINES = ["TORONTO"];
   var SENDER_LOGO_W_MM = 58;     // 로고 폭 (원본 비율 590:144 → 높이 약 14mm, 10-18 46→58 "가로로 더 길게")
-  var SENDER_GAP_MM = 2;         // 로고와 주소 사이
-  var SENDER_SIZE_PT = 9;       // 10-18 11→9 (로고를 키운 만큼 주소는 작게)
+  var SENDER_GAP_MM = 2.5;       // 로고와 아래 줄 사이
+  var SENDER_SIZE_PT = 7;
+  var SENDER_TRACKING = 300;     // studio 와 같은 자간
+  var SENDER_FONT_CANDS = ["Jost-Light", "Jost-Regular"];   // ExtraLight 는 7pt 에서 너무 흐려서 Light
+  var SENDER_CMYK = [75, 68, 67, 90];
 
   var testConfig = $.global.__EVERSTORY_LABELS_TEST__;
 
@@ -414,6 +419,11 @@
     if (font) attrs.textFont = font;
     attrs.size = SENDER_SIZE_PT;
     attrs.leading = SENDER_SIZE_PT * LEADING_RATIO;
+    attrs.tracking = SENDER_TRACKING;
+    var ink = new CMYKColor();
+    ink.cyan = SENDER_CMYK[0]; ink.magenta = SENDER_CMYK[1];
+    ink.yellow = SENDER_CMYK[2]; ink.black = SENDER_CMYK[3];
+    attrs.fillColor = ink;
     tf.textRange.paragraphAttributes.justification = Justification.CENTER;
     var tb = tf.geometricBounds;
     tf.left = (lb[0] + lb[2]) / 2 - (tb[2] - tb[0]) / 2;
@@ -588,6 +598,7 @@
     }
 
     var font = _resolveFont(FONT_CANDS);
+    if (sender) font = _resolveFont(SENDER_FONT_CANDS);
     var lyr = _ensureLayer(doc, "Print");
     var logoSrc = null;
     if (sender) {
