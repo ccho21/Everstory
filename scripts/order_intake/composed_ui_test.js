@@ -156,6 +156,12 @@ async function main() {
     element('#bLine2').value === '' && element('#bName').value === 'Harin' &&
     routes['/api/composed/bday'].sizesMm[+element('#bSize').value] === 38.1);
   check('고객 사진 3장 전부 넣기 (다른 주문은 첫 장만)', read('A.pairs.length === 3 && A.pairs.every(p => p.on)'));
+  check('팝 사진 제목 = 기본 HAPPY / BIRTHDAY (.jsx POP_TITLE_DEFAULT)', element('#bTitleTop').value === 'HAPPY' &&
+    element('#bTitleBot').value === 'BIRTHDAY');
+  element('#bTitleTop').value = 'CONGRATS'; element('#bTitleBot').value = ''; read('A.bTitleTouched = true');
+  await read('loadFolder("SD PHOTO EVS-1b", true)');
+  check('제목은 주문마다 — 고친 제목은 새 주문을 열면 기본으로 돌아간다', element('#bTitleTop').value === 'HAPPY' &&
+    element('#bTitleBot').value === 'BIRTHDAY' && read('A.bTitleTouched') === false);
   check('Special Day 칸 아래 안내 (주의 없음)', element('#sdOrder').hidden === false &&
     element('#sdOrder').textContent.includes('사진 스티커') && element('#sdOrder').className === 'hint');
   const sdRing = {design: 'ring', message: '', topLine: "HARIN'S 2ND BIRTHDAY", bottomLine: '2026.08.23', sizeMm: 38.1};

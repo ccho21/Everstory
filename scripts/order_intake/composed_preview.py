@@ -36,7 +36,7 @@ TYPE_KEYS = ("face", "upper", "full", "group", "petFace", "petBody", "none")
 MATERIALS = ("White Matte", "Translucent", "Silver", "Gold")
 CUT_MARGINS = (0, 0.5, 1, 2)
 GRADES_IN = (2.5, 2, 1.5, 1.25, 1, 0.75)                          # COMPOSED_GRADES_IN (크기 직접 고르기)
-STYLE_KEYS = ("center", "sides", "cluster", "frame", "bottom")     # COMPOSED_STYLES
+STYLE_KEYS = ("center", "sides", "cluster", "frame", "bottom", "grid")     # COMPOSED_STYLES
 NAME_POSITIONS = ("left", "center", "right")                       # COMPOSED_NAME_POSITIONS
 SHUFFLE_MAX = 999                                                  # COMPOSED_SHUFFLE_MAX
 NAME_STYLE_KEYS = ("retro", "bubble")                              # COMPOSED_NAME_STYLES (이름 스타일)
@@ -794,6 +794,8 @@ def bday_choices(jsx_path):
         "subDefault": _jsx_text(src, "BN_SUB_DEFAULT"),
         # 팝 사진 기본 문구 (한 줄 — 이름은 문구 뒤에 붙는다)
         "popMsgDefault": _jsx_text(src, "POP_MSG_DEFAULT"),
+        # 팝 사진 제목 두 줄 기본 (윗줄 검정 · 아랫줄 포인트 색) — 칸을 미리 채운다 (2026-10-15)
+        "popTitleDefault": _jsx_strings(src, "POP_TITLE_DEFAULT"),
         "padYmm": _jsx_number(src, "BODY_PADDING_Y_MM") or 0,
         "gapMm": _jsx_number(src, "GAP_DEFAULT_MM") or 0,
         "draw": {
@@ -982,6 +984,7 @@ def _ring_effect(v, ring):
 
 BDAY_LINE_MAX = 40     # 생일 문구 한 줄 최대 글자 수 (길면 .jsx 가 두 줄을 같이 줄인다)
 BDAY_SUB_MAX = 30      # 원 사진 작은 글씨 (SPECIAL DAY) 최대 글자 수 (길면 .jsx 가 줄인다)
+BDAY_TITLE_MAX = 24    # 팝 사진 제목 한 줄 최대 글자 수 (길면 .jsx 가 두 줄을 같이 줄인다)
 
 
 def build_script_launch(projects_dir, body, ring=None, xmas=None, bday=None):
@@ -1115,6 +1118,10 @@ def build_script_launch(projects_dir, body, ring=None, xmas=None, bday=None):
             if not isinstance(pop_out, bool):
                 raise ValueError("팝 여부(popOut)는 true/false 여야 해요.")
             opts["popOut"] = pop_out
+            # 제목 두 줄 — 쓴 그대로 (빈 칸 = 그 줄 없이). 안 보냈으면 키를 빼서 .jsx 기본 (POP_TITLE_DEFAULT)
+            for field in ("titleTop", "titleBottom"):
+                if field in body:
+                    opts[field] = _text(body, field, limit=BDAY_TITLE_MAX)
         summary = "Special Day %s · 사진 %d장" % (opts["design"], len(picked))
         return script, cut, {"__EVERSTORY_BDAY_OPTS__": opts}, summary
 

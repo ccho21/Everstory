@@ -177,8 +177,12 @@
     { key: "sides",   label: "양옆",     namePos: "center", pull: 45 },   // 큰 사진이 좌우 기둥, 가운데는 작은 사진
     { key: "cluster", label: "모으기",   namePos: "center", pull: 0 },    // 큰 사진을 가운데에 붙여 한 덩어리 (모서리 반발 없음)
     { key: "frame",   label: "가장자리", namePos: "left",   pull: 45 },   // 큰 사진이 가장자리·모서리 (모서리 반발 없음)
-    { key: "bottom",  label: "아래쪽",   namePos: "center", pull: 90 }    // 큰 사진이 아래, 이름 쪽은 작은 사진
+    { key: "bottom",  label: "아래쪽",   namePos: "center", pull: 90 },   // 큰 사진이 아래, 이름 쪽은 작은 사진
+    { key: "grid",    label: "격자",     namePos: "center", pull: 0 }     // 같은 크기 칸을 행·열로 (2026-10-18 사용자) — _composedGridLayout
   ];
+  var COMPOSED_GRID_BALANCE = 0.15;        // 격자: 사진별 넓이(장수 × 크기) 차이 감점 (적은 쪽 ÷ 많은 쪽이 0 이면 −0.15 = 채움 15%p)
+  var COMPOSED_GRID_TIE = 0.02;            // 격자: 점수(채움 비율)가 이만큼 안이면 같은 판으로 보고 스티커가 많은 쪽
+  var COMPOSED_GRID_MID = 0.5;             // 격자: 범위 가운데 크기(기하 평균)에서 멀어지는 감점 — ln(인치 비) 평균 × 이 값 (한 칸 ≈ −0.1~0.15)
   var COMPOSED_NAME_POSITIONS = ["left", "center", "right"];
   var COMPOSED_NAME_POS_LABELS = { left: "왼쪽", center: "가운데", right: "오른쪽" };
   var COMPOSED_SHUFFLE_MAX = 999;          // 섞기 번호 상한 (0 = 섞지 않음)
@@ -2575,6 +2579,11 @@
       _composedPut(ctx, nm);
       ctx.repel.push(nm);
     }
+    // 격자는 장수 계획·자리 점수를 쓰지 않는다 — 칸 크기와 행 수를 따로 고른다.
+    if (ctx.style === "grid") {
+      _composedGridLayout(ctx, input);
+      return ctx;
+    }
     // 시트 네 모서리를 반발점으로 — 없으면 "가장 먼 자리"가 늘 구석이라 큰 조각이 귀퉁이로 몰린다.
     // 모으기·가장자리는 큰 조각이 가운데·가장자리로 가야 하므로 모서리를 막지 않는다.
     cx4 = [0, ctx.W, 0, ctx.W];
@@ -2609,6 +2618,203 @@
     ctx.extras = _composedPlaceExtras(ctx);
     if (input.decoWant > ctx.bubbles) _composedPlaceDecos(ctx, input.decoWant - ctx.bubbles);
     return ctx;
+  }
+
+  // 격자 (2026-10-18 사용자: "정렬 맞춰서 빽빽하게") — 크기마다 행을 맞춰 시트를 채운다.
+  //  · 크기 범위(종류·직접)가 같은 사진끼리 한 크기. 범위가 다르면 크기도 다르게(가능한 한) → 크기마다 행을 나눈다 (큰 행 → 작은 행).
+  //  · 크기 행 묶음 = 행 높이가 같다 (그 크기 사진들의 가장 큰 셀 높이). 칸 폭은
+  //      - 가장 넓은 셀로 맞춰도 한 행 칸 수가 안 줄면 → 모두 같은 칸 = 열까지 맞는 격자 (얼굴처럼 비율이 비슷할 때)
+  //      - 줄면 → 사진마다 자기 폭, 행 안에서 간격을 고르게 (커플·전신처럼 비율이 제각각일 때 — 같은 칸이면 반이 빈다)
+  //    사진은 칸 가운데, 칼선은 지금처럼 누끼 윤곽.
+  //  · 크기 조합 × 크기별 행 수를 다 세어 사진 박스 합(빈 높이가 적을수록 크다)이 가장 큰 판 — 사진마다 넓이가 벌어지거나
+  //    크기가 범위 가운데(얼굴 1″ · 상반신 1.5″ …)에서 멀면 감점, 점수가 COMPOSED_GRID_TIE 안이면 스티커가 많은 판.
+  //    채움만 보면 얼굴이 1.5″ 12장, 스티커 수만 보면 0.75″ 로 쏠렸다 (2026-10-18 시뮬).
+  //    사진마다 1장 이상이어야 하고, COMPOSED_MIN_COPIES 장이 되는 판이 있으면 그런 판만 본다.
+  //  · 사진은 칸 순서대로 돌아가며 (같은 격자에서 같은 사진이 위아래로 붙지 않게 행마다 밀어 준다). 섞기 번호 = 시작 사진.
+  //  · 이름은 위, 작은 이름은 아래 (이름 자리 규칙 그대로) — 격자는 그 사이 높이. 데코·말풍선·빈틈 추가 사진은 없다.
+  // 범위의 가운데 크기 (인치, 범위 양끝의 기하 평균) — 격자가 기본으로 고르는 크기.
+  function _composedGridMid(window) {
+    var lo = 0, hi = 0;
+    for (var g = 0; g < COMPOSED_GRADES_IN.length; g++) {
+      if (!window[g]) continue;
+      if (!hi) hi = COMPOSED_GRADES_IN[g];
+      lo = COMPOSED_GRADES_IN[g];
+    }
+    return Math.sqrt(lo * hi);
+  }
+
+  function _composedGridLayout(ctx, input) {
+    var W = ctx.W, gap = ctx.gap, photos = ctx.photos, n = photos.length, G = COMPOSED_GRADES_IN.length;
+    var top = input.name ? input.name.h + gap : 0;
+    var bottom = (input.name && input.name2) ? ctx.H - input.name2.h - gap : ctx.H;
+    var availH = bottom - top, i, g, k, c, r;
+    // 범위가 같은 사진끼리 묶는다 (입력 순서, 메인이 앞)
+    var order = [input.mainIndex], classes = [], keyOf = {}, key;
+    for (i = 0; i < n; i++) if (i !== input.mainIndex) order.push(i);
+    for (k = 0; k < n; k++) {
+      i = order[k];
+      key = "";
+      for (g = 0; g < G; g++) key += photos[i].window[g] ? "1" : "0";
+      if (keyOf["$" + key] === undefined) {
+        keyOf["$" + key] = classes.length;
+        classes.push({ window: photos[i].window, photos: [] });
+      }
+      classes[keyOf["$" + key]].photos.push(i);
+    }
+    var best = null, cands = [], pick = [], strict, topScore;
+    // 한 판: 범위 묶음마다 등급 → 크기 행 묶음 → 행 수 나누기
+    function tryCombo() {
+      var groups = [], gi, gr, p, cell, used = {}, sumW;
+      for (c = 0; c < classes.length; c++) {
+        if (strict && used["$" + pick[c]]) return;   // 범위가 다른 묶음끼리 같은 크기
+        used["$" + pick[c]] = true;
+      }
+      for (g = 0; g < G; g++) {
+        gr = null;
+        for (c = 0; c < classes.length; c++) {
+          if (pick[c] !== g) continue;
+          if (!gr) gr = { grade: g, inch: COMPOSED_GRADES_IN[g], photos: [], slotW: 0, slotH: 0, art: 0, caps: 0, off: 0 };
+          for (k = 0; k < classes[c].photos.length; k++) gr.photos.push(classes[c].photos[k]);
+        }
+        if (!gr) continue;
+        sumW = 0;
+        for (k = 0; k < gr.photos.length; k++) {
+          p = photos[gr.photos[k]];
+          cell = _composedCell(p.aspect, gr.inch, ctx.rim);
+          if (cell.w > gr.slotW) gr.slotW = cell.w;
+          if (cell.h > gr.slotH) gr.slotH = cell.h;
+          sumW += cell.w;
+          gr.art += cell.artW * cell.artH;
+          gr.caps += p.maxCopies > 0 ? p.maxCopies : 1e9;
+          gr.off += Math.abs(Math.log(gr.inch / _composedGridMid(p.window)));
+        }
+        gr.art /= gr.photos.length;
+        gr.cols = Math.floor((W + gap) / (gr.slotW + gap) + 1e-9);
+        // 사진마다 자기 폭 — 칸 수는 평균 폭으로 어림한다 (실제 자리에서 한두 칸 덜 들어갈 수 있다)
+        k = Math.floor((W + gap) / (sumW / gr.photos.length + gap) + 1e-9);
+        gr.flow = k > gr.cols;
+        if (gr.flow) gr.cols = k;
+        if (gr.cols < 1 || gr.slotH > availH + 1e-9) return;
+        groups.push(gr);
+      }
+      var rows = [];
+      for (gi = 0; gi < groups.length; gi++) rows.push(1);
+      // 행 수 — 크기 행 묶음마다 1행 이상, 높이 합 ≤ availH
+      function walk(gi2, usedH) {
+        var rr, h, cand;
+        if (gi2 === groups.length) {
+          cand = scoreRows(groups, rows);
+          if (cand) cands.push(cand);
+          return;
+        }
+        for (rr = 1; ; rr++) {
+          h = usedH + (usedH > 0 ? gap : 0) + rr * groups[gi2].slotH + (rr - 1) * gap;
+          if (h > availH + 1e-9) break;
+          rows[gi2] = rr;
+          walk(gi2 + 1, h);
+        }
+      }
+      walk(0, 0);
+    }
+    function scoreRows(groups, rows) {
+      var gi, slots, per, minC = 1e9, lo = 1e9, hi = 0, art = 0, count = 0, off = 0, out = [];
+      for (gi = 0; gi < groups.length; gi++) {
+        slots = Math.min(rows[gi] * groups[gi].cols, groups[gi].caps);
+        if (slots < groups[gi].photos.length) return null;
+        per = slots / groups[gi].photos.length;
+        minC = Math.min(minC, Math.floor(per));
+        lo = Math.min(lo, per * groups[gi].art);   // 사진별 넓이로 비교 — 큰 사진은 장수가 적은 게 맞다
+        hi = Math.max(hi, per * groups[gi].art);
+        art += slots * groups[gi].art;
+        count += slots;
+        off += groups[gi].off;
+        out.push({ grade: groups[gi].grade, inch: groups[gi].inch, photos: groups[gi].photos, slotW: groups[gi].slotW,
+                   slotH: groups[gi].slotH, cols: groups[gi].cols, flow: groups[gi].flow, rows: rows[gi] });
+      }
+      // 최소 장수를 채운 판은 늘 그렇지 못한 판보다 앞. 사진마다 넓이(장수 × 크기)가 크게 벌어지면 감점 (얼굴 2장 · 상반신 10장 같은 판).
+      return { score: art / (W * availH) - COMPOSED_GRID_BALANCE * (1 - lo / hi) - COMPOSED_GRID_MID * off / n +
+                      (minC >= COMPOSED_MIN_COPIES ? 1 : 0),
+               count: count, groups: out };
+    }
+    function enumerate(ci) {
+      if (ci === classes.length) { tryCombo(); return; }
+      for (var gg = 0; gg < G; gg++) {
+        if (!classes[ci].window[gg]) continue;
+        pick[ci] = gg;
+        enumerate(ci + 1);
+      }
+    }
+    for (c = 0; c < classes.length; c++) pick.push(-1);
+    strict = classes.length > 1;
+    enumerate(0);
+    if (!cands.length && strict) { strict = false; enumerate(0); }
+    // 가장 높은 점수에서 COMPOSED_GRID_TIE 안의 판 중 스티커가 가장 많은 판 (같으면 점수 높은 판, 그것도 같으면 먼저 센 판)
+    topScore = -1e9;
+    for (i = 0; i < cands.length; i++) if (cands[i].score > topScore) topScore = cands[i].score;
+    for (i = 0; i < cands.length; i++) {
+      if (cands[i].score < topScore - COMPOSED_GRID_TIE) continue;
+      if (!best || cands[i].count > best.count || (cands[i].count === best.count && cands[i].score > best.score + 1e-9)) best = cands[i];
+    }
+    if (!best) throw new Error("격자에 들어갈 크기가 없습니다 (이름 아래 높이 " + Math.round(availH) + "mm)");
+    // 자리 — 남는 높이는 행 사이(와 위아래)에 고르게, 남는 폭은 칸 사이(와 양끝)에 고르게
+    var bands = best.groups, totalRows = 0, usedH = 0, vgap, y, b, band, cnt, shift, next, row, rowW, hgap, x, ph, cell, j;
+    for (b = 0; b < bands.length; b++) { totalRows += bands[b].rows; usedH += bands[b].rows * bands[b].slotH; }
+    vgap = (availH - usedH) / (totalRows + 1);
+    if (vgap >= gap - 1e-9) y = top + vgap;
+    else if (totalRows > 1) { vgap = (availH - usedH) / (totalRows - 1); y = top; }
+    else { vgap = 0; y = top + (availH - usedH) / 2; }
+    ctx.gradeCounts = [];
+    for (g = 0; g < G; g++) ctx.gradeCounts.push(0);
+    // 다음 사진 — 칸 순서대로 돈다. 장수 상한에 닿은 사진은 빼고 남은 사진끼리 돈다 (다 닿았으면 -1) —
+    // 건너뛰기만 하면 그 자리를 바로 다음 사진이 다 가져가 장수가 3 · 14 · 8 로 벌어졌다.
+    function nextPhoto(list, at) {
+      var open = [];
+      for (var t = 0; t < list.length; t++) {
+        if (!(photos[list[t]].maxCopies > 0) || ctx.copies[list[t]] < photos[list[t]].maxCopies) open.push(list[t]);
+      }
+      return open.length ? open[at % open.length] : -1;
+    }
+    for (b = 0; b < bands.length; b++) {
+      band = bands[b];
+      cnt = band.photos.length;
+      shift = (!band.flow && band.cols % cnt === 0 && cnt > 1) ? 1 : 0;   // 열 수가 사진 수의 배수면 행마다 한 칸 민다
+      next = ctx.seed || 0;
+      for (r = 0; r < band.rows; r++) {
+        // 이 행에 들어갈 사진 (같은 칸이면 cols 개, 자기 폭이면 폭이 찰 때까지)
+        row = [];
+        rowW = 0;
+        for (c = 0; c < band.cols; c++) {
+          i = nextPhoto(band.photos, next + r * shift);
+          if (i < 0) break;
+          cell = _composedCell(photos[i].aspect, band.inch, ctx.rim);
+          k = band.flow ? cell.w : band.slotW;
+          if (row.length && rowW + gap + k > W + 1e-9) break;
+          row.push({ photo: i, cell: cell, w: k });
+          rowW += (row.length > 1 ? gap : 0) + k;
+          ctx.copies[i] = ctx.copies[i] + 1;   // nextPhoto 가 상한을 보도록 바로 센다 (_composedPut 이 다시 세므로 아래에서 되돌린다)
+          next++;
+        }
+        for (j = 0; j < row.length; j++) ctx.copies[row[j].photo] = ctx.copies[row[j].photo] - 1;
+        rowW -= (row.length - 1) * gap;
+        // 같은 칸 격자는 모든 행이 같은 칸 수로 (열이 맞게) — 남는 폭은 칸 수 기준
+        k = band.flow ? row.length : band.cols;
+        hgap = (W - (band.flow ? rowW : k * band.slotW)) / (k + 1);
+        if (hgap >= gap - 1e-9) x = hgap;
+        else if (k > 1) { hgap = (W - (band.flow ? rowW : k * band.slotW)) / (k - 1); x = 0; }
+        else { hgap = 0; x = (W - (band.flow ? rowW : band.slotW)) / 2; }
+        for (j = 0; j < row.length; j++) {
+          ph = row[j];
+          _composedPut(ctx, { kind: "photo", photo: ph.photo, grade: band.grade, inch: band.inch,
+                              x: x + (ph.w - ph.cell.w) / 2, y: y + (band.slotH - ph.cell.h) / 2,
+                              w: ph.cell.w, h: ph.cell.h, artW: ph.cell.artW, artH: ph.cell.artH, extra: false });
+          ctx.gradeCounts[band.grade]++;
+          x += ph.w + hgap;
+        }
+        y += band.slotH + vgap;
+      }
+    }
+    ctx.bubbles = 0;
+    ctx.extras = 0;
   }
 
   // 데코 모양 — 스타일 순서(decoOrder)를 start 자리부터 돌며 아직 안 쓴 것 (다 쓰면 처음부터).

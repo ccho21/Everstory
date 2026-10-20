@@ -940,6 +940,12 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
     chk("프레임 안 = popOut false 그대로 · 값이 없으면 .jsx 기본(팝)",
         exi["__EVERSTORY_BDAY_OPTS__"].get("popOut") is False and exd["__EVERSTORY_BDAY_OPTS__"].get("popOut") is True,
         (exi, exd))
+    # 제목 두 줄 (2026-10-15) — 기본 HAPPY / BIRTHDAY, 쓴 그대로 · 빈 칸 = 그 줄 없이 · 안 보내면 키를 빼서 .jsx 기본
+    _, _, ext, _ = cp.build_script_launch(projects, dict(bgood, titleTop="  Congrats ", titleBottom=""), rch, bday=bch)
+    pt = ext["__EVERSTORY_BDAY_OPTS__"]
+    chk("제목: 기본 = HAPPY / BIRTHDAY (.jsx POP_TITLE_DEFAULT) · 보낸 값은 다듬어 그대로 · 빈 아랫줄 = 빈 문자열 · 안 보내면 키 없음",
+        bch.get("popTitleDefault") == ["HAPPY", "BIRTHDAY"] and pt.get("titleTop") == "Congrats" and pt.get("titleBottom") == ""
+        and "titleTop" not in po and "titleBottom" not in po, (bch.get("popTitleDefault"), pt))
     bbad = [("문구 없음 (이름만)", dict(bgood, line1=" "), "문구"), ("문구 너무 김", dict(bgood, line1="A" * 41), "line1"),
             ("이름 너무 김", dict(bgood, name="A" * 30), "name"), ("디자인 번호 밖", dict(bgood, designIdx=1), "designIdx"),
             ("사이즈 번호 밖", dict(bgood, sizeIdx=4), "sizeIdx"),
@@ -947,7 +953,8 @@ console.log(JSON.stringify({ same: JSON.stringify(a) === JSON.stringify(b), shee
             ("레이아웃 번호 밖", dict(bgood, popLayout=2), "popLayout"), ("모양 번호 밖", dict(bgood, popShape=4), "popShape"),
             ("색 번호 밖", dict(bgood, popColor=6), "popColor"),
             ("제목 서체 없음", {k: v for k, v in bgood.items() if k != "popTitle"}, "popTitle"),
-            ("문구 서체 번호 밖", dict(bgood, popHand=2), "popHand"), ("팝 여부가 글자", dict(bgood, popOut="yes"), "popOut")]
+            ("문구 서체 번호 밖", dict(bgood, popHand=2), "popHand"), ("팝 여부가 글자", dict(bgood, popOut="yes"), "popOut"),
+            ("제목 윗줄 너무 김", dict(bgood, titleTop="A" * 25), "titleTop")]
     wrong = []
     for label, body, word in bbad:
         try:

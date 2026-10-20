@@ -15,6 +15,7 @@
 //  디자인 3 = 팝 사진 (2026-10-13, HEART 가 시장 상품과 겹쳐서 — "지금 스타일 + 조금의 차별점". 시안 ROUND 1–5 =
 //   아티팩트 VUujeTFuccnyMGyVuiumDA):
 //   흰 사각 + HAPPY(검정)/BIRTHDAY(빨강) 두 줄 가운데 + 색 프레임 + 머리가 프레임 밖으로 + 문구·이름 한 줄 + 빨간 하트.
+//   제목 두 줄은 기본값일 뿐 — 보드·대화창 칸에서 바꾼다 (2026-10-15 사용자: Special Day 는 생일만이 아니라).
 //   고른 것을 전부 옵션으로 (사용자 "여태까지 고른 것들을 다 옵션으로") — 레이아웃 2 · 제목 서체 3 · 문구 서체 2 ·
 //   프레임 색 6 (운영자가 사진 보고 고름) · 모양 4 (하트 · 기울인 하트 · 구름 · 원).
 //  template_cutout_v2.ait (운영 v2 브랜드 템플릿) 위에 02_cutout 페어(_clean.psd + _sil.png)를
@@ -288,6 +289,9 @@
   var POP_MSG = { maxW: 0.88 };
   //   기본 — 문구 · 옵션 번호 (레이아웃 L1 · 제목 Fredoka · 문구 Fredoka Medium · 분홍 · 하트 · 팝)
   var POP_MSG_DEFAULT = "Thanks for coming!";
+  //   제목 두 줄 기본 — 윗줄 = 검정 · 아랫줄 = 포인트 색. 쓴 그대로 넣는다 (대문자로 바꾸지 않음).
+  //   한 줄만 쓰면 그 줄을 두 줄 자리 가운데에 (색은 그 칸 색), 둘 다 비우면 제목 없이
+  var POP_TITLE_DEFAULT = ["HAPPY", "BIRTHDAY"];
   var POP_DEFAULTS = { layout: 0, title: 2, hand: 0, color: 1, shape: 0, popOut: true };
   var LEGIBILITY_MIN_PT = 5;   // 이보다 작아지면 경고
   var WHITE_HEX = "FFFFFF";
@@ -409,7 +413,7 @@
     var lines = pop ? _popLines(opt) : _messageLines(opt);
     var sel = opt.selectedPairs;
     var placed = 0, failed = 0, minFontPt = 1e9, sigPt = 0, fitNote = "", firstErr = "";
-    var namePt = 0, nameFit = "", subPt = 0, subFit = "";
+    var namePt = 0, nameFit = "", subPt = 0, subFit = "", titlePt = 0, titleFit = false;
     var kinds = { face: 0, upper: 0 }, wide = [];
     for (var i = 0; i < cells.length; i++) {
       var pair = sel[i % sel.length];                 // 칸마다 돌아가며
@@ -425,6 +429,7 @@
         if (r.fit && !fitNote) fitNote = r.fit;
         if (r.namePt > 0) { namePt = r.namePt; nameFit = r.nameFit; }
         if (r.subPt > 0) { subPt = r.subPt; subFit = r.subFit; }
+        if (r.titlePt > 0) { titlePt = r.titlePt; titleFit = r.titleFit; }
         if (i < sel.length) {                          // 사진마다 한 번만 센다
           kinds[r.kind]++;
           if (r.wide) wide.push(pair.base);
@@ -475,6 +480,13 @@
     if (subPt > 0 && subPt < LEGIBILITY_MIN_PT)
       warn += "⚠ 작은 글씨가 " + subPt.toFixed(1) + "pt — 작아서 인쇄가 뭉갤 수 있어요. 글씨를 줄이거나 사이즈를 올리세요.\n";
 
+    // 팝 사진 제목 줄 (중첩 삼항 대신 if — ExtendScript 가 틀린 분기를 탄다)
+    var titleNote = "  /  제목 없이";
+    if (titlePt > 0) {
+      titleNote = "  /  대문자 " + ((titlePt * fonts.title.spec.cap) / MM_TO_PT).toFixed(1) + "mm";
+      if (titleFit) titleNote += " (길어서 줄였어요)";
+    }
+
     var textLines;
     if (circle) textLines =
       "이름: " + (_upperText(opt.name) || "—") + "  /  대문자 " + ((namePt * fonts.name.spec.cap) / MM_TO_PT).toFixed(1) + "mm" +
@@ -488,6 +500,7 @@
     else if (pop) textLines =
       "옵션: " + (opt.popOut === false ? "프레임 안" : "팝") + " · " + (POP_LAYOUTS[opt.popLayout] || POP_LAYOUTS[0]).label +
         " · " + (POP_SHAPES[opt.popShape] || POP_SHAPES[0]).label + " · " + (POP_COLORS[opt.popColor] || POP_COLORS[0]).name + "\n" +
+      "제목: " + (_trim(opt.titleTop || "") || "—") + " / " + (_trim(opt.titleBottom || "") || "—") + titleNote + "\n" +
       "문구: " + (lines.length ? lines[0] : "—") + "  /  글자 " + minFontPt.toFixed(1) + "pt (대문자 " + capMm.toFixed(1) + "mm)" +
         (fitNote ? ("  /  " + fitNote) : "") + "\n" +
       "서체: " + fonts.title.spec.name + " (제목) · " + fonts.hand.spec.name + " (문구)\n" +
@@ -906,9 +919,10 @@
     else clip.clipping = true;
     grp.clipped = true;
 
-    // ④ 제목 두 줄 (HAPPY 검정 · BIRTHDAY 포인트 색, 가운데) · ⑤ 문구 한 줄 + 포인트 색 하트 (포인트 색 = 프레임 색이 정한다)
+    // ④ 제목 두 줄 (윗줄 검정 · 아랫줄 포인트 색, 가운데 — 기본 HAPPY / BIRTHDAY) · ⑤ 문구 한 줄 + 포인트 색 하트
+    //   (포인트 색 = 프레임 색이 정한다)
     var accent = C.accent || POP_TEXT_COLORS.accent;
-    _addPopTitle(printLayer, L, X, Y, W, fonts.title, accent);
+    var title = _addPopTitle(printLayer, L, X, Y, W, fonts.title, fonts.hangul, accent, [opt.titleTop, opt.titleBottom]);
     var msg = _addMessage(printLayer, lines, X(0.5), W, Y, fonts.hand, fonts.hangul, {
       msg: { size: L.msgSize, baseOne: L.msgBase, maxW: POP_MSG.maxW, cx: 0.5 }, mini: BD_MINI, ink: POP_TEXT_COLORS.ink,
       heart: function (hl, baseY, size) {
@@ -919,7 +933,7 @@
 
     // 칼선 — 둥근 사각
     _forceCutContourStroke(kissLayer.pathItems.roundedRectangle(y0, x0, W, cutH, rad, rad), cutSpot);
-    return { fontPt: msg.fontPt, fit: msg.fit, kind: kind, wide: wide };
+    return { fontPt: msg.fontPt, fit: msg.fit, kind: kind, wide: wide, titlePt: title.size, titleFit: title.fit };
   }
 
   // 프레임 안 배치 값 (POP_INSIDE) — 모양 키로. 없으면 하트 값
@@ -984,24 +998,38 @@
     return it;
   }
 
-  // HAPPY (검정) / BIRTHDAY (포인트 색) — 대문자 높이 capMax 에서 시작해 넓은 줄 잉크가 inkW 를 넘으면 줄인다. 줄마다 잉크 가운데 = 0.5W
-  function _addPopTitle(layer, L, X, Y, W, tf, accent) {
+  // 제목 — 윗줄 (검정) / 아랫줄 (포인트 색). 대문자 높이 capMax 에서 시작해 넓은 줄 잉크가 inkW 를 넘으면 줄인다.
+  // 줄마다 잉크 가운데 = 0.5W. 빈 줄은 그리지 않고, 한 줄이거나 줄였으면 두 줄 자리 가운데로 모은다.
+  // 돌려주는 것 = { size: 글자 pt (제목 없으면 0), fit: 길어서 줄였나 }
+  function _addPopTitle(layer, L, X, Y, W, tf, hangul, accent, words) {
     var capK = tf.spec.cap || 0.7;
     var size = L.capMax * W / capK;
-    var t1 = _pointText(layer, "HAPPY", tf.font, size, X(0.5), Y(L.happy), POP_TEXT_COLORS.ink, null);
-    var t2 = _pointText(layer, "BIRTHDAY", tf.font, size, X(0.5), Y(L.birthday), accent || POP_TEXT_COLORS.accent, null);
-    var b1 = _inkBounds(t1), b2 = _inkBounds(t2);
-    var widest = Math.max(b1[2] - b1[0], b2[2] - b2[0]);
+    var rows = [], i, b;
+    var t1 = _trim(_composeHangulNFC(String(words[0] || ""))), t2 = _trim(_composeHangulNFC(String(words[1] || "")));
+    if (t1) rows.push({ text: t1, base: L.happy, hex: POP_TEXT_COLORS.ink });
+    if (t2) rows.push({ text: t2, base: L.birthday, hex: accent || POP_TEXT_COLORS.accent });
+    if (rows.length === 0) return { size: 0, fit: false };
+    var widest = 0;
+    for (i = 0; i < rows.length; i++) {
+      rows[i].tf = _pointText(layer, rows[i].text, tf.font, size, X(0.5), Y(rows[i].base), rows[i].hex, hangul);
+      b = _inkBounds(rows[i].tf);
+      if (b[2] - b[0] > widest) widest = b[2] - b[0];
+    }
+    var fit = false;
     if (widest > L.inkW * W && widest > 0) {
       size = size * L.inkW * W / widest;
-      _setSize(t1, size);
-      _setSize(t2, size);
-      b1 = _inkBounds(t1);
-      b2 = _inkBounds(t2);
+      for (i = 0; i < rows.length; i++) _setSize(rows[i].tf, size);
+      fit = true;
     }
-    t1.translate(X(0.5) - (b1[0] + b1[2]) / 2, 0);
-    t2.translate(X(0.5) - (b2[0] + b2[2]) / 2, 0);
-    return size;
+    // 세로 — 두 줄 자리 (윗줄 대문자 위 ~ 아랫줄 기준선) 가운데에. 줄였으면 줄 간격도 같은 비율로 (줄 사이만 벌어져 보이지 않게).
+    // 안 줄인 두 줄이면 원래 기준선 그대로
+    var capS = capK * size / W, pitch = (L.birthday - L.happy) * capS / L.capMax;
+    var base0 = (L.happy - L.capMax + L.birthday) / 2 - (capS + (rows.length - 1) * pitch) / 2 + capS;
+    for (i = 0; i < rows.length; i++) {
+      b = _inkBounds(rows[i].tf);
+      rows[i].tf.translate(X(0.5) - (b[0] + b[2]) / 2, Y(base0 + i * pitch) - Y(rows[i].base));
+    }
+    return { size: size, fit: fit };
   }
 
 
@@ -1706,6 +1734,9 @@
       sub:          _trim(String(raw.sub != null ? raw.sub : BN_SUB_DEFAULT)),   // 원 사진 작은 글씨 (빈 칸 = 없음)
       line1:        _trim(String(raw.line1 || "")),
       line2:        _trim(String(raw.line2 || "")),
+      // 팝 사진 제목 — 보드가 안 보냈으면 기본 (빈 문자열을 보내면 그 줄 없이)
+      titleTop:     _trim(String(raw.titleTop != null ? raw.titleTop : POP_TITLE_DEFAULT[0])),
+      titleBottom:  _trim(String(raw.titleBottom != null ? raw.titleBottom : POP_TITLE_DEFAULT[1])),
       sizeMm:       sizeMm,
       embed:        (raw.embed !== false),
       customerName: (raw.customerName != null ? String(raw.customerName) : _deriveDefaultCustomerName(folder)),
@@ -1770,6 +1801,16 @@
       dd.selection = d; dd.preferredSize = [240, 24];
       return dd;
     }
+    // 제목 두 줄 — 윗줄 검정 · 아랫줄 포인트 색 (한 줄만 쓰면 가운데, 둘 다 비우면 제목 없이)
+    function popText(label, d) {
+      var g = pD.add("group");
+      g.add("statictext", undefined, label);
+      var et = g.add("edittext", undefined, d);
+      et.preferredSize = [240, 22];
+      return et;
+    }
+    var fTitleTop = popText("제목 윗줄   ", POP_TITLE_DEFAULT[0]);
+    var fTitleBottom = popText("제목 아랫줄", POP_TITLE_DEFAULT[1]);
     var popOutDd = popDd("사진            ", [{ label: "팝 — 머리가 프레임 밖으로" }, { label: "프레임 안" }], "label",
                          POP_DEFAULTS.popOut ? 0 : 1);
     var popLayoutDd = popDd("레이아웃     ", POP_LAYOUTS, "label", POP_DEFAULTS.layout);
@@ -1777,7 +1818,7 @@
     var popColorDd = popDd("프레임 색   ", POP_COLORS, "name", POP_DEFAULTS.color);
     var popTitleDd = popDd("제목 서체   ", POP_TITLE_FONTS, "name", POP_DEFAULTS.title);
     var popHandDd = popDd("문구 서체   ", POP_HAND_FONTS, "name", POP_DEFAULTS.hand);
-    var popDds = [popOutDd, popLayoutDd, popShapeDd, popColorDd, popTitleDd, popHandDd];
+    var popDds = [fTitleTop, fTitleBottom, popOutDd, popLayoutDd, popShapeDd, popColorDd, popTitleDd, popHandDd];
 
     var gSize = pD.add("group");
     gSize.add("statictext", undefined, "사이즈       ");
@@ -1907,6 +1948,8 @@
       sub:          _trim(fSub.text),
       line1:        _trim(fLine1.text),
       line2:        _trim(fLine2.text),
+      titleTop:     _trim(fTitleTop.text),
+      titleBottom:  _trim(fTitleBottom.text),
       sizeMm:       SIZE_MM[sizeDd.selection.index],
       embed:        embedChk.value,
       customerName: _trim(fCust.text),

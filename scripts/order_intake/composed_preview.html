@@ -263,6 +263,8 @@
     <div class="sec" id="bFormSec" hidden>
       <h2>스티커 정보</h2>
       <div class="form">
+        <label for="bTitleTop" data-bd="POP">제목 윗줄</label><input id="bTitleTop" data-bd="POP" autocomplete="off" spellcheck="false" maxlength="24" placeholder="HAPPY (비우면 아랫줄만 가운데에)">
+        <label for="bTitleBot" data-bd="POP">제목 아랫줄</label><input id="bTitleBot" data-bd="POP" autocomplete="off" spellcheck="false" maxlength="24" placeholder="BIRTHDAY (프레임 색에 어울리는 진한 색)">
         <label for="bName" id="bNameLabel">서명 이름</label><input id="bName" autocomplete="off" spellcheck="false" maxlength="24" placeholder="– 이름 – (비우면 서명 없음)">
         <label for="bSub" data-bd="CIRCLE">작은 글씨</label><input id="bSub" data-bd="CIRCLE" autocomplete="off" spellcheck="false" maxlength="30" placeholder="SPECIAL DAY (비우면 양옆 하트도 빠져요)">
         <label for="bLine1" id="bLine1Label">문구 1줄</label><input id="bLine1" autocomplete="off" spellcheck="false" maxlength="40" placeholder="Hey friend!">
@@ -278,7 +280,7 @@
         <label for="bODate">날짜</label><input id="bODate" autocomplete="off" spellcheck="false" placeholder="2026-10-07">
       </div>
       <p class="hint" data-bd="HEART">문구는 고객이 쓴 그대로 넣어요 — 두 줄 가운데, 끝에 빨간 하트 (길면 두 줄을 같이 줄여요). 윗몸·전신 사진은 머리 크기를 맞추고 몸은 하트가 잘라요 · 얼굴 누끼는 하트 안에 통째로 (사진 카드에서 종류를 고칠 수 있어요). 서체 = Bree Serif Bold + Shantell Sans Medium.</p>
-      <p class="hint" data-bd="POP" hidden>문구와 이름이 한 줄로 들어가요 — “문구 – 이름 ♥” (이름을 비우면 문구만). 팝 = 머리만 프레임 위로 나오고 몸은 프레임이 잘라요 · 프레임 안 = 머리까지 프레임이 감싸요 · 얼굴 누끼는 얼굴째 나와요. 프레임 색은 사진을 보고 고르세요 (파란 옷이면 하늘색에 묻혀요). 제목 = HAPPY 검정 · BIRTHDAY 와 끝 하트 = 프레임 색에 어울리는 진한 색.</p>
+      <p class="hint" data-bd="POP" hidden>문구와 이름이 한 줄로 들어가요 — “문구 – 이름 ♥” (이름을 비우면 문구만). 팝 = 머리만 프레임 위로 나오고 몸은 프레임이 잘라요 · 프레임 안 = 머리까지 프레임이 감싸요 · 얼굴 누끼는 얼굴째 나와요. 프레임 색은 사진을 보고 고르세요 (파란 옷이면 하늘색에 묻혀요). 제목은 쓴 그대로 들어가요 (기본 HAPPY / BIRTHDAY) — 윗줄 = 검정 · 아랫줄과 끝 하트 = 프레임 색에 어울리는 진한 색. 한 줄만 쓰면 그 줄이 두 줄 자리 가운데에, 길면 두 줄이 같이 줄어요.</p>
       <p class="hint" data-bd="CIRCLE" hidden>이름·작은 글씨·문구는 고객이 쓴 그대로 넣어요 — 이름은 대문자 한 줄(길면 줄어요), 작은 글씨 양옆에 하트, 문구 끝에 분홍 하트. 사진 규칙은 하트와 같고 몸은 원이 잘라요. 1.75″ 가 9장 (2″ 는 4장). 서체 = Bree Serif Bold (Adobe Fonts, 하트 제목과 같음) + Shantell Sans Bold.</p>
     </div>
     <div class="sec" id="lPhotoSec">
@@ -1837,6 +1839,24 @@ function popLine(msg, name) {
   if (!m) return "– " + n;
   return m + " – " + n;
 }
+// 제목 두 줄 (.jsx _addPopTitle) — 윗줄 검정 · 아랫줄 포인트 색, 빈 줄은 뺀다. 대문자 capMax 에서 시작해 넓은 줄 잉크가 inkW 를
+// 넘으면 줄인다. 한 줄이거나 줄였으면 두 줄 자리 (윗줄 대문자 위 ~ 아랫줄 기준선) 가운데로 모은다. rows[i].base = 기준선 (W 단위, y 아래)
+function popTitleLayout(DB, opt, W) {
+  const P = DB.pop, L = P.layouts[opt.layout] || P.layouts[0], C = P.colors[opt.color] || P.colors[0], TF = popFontPick(A.pTitle, opt.title);
+  if (!TF) return null;
+  const rows = [[opt.titleTop, L.happy, P.text.ink], [opt.titleBottom, L.birthday, C.accent || P.text.accent]]
+    .map(([t, base, color]) => ({ text: String(t || "").trim(), base, color })).filter(r => r.text);
+  if (!rows.length) return null;
+  const capK = (TF.spec && TF.spec.cap) || 0.7, fs0 = L.capMax * W / capK;
+  let fs = fs0;
+  const widest = Math.max(...rows.map(r => { const k = bInk(r.text, TF, fs); return k.r - k.l; }));
+  if (widest > L.inkW * W) fs *= L.inkW * W / widest;
+  // 세로 — 두 줄 자리 가운데. 줄였으면 줄 간격도 같은 비율로 (안 줄인 두 줄 = 원래 기준선 그대로)
+  const capS = capK * fs / W, pitch = (L.birthday - L.happy) * capS / L.capMax;
+  const base0 = (L.happy - L.capMax + L.birthday) / 2 - (capS + (rows.length - 1) * pitch) / 2 + capS;
+  rows.forEach((r, i) => { r.base = base0 + i * pitch; });
+  return { TF, fs, fit: fs < fs0 - 1e-6, cap: capK * fs, cap0: capK * fs0, rows };
+}
 // 문구 크기 — 레이아웃 크기에서 시작해 [글자 + 간격 + 하트] 가 maxW 를 넘으면 줄인다 (.jsx _addMessage)
 function popMsgLayout(DB, opt, W) {
   const P = DB.pop, L = P.layouts[opt.layout] || P.layouts[0], F = popFontPick(A.pHand, opt.hand), text = popLine(opt.line1, opt.name);
@@ -1903,18 +1923,13 @@ function popSticker(DB, opt, p, slot, x0, y0, Dmm, uid) {
       (!I && oB > oT ? `<rect x="${X(oL).toFixed(3)}" y="${Y(oT).toFixed(3)}" width="${(G.openW * headW * W).toFixed(3)}" height="${((oB - oT) * W).toFixed(3)}"/>` : "") +
       `</clipPath><g clip-path="url(#bc${uid})">${imgTag(p, X(left), Y(top), pw * W, ph * W)}</g>`;
   }
-  // 제목 — 대문자 capMax 에서 시작, 넓은 줄 잉크가 inkW 를 넘으면 줄인다. 줄마다 잉크 가운데
-  const TF = popFontPick(A.pTitle, opt.title);
-  if (TF) {
-    let fs = L.capMax * W / ((TF.spec && TF.spec.cap) || 0.7);
-    const k1 = bInk("HAPPY", TF, fs), k2 = bInk("BIRTHDAY", TF, fs), widest = Math.max(k1.r - k1.l, k2.r - k2.l);
-    if (widest > L.inkW * W) fs *= L.inkW * W / widest;
-    [["HAPPY", L.happy, P.text.ink], ["BIRTHDAY", L.birthday, C.accent || P.text.accent]].forEach(([t, b, c]) => {
-      const kk = bInk(t, TF, fs);
-      o += `<text x="${(X(0.5) - (kk.l + kk.r) / 2).toFixed(3)}" y="${Y(b).toFixed(3)}" font-family="${TF.family}" font-weight="${TF.weight || 400}"` +
-        ` font-size="${fs.toFixed(3)}" fill="${hex(c)}">${esc(t)}</text>`;
-    });
-  }
+  // 제목 — 줄마다 잉크 가운데 (popTitleLayout)
+  const TL = popTitleLayout(DB, opt, W);
+  if (TL) TL.rows.forEach(r => {
+    const kk = bInk(r.text, TL.TF, TL.fs);
+    o += `<text x="${(X(0.5) - (kk.l + kk.r) / 2).toFixed(3)}" y="${Y(r.base).toFixed(3)}" font-family="${TL.TF.family}" font-weight="${TL.TF.weight || 400}"` +
+      ` font-size="${TL.fs.toFixed(3)}" fill="${hex(r.color)}">${esc(r.text)}</text>`;
+  });
   // 문구 한 줄 + 빨간 하트 (세로 가운데 = 대문자 높이 가운데)
   const ML = popMsgLayout(DB, opt, W);
   if (ML) {
@@ -2057,6 +2072,7 @@ async function altEnsureChoices(kind) {
     if (!$("#bSub").value.trim()) $("#bSub").value = ch.subDefault || "";
     bDesignChanged(false);
     bPrefillLines();
+    bPrefillTitle();
     sdFill("bday");
     A.bTitle = await xLoadFontList(ch.draw.titleFonts, "BdayTitle");
     A.bHand = await xLoadFontList(ch.draw.handFonts, "BdayHand");
@@ -2145,6 +2161,14 @@ function bMsgDefaultOf(key) {
   if (key === "CIRCLE") return A.bch.circleMsgDefault || [];
   if (key === "POP") return [A.bch.popMsgDefault || "", ""];
   return A.bch.msgDefault || [];
+}
+// 팝 사진 제목 — 주문을 새로 열 때 기본 (.jsx POP_TITLE_DEFAULT) 으로. 선택지를 늦게 읽었으면 읽은 뒤 한 번 채운다
+// (운영자가 손댄 칸은 — 일부러 비운 칸도 — 그대로 둔다)
+function bPrefillTitle(force) {
+  if (!A.bch || (!force && A.bTitleTouched)) return;
+  const t = A.bch.popTitleDefault || [];
+  $("#bTitleTop").value = t[0] || "";
+  $("#bTitleBot").value = t[1] || "";
 }
 function bPrefillLines() {
   if (!A.bch || $("#bLine1").value.trim() || $("#bLine2").value.trim()) return;
@@ -2266,6 +2290,8 @@ async function altLoad(name) {
     $("#bSub").value = (A.bch && A.bch.subDefault) || "";   // 작은 글씨도 주문마다 — 기본 SPECIAL DAY 로
     $("#bLine1").value = $("#bLine2").value = "";   // 문구는 주문마다 — 기본 문구로 다시 채운다
     bPrefillLines();
+    A.bTitleTouched = false;                         // 제목도 주문마다 — 기본 HAPPY / BIRTHDAY 로
+    bPrefillTitle(true);
     A.sd = f.specialDay || null;
     sdFill();
     sdHint(f);
@@ -2377,6 +2403,7 @@ function altPopInfo(ch, design) {
   const D = ch.draw, P = D.pop, dmm = ch.sizesMm[+$("#bSize").value], cutH = P.sticker.h * dmm, PT = 72 / 25.4;
   const g = gridOf(dmm, cutH, ch.gapMm, ch.padYmm);
   const opt = { design: "POP", line1: $("#bLine1").value, name: $("#bName").value,
+                titleTop: $("#bTitleTop").value, titleBottom: $("#bTitleBot").value,
                 popOut: $("#bPopOut").value !== "0",
                 layout: +$("#bPopLayout").value || 0, shape: +$("#bPopShape").value || 0, color: +$("#bPopColor").value || 0,
                 title: +$("#bPopTitle").value || 0, hand: +$("#bPopHand").value || 0 };
@@ -2385,6 +2412,9 @@ function altPopInfo(ch, design) {
     const want = list[i] || {}, F = popFontPick(arr, i);
     if (F && F !== arr[i]) notes.push(`${want.name} 를 이 Mac 에서 못 찾았어요 — 설치하고 Illustrator 를 다시 켜 주세요 (지금은 ${F.spec.name} 로 그려요)`);
   });
+  const TL = popTitleLayout(D, opt, dmm);
+  if (!TL && !opt.titleTop.trim() && !opt.titleBottom.trim()) notes.push("제목 두 줄이 비어 있어요 — 제목 없이 만들어요");
+  if (TL && TL.fit) notes.push(`제목이 길어서 대문자 ${TL.cap.toFixed(1)}mm 로 줄어요 (기본 ${TL.cap0.toFixed(1)}mm)`);
   const ML = popMsgLayout(D, opt, dmm);
   if (ML && ML.fs * PT < D.minPt) notes.push(`문구 글자가 ${(ML.fs * PT).toFixed(1)}pt 까지 줄어요 — 문구를 줄이거나 사이즈를 올리세요`);
   const wide = A.pairs.filter(p => {
@@ -2506,6 +2536,7 @@ async function altMake() {
     popOut: $("#bPopOut").value !== "0",
     popLayout: +$("#bPopLayout").value || 0, popShape: +$("#bPopShape").value || 0, popColor: +$("#bPopColor").value || 0,
     popTitle: +$("#bPopTitle").value || 0, popHand: +$("#bPopHand").value || 0,
+    titleTop: $("#bTitleTop").value, titleBottom: $("#bTitleBot").value,
   });
   else if (A.script === "xmas") Object.assign(body, {
     shotTypes: await ringShotTypes(),   // 하트·오벌은 얼굴용 — 다른 종류면 완료 창이 알린다
@@ -2594,6 +2625,7 @@ function wireAlt() {
     bDesignChanged(true); altSummary();
   });
   ["#bLine1", "#bLine2", "#bName", "#bSub"].forEach(id => $(id).addEventListener("input", altSummary));
+  ["#bTitleTop", "#bTitleBot"].forEach(id => $(id).addEventListener("input", () => { A.bTitleTouched = true; altSummary(); }));
   $("#xLinePreset").addEventListener("change", e => {   // 틀 고르기 → 이름을 넣어 채우고 다시 "틀 고르기…"
     if (e.target.value === "") return;
     $("#xLine").value = xLineOf(+e.target.value, $("#xName").value.trim() || A.xSticker);

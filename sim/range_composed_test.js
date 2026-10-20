@@ -1366,5 +1366,53 @@ console.log('\n══ 작은 이름 = 두 번째 이름 (2026-09-23 사용자 �
       `들어감 ${inIt}/${n} · 사진 평균 −${(lost / n).toFixed(2)}` + (bad2.length ? ' · ' + bad2.slice(0, 3).join(' | ') : ''));
 }
 
+console.log('\n══ 격자 스타일 (2026-10-18 사용자 — 정렬 맞춰 빽빽하게 · 크기마다 행 · 큰 행 → 작은 행) ══');
+{
+  const typed = (list) => list.map((a, i) => ({ base: 'G' + i, aspect: a[0], cutAspect: a[0], shotType: a[1], sizeRange: a[2] }));
+  const grid = (pairs, ex) => P._packComposed(pairs, 0, W, H, G, { hero: heroBox, decoWant: P.COMPOSED_DECO_MAX, rimPt: RIM,
+                                                                 layout: { style: 'grid' }, ...(ex || {}) });
+  const rowsOf = r => { const m = new Map(); r.placed.forEach(p => { const k = Math.round((p.y + p.h / 2) / M * 10); m.set(k, (m.get(k) || []).concat([p])); }); return [...m.values()]; };
+  // 얼굴 3장 (예시 시트와 같은 구성) — 1″ · 같은 칸 격자 · 열이 맞는다 · 같은 사진이 위아래로 안 붙는다 · 데코 없음
+  const faces = typed([[0.9, 'face'], [0.95, 'face'], [0.88, 'face']]);
+  const a = grid(faces), rows = rowsOf(a);
+  const colsX = rows.map(rw => rw.map(p => Math.round((p.x + p.w / 2) / M * 10)).sort((x, y) => x - y).join());
+  chk('얼굴 3장 → 1″ 같은 칸 · 행마다 칸 수 같다 · 열 가운데가 맞는다 · 데코·말풍선 없음',
+      a.placed.every(p => p.inch === 1) && rows.length >= 4 && rows.every(rw => rw.length === rows[0].length) &&
+      new Set(colsX).size === 1 && a.decos.length === 0, `${a.placed.length}장 · ${rows.length}행 × ${rows[0].length}`);
+  let vert = 0;
+  const sorted = rows.map(rw => rw.slice().sort((x, y) => x.x - y.x)).sort((x, y) => x[0].y - y[0].y);
+  for (let i = 1; i < sorted.length; i++) sorted[i].forEach((p, c) => { if (sorted[i - 1][c] && sorted[i - 1][c].photo === p.photo) vert++; });
+  chk('같은 사진이 위아래로 붙지 않는다 · 사진별 장수 차이 ≤ 1', vert === 0 && Math.max(...a.counts) - Math.min(...a.counts) <= 1,
+      `위아래 ${vert} · 장수 ${a.counts}`);
+  // 크기가 섞이면 크기마다 행 — 큰 행이 위
+  const mixed = typed([[0.45, 'full'], [0.5, 'full'], [0.9, 'face'], [0.95, 'face'], [0.88, 'face']]);
+  const b = grid(mixed), bRows = rowsOf(b).sort((x, y) => x[0].y - y[0].y);
+  const rowInch = bRows.map(rw => new Set(rw.map(p => p.inch)));
+  chk('크기가 섞이면 행마다 한 크기 · 큰 행 → 작은 행 · 범위가 다르면 크기도 다르다',
+      rowInch.every(s => s.size === 1) && rowInch.every((s, i) => i === 0 || [...s][0] <= [...rowInch[i - 1]][0]) &&
+      b.placed.filter(p => p.photo < 2).every(p => p.inch > b.placed.find(q => q.photo >= 2).inch),
+      bRows.map(rw => rw[0].inch + '″×' + rw.length).join(' / '));
+  // 비율이 제각각(커플)이면 사진마다 자기 폭 — 같은 칸이면 6장이 안 들어갔다
+  const couples = typed([[0.7, 'group'], [0.62, 'group'], [1.3, 'group'], [0.9, 'group'], [0.66, 'group'], [0.75, 'group']]);
+  const c = grid(couples);
+  chk('커플 6장(비율 제각각)도 6장 모두 들어간다 · 행 높이는 맞는다', c.counts.every(k => k >= 1) && rowsOf(c).length >= 2, `장수 ${c.counts}`);
+  // 직접 정한 크기를 지킨다 · 장수 상한을 지킨다
+  const d = grid(typed([[0.9, 'face', [1.25, 1.25]], [0.95, 'face', [1.25, 1.25]], [0.88, 'face', [1.25, 1.25]]]));
+  const capped = faces.map((p, i) => i === 0 ? { ...p, maxCopies: 3 } : p), e = grid(capped);
+  chk('직접 정한 크기 · 장수 상한을 지킨다 · 남은 사진끼리 고르게', d.placed.every(p => p.inch === 1.25) && e.counts[0] <= 3 &&
+      Math.abs(e.counts[1] - e.counts[2]) <= 1,
+      `상한 판 장수 ${e.counts}`);
+  // 결정적 · 섞기 = 시작 사진만 바뀐다 · 좌우 바꿈 · 작은 이름 자리
+  const s1 = grid(faces, { layout: { style: 'grid', seed: 1 } });
+  const n2 = P._composedName2Spec(HERO);
+  const withName2 = grid(faces, n2 ? { name2: { w: n2.cellW, h: n2.cellH, spec: n2 } } : {});
+  chk('같은 선택 = 같은 판 · 섞기는 칸 자리는 같고 사진만 돈다 · 작은 이름이 있으면 그 위까지만',
+      grid(faces).sig === a.sig && s1.sig !== a.sig && s1.placed.length === a.placed.length &&
+      s1.placed.every((p, i) => Math.abs(p.x + p.w / 2 - a.placed[i].x - a.placed[i].w / 2) < 1e-6 &&
+                                Math.abs(p.y + p.h / 2 - a.placed[i].y - a.placed[i].h / 2) < 1e-6) &&
+      (!withName2.name2Box || withName2.placed.every(p => p.y + p.h <= withName2.name2Box.y - G + 1e-3)),
+      n2 ? `작은 이름 ${withName2.name2Box ? '있음' : '없음'}` : '작은 이름 스펙 없음');
+}
+
 assert(Buffer.compare(before, fs.readFileSync(SOURCE)) === 0, 'Everstory_range.jsx 가 테스트 중 바뀌었다');
 console.log(`\n${checks} 검사 통과 ✅  (소스 무변경 확인)`);
